@@ -88,3 +88,8 @@ plot!(xyz_data.tt[i1:i2],detrend(mag_5_c[i1:i2]
                          label="Comp Mag 5",color=:orange)
 
 # savefig("comp_prof_1.png")
+
+
+
+# gradient of parameter example
+grad_flux_b_x = central_fdm(xyz_data.flux_b_x)
