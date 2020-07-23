@@ -2,10 +2,12 @@
 cd(@__DIR__)
 using Pkg; Pkg.activate("../"); Pkg.instantiate()
 using MagNav
-using HDF5, Plots
+using Plots
 gr()
 
-xyz = get_flight_data("../data/DLV2265-Flt1002/10Hz_Mag_INS_Aux - Flt1002.h5")
+data_dir  = MagNav.data_dir()
+data_file = string(data_dir,"/Flt1002-train.h5")
+xyz_data  = get_flight_data(data_file)
 
 # sensor locations (from front seat rail)
 # Mag  1   tail stinger                      X=-12.01   Y= 0      Z=1.37
@@ -58,8 +60,8 @@ mag_4_c = xyz_data.mag_4_uc - A*TL_coef_4 .+ mean(A*TL_coef_4)
 mag_5_c = xyz_data.mag_5_uc - A*TL_coef_5 .+ mean(A*TL_coef_5)
 
 # plot total field comparison with SGL, Compensation 1
-plot(xyz_data.tt[i1:i2],xyz_data.mag_1_c[i1:i2])
-plot!(xyz_data.tt[i1:i2],mag_1_c[i1:i2])
+# plot(xyz_data.tt[i1:i2],xyz_data.mag_1_c[i1:i2])
+# plot!(xyz_data.tt[i1:i2],mag_1_c[i1:i2])
 
 # IGRF offset
 calcIGRF = xyz_data.mag_1_dc - xyz_data.mag_1_igrf
@@ -85,4 +87,4 @@ plot!(xyz_data.tt[i1:i2],detrend(mag_5_c[i1:i2]
                         -xyz_data.diurnal[i1:i2]-calcIGRF[i1:i2]),
                          label="Comp Mag 5",color=:orange)
 
-savefig("comp_prof_1.png")
+# savefig("comp_prof_1.png")
