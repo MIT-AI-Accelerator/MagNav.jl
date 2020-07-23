@@ -1,7 +1,7 @@
 [flight_data]
-git-tree-sha1 = "ef609b912631f068e64f52bf4fa1667f874cf1a4"
+git-tree-sha1 = "866ab128af87f731ff10fffb6017e6aa13b8da53"
 lazy = true
 
 [[flight_data.download]]
-url = "https://dropbox.com/sh/dl/x37yr72x5a5nbz0/AADBt8ioU4Lm7JgEMQvPD7gxa/flight_data.tar.gz"
-sha256 = "1c01846dcd31ad2a3b281c10cd7f20c2105e9d9e37fc90ae54b0ea98760feffb"
+url = "https://www.dropbox.com/sh/dl/x37yr72x5a5nbz0/AADBt8ioU4Lm7JgEMQvPD7gxa/flight_data.tar.gz"
+sha256 = "41eed1f3248cb0a53168fc6a718816b318b5e3f5c4ceeb4a61b3ff3ec76856ea"
