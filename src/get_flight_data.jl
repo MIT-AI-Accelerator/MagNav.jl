@@ -114,7 +114,7 @@ function get_flight_data(h5_file::String)
     V_CABT      = readcheck(N,h5_data,h5_file, "vol_cabt")
     V_FAN       = readcheck(N,h5_data,h5_file, "vol_fan")
 
-    return (xyz(N         , DT        , LINE      , FLT       ,
+    return (XYZ(N         , DT        , LINE      , FLT       ,
                 TIME      , UTM_X     , UTM_Y     , UTM_Z     ,
                 MSL_Z     , LAT       , LONG      , BARO      ,
                 RADAR     , TOPO      , DEM       , DRAPE     ,

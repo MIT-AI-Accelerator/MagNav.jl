@@ -7,7 +7,7 @@ using Interpolations, LinearAlgebra, Plots, StaticArrays, Statistics
 
 data_dir() = joinpath(artifact"flight_data", "flight_data")
 
-struct mapS
+struct MapS
     map::Matrix{Float64}
     xx::Vector{Float64}
     yy::Vector{Float64}
@@ -16,7 +16,7 @@ struct mapS
     de::Float64
 end
 
-struct mapV
+struct MapV
     mapX::Matrix{Float64}
     mapY::Matrix{Float64}
     mapZ::Matrix{Float64}
@@ -27,7 +27,7 @@ struct mapV
     de::Float64
 end
 
-struct xyz
+struct XYZ
     N::Int64
     DT::Float64
 

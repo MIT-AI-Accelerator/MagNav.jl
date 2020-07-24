@@ -24,10 +24,10 @@ function get_map_data(h5_file::String)
         map_mapX = read(map_data,"mapX")
         map_mapY = read(map_data,"mapY")
         map_mapZ = read(map_data,"mapY")
-        return mapV(map_mapX,map_mapY,map_mapZ,map_xx,map_yy,map_alt,dn,de)
+        return MapV(map_mapX,map_mapY,map_mapZ,map_xx,map_yy,map_alt,dn,de)
     elseif exists(map_data,"map" ) # scalar magnetometer
         map_map  = read(map_data,"map" )
-        return mapS(map_map,map_xx,map_yy,map_alt,dn,de)
+        return MapS(map_map,map_xx,map_yy,map_alt,dn,de)
     end
 
     close(map_data)
