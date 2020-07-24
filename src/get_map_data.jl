@@ -1,15 +1,15 @@
-function get_map_data(map_file::String)
-#   map_file    location/name of magnetic anomaly map HDF5 file
+function get_map_data(h5_file::String)
+#   h5_file     location/name of magnetic anomaly map HDF5 file
 
-    map_xx   = h5open(map_file,"r") do file
+    map_xx   = h5open(h5_file,"r") do file
         vec(read(file,"xx"))
     end
 
-    map_yy   = h5open(map_file,"r") do file
+    map_yy   = h5open(h5_file,"r") do file
         vec(read(file,"yy"))
     end
 
-    map_alt  = h5open(map_file,"r") do file
+    map_alt  = h5open(h5_file,"r") do file
         vec(read(file,"alt"))[1]
     end
 
@@ -18,7 +18,7 @@ function get_map_data(map_file::String)
     dn   = delta_north(deg2rad(dlat),deg2rad(mean(map_yy)))
     de   = delta_east( deg2rad(dlon),deg2rad(mean(map_yy)))
 
-    map_data = h5open(map_file,"r")
+    map_data = h5open(h5_file,"r")
 
     if exists(map_data,"mapX") # vector magnetometer
         map_mapX = read(map_data,"mapX")
