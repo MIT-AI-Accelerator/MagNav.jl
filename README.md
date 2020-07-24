@@ -8,10 +8,10 @@ A basic set of starter Julia code files have been provided within the `src` fold
 
 ## Team Members
 
-The MagNav team is part of the MIT-Air Force Artficial Intelligence Accelerator, a joint
-collaboration between the US Air Force, MIT CSAIL, and MIT Lincoln Laboratory. Team members include:
+The MagNav team is part of the MIT-Air Force Artificial Intelligence Accelerator, a joint
+collaboration between MIT CSAIL, MIT Lincoln Laboratory, and the US Air Force. Team members include:
 
-[MIT Julia Lab](https://julia.mit.edu/)
+[MIT Julia Lab](https://julia.mit.edu/) within [MIT CSAIL](https://www.csail.mit.edu/)
 - Albert R. Gnadt (AeroAstro Graduate Student)
 - Chris Rackauckas (Applied Mathematics Instructor)
 - Alan Edelman (Applied Mathematics Professor)
