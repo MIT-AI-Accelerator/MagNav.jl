@@ -5,6 +5,7 @@ using MagNav
 using Plots
 gr()
 
+# get flight data
 data_dir  = MagNav.data_dir()
 data_file = string(data_dir,"/Flt1002-train.h5")
 xyz_data  = get_flight_data(data_file)
@@ -93,3 +94,24 @@ plot!(xyz_data.TIME[i1:i2],detrend(mag_5_c[i1:i2]
 
 # gradient of parameter example
 grad_flux_b_x = central_fdm(xyz_data.FLUXB_X)
+
+
+
+# working with map data
+# NOTE data: https://www.dropbox.com/s/hdz03878lparyyr/map_data_1.tar.gz?dl=0
+# NOTE maps will likely be updated during the challenge problem
+map_file = "../maps/Renfrew_1.h5" # adjust based on save location
+map_data = get_map_data(map_file) # get map data, map values are total flux
+
+# upward continue the map to a desired altitude (400 m here)
+map_data.map[:,:] = upward_fft(map_data.map,map_data.de,map_data.dn,
+                               400 - map_data.alt)
+
+# map interpolation function, coordinates are UTM XY, map values are total flux
+interp_map = gen_interp_map(map_data.map,map_data.xx,map_data.yy)
+
+# sample a point from the map
+pt_samp = interp_map(460000,4982730)
+
+# get the sample point gradient
+pt_grad = map_grad(interp_map,460000,4982730)
