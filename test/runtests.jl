@@ -1,6 +1,3 @@
-using MagNav
-using Test
+using SafeTestsets
 
-@testset "MagNav.jl" begin
-    # Write your own tests here.
-end
+@safetestset "Test 1" begin include("test_1.jl") end
