@@ -35,3 +35,17 @@ collaboration between MIT CSAIL, MIT Lincoln Laboratory, and the US Air Force. T
 
 Air Force @ MIT
 - Major David Jacobs
+
+## Citation
+
+If this dataset is used in any citation, please cite the following work:
+
+```
+@article{gnadt2020signal,
+  title={Signal Enhancement for Magnetic Navigation Challenge Problem},
+  author={Gnadt, Albert R and Belarge, Joseph and Canciani, Aaron and Conger, Lauren and Curro, Joseph and Edelman, Alan and Morales, Peter and O'Keeffe, Michael F and Taylor, Jonathan and Rackauckas, Christopher},
+  journal={arXiv e-prints},
+  pages={arXiv--2007},
+  year={2020}
+}
+```
