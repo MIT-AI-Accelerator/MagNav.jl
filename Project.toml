@@ -22,6 +22,7 @@ FFTW = "1.2"
 ForwardDiff = "0.10"
 HDF5 = "0.13"
 Interpolations = "0.12"
+Plots = "1.5"
 StaticArrays = "0.12"
 julia = "1.4"
 
