@@ -35,3 +35,21 @@ collaboration between MIT CSAIL, MIT Lincoln Laboratory, and the US Air Force. T
 
 Air Force @ MIT
 - Major David Jacobs
+
+## Citation
+
+If this dataset is used in any citation, please cite the following work:
+
+```
+@article{gnadt2020signal,
+  title={Signal Enhancement for Magnetic Navigation Challenge Problem},
+  author={Gnadt, Albert R and Belarge, Joseph and Canciani, Aaron and Conger, Lauren and Curro, Joseph and Edelman, Alan and Morales, Peter and O'Keeffe, Michael F and Taylor, Jonathan and Rackauckas, Christopher},
+  journal={arXiv e-prints},
+  pages={arXiv--2007},
+  year={2020}
+}
+```
+
+## Data Sharing Agreement
+
+By granting You access to Data, the Air Force grants You a limited personal, non-exclusive, non-transferable, non-assignable, and revocable license to copy, modify, publicly display, and use the Data in accordance with this AGREEMENT solely for the purpose of non-profit research, non-profit education, or for government purposes by or on behalf of the U.S. Government. No license is granted for any other purpose, and there are no implied licenses in this Agreement. This Agreement is effective as of the date of approval by Air Force and remains in force for a period of one year from such date, unless terminated earlier or amended in writing. By using Data, You hereby grant an unlimited, irrevocable, world-wide, royalty-free right to the The United States Government to use for any purpose and in any manner whatsoever any feedback from You to the Air Force concerning Your use of Data.
