@@ -1,6 +1,11 @@
 # Signal Enhancement for Magnetic Navigation Challenge Problem
 
-This is a repository for the signal enhancement for magnetic navigation (MagNav) challenge problem, which was introduced at [JuliaCon 2020](https://juliacon.org/2020) and is currently running from July 26 to August 28. The high-level goal is to use magnetometer (magnetic field) readings recorded from within a cockpit and remove the aircraft magnetic noise to yield a clean magnetic signal. A detailed description of the challenge problem can be found [here](https://arxiv.org/pdf/2007.12158.pdf) and other MagNav literature can be found [here](https://github.com/MIT-AI-Accelerator/sciml-papers/tree/master/magnav).
+This is a repository for the signal enhancement for magnetic navigation (MagNav) challenge problem, which was introduced at [JuliaCon 2020](https://live.juliacon.org/talk/C9FGPP). The high-level goal is to use magnetometer (magnetic field) readings recorded from within a cockpit and remove the aircraft magnetic noise to yield a clean magnetic signal. A detailed description of the challenge problem can be found [here](https://arxiv.org/pdf/2007.12158.pdf) and other MagNav literature can be found [here](https://github.com/MIT-AI-Accelerator/sciml-papers/tree/master/magnav).
+
+|Round|Start|End|Winners|
+|--|--|--|--|
+|1|26-Jul-20|28-Aug-20|ASU|
+|2|TBD|TBD||
 
 ## Introduction Videos
 
@@ -14,8 +19,7 @@ A basic set of starter Julia code files have been provided within the `src` fold
 
 ## Team Members
 
-The MagNav team is part of the [MIT-Air Force Artificial Intelligence Accelerator](https://ai-accelerator.csail.mit.edu/), a joint
-collaboration between MIT CSAIL, MIT Lincoln Laboratory, and the US Air Force. Team members include:
+The MagNav team is part of the [MIT-Air Force Artificial Intelligence Accelerator](https://ai-accelerator.csail.mit.edu/), a joint collaboration between MIT CSAIL, MIT Lincoln Laboratory, and the US Air Force. Current team members include:
 
 [MIT Julia Lab](https://julia.mit.edu/) within [MIT CSAIL](https://www.csail.mit.edu/)
 - Albert R. Gnadt (AeroAstro Graduate Student)
@@ -24,14 +28,13 @@ collaboration between MIT CSAIL, MIT Lincoln Laboratory, and the US Air Force. T
 
 [MIT Lincoln Laboratory](https://www.ll.mit.edu/)
 - Joseph Belarge (Group 46)
-- Lauren Conger (Group 46)
-- Peter Morales (Group 01)
 - Michael F. O'Keeffe (Group 89)
 - Jonathan Taylor (Group 52)
 
 [Air Force Institute of Technology](https://www.afit.edu/)
 - Major Aaron Canciani
 - Major Joseph Curro
+- Aaron Nielsen
 
 Air Force @ MIT
 - Major David Jacobs
