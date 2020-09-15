@@ -1,6 +1,6 @@
 # analysis of SGL Flt1002
 cd(@__DIR__)
-using Pkg; Pkg.activate("../"); Pkg.instantiate()
+using Pkg; Pkg.activate("../"); Pkg.update(); Pkg.instantiate()
 using MagNav
 using Plots
 gr()
@@ -69,7 +69,7 @@ calcIGRF = xyz_data.DCMAG1 - xyz_data.IGRFMAG1
 
 # plot anomaly field comparison with SGL, Compensation 1
 plot(xyz_data.TIME[i1:i2],detrend(xyz_data.IGRFMAG1[i1:i2]),
-                        label="SGL Mag 1",color=:blue,lw=3,dpi=500,
+                        label="SGL Mag 1",color=:blue,lw=3, # dpi=500,
                         xlabel="Time [s]",ylabel="Magnetic Field [nT]",
                         ylims=(-150,150))
 plot!(xyz_data.TIME[i1:i2],detrend(mag_1_c[i1:i2]
@@ -97,10 +97,7 @@ grad_flux_b_x = central_fdm(xyz_data.FLUXB_X)
 
 
 
-# working with map data
-# map data, raw:
-#   https://www.dropbox.com/s/hdz03878lparyyr/map_data_1.tar.gz?dl=0
-# map data, IGRF removed, kNN for missing data, at constant HAE [m]:
+# download map data (IGRF removed, kNN for missing data, at constant HAE [m])
 #   https://www.dropbox.com/s/btge4wkold4w830/map_data_2.tar.gz?dl=0
 
 # get map data
