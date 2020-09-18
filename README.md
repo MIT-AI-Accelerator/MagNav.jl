@@ -9,9 +9,9 @@ This is a repository for the signal enhancement for magnetic navigation (MagNav)
 
 ## Introduction Videos
 
-- [Challenge Problem Overview](https://youtu.be/S3wKHDsHq8A)
-- [Detailed Description](https://youtu.be/qLKd1gwJhoA)
-- [Data Description](https://youtu.be/fyEt6XJRvvg)
+- [Magnetic Navigation Overview](https://youtu.be/S3wKHDsHq8A)
+- [Challenge Problem Description](https://youtu.be/qLKd1gwJhoA)
+- [Challenge Problem Datasets](https://youtu.be/fyEt6XJRvvg)
 
 ## Starter Code
 
