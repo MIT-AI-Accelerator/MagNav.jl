@@ -1,17 +1,17 @@
 # Signal Enhancement for Magnetic Navigation Challenge Problem
 
-This is a repository for the signal enhancement for magnetic navigation (MagNav) challenge problem, which was introduced at [JuliaCon 2020](https://live.juliacon.org/talk/C9FGPP). The high-level goal is to use magnetometer (magnetic field) readings recorded from within a cockpit and remove the aircraft magnetic noise to yield a clean magnetic signal. A detailed description of the challenge problem can be found [here](https://arxiv.org/pdf/2007.12158.pdf) and other MagNav literature can be found [here](https://github.com/MIT-AI-Accelerator/sciml-papers/tree/master/magnav).
+This is a repository for the signal enhancement for magnetic navigation (MagNav) challenge problem, which was introduced at [JuliaCon 2020](https://live.juliacon.org/talk/C9FGPP). The high-level goal is to use magnetometer (magnetic field) readings recorded from within a cockpit and remove the aircraft magnetic noise to yield a clean magnetic signal. A detailed description of the challenge problem can be found [here](https://arxiv.org/pdf/2007.12158.pdf) and additional MagNav literature can be found [here](https://github.com/MIT-AI-Accelerator/sciml-papers/tree/master/magnav).
 
-|Round|Start|End|Winners|
+|Round|Start|End|Winning Team|
 |--|--|--|--|
 |1|26-Jul-20|28-Aug-20|Ling-Wei Kong, Cheng-Zhen Wang, and Ying-Cheng Lai <br /> Arizona State University ([submission](https://github.com/lw-kong/MagNav))|
 |2|24-Sep-20|4-Jan-21||
 
 ## Introduction Videos
 
-- [Signal Enhancement for Magnetic Navigation Scientific Machine Learning Challenge Problem](https://youtu.be/S3wKHDsHq8A)
-- [Signal Enhancement for Magnetic Navigation Challenge Problem Detailed Description](https://youtu.be/qLKd1gwJhoA)
-- [Signal Enhancement for Magnetic Navigation Challenge Problem Data Description](https://youtu.be/fyEt6XJRvvg)
+- [Challenge Problem Overview](https://youtu.be/S3wKHDsHq8A)
+- [Detailed Description](https://youtu.be/qLKd1gwJhoA)
+- [Data Description](https://youtu.be/fyEt6XJRvvg)
 
 ## Starter Code
 
