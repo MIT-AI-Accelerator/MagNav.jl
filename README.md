@@ -4,8 +4,8 @@ This is a repository for the signal enhancement for magnetic navigation (MagNav)
 
 |Round|Start|End|Winners|
 |--|--|--|--|
-|1|26-Jul-20|28-Aug-20|ASU|
-|2|TBD|TBD||
+|1|26-Jul-20|28-Aug-20|Ling-Wei Kong, Cheng-Zhen Wang, and Ying-Cheng Lai\s\s Arizona State University ([submission](https://github.com/lw-kong/MagNav))|
+|2|24-Sep-20|4-Jan-21||
 
 ## Introduction Videos
 
