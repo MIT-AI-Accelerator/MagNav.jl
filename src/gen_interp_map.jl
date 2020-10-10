@@ -1,7 +1,21 @@
-function gen_interp_map(map_map::Array{Float64},
-                         map_xx::Array{Float64},
-                         map_yy::Array{Float64})
-#   map grid interpolation function, equivalent of griddedInterpolant in MATLAB
+"""
+    gen_interp_map(map_map::Array{Float64}, 
+                   map_xx::Array{Float64}, 
+                   map_yy::Array{Float64})
+
+Generate map grid interpolation, equivalent of griddedInterpolant in MATLAB.
+
+**Arguments:**
+- `map_map`: 2D gridded magnetic anomaly map
+- `map_xx`: x direction map indices
+- `map_yy`: y direction map indices
+
+**Returns:**
+- `interp_map`: map grid interpolation
+"""
+function gen_interp_map(map_map::Array{Float64}, 
+                        map_xx::Array{Float64}, 
+                        map_yy::Array{Float64})
 #   BSpline(Linear())
 #   BSpline(Quadratic(Line(OnCell())))
 #   BSpline(Cubic(Line(OnCell())))

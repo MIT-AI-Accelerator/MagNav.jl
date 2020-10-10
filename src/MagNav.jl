@@ -141,24 +141,22 @@ struct XYZ
     V_FAN::Vector{Float64}
 end
 
-include("create_TL_Amat.jl")
-include("create_TL_coef.jl")
 include("delta_lat_lon.jl")
 include("fft_maps.jl")
 include("gen_interp_map.jl")
 include("get_flight_data.jl")
 include("get_map_data.jl")
 include("helpers.jl")
+include("TL.jl")
 
 export
-create_TL_Amat,central_fdm,
-create_TL_coef,
 delta_lat,delta_lon,delta_north,delta_east,
-upward_fft,create_K,
+upward_fft,vector_fft,
 gen_interp_map,
 get_flight_data,
 get_map_data,
 detrend,map_grad,
+create_TL_A,create_TL_coef,fdm,
 mean
 
-end # module
+end # module MagNav
