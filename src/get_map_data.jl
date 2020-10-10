@@ -1,5 +1,15 @@
+"""
+    get_map_data(h5_file::String)
+
+Get map data from saved HDF5 file.
+
+**Arguments:**
+- `map_file`: path/name of magnetic anomaly map HDF5 file
+
+**Returns:**
+- `MapS`: scalar or vector magnetometer struct
+"""
 function get_map_data(h5_file::String)
-#   h5_file     location/name of magnetic anomaly map HDF5 file
 
     map_xx   = h5open(h5_file,"r") do file
         vec(read(file,"xx"))
@@ -10,7 +20,7 @@ function get_map_data(h5_file::String)
     end
 
     map_alt  = h5open(h5_file,"r") do file
-        read(file,"alt")
+        read(file,"alt")[1]
     end
 
     map_map  = h5open(h5_file,"r") do file
