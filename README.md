@@ -30,6 +30,7 @@ The MagNav team is part of the [MIT-Air Force Artificial Intelligence Accelerato
 - Joseph Belarge (Group 46)
 - Michael F. O'Keeffe (Group 89)
 - Jonathan Taylor (Group 52)
+- Michael Yee (Group 01)
 
 [Air Force Institute of Technology](https://www.afit.edu/)
 - Major Aaron Canciani
