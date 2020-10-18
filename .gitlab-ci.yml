@@ -1,0 +1,9 @@
+include: https://raw.githubusercontent.com/JuliaGPU/gitlab-ci/master/templates/v6.yml
+
+variables:
+  JULIA_NUM_THREADS: 8
+
+test:
+  extends:
+    - .julia:1.5
+    - .test
