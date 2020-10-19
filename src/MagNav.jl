@@ -2,8 +2,8 @@ module MagNav
 
 using Pkg.Artifacts: @artifact_str
 
-using BenchmarkTools, DSP, FFTW, ForwardDiff, HDF5
-using Interpolations, LinearAlgebra, Plots, StaticArrays, Statistics
+using BenchmarkTools, DSP, FFTW, ForwardDiff, HDF5, Interpolations
+using LinearAlgebra, MAT, Plots, StaticArrays, Statistics
 
 data_dir() = joinpath(artifact"flight_data", "flight_data")
 
@@ -151,7 +151,7 @@ include("TL.jl")
 
 export
 delta_lat,delta_lon,delta_north,delta_east,
-upward_fft,vector_fft,
+upward_fft,vector_fft,create_K,
 gen_interp_map,
 get_flight_data,
 get_map_data,
