@@ -19,12 +19,12 @@ A basic set of starter Julia code files have been provided within the `src` fold
 
 ## Team Members
 
-The MagNav team is part of the [MIT-Air Force Artificial Intelligence Accelerator](https://ai-accelerator.csail.mit.edu/), a joint collaboration between MIT CSAIL, MIT Lincoln Laboratory, and the US Air Force. Current team members include:
+The MagNav team is part of the [USAF-MIT Artificial Intelligence Accelerator](https://aia.mit.edu/), a joint collaboration between the United States Air Force, MIT CSAIL, and MIT Lincoln Laboratory. Current team members include:
 
 [MIT Julia Lab](https://julia.mit.edu/) within [MIT CSAIL](https://www.csail.mit.edu/)
-- Albert R. Gnadt (AeroAstro Graduate Student)
-- Chris Rackauckas (Applied Mathematics Instructor)
-- Alan Edelman (Applied Mathematics Professor)
+- [Albert R. Gnadt](https://gnadt.github.io/) (AeroAstro Graduate Student)
+- [Chris Rackauckas](https://chrisrackauckas.com/) (Applied Mathematics Instructor)
+- [Alan Edelman](http://www-math.mit.edu/~edelman/) (Applied Mathematics Professor)
 
 [MIT Lincoln Laboratory](https://www.ll.mit.edu/)
 - Joseph Belarge (Group 46)
@@ -37,7 +37,7 @@ The MagNav team is part of the [MIT-Air Force Artificial Intelligence Accelerato
 - Major Joseph Curro
 - Aaron P. Nielsen ([DiDacTex, LLC](https://www.didactex.com))
 
-Air Force @ MIT
+[Air Force @ MIT](https://aia.mit.edu/about-us/)
 - Major David Jacobs
 
 ## Citation
