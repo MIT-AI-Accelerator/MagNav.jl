@@ -18,7 +18,7 @@ By granting You access to Data, the Air Force grants You a limited personal, non
 
 ## 2. GENERAL CONDITIONS
 
-(i) The Data has been anonymized; however, if any portion(s) of such Data incidentally contains information that could amount to non-anonymized Data, You will respect the privacy of persons that may be identified in such Data. For any publication or other disclosure, You will anonymize or de-identify all personally-identifiable information, IP addresses, and other data identified in Supplemental provisions (if any) by using commonly accepted techniques, such as one of the methods recommended by CAIDA (https://www.caida.org/projects/predict/anonymization). You will notify the Air Force using the contact information provided at the end of this AGREEMENT immediately and provide all relevant regarding potential non-anonymized Data.
+(i) The Data has been anonymized; however, if any portion(s) of such Data incidentally contains information that could amount to non-anonymized Data, You will respect the privacy of persons that may be identified in such Data. For any publication or other disclosure, You will anonymize or de-identify all personally-identifiable information, IP addresses, and other data identified in Supplemental provisions (if any) by using commonly accepted techniques, such as one of the methods recommended by [CAIDA](https://www.caida.org/projects/predict/anonymization). You will notify the Air Force using the contact information provided at the end of this AGREEMENT immediately and provide all relevant regarding potential non-anonymized Data.
 
 (ii) While using Data, You agree not to circumvent any technological measure as prohibited and punishable under Title 17 United States Code § 1201, Circumvention of copyright protection systems, by reverse engineering, decrypting, de-anonymizing, deriving, or otherwise re-identifying any anonymized information.
 
@@ -34,6 +34,7 @@ By granting You access to Data, the Air Force grants You a limited personal, non
 
 (viii) You are free to publish (including web pages, papers published by a third party, and publicly available presentations) or make public or use results derived from this Data. Results derived from data means any conclusions, observations, theories, analysis or opinions derived in whole, or in-part, from the Data. You may publish Data only to the extent necessary to discuss the results derived from this Data. You agree that by publishing results derived from this Data, or making public results derived from this Data, or using by any means data from this Data, You will provide Air Force with a copy of (or a link to) the publication and You must cite the Data as follows:
 
+```
 [DataSet Name] provided by the United States Air Force pursuant to Cooperative Agreement Number FA8750-19-2-1000 - [dates used]
 @article{gnadt2020signal,
   title={Signal Enhancement for Magnetic Navigation Challenge Problem},
@@ -41,8 +42,10 @@ By granting You access to Data, the Air Force grants You a limited personal, non
   journal={arXiv e-prints},
   pages={arXiv--2007},
   year={2020}
+}
+```
 
 ## Point of Contact
 
-Name: USAF-MIT Artificial Intelligence Accelerator Program Administrators
-Email: aia.contact@mit.edu
+- Name: USAF-MIT Artificial Intelligence Accelerator Program Administrators
+- Email: aia.contact@mit.edu
