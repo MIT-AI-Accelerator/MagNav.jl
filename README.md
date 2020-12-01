@@ -1,5 +1,9 @@
 # Signal Enhancement for Magnetic Navigation Challenge Problem
 
+[![gitlab](https://gitlab.com/gnadt/MagNav-jl/badges/master/pipeline.svg)](https://gitlab.com/gnadt/MagNav-jl/-/jobs)
+<!-- [![codecov](https://codecov.io/gh/MIT-AI-Accelerator/MagNav.jl/coverage.svg?branch=master)](https://codecov.io/gh/MIT-AI-Accelerator/MagNav.jl?branch=master) -->
+<!-- [![codecov](https://codecov.io/gh/MIT-AI-Accelerator/MagNav.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/MIT-AI-Accelerator/MagNav.jl) -->
+
 This is a repository for the signal enhancement for magnetic navigation (MagNav) challenge problem, which was introduced at [JuliaCon 2020](https://live.juliacon.org/talk/C9FGPP). The high-level goal is to use magnetometer (magnetic field) readings recorded from within a cockpit and remove the aircraft magnetic noise to yield a clean magnetic signal. A detailed description of the challenge problem can be found [here](https://arxiv.org/pdf/2007.12158.pdf) and additional MagNav literature can be found [here](https://github.com/MIT-AI-Accelerator/sciml-papers/tree/master/magnav).
 
 |Round|Start|End|Winning Team|
