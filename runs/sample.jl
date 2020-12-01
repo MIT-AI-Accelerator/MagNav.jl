@@ -8,7 +8,7 @@ gr()
 ## get flight data
 data_dir  = MagNav.data_dir()
 data_file = string(data_dir,"/Flt1002-train.h5")
-xyz_data  = get_flight_data(data_file)
+xyz_data  = get_flight_data(data_file);
 
 ## sensor locations (from front seat rail)
 # Mag  1   tail stinger                      X=-12.01   Y= 0      Z=1.37
@@ -21,37 +21,42 @@ xyz_data  = get_flight_data(data_file)
 # Flux D   rear of cabin starboard side      X= -4.06   Y=-0.42   Z=0
 
 ## create Tolles-Lawson coefficients
-cp = Dict()
-cp[:pass1] = 0.1  # first  passband frequency [Hz]
-cp[:pass2] = 0.9  # second passband frequency [Hz]
-cp[:fs]    = 10.0 # sampling frequency [Hz]
+pass1 = 0.1  # first  passband frequency [Hz]
+pass2 = 0.9  # second passband frequency [Hz]
+fs    = 10.0 # sampling frequency [Hz]
 i1         = findfirst(xyz_data.LINE .== 1002.02)
 i2         = findlast( xyz_data.LINE .== 1002.02)
+
 TL_coef_1  = create_TL_coef(xyz_data.FLUXB_X[i1:i2],
                             xyz_data.FLUXB_Y[i1:i2],
                             xyz_data.FLUXB_Z[i1:i2],
-                            xyz_data.UNCOMPMAG1[i1:i2];cp...)
+                            xyz_data.UNCOMPMAG1[i1:i2];
+                            pass1=pass1,pass2=pass2,fs=fs)
 TL_coef_2  = create_TL_coef(xyz_data.FLUXB_X[i1:i2],
                             xyz_data.FLUXB_Y[i1:i2],
                             xyz_data.FLUXB_Z[i1:i2],
-                            xyz_data.UNCOMPMAG2[i1:i2];cp...)
+                            xyz_data.UNCOMPMAG2[i1:i2];
+                            pass1=pass1,pass2=pass2,fs=fs)
 TL_coef_3  = create_TL_coef(xyz_data.FLUXB_X[i1:i2],
                             xyz_data.FLUXB_Y[i1:i2],
                             xyz_data.FLUXB_Z[i1:i2],
-                            xyz_data.UNCOMPMAG3[i1:i2];cp...)
+                            xyz_data.UNCOMPMAG3[i1:i2];
+                            pass1=pass1,pass2=pass2,fs=fs)
 TL_coef_4  = create_TL_coef(xyz_data.FLUXB_X[i1:i2],
                             xyz_data.FLUXB_Y[i1:i2],
                             xyz_data.FLUXB_Z[i1:i2],
-                            xyz_data.UNCOMPMAG4[i1:i2];cp...)
+                            xyz_data.UNCOMPMAG4[i1:i2];
+                            pass1=pass1,pass2=pass2,fs=fs)
 TL_coef_5  = create_TL_coef(xyz_data.FLUXB_X[i1:i2],
                             xyz_data.FLUXB_Y[i1:i2],
                             xyz_data.FLUXB_Z[i1:i2],
-                            xyz_data.UNCOMPMAG5[i1:i2];cp...)
+                            xyz_data.UNCOMPMAG5[i1:i2];
+                            pass1=pass1,pass2=pass2,fs=fs)
 
 ## create Tolles-Lawson A matrix
 A = create_TL_A(xyz_data.FLUXB_X,
                 xyz_data.FLUXB_Y,
-                xyz_data.FLUXB_Z)
+                xyz_data.FLUXB_Z);
 
 ## correct magnetometer measurements
 mag_1_c = xyz_data.UNCOMPMAG1 - A*TL_coef_1 .+ mean(A*TL_coef_1)
@@ -68,26 +73,27 @@ mag_5_c = xyz_data.UNCOMPMAG5 - A*TL_coef_5 .+ mean(A*TL_coef_5)
 calcIGRF = xyz_data.DCMAG1 - xyz_data.IGRFMAG1
 
 ## plot anomaly field comparison with SGL, Compensation 1
-plot(xyz_data.TIME[i1:i2],detrend(xyz_data.IGRFMAG1[i1:i2]),
-                        label="SGL Mag 1",color=:blue,lw=3, # dpi=500,
-                        xlabel="Time [s]",ylabel="Magnetic Field [nT]",
-                        ylims=(-150,150))
-plot!(xyz_data.TIME[i1:i2],detrend(mag_1_c[i1:i2]
-                        -xyz_data.DIURNAL[i1:i2]-calcIGRF[i1:i2]),
-                         label="Comp Mag 1",color=:red,lw=3,linestyle=:dash)
-# plot!(xyz_data.TIME[i1:i2],detrend(mag_2_c[i1:i2]
-#                         -xyz_data.DIURNAL[i1:i2]-calcIGRF[i1:i2]),
-#                          label="Mag 2",color=:purple)
-plot!(xyz_data.TIME[i1:i2],detrend(mag_3_c[i1:i2]
-                        -xyz_data.DIURNAL[i1:i2]-calcIGRF[i1:i2]),
-                         label="Comp Mag 3",color=:green)
-plot!(xyz_data.TIME[i1:i2],detrend(mag_4_c[i1:i2]
-                        -xyz_data.DIURNAL[i1:i2]-calcIGRF[i1:i2]),
-                         label="Comp Mag 4",color=:black)
-plot!(xyz_data.TIME[i1:i2],detrend(mag_5_c[i1:i2]
-                        -xyz_data.DIURNAL[i1:i2]-calcIGRF[i1:i2]),
-                         label="Comp Mag 5",color=:orange)
+p1 = plot(xyz_data.TIME[i1:i2],detrend(xyz_data.IGRFMAG1[i1:i2]),
+          label="SGL Mag 1",color=:blue,lw=3, # dpi=500,
+          xlabel="Time [s]",ylabel="Magnetic Field [nT]",
+          ylims=(-150,150))
+plot!(p1,xyz_data.TIME[i1:i2],detrend(mag_1_c[i1:i2]
+                              -xyz_data.DIURNAL[i1:i2]-calcIGRF[i1:i2]),
+      label="Comp Mag 1",color=:red,lw=3,linestyle=:dash)
+# plot!(p1,xyz_data.TIME[i1:i2],detrend(mag_2_c[i1:i2]
+#                               -xyz_data.DIURNAL[i1:i2]-calcIGRF[i1:i2]),
+#       label="Comp Mag 2",color=:purple)
+plot!(p1,xyz_data.TIME[i1:i2],detrend(mag_3_c[i1:i2]
+                              -xyz_data.DIURNAL[i1:i2]-calcIGRF[i1:i2]),
+      label="Comp Mag 3",color=:green)
+plot!(p1,xyz_data.TIME[i1:i2],detrend(mag_4_c[i1:i2]
+                              -xyz_data.DIURNAL[i1:i2]-calcIGRF[i1:i2]),
+      label="Comp Mag 4",color=:black)
+plot!(p1,xyz_data.TIME[i1:i2],detrend(mag_5_c[i1:i2]
+                              -xyz_data.DIURNAL[i1:i2]-calcIGRF[i1:i2]),
+      label="Comp Mag 5",color=:orange)
 
+display(p1)
 # savefig("comp_prof_1.png")
 
 

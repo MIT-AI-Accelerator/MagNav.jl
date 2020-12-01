@@ -54,26 +54,21 @@ function create_TL_A(Bx, By, Bz)
 end # function create_TL_A
 
 """
-    create_TL_coef(Bx, By, Bz, meas; kwargs...)
+    create_TL_coef(Bx, By, Bz, meas; pass1=0.1, pass2=0.9, fs=10.0)
 
 Create Tolles-Lawson coefficients using vector and scalar magnetometer measurements and bandpass filter.
 
 **Arguments:**
 - `Bx, By, Bz`: vector magnetometer measurements
 - `meas`: scalar magnetometer measurements
-- `kwargs`:named tuple containing bandpass filter parameters, pass1, pass2, fs
+- `pass1`: (optional) first passband frequency [Hz]
+- `pass2`: (optional) second passband frequency [Hz]
+- `fs`: (optional) sampling frequency [Hz]
 
 **Returns:**
 - `coef`: Tolles-Lawson coefficients
 """
-function create_TL_coef(Bx, By, Bz, meas; kwargs...)
-    defaults = (; pass1 = 0.1,
-                  pass2 = 0.9,
-                  fs    = 10.0)
-    settings = merge(defaults,kwargs)
-    pass1 = settings.pass1
-    pass2 = settings.pass2
-    fs    = settings.fs
+function create_TL_coef(Bx, By, Bz, meas; pass1=0.1, pass2=0.9, fs=10.0)
 
     # create filter
     d = digitalfilter(Bandpass(pass1,pass2;fs=fs),Butterworth(4))

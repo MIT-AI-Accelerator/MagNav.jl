@@ -11,15 +11,14 @@ Bz         = TL_data["Bz"]
 meas_uc    = TL_data["mag_uc"]
 meas_uc_t  = TL_data["mag_uc_t"]
 
-cp = Dict()
-cp[:pass1] = TL_data["Fpass1"]
-cp[:pass2] = TL_data["Fpass2"]
-cp[:fs]    = TL_data["Fs"]
+pass1 = TL_data["Fpass1"]
+pass2 = TL_data["Fpass2"]
+fs    = TL_data["Fs"]
 
 tr = round(Int64,TL_data["trim"])
 A  = create_TL_A(Bx,By,Bz)[tr+1:end-tr,:]
 
-TL_coef  = create_TL_coef(Bx,By,Bz,meas_uc;cp...)
+TL_coef  = create_TL_coef(Bx,By,Bz,meas_uc; pass1=pass1,pass2=pass2,fs=fs)
 meas_c_t = meas_uc_t - A*TL_coef .+ mean(A*TL_coef)
 
 @testset "Create TL A Tests" begin
