@@ -5,9 +5,9 @@ File format as follows:
 
         LINE     8        -        -         Line Number XXXX.YY where XXXX is line number and YY is segment number
          FLT     5        -        -         Flight Number
-        YEAR     5        s        -         Year
-         DOY     4        m        -         Day of year
-        TIME     9        m        *         Fiducial Seconds Past Midnight UTC
+        YEAR     5        -        -         Year
+         DOY     4        -        -         Day of year
+        TIME     9        s        *         Fiducial Seconds Past Midnight UTC
        UTM-X    11        m        *         X coordinate, WGS-84 UTM ZONE 18N
        UTM-Y    11        m        *         Y coordinate, WGS-84 UTM ZONE 18N
        UTM-Z     8        m        *         Z coordinate, GPS Elevation (above WGS-84 Ellipsoid)
@@ -19,9 +19,9 @@ File format as follows:
         TOPO     8        m        *         Radar Topography (above WGS-84 Ellipsoid)
          DEM     8        m        *         Digital Elevation Model from SRTM (above WGS-84 Ellipsoid)
        DRAPE     8        m        *         Planned Survey Drape (above WGS-84 Ellipsoid)
-       PITCH     7       nT        *         INS computed aircraft pitch
-        ROLL     7       nT        *         INS computed aircraft roll
-     AZIMUTH     7       nT        *         INS computed aircraft azimuth
+       PITCH     7      deg        *         INS computed aircraft pitch
+        ROLL     7      deg        *         INS computed aircraft roll
+     AZIMUTH     7      deg        *         INS computed aircraft azimuth
      DIURNAL    11       nT        *         Measured Diurnal
     COMPMAG1    11       nT        *         Mag 1: Compensated Airborne Magnetic Field
      LAGMAG1    11       nT        *         Mag 1: Lag Corrected Airborne Magnetic Field
