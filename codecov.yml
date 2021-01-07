@@ -1,0 +1,13 @@
+coverage:
+  ignore:
+    - "readmes"
+    - "runs"
+    - "test"
+
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 5%
+    patch: no
+    changes: no
