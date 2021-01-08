@@ -7,3 +7,8 @@ test:
   extends:
     - .julia:1.5
     - .test
+
+coverage:
+  extends:
+    - .julia:1.5
+    - .coverage
