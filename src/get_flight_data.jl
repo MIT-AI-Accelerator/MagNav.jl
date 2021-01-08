@@ -17,7 +17,7 @@ function get_flight_data(h5_file::String)
     h5_data     = h5open(h5_file,"r")
 
     N           = h5read(h5_file, "N")
-    DT          = h5read(h5_file, "dt")
+    DT          = 0.1 # h5read(h5_file, "dt") # error in h5_file
 
     LINE        = read_check(N,h5_data,h5_file, "tie_line")
     FLT         = read_check(N,h5_data,h5_file, "flight")
