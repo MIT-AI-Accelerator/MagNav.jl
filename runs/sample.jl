@@ -107,20 +107,20 @@ grad_flux_b_x = fdm(xyz_data.FLUXB_X)
 #   https://www.dropbox.com/s/btge4wkold4w830/map_data_2.tar.gz?dl=0
 
 ## get map data
-map_file = "../maps/Renfrew_2.h5" # adjust based on save location
-map_data = get_map_data(map_file) # get map data, map values are total flux
+#map_file = "../maps/Renfrew_2.h5" # adjust based on save location
+#map_data = get_map_data(map_file) # get map data, map values are total flux
 
 # upward continue the map to a desired altitude (2000 m here)
-map_data.map[:,:] = upward_fft(map_data.map,map_data.de,map_data.dn,
-                               2000 - map_data.alt)
+#map_data.map[:,:] = upward_fft(map_data.map,map_data.de,map_data.dn,
+#                               2000 - map_data.alt)
 
 # map interpolation, coordinates are UTM XY [m], map values are total flux
-interp_map = gen_interp_map(map_data.map,map_data.xx,map_data.yy)
+#interp_map = gen_interp_map(map_data.map,map_data.xx,map_data.yy)
 
 # sample point from the map
 # NOTE: if a bounds error is observed, the sample is outside the map area, so
 # the wrong map is being used or there is not reliable map data for that sample
-pt_samp = interp_map(350000,5000000)
+#pt_samp = interp_map(350000,5000000)
 
 # get the sample point gradient
-pt_grad = map_grad(interp_map,350000,5000000)
+#pt_grad = map_grad(interp_map,350000,5000000)
