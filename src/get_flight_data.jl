@@ -9,7 +9,7 @@ Get xyz data from saved xyz HDF5 file.
 **Returns:**
 - `XYZ`: XYZ data struct
 """
-function get_flight_data(h5_file::String)
+function get_flight_data(h5_file::String; tt_sort::Bool=true)
 
     println("")
     println("> Reading in file: ", h5_file)
@@ -18,111 +18,117 @@ function get_flight_data(h5_file::String)
 
     N           = h5read(h5_file, "N")
     DT          = 0.1 # h5read(h5_file, "dt") # error in h5_file
+    
+    if tt_sort
+        ind = sortperm(read_check(N,h5_data,h5_file, "tt"))
+    else
+        ind = 1:N
+    end
 
-    LINE        = read_check(N,h5_data,h5_file, "tie_line")
-    FLT         = read_check(N,h5_data,h5_file, "flight")
-    TIME        = read_check(N,h5_data,h5_file, "tt")
-    UTM_X       = read_check(N,h5_data,h5_file, "utmX")
-    UTM_Y       = read_check(N,h5_data,h5_file, "utmY")
-    UTM_Z       = read_check(N,h5_data,h5_file, "utmZ")
-    MSL_Z       = read_check(N,h5_data,h5_file, "alt")
-    LAT         = read_check(N,h5_data,h5_file, "lat")
-    LONG        = read_check(N,h5_data,h5_file, "lon")
+    LINE        = read_check(N,h5_data,h5_file, "tie_line")[ind]
+    FLT         = read_check(N,h5_data,h5_file, "flight")[ind]
+    TIME        = read_check(N,h5_data,h5_file, "tt")[ind]
+    UTM_X       = read_check(N,h5_data,h5_file, "utmX")[ind]
+    UTM_Y       = read_check(N,h5_data,h5_file, "utmY")[ind]
+    UTM_Z       = read_check(N,h5_data,h5_file, "utmZ")[ind]
+    MSL_Z       = read_check(N,h5_data,h5_file, "alt")[ind]
+    LAT         = read_check(N,h5_data,h5_file, "lat")[ind]
+    LONG        = read_check(N,h5_data,h5_file, "lon")[ind]
 
-    BARO        = read_check(N,h5_data,h5_file, "baro")
-    RADAR       = read_check(N,h5_data,h5_file, "radar")
-    TOPO        = read_check(N,h5_data,h5_file, "topo")
-    DEM         = read_check(N,h5_data,h5_file, "dem")
-    DRAPE       = read_check(N,h5_data,h5_file, "drape")
+    BARO        = read_check(N,h5_data,h5_file, "baro")[ind]
+    RADAR       = read_check(N,h5_data,h5_file, "radar")[ind]
+    TOPO        = read_check(N,h5_data,h5_file, "topo")[ind]
+    DEM         = read_check(N,h5_data,h5_file, "dem")[ind]
+    DRAPE       = read_check(N,h5_data,h5_file, "drape")[ind]
 
-    PITCH       = read_check(N,h5_data,h5_file, "ins_pitch")
-    ROLL        = read_check(N,h5_data,h5_file, "ins_roll")
-    AZIMUTH     = read_check(N,h5_data,h5_file, "ins_azim")
-    DIURNAL     = read_check(N,h5_data,h5_file, "diurnal")
+    PITCH       = read_check(N,h5_data,h5_file, "ins_pitch")[ind]
+    ROLL        = read_check(N,h5_data,h5_file, "ins_roll")[ind]
+    AZIMUTH     = read_check(N,h5_data,h5_file, "ins_azim")[ind]
+    DIURNAL     = read_check(N,h5_data,h5_file, "diurnal")[ind]
 
-    COMPMAG1    = read_check(N,h5_data,h5_file, "mag_1_c")
-    LAGMAG1     = read_check(N,h5_data,h5_file, "mag_1_lag")
-    DCMAG1      = read_check(N,h5_data,h5_file, "mag_1_dc")
-    IGRFMAG1    = read_check(N,h5_data,h5_file, "mag_1_igrf")
-    UNCOMPMAG1  = read_check(N,h5_data,h5_file, "mag_1_uc")
+    COMPMAG1    = read_check(N,h5_data,h5_file, "mag_1_c")[ind]
+    LAGMAG1     = read_check(N,h5_data,h5_file, "mag_1_lag")[ind]
+    DCMAG1      = read_check(N,h5_data,h5_file, "mag_1_dc")[ind]
+    IGRFMAG1    = read_check(N,h5_data,h5_file, "mag_1_igrf")[ind]
+    UNCOMPMAG1  = read_check(N,h5_data,h5_file, "mag_1_uc")[ind]
 
-    UNCOMPMAG2  = read_check(N,h5_data,h5_file, "mag_2_uc")
-    UNCOMPMAG3  = read_check(N,h5_data,h5_file, "mag_3_uc")
-    UNCOMPMAG4  = read_check(N,h5_data,h5_file, "mag_4_uc")
-    UNCOMPMAG5  = read_check(N,h5_data,h5_file, "mag_5_uc")
+    UNCOMPMAG2  = read_check(N,h5_data,h5_file, "mag_2_uc")[ind]
+    UNCOMPMAG3  = read_check(N,h5_data,h5_file, "mag_3_uc")[ind]
+    UNCOMPMAG4  = read_check(N,h5_data,h5_file, "mag_4_uc")[ind]
+    UNCOMPMAG5  = read_check(N,h5_data,h5_file, "mag_5_uc")[ind]
 
-    FLUXB_X     = read_check(N,h5_data,h5_file, "flux_b_x")
-    FLUXB_Y     = read_check(N,h5_data,h5_file, "flux_b_y")
-    FLUXB_Z     = read_check(N,h5_data,h5_file, "flux_b_z")
-    FLUXB_TOT   = read_check(N,h5_data,h5_file, "flux_b_t")
+    FLUXB_X     = read_check(N,h5_data,h5_file, "flux_b_x")[ind]
+    FLUXB_Y     = read_check(N,h5_data,h5_file, "flux_b_y")[ind]
+    FLUXB_Z     = read_check(N,h5_data,h5_file, "flux_b_z")[ind]
+    FLUXB_TOT   = read_check(N,h5_data,h5_file, "flux_b_t")[ind]
 
-    FLUXC_X     = read_check(N,h5_data,h5_file, "flux_c_x")
-    FLUXC_Y     = read_check(N,h5_data,h5_file, "flux_c_y")
-    FLUXC_Z     = read_check(N,h5_data,h5_file, "flux_c_z")
-    FLUXC_TOT   = read_check(N,h5_data,h5_file, "flux_c_t")
+    FLUXC_X     = read_check(N,h5_data,h5_file, "flux_c_x")[ind]
+    FLUXC_Y     = read_check(N,h5_data,h5_file, "flux_c_y")[ind]
+    FLUXC_Z     = read_check(N,h5_data,h5_file, "flux_c_z")[ind]
+    FLUXC_TOT   = read_check(N,h5_data,h5_file, "flux_c_t")[ind]
 
-    FLUXD_X     = read_check(N,h5_data,h5_file, "flux_d_x")
-    FLUXD_Y     = read_check(N,h5_data,h5_file, "flux_d_y")
-    FLUXD_Z     = read_check(N,h5_data,h5_file, "flux_d_z")
-    FLUXD_TOT   = read_check(N,h5_data,h5_file, "flux_d_t")
+    FLUXD_X     = read_check(N,h5_data,h5_file, "flux_d_x")[ind]
+    FLUXD_Y     = read_check(N,h5_data,h5_file, "flux_d_y")[ind]
+    FLUXD_Z     = read_check(N,h5_data,h5_file, "flux_d_z")[ind]
+    FLUXD_TOT   = read_check(N,h5_data,h5_file, "flux_d_t")[ind]
 
-    OGS_MAG     = read_check(N,h5_data,h5_file, "ogs_mag")
-    OGS_HGT     = read_check(N,h5_data,h5_file, "ogs_alt")
+    OGS_MAG     = read_check(N,h5_data,h5_file, "ogs_mag")[ind]
+    OGS_HGT     = read_check(N,h5_data,h5_file, "ogs_alt")[ind]
 
-    INS_ACC_X   = read_check(N,h5_data,h5_file, "ins_acc_x")
-    INS_ACC_Y   = read_check(N,h5_data,h5_file, "ins_acc_y")
-    INS_ACC_Z   = read_check(N,h5_data,h5_file, "ins_acc_z")
-    INS_WANDER  = read_check(N,h5_data,h5_file, "ins_wander")
-    INS_LAT     = read_check(N,h5_data,h5_file, "ins_lat")
-    INS_LON     = read_check(N,h5_data,h5_file, "ins_lon")
-    INS_HGT     = read_check(N,h5_data,h5_file, "ins_alt")
-    INS_VEL_N   = read_check(N,h5_data,h5_file, "ins_vn")
-    INS_VEL_W   = read_check(N,h5_data,h5_file, "ins_vw")
-    INS_VEL_V   = read_check(N,h5_data,h5_file, "ins_vu")
+    INS_ACC_X   = read_check(N,h5_data,h5_file, "ins_acc_x")[ind]
+    INS_ACC_Y   = read_check(N,h5_data,h5_file, "ins_acc_y")[ind]
+    INS_ACC_Z   = read_check(N,h5_data,h5_file, "ins_acc_z")[ind]
+    INS_WANDER  = read_check(N,h5_data,h5_file, "ins_wander")[ind]
+    INS_LAT     = read_check(N,h5_data,h5_file, "ins_lat")[ind]
+    INS_LON     = read_check(N,h5_data,h5_file, "ins_lon")[ind]
+    INS_HGT     = read_check(N,h5_data,h5_file, "ins_alt")[ind]
+    INS_VEL_N   = read_check(N,h5_data,h5_file, "ins_vn")[ind]
+    INS_VEL_W   = read_check(N,h5_data,h5_file, "ins_vw")[ind]
+    INS_VEL_V   = read_check(N,h5_data,h5_file, "ins_vu")[ind]
 
-    PITCHRT     = read_check(N,h5_data,h5_file, "pitch_rt")
-    ROLLRT      = read_check(N,h5_data,h5_file, "roll_rt")
-    YAWRT       = read_check(N,h5_data,h5_file, "yaw_rt")
-    LONG_ACC    = read_check(N,h5_data,h5_file, "lon_acc")
-    LAT_ACC     = read_check(N,h5_data,h5_file, "lat_acc")
-    NORM_ACC    = read_check(N,h5_data,h5_file, "alt_acc")
-    TRUE_AS     = read_check(N,h5_data,h5_file, "true_as")
-    PITOT_P     = read_check(N,h5_data,h5_file, "pitot_p")
-    STATIC_P    = read_check(N,h5_data,h5_file, "static_p")
-    TOT_P       = read_check(N,h5_data,h5_file, "total_p")
+    PITCHRT     = read_check(N,h5_data,h5_file, "pitch_rt")[ind]
+    ROLLRT      = read_check(N,h5_data,h5_file, "roll_rt")[ind]
+    YAWRT       = read_check(N,h5_data,h5_file, "yaw_rt")[ind]
+    LONG_ACC    = read_check(N,h5_data,h5_file, "lon_acc")[ind]
+    LAT_ACC     = read_check(N,h5_data,h5_file, "lat_acc")[ind]
+    NORM_ACC    = read_check(N,h5_data,h5_file, "alt_acc")[ind]
+    TRUE_AS     = read_check(N,h5_data,h5_file, "true_as")[ind]
+    PITOT_P     = read_check(N,h5_data,h5_file, "pitot_p")[ind]
+    STATIC_P    = read_check(N,h5_data,h5_file, "static_p")[ind]
+    TOT_P       = read_check(N,h5_data,h5_file, "total_p")[ind]
 
-    CUR_COM1    = read_check(N,h5_data,h5_file, "cur_com_1")
-    CUR_ACHi    = read_check(N,h5_data,h5_file, "cur_ac_hi")
-    CUR_ACLo    = read_check(N,h5_data,h5_file, "cur_ac_lo")
-    CUR_TANK    = read_check(N,h5_data,h5_file, "cur_tank")
-    CUR_FLAP    = read_check(N,h5_data,h5_file, "cur_flap")
-    CUR_STRB    = read_check(N,h5_data,h5_file, "cur_strb")
-    CUR_SRVO_O  = read_check(N,h5_data,h5_file, "cur_srvo_o")
-    CUR_SRVO_M  = read_check(N,h5_data,h5_file, "cur_srvo_m")
-    CUR_SRVO_I  = read_check(N,h5_data,h5_file, "cur_srvo_i")
-    CUR_IHTR    = read_check(N,h5_data,h5_file, "cur_heat")
-    CUR_ACPWR   = read_check(N,h5_data,h5_file, "cur_acpwr")
-    CUR_OUTPWR  = read_check(N,h5_data,h5_file, "cur_outpwr")
-    CUR_BAT1    = read_check(N,h5_data,h5_file, "cur_bat_1")
-    CUR_BAT2    = read_check(N,h5_data,h5_file, "cur_bat_2")
+    CUR_COM1    = read_check(N,h5_data,h5_file, "cur_com_1")[ind]
+    CUR_ACHi    = read_check(N,h5_data,h5_file, "cur_ac_hi")[ind]
+    CUR_ACLo    = read_check(N,h5_data,h5_file, "cur_ac_lo")[ind]
+    CUR_TANK    = read_check(N,h5_data,h5_file, "cur_tank")[ind]
+    CUR_FLAP    = read_check(N,h5_data,h5_file, "cur_flap")[ind]
+    CUR_STRB    = read_check(N,h5_data,h5_file, "cur_strb")[ind]
+    CUR_SRVO_O  = read_check(N,h5_data,h5_file, "cur_srvo_o")[ind]
+    CUR_SRVO_M  = read_check(N,h5_data,h5_file, "cur_srvo_m")[ind]
+    CUR_SRVO_I  = read_check(N,h5_data,h5_file, "cur_srvo_i")[ind]
+    CUR_IHTR    = read_check(N,h5_data,h5_file, "cur_heat")[ind]
+    CUR_ACPWR   = read_check(N,h5_data,h5_file, "cur_acpwr")[ind]
+    CUR_OUTPWR  = read_check(N,h5_data,h5_file, "cur_outpwr")[ind]
+    CUR_BAT1    = read_check(N,h5_data,h5_file, "cur_bat_1")[ind]
+    CUR_BAT2    = read_check(N,h5_data,h5_file, "cur_bat_2")[ind]
 
-    V_ACPWR     = read_check(N,h5_data,h5_file, "vol_acpwr")
-    V_OUTPWR    = read_check(N,h5_data,h5_file, "vol_outpwr")
-    V_BAT1      = read_check(N,h5_data,h5_file, "vol_bat_1")
-    V_BAT2      = read_check(N,h5_data,h5_file, "vol_bat_2")
-    V_RESp      = read_check(N,h5_data,h5_file, "vol_res_p")
-    V_RESn      = read_check(N,h5_data,h5_file, "vol_res_n")
-    V_BACKp     = read_check(N,h5_data,h5_file, "vol_back_p")
-    V_BACKn     = read_check(N,h5_data,h5_file, "vol_back_n")
-    V_GYRO1     = read_check(N,h5_data,h5_file, "vol_gyro_1")
-    V_GYRO2     = read_check(N,h5_data,h5_file, "vol_gyro_2")
-    V_ACCp      = read_check(N,h5_data,h5_file, "vol_acc_p")
-    V_ACCn      = read_check(N,h5_data,h5_file, "vol_acc_n")
-    V_BLOCK     = read_check(N,h5_data,h5_file, "vol_block")
-    V_BACK      = read_check(N,h5_data,h5_file, "vol_back")
-    V_SERVO     = read_check(N,h5_data,h5_file, "vol_servo")
-    V_CABT      = read_check(N,h5_data,h5_file, "vol_cabt")
-    V_FAN       = read_check(N,h5_data,h5_file, "vol_fan")
+    V_ACPWR     = read_check(N,h5_data,h5_file, "vol_acpwr")[ind]
+    V_OUTPWR    = read_check(N,h5_data,h5_file, "vol_outpwr")[ind]
+    V_BAT1      = read_check(N,h5_data,h5_file, "vol_bat_1")[ind]
+    V_BAT2      = read_check(N,h5_data,h5_file, "vol_bat_2")[ind]
+    V_RESp      = read_check(N,h5_data,h5_file, "vol_res_p")[ind]
+    V_RESn      = read_check(N,h5_data,h5_file, "vol_res_n")[ind]
+    V_BACKp     = read_check(N,h5_data,h5_file, "vol_back_p")[ind]
+    V_BACKn     = read_check(N,h5_data,h5_file, "vol_back_n")[ind]
+    V_GYRO1     = read_check(N,h5_data,h5_file, "vol_gyro_1")[ind]
+    V_GYRO2     = read_check(N,h5_data,h5_file, "vol_gyro_2")[ind]
+    V_ACCp      = read_check(N,h5_data,h5_file, "vol_acc_p")[ind]
+    V_ACCn      = read_check(N,h5_data,h5_file, "vol_acc_n")[ind]
+    V_BLOCK     = read_check(N,h5_data,h5_file, "vol_block")[ind]
+    V_BACK      = read_check(N,h5_data,h5_file, "vol_back")[ind]
+    V_SERVO     = read_check(N,h5_data,h5_file, "vol_servo")[ind]
+    V_CABT      = read_check(N,h5_data,h5_file, "vol_cabt")[ind]
+    V_FAN       = read_check(N,h5_data,h5_file, "vol_fan")[ind]
 
     return (XYZ(N         , DT        , LINE      , FLT       ,
                 TIME      , UTM_X     , UTM_Y     , UTM_Z     ,
