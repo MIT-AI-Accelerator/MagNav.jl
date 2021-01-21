@@ -1,5 +1,6 @@
 coverage:
   ignore:
+    - "notebooks"
     - "readmes"
     - "runs"
     - "test"

@@ -174,7 +174,7 @@ Prints out warning for any field that contains NaNs.
 - `val`: data returned for `field`
 """
 function read_check(N, data, file, field)
-    if field in names(data)
+    if field in keys(data)
         val = h5read(file,field)
         if isnan(sum(val))
             print("")

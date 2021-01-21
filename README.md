@@ -22,9 +22,17 @@ This is a repository for the signal enhancement for magnetic navigation (MagNav)
 - [Challenge Problem Description](https://youtu.be/qLKd1gwJhoA)
 - [Challenge Problem Datasets](https://youtu.be/fyEt6XJRvvg)
 
-## Starter Code
+## Starter Code and Data
 
-A basic set of starter Julia code files have been provided within the `src` folder. This code is largely based on work done by [Major Canciani](https://apps.dtic.mil/dtic/tr/fulltext/u2/1017870.pdf). This code has only been tested with Julia 1.4 and [1.5](https://julialang.org/downloads/). A sample run file is located within the `runs` folder, which includes downloading the flight data via artifact (`Artifacts.toml`). Details of the flight data are described in the readme files within the `readmes` folder. The flight data can also be directly downloaded from [here](https://www.dropbox.com/sh/dl/x37yr72x5a5nbz0/AADBt8ioU4Lm7JgEMQvPD7gxa/flight_data.tar.gz).
+A basic set of starter Julia code files are in the `src` folder. This code is largely based on work done by [Major Canciani](https://apps.dtic.mil/dtic/tr/fulltext/u2/1017870.pdf). This code has only been tested with Julia 1.4 and [1.5](https://julialang.org/downloads/). A sample run file is in the `runs` folder, which includes downloading the flight data via artifact (see `Artifacts.toml`). Please see the [datasheet](https://github.com/MIT-AI-Accelerator/MagNav.jl/blob/master/challenge_problem_datasheet.pdf) for high-level information about this dataset. Details of the flight data are described in the readme files within the `readmes` folder. The flight data can also be directly downloaded from [here](https://www.dropbox.com/sh/dl/x37yr72x5a5nbz0/AADBt8ioU4Lm7JgEMQvPD7gxa/flight_data.tar.gz).
+
+**NOTE**: The `dt` field in each HDF5 file is incorrect. The correct value is 0.1.
+
+## Data Sharing Agreement
+
+Please read the full Data Sharing Agreement located [here](https://github.com/MIT-AI-Accelerator/MagNav.jl/blob/master/DATA_SHARING_AGREEMENT.md).
+
+By granting You access to Data, the Air Force grants You a limited personal, non-exclusive, non-transferable, non-assignable, and revocable license to copy, modify, publicly display, and use the Data in accordance with this AGREEMENT solely for the purpose of non-profit research, non-profit education, or for government purposes by or on behalf of the U.S. Government. No license is granted for any other purpose, and there are no implied licenses in this Agreement. This Agreement is effective as of the date of approval by Air Force and remains in force for a period of one year from such date, unless terminated earlier or amended in writing. By using Data, You hereby grant an unlimited, irrevocable, world-wide, royalty-free right to the The United States Government to use for any purpose and in any manner whatsoever any feedback from You to the Air Force concerning Your use of Data.
 
 ## Team Members
 
@@ -63,9 +71,3 @@ If this dataset is used in any citation, please cite the following work:
   year={2020}
 }
 ```
-
-## Data Sharing Agreement
-
-Please read the full Data Sharing Agreement located [here](https://github.com/MIT-AI-Accelerator/MagNav.jl/blob/master/DATA_SHARING_AGREEMENT.md).
-
-By granting You access to Data, the Air Force grants You a limited personal, non-exclusive, non-transferable, non-assignable, and revocable license to copy, modify, publicly display, and use the Data in accordance with this AGREEMENT solely for the purpose of non-profit research, non-profit education, or for government purposes by or on behalf of the U.S. Government. No license is granted for any other purpose, and there are no implied licenses in this Agreement. This Agreement is effective as of the date of approval by Air Force and remains in force for a period of one year from such date, unless terminated earlier or amended in writing. By using Data, You hereby grant an unlimited, irrevocable, world-wide, royalty-free right to the The United States Government to use for any purpose and in any manner whatsoever any feedback from You to the Air Force concerning Your use of Data.
