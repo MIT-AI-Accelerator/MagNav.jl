@@ -50,9 +50,9 @@ The MagNav team is part of the [USAF-MIT Artificial Intelligence Accelerator](ht
 - Michael Yee (Group 01)
 
 [Air Force Institute of Technology](https://www.afit.edu/)
-- Major Aaron Canciani
 - Major Joseph Curro
-- Aaron P. Nielsen ([DiDacTex, LLC](https://www.didactex.com))
+- Aaron P. Nielsen ([DiDacTex, LLC](https://www.didactex.com/))
+- Major Aaron Canciani ([NGA](https://www.nga.mil/))
 
 [Air Force @ MIT](https://aia.mit.edu/about-us/)
 - Major David Jacobs
