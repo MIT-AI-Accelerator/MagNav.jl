@@ -56,6 +56,7 @@ The MagNav team is part of the [USAF-MIT Artificial Intelligence Accelerator](ht
 
 [Air Force @ MIT](https://aia.mit.edu/about-us/)
 - Major David Jacobs
+- Captain Kyle Palko
 
 ## Citation
 
