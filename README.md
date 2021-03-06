@@ -14,7 +14,7 @@ This is a repository for the signal enhancement for magnetic navigation (MagNav)
 |Round|Start|End|Winning Team|
 |--|--|--|--|
 |1|26-Jul-20|28-Aug-20|Ling-Wei Kong, Cheng-Zhen Wang, and Ying-Cheng Lai <br /> Arizona State University ([submission](https://github.com/lw-kong/MagNav))|
-|2|24-Sep-20|31-Jan-21||
+|2|TBD|TBD||
 
 ## Introduction Videos
 
@@ -46,13 +46,13 @@ The MagNav team is part of the [USAF-MIT Artificial Intelligence Accelerator](ht
 [MIT Lincoln Laboratory](https://www.ll.mit.edu/)
 - Joseph Belarge (Group 46)
 - Michael F. O'Keeffe (Group 89)
-- Jonathan Taylor (Group 52)
+- Jonathan Taylor (Group 24)
 - Michael Yee (Group 01)
 
 [Air Force Institute of Technology](https://www.afit.edu/)
 - Major Joseph Curro
 - Aaron P. Nielsen ([DiDacTex, LLC](https://www.didactex.com/))
-- Major Aaron Canciani ([NGA](https://www.nga.mil/))
+- Major Aaron Canciani ([NRO](https://www.nro.gov/))
 
 [Air Force @ MIT](https://aia.mit.edu/about-us/)
 - Major David Jacobs
