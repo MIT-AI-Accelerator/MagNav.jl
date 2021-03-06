@@ -1,6 +1,3 @@
-codecov:
-  token: 62f4e490-0717-435d-9796-71c677e2ce3e
-
 coverage:
   ignore:
     - "notebooks"
