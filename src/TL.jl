@@ -77,6 +77,7 @@ Create Tolles-Lawson coefficients using vector and scalar magnetometer measureme
 function create_TL_coef(Bx, By, Bz, meas; pass1=0.1, pass2=0.9, fs=10.0, terms = ["permanent","induced","eddy"])
 
     # create filter
+    perform_filter = true
     if (pass1 > 0) & (pass2 < fs/2)
         # bandpass
         d = digitalfilter(Bandpass(pass1,pass2;fs=fs),Butterworth(4))
@@ -87,19 +88,26 @@ function create_TL_coef(Bx, By, Bz, meas; pass1=0.1, pass2=0.9, fs=10.0, terms =
         # high-pass
         d = digitalfilter(Highpass(pass1;fs=fs),Butterworth(4))
     else
-        error("Filter limits out of bounds")
+        # all-pass
+        perform_filter = false
     end
 
     # filter measurements
-    meas_f = filtfilt(d,meas)
+    if perform_filter
+        meas_f = filtfilt(d,meas)
+    else
+        meas_f = meas
+    end
 
     # create Tolles-Lawson A matrix
     A = create_TL_A(Bx,By,Bz; terms = terms)
 
     # filter each column of A (e.g. cosX)
     A_f = deepcopy(A)
-    for i = 1:size(A,2)
-        A_f[:,i] = filtfilt(d,A[:,i])
+    if perform_filter
+        for i = 1:size(A,2)
+            A_f[:,i] = filtfilt(d,A[:,i])
+        end
     end
 
     # all filters create artifacts so trim off first/last 20 elements
