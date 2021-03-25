@@ -9,7 +9,7 @@ Create Tolles-Lawson A matrix using vector magnetometer measurements.
 **Returns:**
 - `A`: Tolles-Lawson A matrix
 """
-function create_TL_A(Bx, By, Bz)
+function create_TL_A(Bx, By, Bz; terms=["permanent","induced","eddy"])
 
     Bt       = sqrt.(Bx.^2+By.^2+Bz.^2)
     BtMean   = max(mean(Bt),1e-6)
@@ -40,15 +40,21 @@ function create_TL_A(Bx, By, Bz)
     cosZcosZ_dot = Bt .* cosZ.*cosZ_dot ./ BtMean
 
     # add permanent field terms
-    A = [cosX cosY cosZ]
+    if "permanent" in terms
+        A = [cosX cosY cosZ]
+    end
 
     # add induced field terms
-    A = [A cosXX cosXY cosXZ cosYY cosYZ cosZZ]
+    if "induced" in terms
+        A = [A cosXX cosXY cosXZ cosYY cosYZ cosZZ]
+    end
 
     # add eddy current terms
-    A = [A cosXcosX_dot cosXcosY_dot cosXcosZ_dot]
-    A = [A cosYcosX_dot cosYcosY_dot cosYcosZ_dot]
-    A = [A cosZcosX_dot cosZcosY_dot cosZcosZ_dot]
+    if "eddy" in terms
+        A = [A cosXcosX_dot cosXcosY_dot cosXcosZ_dot]
+        A = [A cosYcosX_dot cosYcosY_dot cosYcosZ_dot]
+        A = [A cosZcosX_dot cosZcosY_dot cosZcosZ_dot]
+    end
 
     return (A)
 end # function create_TL_A
@@ -68,16 +74,27 @@ Create Tolles-Lawson coefficients using vector and scalar magnetometer measureme
 **Returns:**
 - `coef`: Tolles-Lawson coefficients
 """
-function create_TL_coef(Bx, By, Bz, meas; pass1=0.1, pass2=0.9, fs=10.0)
+function create_TL_coef(Bx, By, Bz, meas; pass1=0.1, pass2=0.9, fs=10.0, terms = ["permanent","induced","eddy"])
 
     # create filter
-    d = digitalfilter(Bandpass(pass1,pass2;fs=fs),Butterworth(4))
+    if (pass1 > 0) & (pass2 < fs/2)
+        # bandpass
+        d = digitalfilter(Bandpass(pass1,pass2;fs=fs),Butterworth(4))
+    elseif (pass1 <= 0) & (pass2 < fs/2)
+        # lowpass
+        d = digitalfilter(Lowpass(pass2;fs=fs),Butterworth(4))
+    elseif (pass1 > 0) & (pass2 >= fs/2)
+        # high-pass
+        d = digitalfilter(Highpass(pass1;fs=fs),Butterworth(4))
+    else
+        error("Filter limits out of bounds")
+    end
 
     # filter measurements
     meas_f = filtfilt(d,meas)
 
     # create Tolles-Lawson A matrix
-    A = create_TL_A(Bx,By,Bz)
+    A = create_TL_A(Bx,By,Bz; terms = terms)
 
     # filter each column of A (e.g. cosX)
     A_f = deepcopy(A)
