@@ -39,9 +39,11 @@ function create_TL_A(Bx, By, Bz; terms=["permanent","induced","eddy"])
     cosZcosY_dot = Bt .* cosZ.*cosY_dot ./ BtMean
     cosZcosZ_dot = Bt .* cosZ.*cosZ_dot ./ BtMean
 
+    A = Array{Float64}(undef,size(Bt,1),0)
+    
     # add permanent field terms
     if "permanent" in terms
-        A = [cosX cosY cosZ]
+        A = [A cosX cosY cosZ]
     end
 
     # add induced field terms
