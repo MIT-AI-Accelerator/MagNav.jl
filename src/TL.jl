@@ -1,18 +1,19 @@
 """
-    create_TL_A(Bx, By, Bz)
+    create_TL_A(Bx, By, Bz; terms=["permanent","induced","eddy"])
 
-Create Tolles-Lawson A matrix using vector magnetometer measurements.
+Create Tolles-Lawson `A` matrix using vector magnetometer measurements.
 
 **Arguments:**
 - `Bx, By, Bz`: vector magnetometer measurements
+- `terms`: (optional) Tolles-Lawson terms to use {"permanent","induced","eddy"}
 
 **Returns:**
-- `A`: Tolles-Lawson A matrix
+- `A`: Tolles-Lawson `A` matrix
 """
 function create_TL_A(Bx, By, Bz; terms=["permanent","induced","eddy"])
 
     Bt       = sqrt.(Bx.^2+By.^2+Bz.^2)
-    BtMean   = max(mean(Bt),1e-6)
+    Bt_scale = mean(Bt) # 50000
 
     cosX     = Bx ./ Bt
     cosY     = By ./ Bt
@@ -22,49 +23,53 @@ function create_TL_A(Bx, By, Bz; terms=["permanent","induced","eddy"])
     cosY_dot = fdm(cosY)
     cosZ_dot = fdm(cosZ)
 
-    cosXX    = Bt .* cosX.*cosX ./ BtMean
-    cosXY    = Bt .* cosX.*cosY ./ BtMean
-    cosXZ    = Bt .* cosX.*cosZ ./ BtMean
-    cosYY    = Bt .* cosY.*cosY ./ BtMean
-    cosYZ    = Bt .* cosY.*cosZ ./ BtMean
-    cosZZ    = Bt .* cosZ.*cosZ ./ BtMean
+    cosXX    = Bt .* cosX.*cosX ./ Bt_scale
+    cosXY    = Bt .* cosX.*cosY ./ Bt_scale
+    cosXZ    = Bt .* cosX.*cosZ ./ Bt_scale
+    cosYY    = Bt .* cosY.*cosY ./ Bt_scale
+    cosYZ    = Bt .* cosY.*cosZ ./ Bt_scale
+    cosZZ    = Bt .* cosZ.*cosZ ./ Bt_scale
 
-    cosXcosX_dot = Bt .* cosX.*cosX_dot ./ BtMean
-    cosXcosY_dot = Bt .* cosX.*cosY_dot ./ BtMean
-    cosXcosZ_dot = Bt .* cosX.*cosZ_dot ./ BtMean
-    cosYcosX_dot = Bt .* cosY.*cosX_dot ./ BtMean
-    cosYcosY_dot = Bt .* cosY.*cosY_dot ./ BtMean
-    cosYcosZ_dot = Bt .* cosY.*cosZ_dot ./ BtMean
-    cosZcosX_dot = Bt .* cosZ.*cosX_dot ./ BtMean
-    cosZcosY_dot = Bt .* cosZ.*cosY_dot ./ BtMean
-    cosZcosZ_dot = Bt .* cosZ.*cosZ_dot ./ BtMean
+    cosXcosX_dot = Bt .* cosX.*cosX_dot ./ Bt_scale
+    cosXcosY_dot = Bt .* cosX.*cosY_dot ./ Bt_scale
+    cosXcosZ_dot = Bt .* cosX.*cosZ_dot ./ Bt_scale
+    cosYcosX_dot = Bt .* cosY.*cosX_dot ./ Bt_scale
+    cosYcosY_dot = Bt .* cosY.*cosY_dot ./ Bt_scale
+    cosYcosZ_dot = Bt .* cosY.*cosZ_dot ./ Bt_scale
+    cosZcosX_dot = Bt .* cosZ.*cosX_dot ./ Bt_scale
+    cosZcosY_dot = Bt .* cosZ.*cosY_dot ./ Bt_scale
+    cosZcosZ_dot = Bt .* cosZ.*cosZ_dot ./ Bt_scale
 
     A = Array{Float64}(undef,size(Bt,1),0)
     
-    # add permanent field terms
+    # add (3) permanent field terms
     if "permanent" in terms
         A = [A cosX cosY cosZ]
     end
 
-    # add induced field terms
+    # add (6) induced field terms
     if "induced" in terms
         A = [A cosXX cosXY cosXZ cosYY cosYZ cosZZ]
     end
 
-    # add eddy current terms
+    # add (9) eddy current terms
     if "eddy" in terms
         A = [A cosXcosX_dot cosXcosY_dot cosXcosZ_dot]
         A = [A cosYcosX_dot cosYcosY_dot cosYcosZ_dot]
         A = [A cosZcosX_dot cosZcosY_dot cosZcosZ_dot]
+	    # A = [A ones(length(Bt))]
     end
 
     return (A)
 end # function create_TL_A
 
 """
-    create_TL_coef(Bx, By, Bz, meas; pass1=0.1, pass2=0.9, fs=10.0)
+    create_TL_coef(Bx, By, Bz, meas;
+                   pass1=0.1, pass2=0.9, fs=10.0,
+                   terms=["permanent","induced","eddy"])
 
-Create Tolles-Lawson coefficients using vector and scalar magnetometer measurements and bandpass filter.
+Create Tolles-Lawson coefficients using vector and scalar magnetometer 
+measurements and a bandpass, low-pass or high-pass filter.
 
 **Arguments:**
 - `Bx, By, Bz`: vector magnetometer measurements
@@ -72,21 +77,24 @@ Create Tolles-Lawson coefficients using vector and scalar magnetometer measureme
 - `pass1`: (optional) first passband frequency [Hz]
 - `pass2`: (optional) second passband frequency [Hz]
 - `fs`: (optional) sampling frequency [Hz]
+- `terms`: (optional) Tolles-Lawson terms to use {"permanent","induced","eddy"}
 
 **Returns:**
 - `coef`: Tolles-Lawson coefficients
 """
-function create_TL_coef(Bx, By, Bz, meas; pass1=0.1, pass2=0.9, fs=10.0, terms = ["permanent","induced","eddy"])
+function create_TL_coef(Bx, By, Bz, meas;
+                        pass1=0.1, pass2=0.9, fs=10.0,
+                        terms=["permanent","induced","eddy"])
 
     # create filter
     perform_filter = true
     if (pass1 > 0) & (pass2 < fs/2)
         # bandpass
         d = digitalfilter(Bandpass(pass1,pass2;fs=fs),Butterworth(4))
-    elseif (pass1 <= 0) & (pass2 < fs/2)
-        # lowpass
+    elseif ((pass1 <= 0) | (pass1 >= fs/2)) & (pass2 < fs/2)
+        # low-pass
         d = digitalfilter(Lowpass(pass2;fs=fs),Butterworth(4))
-    elseif (pass1 > 0) & (pass2 >= fs/2)
+    elseif (pass1 > 0) & ((pass2 <= 0) | (pass2 >= fs/2))
         # high-pass
         d = digitalfilter(Highpass(pass1;fs=fs),Butterworth(4))
     else
@@ -102,12 +110,13 @@ function create_TL_coef(Bx, By, Bz, meas; pass1=0.1, pass2=0.9, fs=10.0, terms =
     end
 
     # create Tolles-Lawson A matrix
-    A = create_TL_A(Bx,By,Bz; terms = terms)
+    A = create_TL_A(Bx,By,Bz;terms=terms)
 
     # filter each column of A (e.g. cosX)
     A_f = deepcopy(A)
     if perform_filter
         for i = 1:size(A,2)
+            # std(A[:,i]) != 0.0 ? A_f[:,i] = filtfilt(d,A[:,i]) : nothing
             A_f[:,i] = filtfilt(d,A[:,i])
         end
     end
