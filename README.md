@@ -45,7 +45,6 @@ The MagNav team is part of the [USAF-MIT Artificial Intelligence Accelerator](ht
 
 [MIT Lincoln Laboratory](https://www.ll.mit.edu/)
 - Joseph Belarge (Group 46)
-- Michael F. O'Keeffe (Group 89)
 - Jonathan Taylor (Group 24)
 - Michael Yee (Group 01)
 
@@ -55,7 +54,6 @@ The MagNav team is part of the [USAF-MIT Artificial Intelligence Accelerator](ht
 - Major Aaron Canciani ([NRO](https://www.nro.gov/))
 
 [Air Force @ MIT](https://aia.mit.edu/about-us/)
-- Major David Jacobs
 - Captain Kyle Palko
 
 ## Citation
