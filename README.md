@@ -47,6 +47,7 @@ The MagNav team is part of the [USAF-MIT Artificial Intelligence Accelerator](ht
 - Joseph Belarge (Group 46)
 - Jonathan Taylor (Group 24)
 - Michael Yee (Group 01)
+- Allan Wollaber (Group 01)
 
 [Air Force Institute of Technology](https://www.afit.edu/)
 - Major Joseph Curro
