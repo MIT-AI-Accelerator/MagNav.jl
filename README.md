@@ -9,7 +9,7 @@
     </a> -->
 </p>
 
-This is a repository for the signal enhancement for magnetic navigation (MagNav) challenge problem, which was introduced at [JuliaCon 2020](https://live.juliacon.org/talk/C9FGPP). The high-level goal is to use magnetometer (magnetic field) readings recorded from within a cockpit and remove the aircraft magnetic noise to yield a clean magnetic signal. A detailed description of the challenge problem can be found [here](https://arxiv.org/pdf/2007.12158.pdf) and additional MagNav literature can be found [here](https://github.com/MIT-AI-Accelerator/sciml-papers/tree/master/magnav).
+This is a repository for the signal enhancement for magnetic navigation (MagNav) challenge problem, which was [introduced at JuliaCon 2020](https://youtu.be/QwVO0Xh2Hbg?t=7252). The high-level goal is to use magnetometer (magnetic field) readings recorded from within a cockpit and remove the aircraft magnetic noise to yield a clean magnetic signal. A detailed description of the challenge problem can be found [here](https://arxiv.org/pdf/2007.12158.pdf) and additional MagNav literature can be found [here](https://github.com/MIT-AI-Accelerator/sciml-papers/tree/master/magnav).
 
 |Round|Start|End|Winning Team|
 |--|--|--|--|
@@ -24,7 +24,7 @@ This is a repository for the signal enhancement for magnetic navigation (MagNav)
 
 ## Starter Code and Data
 
-A basic set of Julia starter code files are in the `src` folder. This code is largely based on work done by [Major Canciani](https://apps.dtic.mil/dtic/tr/fulltext/u2/1017870.pdf). This code has only been tested using the latest version of [Julia](https://julialang.org/downloads/). A sample run file is in the `runs` folder, which includes downloading the flight data via artifact (see `Artifacts.toml`). Please see the [datasheet](https://github.com/MIT-AI-Accelerator/MagNav.jl/blob/master/challenge_problem_datasheet.pdf) for high-level information about this dataset. Details of the flight data are described in the readme files within the `readmes` folder. The flight data can also be directly downloaded from [here](https://www.dropbox.com/sh/dl/x37yr72x5a5nbz0/AADBt8ioU4Lm7JgEMQvPD7gxa/flight_data.tar.gz).
+A basic set of Julia starter code files are in the `src` folder. This code is largely based on work done by [Maj Canciani](https://apps.dtic.mil/dtic/tr/fulltext/u2/1017870.pdf). This code has only been tested using the latest version of [Julia](https://julialang.org/downloads/). A sample run file is in the `runs` folder, which includes downloading the flight data via artifact (see `Artifacts.toml`). Please see the [datasheet](https://github.com/MIT-AI-Accelerator/MagNav.jl/blob/master/challenge_problem_datasheet.pdf) for high-level information about this dataset. Details of the flight data are described in the readme files within the `readmes` folder. The flight data can also be directly downloaded from [here](https://doi.org/10.5281/zenodo.4271804).
 
 **NOTE**: The `dt` field in each HDF5 file is incorrect. The correct value is 0.1.
 
@@ -40,22 +40,20 @@ The MagNav team is part of the [USAF-MIT Artificial Intelligence Accelerator](ht
 
 [MIT Julia Lab](https://julia.mit.edu/) within [MIT CSAIL](https://www.csail.mit.edu/)
 - [Albert R. Gnadt](https://gnadt.github.io/) (AeroAstro Graduate Student)
-- [Chris Rackauckas](https://chrisrackauckas.com/) (Applied Mathematics Instructor)
-- [Alan Edelman](http://www-math.mit.edu/~edelman/) (Applied Mathematics Professor)
+- [Chris V. Rackauckas](https://chrisrackauckas.com/) (Applied Mathematics Instructor)
+- [Alan S. Edelman](http://www-math.mit.edu/~edelman/) (Applied Mathematics Professor)
 
 [MIT Lincoln Laboratory](https://www.ll.mit.edu/)
-- Joseph Belarge (Group 46)
-- Jonathan Taylor (Group 24)
-- Michael Yee (Group 01)
-- Allan Wollaber (Group 01)
+- Jonathan A. Taylor (Group 24)
+- Allan B. Wollaber (Group 01)
 
 [Air Force Institute of Technology](https://www.afit.edu/)
-- Major Joseph Curro
 - Aaron P. Nielsen ([DiDacTex, LLC](https://www.didactex.com/))
-- Major Aaron Canciani ([NRO](https://www.nro.gov/))
+- Maj Joseph A. Curro
+- Maj Aaron J. Canciani ([NRO](https://www.nro.gov/))
 
 [Air Force @ MIT](https://aia.mit.edu/about-us/)
-- Captain Kyle Palko
+- Capt Kyle Palko
 
 ## Citation
 
