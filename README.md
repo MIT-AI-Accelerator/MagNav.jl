@@ -46,6 +46,7 @@ The MagNav team is part of the [USAF-MIT Artificial Intelligence Accelerator](ht
 [MIT Lincoln Laboratory](https://www.ll.mit.edu/)
 - Jonathan A. Taylor (Group 24)
 - Allan B. Wollaber (Group 01)
+- Glenn M. Carl (Group 89)
 
 [Air Force Institute of Technology](https://www.afit.edu/)
 - Aaron P. Nielsen ([DiDacTex, LLC](https://www.didactex.com/))
@@ -53,7 +54,7 @@ The MagNav team is part of the [USAF-MIT Artificial Intelligence Accelerator](ht
 - Maj Aaron J. Canciani ([NRO](https://www.nro.gov/))
 
 [Air Force @ MIT](https://aia.mit.edu/about-us/)
-- Capt Kyle Palko
+- Capt Kyle A. Palko
 
 ## Citation
 
