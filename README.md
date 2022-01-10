@@ -24,7 +24,7 @@ This is a repository for the signal enhancement for magnetic navigation (MagNav)
 
 ## Starter Code and Data
 
-A basic set of Julia starter code files are in the `src` folder. This code is largely based on work done by [Maj Canciani](https://apps.dtic.mil/dtic/tr/fulltext/u2/1017870.pdf). This code has only been tested using the latest version of [Julia](https://julialang.org/downloads/). A sample run file is in the `runs` folder, which includes downloading the flight data via artifact (see `Artifacts.toml`). Please see the [datasheet](https://github.com/MIT-AI-Accelerator/MagNav.jl/blob/master/challenge_problem_datasheet.pdf) for high-level information about this dataset. Details of the flight data are described in the readme files within the `readmes` folder. The flight data can also be directly downloaded from [here](https://doi.org/10.5281/zenodo.4271804).
+A basic set of Julia starter code files are in the `src` folder. This code is largely based on work done by [Maj Canciani](https://apps.dtic.mil/dtic/tr/fulltext/u2/1017870.pdf). This code has only been tested using the latest version of [Julia](https://julialang.org/downloads/). A sample run file is in the `runs` folder, which includes downloading the flight data via artifact (see `Artifacts.toml`). Please see the [datasheet](https://github.com/MIT-AI-Accelerator/MagNav.jl/blob/master/challenge_problem_datasheet.pdf) for high-level information about this dataset. Details of the flight data are described in the readme files within the `readmes` folder. The flight data can also be directly downloaded from this [link](https://doi.org/10.5281/zenodo.4271804).
 
 **NOTE**: The `dt` field in each HDF5 file is incorrect. The correct value is 0.1.
 
