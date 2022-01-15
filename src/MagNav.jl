@@ -1,31 +1,9 @@
 module MagNav
 
 using Pkg.Artifacts: @artifact_str
-
-using BenchmarkTools, DSP, FFTW, ForwardDiff, HDF5, Interpolations
-using LinearAlgebra, MAT, Plots, StaticArrays, Statistics
+using DSP, HDF5, LinearAlgebra, MAT, Statistics
 
 data_dir() = joinpath(artifact"flight_data", "flight_data")
-
-struct MapS
-    map::Matrix{Float64}
-    xx::Vector{Float64}
-    yy::Vector{Float64}
-    alt::Float64
-    dn::Float64
-    de::Float64
-end
-
-struct MapV
-    mapX::Matrix{Float64}
-    mapY::Matrix{Float64}
-    mapZ::Matrix{Float64}
-    xx::Vector{Float64}
-    yy::Vector{Float64}
-    alt::Float64
-    dn::Float64
-    de::Float64
-end
 
 struct XYZ
     N::Int64
@@ -142,21 +120,14 @@ struct XYZ
 end
 
 include("delta_lat_lon.jl")
-include("fft_maps.jl")
-include("gen_interp_map.jl")
 include("get_flight_data.jl")
-include("get_map_data.jl")
 include("helpers.jl")
 include("TL.jl")
 
 export
 delta_lat,delta_lon,delta_north,delta_east,
-upward_fft,vector_fft,create_K,
-gen_interp_map,
 get_flight_data,
-get_map_data,
-detrend,map_grad,
-create_TL_A,create_TL_coef,fdm,
-mean
+detrend,
+create_TL_A,create_TL_coef,fdm
 
 end # module MagNav
