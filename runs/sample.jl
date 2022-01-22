@@ -2,8 +2,8 @@
 cd(@__DIR__)
 using Pkg; Pkg.activate("../"); Pkg.update(); Pkg.instantiate()
 using MagNav
-using Plots
-gr()
+using BenchmarkTools, Statistics
+using Plots: plot, plot!
 
 ## get flight data
 data_dir  = MagNav.data_dir()
@@ -24,34 +24,34 @@ xyz_data  = get_flight_data(data_file);
 pass1 = 0.1  # first  passband frequency [Hz]
 pass2 = 0.9  # second passband frequency [Hz]
 fs    = 10.0 # sampling frequency [Hz]
-i1         = findfirst(xyz_data.LINE .== 1002.02)
-i2         = findlast( xyz_data.LINE .== 1002.02)
+i1    = findfirst(xyz_data.LINE .== 1002.02)
+i2    = findlast( xyz_data.LINE .== 1002.02)
 
-TL_coef_1  = create_TL_coef(xyz_data.FLUXB_X[i1:i2],
-                            xyz_data.FLUXB_Y[i1:i2],
-                            xyz_data.FLUXB_Z[i1:i2],
-                            xyz_data.UNCOMPMAG1[i1:i2];
-                            pass1=pass1,pass2=pass2,fs=fs)
-TL_coef_2  = create_TL_coef(xyz_data.FLUXB_X[i1:i2],
-                            xyz_data.FLUXB_Y[i1:i2],
-                            xyz_data.FLUXB_Z[i1:i2],
-                            xyz_data.UNCOMPMAG2[i1:i2];
-                            pass1=pass1,pass2=pass2,fs=fs)
-TL_coef_3  = create_TL_coef(xyz_data.FLUXB_X[i1:i2],
-                            xyz_data.FLUXB_Y[i1:i2],
-                            xyz_data.FLUXB_Z[i1:i2],
-                            xyz_data.UNCOMPMAG3[i1:i2];
-                            pass1=pass1,pass2=pass2,fs=fs)
-TL_coef_4  = create_TL_coef(xyz_data.FLUXB_X[i1:i2],
-                            xyz_data.FLUXB_Y[i1:i2],
-                            xyz_data.FLUXB_Z[i1:i2],
-                            xyz_data.UNCOMPMAG4[i1:i2];
-                            pass1=pass1,pass2=pass2,fs=fs)
-TL_coef_5  = create_TL_coef(xyz_data.FLUXB_X[i1:i2],
-                            xyz_data.FLUXB_Y[i1:i2],
-                            xyz_data.FLUXB_Z[i1:i2],
-                            xyz_data.UNCOMPMAG5[i1:i2];
-                            pass1=pass1,pass2=pass2,fs=fs)
+TL_coef_1 = create_TL_coef(xyz_data.FLUXB_X[i1:i2],
+                           xyz_data.FLUXB_Y[i1:i2],
+                           xyz_data.FLUXB_Z[i1:i2],
+                           xyz_data.UNCOMPMAG1[i1:i2];
+                           pass1=pass1,pass2=pass2,fs=fs);
+TL_coef_2 = create_TL_coef(xyz_data.FLUXB_X[i1:i2],
+                           xyz_data.FLUXB_Y[i1:i2],
+                           xyz_data.FLUXB_Z[i1:i2],
+                           xyz_data.UNCOMPMAG2[i1:i2];
+                           pass1=pass1,pass2=pass2,fs=fs);
+TL_coef_3 = create_TL_coef(xyz_data.FLUXB_X[i1:i2],
+                           xyz_data.FLUXB_Y[i1:i2],
+                           xyz_data.FLUXB_Z[i1:i2],
+                           xyz_data.UNCOMPMAG3[i1:i2];
+                           pass1=pass1,pass2=pass2,fs=fs);
+TL_coef_4 = create_TL_coef(xyz_data.FLUXB_X[i1:i2],
+                           xyz_data.FLUXB_Y[i1:i2],
+                           xyz_data.FLUXB_Z[i1:i2],
+                           xyz_data.UNCOMPMAG4[i1:i2];
+                           pass1=pass1,pass2=pass2,fs=fs);
+TL_coef_5 = create_TL_coef(xyz_data.FLUXB_X[i1:i2],
+                           xyz_data.FLUXB_Y[i1:i2],
+                           xyz_data.FLUXB_Z[i1:i2],
+                           xyz_data.UNCOMPMAG5[i1:i2];
+                           pass1=pass1,pass2=pass2,fs=fs);
 
 ## create Tolles-Lawson A matrix
 A = create_TL_A(xyz_data.FLUXB_X,
@@ -59,68 +59,31 @@ A = create_TL_A(xyz_data.FLUXB_X,
                 xyz_data.FLUXB_Z);
 
 ## correct magnetometer measurements
-mag_1_c = xyz_data.UNCOMPMAG1 - A*TL_coef_1 .+ mean(A*TL_coef_1)
-mag_2_c = xyz_data.UNCOMPMAG2 - A*TL_coef_2 .+ mean(A*TL_coef_2)
-mag_3_c = xyz_data.UNCOMPMAG3 - A*TL_coef_3 .+ mean(A*TL_coef_3)
-mag_4_c = xyz_data.UNCOMPMAG4 - A*TL_coef_4 .+ mean(A*TL_coef_4)
-mag_5_c = xyz_data.UNCOMPMAG5 - A*TL_coef_5 .+ mean(A*TL_coef_5)
-
-## plot total field comparison with SGL, Compensation 1
-# plot(xyz_data.TIME[i1:i2],xyz_data.COMPMAG1[i1:i2])
-# plot!(xyz_data.TIME[i1:i2],mag_1_c[i1:i2])
-
-# IGRF offset
-calcIGRF = xyz_data.DCMAG1 - xyz_data.IGRFMAG1
+mag_1_c = xyz_data.UNCOMPMAG1 - A*TL_coef_1 .+ mean(A*TL_coef_1);
+mag_2_c = xyz_data.UNCOMPMAG2 - A*TL_coef_2 .+ mean(A*TL_coef_2);
+mag_3_c = xyz_data.UNCOMPMAG3 - A*TL_coef_3 .+ mean(A*TL_coef_3);
+mag_4_c = xyz_data.UNCOMPMAG4 - A*TL_coef_4 .+ mean(A*TL_coef_4);
+mag_5_c = xyz_data.UNCOMPMAG5 - A*TL_coef_5 .+ mean(A*TL_coef_5);
 
 ## plot anomaly field comparison with SGL, Compensation 1
-p1 = plot(xyz_data.TIME[i1:i2],detrend(xyz_data.IGRFMAG1[i1:i2]),
-          label="SGL Mag 1",color=:blue,lw=3, # dpi=500,
+calcIGRF = xyz_data.DCMAG1 - xyz_data.IGRFMAG1; # IGRF offset
+tt = xyz_data.TIME[i1:i2]; # time series
+p1 = plot(tt,detrend(xyz_data.IGRFMAG1[i1:i2]),
+          label="SGL Mag 1",color=:blue,lw=3, dpi=200,
           xlabel="Time [s]",ylabel="Magnetic Field [nT]",
           ylims=(-150,150))
-plot!(p1,xyz_data.TIME[i1:i2],detrend(mag_1_c[i1:i2]
-                              -xyz_data.DIURNAL[i1:i2]-calcIGRF[i1:i2]),
+plot!(p1,tt,detrend(mag_1_c[i1:i2]-xyz_data.DIURNAL[i1:i2]-calcIGRF[i1:i2]),
       label="Comp Mag 1",color=:red,lw=3,linestyle=:dash)
-# plot!(p1,xyz_data.TIME[i1:i2],detrend(mag_2_c[i1:i2]
-#                               -xyz_data.DIURNAL[i1:i2]-calcIGRF[i1:i2]),
+# plot!(p1,tt,detrend(mag_2_c[i1:i2]-xyz_data.DIURNAL[i1:i2]-calcIGRF[i1:i2]),
 #       label="Comp Mag 2",color=:purple)
-plot!(p1,xyz_data.TIME[i1:i2],detrend(mag_3_c[i1:i2]
-                              -xyz_data.DIURNAL[i1:i2]-calcIGRF[i1:i2]),
+plot!(p1,tt,detrend(mag_3_c[i1:i2]-xyz_data.DIURNAL[i1:i2]-calcIGRF[i1:i2]),
       label="Comp Mag 3",color=:green)
-plot!(p1,xyz_data.TIME[i1:i2],detrend(mag_4_c[i1:i2]
-                              -xyz_data.DIURNAL[i1:i2]-calcIGRF[i1:i2]),
+plot!(p1,tt,detrend(mag_4_c[i1:i2]-xyz_data.DIURNAL[i1:i2]-calcIGRF[i1:i2]),
       label="Comp Mag 4",color=:black)
-plot!(p1,xyz_data.TIME[i1:i2],detrend(mag_5_c[i1:i2]
-                              -xyz_data.DIURNAL[i1:i2]-calcIGRF[i1:i2]),
+plot!(p1,tt,detrend(mag_5_c[i1:i2]-xyz_data.DIURNAL[i1:i2]-calcIGRF[i1:i2]),
       label="Comp Mag 5",color=:orange)
-
 display(p1)
 # savefig("comp_prof_1.png")
 
-
-
-# gradient of parameter example
-grad_flux_b_x = fdm(xyz_data.FLUXB_X)
-
-
-
-# download map data (IGRF removed, kNN for missing data, at constant HAE [m])
-#   https://www.dropbox.com/s/btge4wkold4w830/map_data_2.tar.gz?dl=0
-
-## get map data
-#map_file = "../maps/Renfrew_2.h5" # adjust based on save location
-#map_data = get_map_data(map_file) # get map data, map values are total flux
-
-# upward continue the map to a desired altitude (2000 m here)
-#map_data.map[:,:] = upward_fft(map_data.map,map_data.de,map_data.dn,
-#                               2000 - map_data.alt)
-
-# map interpolation, coordinates are UTM XY [m], map values are total flux
-#interp_map = gen_interp_map(map_data.map,map_data.xx,map_data.yy)
-
-# sample point from the map
-# NOTE: if a bounds error is observed, the sample is outside the map area, so
-# the wrong map is being used or there is not reliable map data for that sample
-#pt_samp = interp_map(350000,5000000)
-
-# get the sample point gradient
-#pt_grad = map_grad(interp_map,350000,5000000)
+## gradient of parameter example
+grad_flux_b_x = fdm(xyz_data.FLUXB_X);
