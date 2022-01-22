@@ -1,7 +1,7 @@
 module MagNav
 
 using Pkg.Artifacts: @artifact_str
-using DSP, HDF5, LinearAlgebra, MAT, Statistics
+using DSP, HDF5, LazyArtifacts, LinearAlgebra, MAT, Statistics
 
 data_dir() = joinpath(artifact"flight_data", "flight_data")
 
