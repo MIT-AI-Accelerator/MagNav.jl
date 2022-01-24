@@ -4,4 +4,4 @@ lazy = true
 
     [[flight_data.download]]
     sha256 = "41eed1f3248cb0a53168fc6a718816b318b5e3f5c4ceeb4a61b3ff3ec76856ea"
-    url = "https://www.dropbox.com/sh/dl/x37yr72x5a5nbz0/AADBt8ioU4Lm7JgEMQvPD7gxa/flight_data.tar.gz"
+    url = "https://www.dropbox.com/s/gndo5avpzppipbw/flight_data.tar.gz"
