@@ -16,7 +16,7 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 [compat]
 BenchmarkTools = "1"
 DSP = "0.7"
-HDF5 = "0.15"
+HDF5 = "0.15, 0.16"
 MAT = "0.10"
 Plots = "1.5"
 julia = "1.6"
