@@ -1,4 +1,53 @@
-include: https://raw.githubusercontent.com/JuliaGPU/gitlab-ci/master/templates/v6.yml
+.julia:1.6: &1
+  before_script:
+    - |
+      apt-get -qq update
+      DEBIAN_FRONTEND=noninteractive apt-get -qqy -o=Dpkg::Use-Pty=0 install wget $CI_APT_INSTALL
+      wget -nv https://raw.githubusercontent.com/JuliaGPU/gitlab-ci/master/install_julia.sh
+      eval "$(bash install_julia.sh 1.6)"
+
+.test:
+  stage: test
+  script: |
+    julia --project -e '
+      using Pkg;
+      Pkg.instantiate();
+      Pkg.build();
+      Pkg.test(; coverage=true);'
+  interruptible: true
+  after_script:
+    - shopt -s globstar; for f in ./**/*.cov; do mv "$f" "${f%.cov}.$CI_JOB_ID.cov"; done
+  artifacts:
+    when: always
+    paths:
+      - deps/ext.jl
+      - deps/deps.jl
+      - deps/build.log
+      - ./*.cov
+      - ./*/*.cov
+      - ./*/*/*.cov
+      - ./*/*/*/*.cov
+
+.coverage:
+  stage: post
+  script: |
+    julia -e '
+      using Pkg
+      Pkg.add("Coverage")
+      using Coverage
+      dirs = filter(entry -> isdir(entry) && !startswith(entry, "."), readdir())
+      coverage = vcat(map(process_folder, dirs)...)
+      Codecov.submit_local(coverage)'
+  interruptible: true
+
+stages:
+  - build
+  - test
+  - post
+  - deploy
+
+codecov:
+  token: ec8a8d09-60d9-451e-ae7b-d964d9d12478
 
 variables:
   JULIA_NUM_THREADS: 8
