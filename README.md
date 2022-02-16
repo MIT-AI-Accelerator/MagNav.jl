@@ -19,7 +19,7 @@ MagNav.jl contains tools for performing aeromagnetic compensation. A basic set o
 
 ## Data
 
-Publically available flight data can be automatically downloaded within the package itself. This dataset can also be directly downloaded from [here](https://doi.org/10.5281/zenodo.4271804). See the [datasheet](https://github.com/MIT-AI-Accelerator/MagNav.jl/blob/master/challenge_problem_datasheet.pdf) for high-level information about this dataset. Details of the flight data are described in the readme files within the `readmes` folder.
+Publically available flight data can be automatically downloaded within the package itself. This dataset can also be directly downloaded from [here](https://doi.org/10.5281/zenodo.4271804). See the [datasheet](https://github.com/MIT-AI-Accelerator/MagNav.jl/blob/master/datasheet_2020.pdf) for high-level information about this dataset. Details of the flight data are described in the readme files within the `readmes` folder.
 
 ## Data Sharing Agreement
 
