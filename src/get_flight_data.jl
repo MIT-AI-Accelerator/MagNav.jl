@@ -31,7 +31,7 @@ function get_flight_data(h5_file::String; tt_sort::Bool=true)
     UTM_X       = read_check(N,h5_data,h5_file, "utmX")[ind]
     UTM_Y       = read_check(N,h5_data,h5_file, "utmY")[ind]
     UTM_Z       = read_check(N,h5_data,h5_file, "utmZ")[ind]
-    MSL_Z       = read_check(N,h5_data,h5_file, "alt")[ind]
+    MSL_Z       = read_check(N,h5_data,h5_file, "msl")[ind]
     LAT         = read_check(N,h5_data,h5_file, "lat")[ind]
     LONG        = read_check(N,h5_data,h5_file, "lon")[ind]
 
@@ -43,7 +43,7 @@ function get_flight_data(h5_file::String; tt_sort::Bool=true)
 
     PITCH       = read_check(N,h5_data,h5_file, "ins_pitch")[ind]
     ROLL        = read_check(N,h5_data,h5_file, "ins_roll")[ind]
-    AZIMUTH     = read_check(N,h5_data,h5_file, "ins_azim")[ind]
+    AZIMUTH     = read_check(N,h5_data,h5_file, "ins_yaw")[ind]
     DIURNAL     = read_check(N,h5_data,h5_file, "diurnal")[ind]
 
     COMPMAG1    = read_check(N,h5_data,h5_file, "mag_1_c")[ind]
@@ -56,6 +56,11 @@ function get_flight_data(h5_file::String; tt_sort::Bool=true)
     UNCOMPMAG3  = read_check(N,h5_data,h5_file, "mag_3_uc")[ind]
     UNCOMPMAG4  = read_check(N,h5_data,h5_file, "mag_4_uc")[ind]
     UNCOMPMAG5  = read_check(N,h5_data,h5_file, "mag_5_uc")[ind]
+
+    FLUXA_X     = read_check(N,h5_data,h5_file, "flux_a_x")[ind]
+    FLUXA_Y     = read_check(N,h5_data,h5_file, "flux_a_y")[ind]
+    FLUXA_Z     = read_check(N,h5_data,h5_file, "flux_a_z")[ind]
+    FLUXA_TOT   = read_check(N,h5_data,h5_file, "flux_a_t")[ind]
 
     FLUXB_X     = read_check(N,h5_data,h5_file, "flux_b_x")[ind]
     FLUXB_Y     = read_check(N,h5_data,h5_file, "flux_b_y")[ind]
@@ -137,7 +142,8 @@ function get_flight_data(h5_file::String; tt_sort::Bool=true)
                 PITCH     , ROLL      , AZIMUTH   , DIURNAL   ,
                 COMPMAG1  , LAGMAG1   , DCMAG1    , IGRFMAG1  ,
                 UNCOMPMAG1, UNCOMPMAG2, UNCOMPMAG3, UNCOMPMAG4,
-                UNCOMPMAG5, FLUXB_X   , FLUXB_Y   , FLUXB_Z   ,
+                UNCOMPMAG5, FLUXA_X   , FLUXA_Y   , FLUXA_Z   ,
+                FLUXA_TOT , FLUXB_X   , FLUXB_Y   , FLUXB_Z   ,
                 FLUXB_TOT , FLUXC_X   , FLUXC_Y   , FLUXC_Z   ,
                 FLUXC_TOT , FLUXD_X   , FLUXD_Y   , FLUXD_Z   ,
                 FLUXD_TOT , OGS_MAG   , OGS_HGT   , INS_ACC_X ,

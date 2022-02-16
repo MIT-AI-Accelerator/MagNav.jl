@@ -42,6 +42,11 @@ struct XYZ
     UNCOMPMAG4::Vector{Float64}
     UNCOMPMAG5::Vector{Float64}
 
+    FLUXA_X::Vector{Float64}
+    FLUXA_Y::Vector{Float64}
+    FLUXA_Z::Vector{Float64}
+    FLUXA_TOT::Vector{Float64}
+
     FLUXB_X::Vector{Float64}
     FLUXB_Y::Vector{Float64}
     FLUXB_Z::Vector{Float64}
