@@ -87,38 +87,3 @@ display(p1)
 
 ## gradient of parameter example
 grad_flux_b_x = fdm(xyz_data.FLUXB_X);
-
-
-## 
-##* INSTRUCTIONS
-# 0) Don't edit artifacts.toml file directly
-# 1) Create tarball from folder containing data (tar czf folder.tar.gz folder)
-# 2) Save tarball on Dropbox (or other blob storage)
-# 3) Download tarball into same folder as this file
-# 4) Set tarball_name, tarball_url & artifact_name below
-# 5) Run the code shown below
-
-#* SPECIFY INFORMATION HERE
-tarball_name  = "flight_data_2020.tar.gz"
-tarball_url   = "https://www.dropbox.com/s/ge5np08npvidi3r/flight_data_2020.tar.gz?dl=0"
-artifact_name = "flight_data_2020"
-
-##* RUN CODE BELOW
-cd(@__DIR__)
-using Pkg
-using Pkg.Artifacts, Inflate, SHA, Tar
-
-# generate hashes
-artifact_toml = normpath(joinpath(@__DIR__,"../Artifacts.toml"))
-hash_1   = Base.SHA1(Tar.tree_hash(IOBuffer(inflate_gzip(tarball_name))))
-hash_256 = bytes2hex(open(sha256,tarball_name))
-
-# bind artifact
-bind_artifact!(artifact_toml,artifact_name,hash_1;
-               download_info=[(tarball_url,hash_256)],lazy=true,force=true)
-
-## todo: add other artifacts
-using MagNav
-data_dir  = MagNav.data_dir()
-data_file = string(data_dir,"/FltXXXX.h5")
-xyz = get_XYZ20(data_file);
