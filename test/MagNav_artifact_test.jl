@@ -7,8 +7,8 @@ data_4_h5 = string(data_dir,"/Flt1004_train.h5")
 data_5_h5 = string(data_dir,"/Flt1005_train.h5")
 data_2    = get_flight_data(data_2_h5);
 data_3    = get_flight_data(data_3_h5);
-data_4    = get_flight_data(data_4_h5);
-data_5    = get_flight_data(data_5_h5);
+data_4    = get_flight_data(data_4_h5;tt_sort=false);
+data_5    = get_flight_data(data_5_h5;tt_sort=false);
 
 @testset "Artifact N Tests" begin
     @test data_2.N == length(data_2.LAT) == length(data_2.LONG)
