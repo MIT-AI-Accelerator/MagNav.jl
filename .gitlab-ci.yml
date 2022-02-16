@@ -1,63 +1,34 @@
-.julia:1.6: &1
+# example 1: https://gitlab.com/tkpapp/GitlabJuliaDemo.jl/-/blob/master/.gitlab-ci.yml
+# example 2: https://gitlab.kuleuven.be/UCM/representativeperiodsfinder.jl/-/blob/dev/.gitlab-ci.yml
+# `julia` images are from [Docker Hub: https://hub.docker.com/_/julia/
+
+default:
+  image: julia:latest
   before_script:
-    - |
-      apt-get -qq update
-      DEBIAN_FRONTEND=noninteractive apt-get -qqy -o=Dpkg::Use-Pty=0 install wget $CI_APT_INSTALL
-      wget -nv https://raw.githubusercontent.com/JuliaGPU/gitlab-ci/master/install_julia.sh
-      eval "$(bash install_julia.sh 1.6)"
+  # - apt-get -qq update; apt-get -y --no-install-recommends install git qt5-default
+  - apt-get -qq update; apt-get -y install git
+  - julia --project=@. -e "import Pkg; Pkg.build()" # build the package
 
-.test:
-  stage: test
-  script: |
-    julia --project -e '
-      using Pkg;
-      Pkg.instantiate();
-      Pkg.build();
-      Pkg.test(; coverage=true);'
-  interruptible: true
-  after_script:
-    - shopt -s globstar; for f in ./**/*.cov; do mv "$f" "${f%.cov}.$CI_JOB_ID.cov"; done
+test:latest:
+  image: julia:latest
+  script:
+    - julia --project=@. -e "import Pkg; Pkg.test(; coverage=true)" # test package
+    - julia --project=test/coverage -e 'import Pkg; Pkg.instantiate()' # setup coverage environment
+    - julia --project=test/coverage test/coverage/coverage_summary.jl # run coverage summary
+  coverage: '/Code coverage: \d+\.\d+/' # Regex expression to determine coverage
+  only:
+    - master
+
+pages:
+  stage: deploy
+  script:
+    # - julia --project=docs -e 'using Pkg; Pkg.instantiate(); Pkg.develop(PackageSpec(path=pwd()))'
+    - julia --project=docs -e 'using Pkg; Pkg.develop(path=pwd()); Pkg.instantiate();' 
+      # instantiate docs environment and dev the package to add it to environment
+    - julia --project=docs --color=yes docs/make.jl # build docs
+    - mv docs/build public # move to directory picked up by GitLab pages
   artifacts:
-    when: always
     paths:
-      - deps/ext.jl
-      - deps/deps.jl
-      - deps/build.log
-      - ./*.cov
-      - ./*/*.cov
-      - ./*/*/*.cov
-      - ./*/*/*/*.cov
-
-.coverage:
-  stage: post
-  script: |
-    julia -e '
-      using Pkg
-      Pkg.add("Coverage")
-      using Coverage
-      dirs = filter(entry -> isdir(entry) && !startswith(entry, "."), readdir())
-      coverage = vcat(map(process_folder, dirs)...)
-      Codecov.submit_local(coverage)'
-  interruptible: true
-
-stages:
-  - build
-  - test
-  - post
-  - deploy
-
-codecov:
-  token: ec8a8d09-60d9-451e-ae7b-d964d9d12478
-
-variables:
-  JULIA_NUM_THREADS: 8
-
-test:
-  extends:
-    - .julia:1.5
-    - .test
-
-coverage:
-  extends:
-    - .julia:1.5
-    - .coverage
+      - public
+  only:
+    - master
