@@ -30,7 +30,7 @@ end
     @test rms(meas_c_t - TL_data["mag_c_t"]) < 0.1
 end
 
-@testset "TL input options" begin
+@testset "TL Arguments Tests" begin
     # test that the code runs with a variety of different terms selected
     terms = [ ["permanent","induced","eddy"],
               ["permanent","induced"],
@@ -39,16 +39,19 @@ end
 
     for t in terms
         local A, TL_coef, meas_c_t
-
-        @test_nowarn A  = create_TL_A(Bx,By,Bz; terms = t)[tr+1:end-tr,:]
-
-        @test_nowarn TL_coef  = create_TL_coef(Bx,By,Bz,meas_uc; pass1=pass1,pass2=pass2,fs=fs,terms=t)
-        # meas_c_t = meas_uc_t - A*TL_coef .+ mean(A*TL_coef)
+        @test_nowarn A = create_TL_A(Bx,By,Bz; terms = t)[tr+1:end-tr,:]
+        @test_nowarn TL_coef = create_TL_coef(Bx,By,Bz,meas_uc;
+                               pass1=pass1,pass2=pass2,fs=fs,terms=t)
     end
 
-    @test_nowarn A  = create_TL_coef(Bx,By,Bz,meas_uc; pass1=0.0)[tr+1:end-tr,:]
-    @test_nowarn A  = create_TL_coef(Bx,By,Bz,meas_uc; pass2=fs*10)[tr+1:end-tr,:]
-    @test_nowarn A  = create_TL_coef(Bx,By,Bz,meas_uc; pass1=0.0,pass2=fs*10)[tr+1:end-tr,:]
+    @test_nowarn A = create_TL_coef(Bx,By,Bz,meas_uc; pass1=0.0)[tr+1:end-tr,:]
+    @test_nowarn A = create_TL_coef(Bx,By,Bz,meas_uc; pass2=fs*10)[tr+1:end-tr,:]
+    @test_nowarn A = create_TL_coef(Bx,By,Bz,meas_uc; pass1=0.0,pass2=fs*10)[tr+1:end-tr,:]
     
 
+end
+
+@testset "fdm Tests" begin
+    @test_nowarn val = fdm(meas_c_t;central=true)
+    @test_nowarn val = fdm(meas_c_t;central=false) 
 end
