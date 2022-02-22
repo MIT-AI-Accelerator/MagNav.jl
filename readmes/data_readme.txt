@@ -102,7 +102,7 @@ inertial navigation system, avionics, and electrical currents and voltages.
       V_BACK        V    voltage sensor: backplane
      V_SERVO        V    voltage sensor: servos
       V_CABT        V    voltage sensor: cabinet
-       V_FAN        V    voltage sensor: air conditioner fan
+       V_FAN        V    voltage sensor: cooling fan
 ================================================================================
 
 Notes on specific flight data fields:

@@ -10,16 +10,6 @@ data_dir  = MagNav.data_dir()
 data_file = string(data_dir,"/Flt1002_train.h5")
 xyz_data  = get_flight_data(data_file);
 
-## sensor locations (from front seat rail)
-# Mag  1   tail stinger                      X=-12.01   Y= 0      Z=1.37
-# Mag  2   front cabin just aft of cockpit   X= -0.60   Y=-0.36   Z=0
-# Mag  3   mid cabin next to INS             X= -1.28   Y=-0.36   Z=0
-# Mag  4   rear of cabin on floor            X= -3.53   Y= 0      Z=0
-# Mag  5   rear of cabin on ceiling          X= -3.79   Y= 0      Z=1.20
-# Flux B   tail at base of stinger           X= -8.92   Y= 0      Z=0.96
-# Flux C   rear of cabin port side           X= -4.06   Y= 0.42   Z=0
-# Flux D   rear of cabin starboard side      X= -4.06   Y=-0.42   Z=0
-
 ## create Tolles-Lawson coefficients
 pass1 = 0.1  # first  passband frequency [Hz]
 pass2 = 0.9  # second passband frequency [Hz]
