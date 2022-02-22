@@ -17,8 +17,8 @@ function get_flight_data(h5_file::String; tt_sort::Bool=true)
     h5_data     = h5open(h5_file,"r")
 
     N           = h5read(h5_file, "N")
-    DT          = 0.1 # h5read(h5_file, "dt") # error in h5_file
-    
+    DT          = h5read(h5_file, "dt")
+
     if tt_sort
         ind = sortperm(read_check(N,h5_data,h5_file, "tt"))
     else

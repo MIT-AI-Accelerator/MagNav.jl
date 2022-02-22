@@ -1,6 +1,5 @@
 .DS_Store
 /Manifest.toml
 /dev/
-settings.json
-*.h5
 /docs/build/
+settings.json
