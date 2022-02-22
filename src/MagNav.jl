@@ -3,7 +3,7 @@ module MagNav
 using Pkg.Artifacts: @artifact_str
 using DSP, HDF5, LazyArtifacts, LinearAlgebra, MAT, Statistics
 
-data_dir() = joinpath(artifact"flight_data_2020","flight_data_2020")
+data_dir() = joinpath(artifact"sgl_2020_train","sgl_2020_train")
 
 struct XYZ
     N::Int64
