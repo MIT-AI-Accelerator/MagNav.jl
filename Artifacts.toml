@@ -1,7 +1,7 @@
-[flight_data_2020]
-git-tree-sha1 = "77b808370d3c74f9302c94f3fa5bf04d2be5ab7c"
+[sgl_2020_train]
+git-tree-sha1 = "30a419b415c978e160075492e33605ce0a2bffa7"
 lazy = true
 
-    [[flight_data_2020.download]]
-    sha256 = "5a02bddad1a5f6727cc84d8fe4f7f7071fbbae6ebba3f6287f5369d08a07bd38"
-    url = "https://www.dropbox.com/s/ge5np08npvidi3r/flight_data_2020.tar.gz?dl=0"
+    [[sgl_2020_train.download]]
+    sha256 = "26336f638ce3c677bce33868cede4216f0a5344e2757f3055f7354f5bdace5fa"
+    url = "https://www.dropbox.com/s/ge5np08npvidi3r/sgl_2020_train.tar.gz"
