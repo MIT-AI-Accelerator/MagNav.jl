@@ -13,13 +13,13 @@
 
 <!-- - Bickel1979, Canciani2016, Canciani2017, Canciani2021, Gnadt2022, Gnadt2022a -->
 
-<!-- MagNav.jl contains a full suite of tools for performing airborne Magnetic anomaly Navigation, including mapping, compensation, and navigation. Multiple tutorials are provided in the `runs` folder. -->
+<!-- full suite of tools for performing airborne Magnetic anomaly Navigation, including flight path & INS data import or simulation, mapping, aeromagnetic compensation, and navigation.  -->
 
-MagNav.jl contains tools for performing aeromagnetic compensation. A basic set of Julia starter code files are in the `src` folder and a sample run file is in the `runs` folder. This package was developed as part of the [USAF-MIT Artificial Intelligence Accelerator](https://aia.mit.edu/). More information on this effort is provided on the [challenge problem website](https://magnav.mit.edu/). Questions may be sent to [magnav-admins@mit.edu](mailto:magnav-admins@mit.edu).
+MagNav.jl contains tools for performing aeromagnetic compensation. A basic set of Julia starter code files are in the `src` folder and a sample run file is in the `runs` folder. This package was developed as part of the [USAF-MIT Artificial Intelligence Accelerator](https://aia.mit.edu/). More information on this effort is provided on the [challenge problem website](https://magnav.mit.edu/).
 
 ## Data
 
-Publically available flight data can be automatically downloaded within the package itself. This dataset can also be directly downloaded from [here](https://doi.org/10.5281/zenodo.4271804). See the [datasheet](https://github.com/MIT-AI-Accelerator/MagNav.jl/blob/master/readmes/datasheet_sgl_2020_train.pdf) for high-level information about this dataset. Details of the flight data are described in the readme files within the `readmes` folder.
+Publically available flight data can be automatically downloaded within the package itself. This dataset can also be directly downloaded from [here](https://doi.org/10.5281/zenodo.6327685). See the [datasheet](https://github.com/MIT-AI-Accelerator/MagNav.jl/blob/master/readmes/datasheet_sgl_2020_train.pdf) for high-level information about this dataset. Details of the flight data are described in the readme files within the `readmes` folder.
 
 ## Data Sharing Agreement
 
