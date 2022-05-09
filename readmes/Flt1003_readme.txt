@@ -1,5 +1,5 @@
 Flight 1003
-29-Jun-2020
+29-Jun-2020 (doy = ~180.5/366)
 
 - Eastern Ontario & Renfrew free-fly at 400m & 800m
 - Mag 2 periodically dropped signal at ~180 degree headings during pitch/roll maneuvers
