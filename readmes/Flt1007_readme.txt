@@ -1,5 +1,5 @@
 Flight 1007
-07-Jul-2020
+07-Jul-2020 (doy = ~188.5/366)
 
 - Free-fly in Perth mini-survey at 800m
 - Free-fly in Eastern Ontario & Renfrew at 400m

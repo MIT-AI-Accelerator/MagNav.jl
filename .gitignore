@@ -1,5 +1,8 @@
 .DS_Store
 /Manifest.toml
+/data/
 /dev/
 /docs/build/
+/maps/
 settings.json
+LocalPreferences.toml

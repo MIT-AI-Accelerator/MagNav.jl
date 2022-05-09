@@ -1,5 +1,5 @@
 Flight 1004
-30-Jun-2020
+30-Jun-2020 (doy = ~181.5/366)
 
 - Perth mini-survey (within Eastern Ontario) flown at 800m, flight 1 of 2
 - Split into two flights due to weather (low altitude clouds)
