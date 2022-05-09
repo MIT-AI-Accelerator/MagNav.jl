@@ -10,14 +10,10 @@
 </p>
 
 <!-- https://gnadt.gitlab.io/MagNav.jl/ -->
-
 <!-- https://github.com/pkofod/QuantileRegressions.jl/blob/master/.travis.yml -->
-
 <!-- - Bickel1979, Canciani2016, Canciani2017, Canciani2021, Gnadt2022, Gnadt2022a -->
 
-<!-- full suite of tools for performing airborne Magnetic anomaly Navigation, including flight path & INS data import or simulation, mapping, aeromagnetic compensation, and navigation.  -->
-
-MagNav.jl contains tools for performing aeromagnetic compensation. A basic set of Julia starter code files are in the `src` folder and a sample run file is in the `runs` folder. This package was developed as part of the [USAF-MIT Artificial Intelligence Accelerator](https://aia.mit.edu/). More information on this effort is provided on the [challenge problem website](https://magnav.mit.edu/).
+MagNav.jl a full suite of tools for performing airborne Magnetic anomaly Navigation (MagNav), including flight path & INS data import or simulation, mapping, aeromagnetic compensation, and navigation. Julia source code files are in the `src` folder and examples are in the `runs` folder, which will be expanded in early summer 2022. This package was developed as part of the [USAF-MIT Artificial Intelligence Accelerator](https://aia.mit.edu/). More information on this effort is provided on the [challenge problem website](https://magnav.mit.edu/).
 
 ## Data
 
