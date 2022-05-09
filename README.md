@@ -11,6 +11,8 @@
 
 <!-- https://gnadt.gitlab.io/MagNav.jl/ -->
 
+<!-- https://github.com/pkofod/QuantileRegressions.jl/blob/master/.travis.yml -->
+
 <!-- - Bickel1979, Canciani2016, Canciani2017, Canciani2021, Gnadt2022, Gnadt2022a -->
 
 <!-- full suite of tools for performing airborne Magnetic anomaly Navigation, including flight path & INS data import or simulation, mapping, aeromagnetic compensation, and navigation.  -->
