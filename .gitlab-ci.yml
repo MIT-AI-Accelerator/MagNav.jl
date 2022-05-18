@@ -15,6 +15,7 @@ test:latest:
     - julia --project=@. -e "import Pkg; Pkg.test(; coverage=true)" # test package
     - julia --project=test/coverage -e 'import Pkg; Pkg.instantiate()' # setup coverage environment
     - julia --project=test/coverage test/coverage/coverage_summary.jl # run coverage summary
+  timeout: 2h 0m
   coverage: '/Code coverage: \d+\.\d+/' # Regex expression to determine coverage
   only:
     - master
