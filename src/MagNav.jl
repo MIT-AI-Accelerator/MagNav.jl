@@ -27,7 +27,7 @@ module MagNav
     using Optim: only_fg!, optimize, LBFGS, Options
     using Parameters: @unpack, @with_kw
     using Pkg.Artifacts: @artifact_str
-    using Plots: mm
+    using Plots: mm, plot, plot!
     using Random: rand, randn, randperm, seed!, shuffle
     using RecipesBase: @recipe
     using SatelliteToolbox: igrf, igrfd

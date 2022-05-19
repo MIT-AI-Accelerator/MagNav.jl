@@ -7,6 +7,7 @@ using BSON: @load, @save
 using CSV
 using DataFrames: sort
 using DelimitedFiles: readdlm, writedlm
+using Plots: plot, plot!
 using Random: rand, randn, randperm, seed!, shuffle
 using Statistics: cor, cov, mean, median, std, var
 
