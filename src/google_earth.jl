@@ -104,7 +104,12 @@ function map2kmz(map_map::Matrix, map_xx::Vector, map_yy::Vector,
             "</kml> ")
         end
 
-        create_zip(map_kmz,[map_kml,map_png])
+        w = ZipFile.Writer(map_kmz)
+        for file in [map_kml,map_png]
+            f = ZipFile.addfile(w,file,method=ZipFile.Deflate)
+            write(f,read(file))
+        end
+        close(w)
         rm(map_kml)
         rm(map_png)
 
