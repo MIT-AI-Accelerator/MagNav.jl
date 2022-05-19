@@ -10,4 +10,5 @@ using SafeTestsets
 @safetestset "map_fft         " begin include("test_map_fft.jl") end
 @safetestset "map_functions   " begin include("test_map_functions.jl") end
 @safetestset "model_functions " begin include("test_model_functions.jl") end
+@safetestset "MagNav_artifacts" begin include("test_MagNav_artifacts.jl") end
 @safetestset "tolles_lawson   " begin include("test_tolles_lawson.jl") end
