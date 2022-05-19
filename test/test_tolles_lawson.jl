@@ -22,8 +22,7 @@ flux_a_y  = vec(TL_data["flux_a_y"])
 flux_a_z  = vec(TL_data["flux_a_z"])
 mag_1_uc  = vec(TL_data["mag_1_uc"])
 
-A_a       = create_TL_A(flux_a_x,flux_a_y,flux_a_z;
-                        Bt_scale=Bt_scale)
+A_a       = create_TL_A(flux_a_x,flux_a_y,flux_a_z;Bt_scale=Bt_scale)
 TL_a_1    = create_TL_coef(flux_a_x,flux_a_y,flux_a_z,mag_1_uc;
                            λ=λ,pass1=pass1,pass2=pass2,fs=fs,
                            trim=trim,Bt_scale=Bt_scale)
@@ -37,4 +36,34 @@ end
 @testset "Create TL Coefficients Tests" begin
     @test std(mag_1_c-TL_data["mag_1_c"]) < 0.1
     @test std(mag_1_c_d-TL_data["mag_1_c_d"]) < 0.1
+end
+
+@testset "TL Arguments Tests" begin
+    terms_set = [[:permanent,:induced,:eddy,:bias],
+                 [:permanent,:induced,:eddy],
+                 [:permanent,:induced],
+                 [:permanent],
+                 [:induced],
+                 [:i5,:e8,:fdm],
+                 [:i3,:e3,:f3]]
+
+    for terms in terms_set
+        @test_nowarn create_TL_A(flux_a_x,flux_a_y,flux_a_z;terms=terms)
+        @test_nowarn create_TL_coef(flux_a_x,flux_a_y,flux_a_z,mag_1_uc;
+                                    terms=terms)
+    end
+
+    @test_nowarn create_TL_coef(flux_a_x,flux_a_y,flux_a_z,mag_1_uc;
+                                fs=fs,pass1=0)
+    @test_nowarn create_TL_coef(flux_a_x,flux_a_y,flux_a_z,mag_1_uc;
+                                fs=fs,pass2=fs)
+    @test std(create_TL_coef(flux_a_x,flux_a_y,flux_a_z,mag_1_uc;
+                              fs=fs,pass1=0,pass2=fs)) >= 0
+end
+
+@testset "FDM Tests" begin
+    @test_nowarn fdm(mag_1_c_d;central=true ,fourth=false)
+    @test_nowarn fdm(mag_1_c_d;central=false,fourth=false)
+    @test_nowarn fdm(mag_1_c_d;central=true ,fourth=true)
+    @test_nowarn fdm(mag_1_c_d;central=false,fourth=true)
 end

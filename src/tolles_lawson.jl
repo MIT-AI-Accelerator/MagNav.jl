@@ -173,7 +173,7 @@ function create_TL_coef(Bx, By, Bz, B;
                         return_var = false)
 
     # create filter
-    if ((pass1 >  0) & (pass1 <  fs/2)) | ((pass2 >  0) & (pass2 <  fs/2))
+    if ((pass1 > 0) & (pass1 < fs/2)) | ((pass2 > 0) & (pass2 < fs/2))
         perform_filter = true # bandpass, low-pass, or high-pass
         bpf = get_bpf(;pass1=pass1,pass2=pass2,fs=fs,pole=pole)
     else
