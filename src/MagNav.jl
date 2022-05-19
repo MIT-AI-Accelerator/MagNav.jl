@@ -16,7 +16,6 @@ module MagNav
     using Geodesy: LLA, LLAfromUTMZ, UTMZ, UTMZfromLLA, WGS84
     using GLMNet: glmnetcv
     using GlobalSensitivity: gsa, Morris
-    using InfoZIP: create_zip
     using Interpolations: interpolate, scale
     using Interpolations: BSpline, Cubic, Line, Linear, OnGrid, Quadratic
     using IterTools: ncycle
