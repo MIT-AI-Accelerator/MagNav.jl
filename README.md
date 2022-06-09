@@ -14,7 +14,7 @@
 
 MagNav.jl a full suite of tools for performing airborne Magnetic anomaly Navigation (MagNav), including flight path & INS data import or simulation, mapping, aeromagnetic compensation, and navigation. Julia source code files are in the `src` folder and examples are in the `runs` folder. This package was developed as part of the [USAF-MIT Artificial Intelligence Accelerator](https://aia.mit.edu/). More information on this effort is provided on the [challenge problem website](https://magnav.mit.edu/).
 
-Note that the unit tests and examples are currently being updated through the summer 2022.
+Note that the unit tests and examples, based on the [doctoral thesis](https://www.dropbox.com/s/forort8b6ilpi8j/Gnadt_Thesis.pdf) work by Albert Gnadt, are currently being expanded throughout the summer of 2022.
 
 ## Data
 
@@ -34,7 +34,8 @@ If this code or data is used in any work, please cite:
 [DataSet Name] provided by the United States Air Force pursuant to Cooperative Agreement Number FA8750-19-2-1000 - [dates used]
 @article{gnadt2020signal,
   title={Signal Enhancement for Magnetic Navigation Challenge Problem},
-  author={Gnadt, Albert R and Belarge, Joseph and Canciani, Aaron and Conger, Lauren and Curro, Joseph and Edelman, Alan and Morales, Peter and O'Keeffe, Michael F and Taylor, Jonathan and Rackauckas, Christopher},
+  author={Gnadt, Albert R and Belarge, Joseph and 
+  ni, Aaron and Conger, Lauren and Curro, Joseph and Edelman, Alan and Morales, Peter and O'Keeffe, Michael F and Taylor, Jonathan and Rackauckas, Christopher},
   journal={arXiv e-prints},
   pages={arXiv--2007},
   year={2020}
