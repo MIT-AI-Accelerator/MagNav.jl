@@ -363,6 +363,14 @@ function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
         end
     end
 
+    # Try low-passing the current signals
+    lpf = get_bpf(;pass1=0.0, pass2=0.2,fs=1/xyz.traj.dt);
+    hasproperty(xyz, :cur_strb)   ? push!(d,:lpf_cur_strb=>bpf_data(xyz.cur_strb[ind]; bpf=lpf))      : nothing;
+    hasproperty(xyz, :cur_outpwr) ? push!(d,:lpf_cur_outpwr=> bpf_data(xyz.cur_outpwr[ind]; bpf=lpf)) : nothing;
+    hasproperty(xyz, :cur_ac_hi)  ? push!(d,:lpf_cur_ac_hi=> bpf_data(xyz.cur_ac_hi[ind]; bpf=lpf))   : nothing;
+    hasproperty(xyz, :cur_ac_lo)  ? push!(d,:lpf_cur_ac_lo=> bpf_data(xyz.cur_ac_lo[ind]; bpf=lpf))   : nothing;
+    hasproperty(xyz, :cur_com_1)  ? push!(d,:lpf_cur_com_1=> bpf_data(xyz.cur_com_1[ind]; bpf=lpf))   : nothing;
+
     push!(d,:ins_lat=>xyz.ins.lat[ind])
     push!(d,:ins_lon=>xyz.ins.lon[ind])
     push!(d,:ins_alt=>xyz.ins.alt[ind])
