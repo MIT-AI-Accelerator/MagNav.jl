@@ -1,18 +1,15 @@
 # MagNav: airborne Magnetic anomaly Navigation
 
 <p align="left">
-    <a href="https://gitlab.com/gnadt/MagNav.jl/-/jobs">
-        <img src="https://gitlab.com/gnadt/MagNav.jl/badges/master/pipeline.svg" title="gitlab">
+    <a href="https://github.com/MIT-AI-Accelerator/MagNav.jl/actions/workflows/ci.yml">
+        <img src="https://github.com/MIT-AI-Accelerator/MagNav.jl/workflows/CI/badge.svg" title="CI">
     </a>
     <a href="https://app.codecov.io/gh/MIT-AI-Accelerator/MagNav.jl">
         <img src="https://codecov.io/gh/MIT-AI-Accelerator/MagNav.jl/branch/master/graph/badge.svg" title="codecov">
     </a>
 </p>
 
-<!-- https://gnadt.gitlab.io/MagNav.jl/ -->
-<!-- https://github.com/pkofod/QuantileRegressions.jl/blob/master/.travis.yml -->
-
-MagNav.jl a full suite of tools for performing airborne Magnetic anomaly Navigation (MagNav), including flight path & INS data import or simulation, mapping, aeromagnetic compensation, and navigation. Julia source code files are in the `src` folder and examples are in the `runs` folder. This package was developed as part of the [USAF-MIT Artificial Intelligence Accelerator](https://aia.mit.edu/). More information on this effort is provided on the [challenge problem website](https://magnav.mit.edu/).
+MagNav.jl a full suite of tools for performing airborne Magnetic anomaly Navigation (MagNav), including flight path & INS data import or simulation, mapping, aeromagnetic compensation, and navigation. Julia source code files are in the `src` folder and examples are in the `runs` folder. This package was developed as part of the [DAF-MIT Artificial Intelligence Accelerator](https://aia.mit.edu/). More information on this effort is provided on the [challenge problem website](https://magnav.mit.edu/).
 
 Note that the unit tests and examples, based on the [doctoral thesis](https://www.dropbox.com/s/forort8b6ilpi8j/Gnadt_Thesis.pdf) work by Albert Gnadt, are currently being expanded throughout the summer of 2022.
 
