@@ -3,7 +3,7 @@ using Documenter, MagNav
 makedocs(
     modules = [MagNav],
     format = Documenter.HTML(
-        assets = ["assets/favicon.png"],
+        assets = ["assets/favicon.ico"],
     ),
     checkdocs = :exports,
     sitename = "MagNav.jl",
