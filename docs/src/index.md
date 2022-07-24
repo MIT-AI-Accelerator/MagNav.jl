@@ -1,17 +1,15 @@
-# MagNav: airborne Magnetic anomaly Navigation
+# MagNav.jl
 
-Placeholder page for [MagNav.jl](https://github.com/MIT-AI-Accelerator/MagNav.jl) documentation.
+[MagNav.jl](https://github.com/MIT-AI-Accelerator/MagNav.jl) contains a full suite of tools for airborne Magnetic anomaly Navigation (MagNav). This documentation is separated into four main functionalities:
 
-```@docs
-create_TL_A
-```
-
-```@docs
-create_TL_coef
-```
-
-```@docs
-fdm
+```@contents
+Pages = [
+    "data.md",
+    "maps.md",
+    "comp.md",
+    "nav.md",
+]
+Depth = 1
 ```
 
 ## Version

@@ -7,7 +7,12 @@ makedocs(
     ),
     checkdocs = :exports,
     sitename = "MagNav.jl",
-    pages = Any["index.md"],
+    pages = Any[
+        "index.md",
+        "data.md",
+        "maps.md",
+        "comp.md",
+        "nav.md"],
 )
 
 deploydocs(
