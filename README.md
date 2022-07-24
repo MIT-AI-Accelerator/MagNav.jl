@@ -1,6 +1,9 @@
 # MagNav: airborne Magnetic anomaly Navigation
 
 <p align="left">
+<!--     <a href="https://mit-ai-accelerator.github.io/MagNav.jl/dev/">
+        <img src="https://img.shields.io/badge/docs-dev-blue.svg" title="Dev">
+    </a> -->
     <a href="https://github.com/MIT-AI-Accelerator/MagNav.jl/actions/workflows/ci.yml">
         <img src="https://github.com/MIT-AI-Accelerator/MagNav.jl/workflows/CI/badge.svg" title="CI">
     </a>
