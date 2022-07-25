@@ -21,7 +21,6 @@ module MagNav
     using IterTools: ncycle
     using KernelFunctions: kernelmatrix, PolynomialKernel
     using MAT: matopen
-    using MendelIHT: cv_iht, fit_iht, IdentityLink
     using MLJLinearModels: ElasticNetRegression, fit
     using NearestNeighbors: knn, KDTree
     using Optim: only_fg!, optimize, LBFGS, Options
@@ -998,7 +997,7 @@ module MagNav
     dn2dlat,de2dlon,dlat2dn,dlon2de,linreg,detrend,get_bpf,bpf_data,bpf_data!,
     get_x,get_y,get_Axy,get_nn_m,sparse_group_lasso,err_segs,
     norm_sets,denorm_sets,get_ind,chunk_data,predict_rnn_full,
-    predict_rnn_windowed,krr,eval_iht,eval_shapley,plot_shapley,eval_gsa,
+    predict_rnn_windowed,krr,eval_shapley,plot_shapley,eval_gsa,
     plot_basic,plot_activation,plot_mag,plot_vec,plot_mag_c,
     plot_PSD,plot_spectrogram,plot_frequency,plot_correlation,
     create_XYZ0,create_traj,create_ins,create_mag_c,corrupt_mag,create_flux,
