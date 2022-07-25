@@ -1580,56 +1580,6 @@ function krr(x_train, y_train, x_test, y_test;
 end # function krr
 
 """
-    eval_iht(y, x,
-             N::Int        = min(10000,size(x,1)),
-             path          = 1:40;
-             max_iter::Int = 500,
-             d             = Normal,
-             l             = IdentityLink)
-
-Iterative Hard Thresholding (IHT) with cross-validation to determine best 
-number of non-zero features (causal predictors) and corresponding coefficients.
-
-Reference: https://openmendel.github.io/MendelIHT.jl/stable/man/examples/#Example-4:-Running-IHT-on-general-matrices
-
-**Arguments:**
-- `y`:        observed data
-- `x`:        input data
-- `N`:        (optional) number of samples (instances) to use for explanation
-- `path`:     (optional) range of number of non-zero features to test
-- `max_iter`: (optional) maximum number of iterations
-- `d`:        (optional) response distribution
-- `l`:        (optional) canonical link
-
-**Returns:**
-- `coef`: IHT-based coefficients for best number of non-zero features
-- `bias`: IHT-based bias coefficient
-"""
-function eval_iht(y, x,
-                  N::Int        = min(10000,size(x,1)),
-                  path          = 1:40;
-                  max_iter::Int = 500,
-                  d             = Normal,
-                  l             = IdentityLink)
-
-    seed!(2) # for reproducibility
-    n_threads = BLAS.get_num_threads()
-    BLAS.set_num_threads(1) # prevent oversubscription
-
-    # run cross-validation and get best number of non-zero feature coefficients
-    p    = randperm(N) # subset of data used for explanation
-    mses = cv_iht(y[p],x[p,:];path=path,d=d(),l=l(),q=10,max_iter=max_iter)
-    k    = path[argmin(mses)]
-
-    # re-run on full dataset with best number of non-zero feature coefficients
-    result = fit_iht(y,x,k=k,d=d(),l=l(),max_iter=max_iter)
-
-    BLAS.set_num_threads(n_threads) # re-set number of threads
-
-    return (result.beta, result.c)
-end # function eval_iht
-
-"""
     predict_shapley(m, x::DataFrame)
 
 Internal helper function that wraps a neural network model to create a 
