@@ -1,8 +1,7 @@
-# ins_field = :none
 """
     get_XYZ0(xyz_file::String,
              traj_field::Symbol = :traj,
-             ins_field::Symbol  = :ins_data,
+             ins_field::Symbol  = :ins_data;
              flight             = 1,
              line               = 1,
              dt                 = 0.1,
@@ -66,7 +65,7 @@ standard way the MATLAB-companion produces data.
 **Arguments:**
 - `xyz_file`:   path/name of HDF5 or MAT file containing flight data
 - `traj_field`: (optional) trajectory struct field within MAT file to use, not relevant for HDF5 file
-- `ins_field`:  (optional) INS struct field within MAT file to use, not relevant for HDF5 file
+- `ins_field`:  (optional) INS struct field within MAT file to use, `:none` if unavailable, not relevant for HDF5 file
 - `flight`:     (optional) flight number, only used if not in file
 - `line`:       (optional) line number, i.e. segment within `flight`, only used if not in file
 - `dt`:         (optional) measurement time step [s], only used if not in file
@@ -77,7 +76,7 @@ standard way the MATLAB-companion produces data.
 """
 function get_XYZ0(xyz_file::String,
                   traj_field::Symbol = :traj,
-                  ins_field::Symbol  = :ins_data,
+                  ins_field::Symbol  = :ins_data;
                   flight             = 1,
                   line               = 1,
                   dt                 = 0.1,
@@ -111,10 +110,10 @@ function get_XYZ0(xyz_file::String,
 
         close(xyz_data)
 
-    elseif occursin(".mat",traj_file) # get data from MAT file
+    elseif occursin(".mat",xyz_file) # get data from MAT file
 
         xyz_data = matopen(xyz_file,"r") do file
-            read(file,traj_field)
+            read(file,string(traj_field))
         end
 
         # these fields might not be included
@@ -128,7 +127,7 @@ function get_XYZ0(xyz_file::String,
         flux_a_t = haskey(xyz_data,"flux_a_t") ? xyz_data["flux_a_t"] : NaN
 
     else
-        error("$traj_file trajectory file is incorrect or invalid")
+        error("$xyz_file flight data file is incorrect or invalid")
     end
 
     # ensure row vectors
@@ -218,7 +217,7 @@ function get_traj(traj_file::String, field::Symbol=:traj; dt=0.1, silent::Bool=f
     elseif occursin(".mat",traj_file) # get data from MAT file
 
         traj_data = matopen(traj_file,"r") do file
-            read(file,field)
+            read(file,string(field))
         end
 
         # these fields are absolutely expected
@@ -359,7 +358,7 @@ function get_ins(ins_file::String, field::Symbol=:ins_data; dt=0.1, silent::Bool
     elseif occursin(".mat",ins_file) # get data from MAT file
 
         ins_data = matopen(ins_file,"r") do file
-            read(file,field)
+            read(file,string(field))
         end
 
         # these fields are absolutely expected
@@ -368,7 +367,7 @@ function get_ins(ins_file::String, field::Symbol=:ins_data; dt=0.1, silent::Bool
         alt   = ins_data["alt"]
 
         # these fields might not be included (especially dt vs tt & Cnb vs RPY)
-        dt    = haskey(ins_data,"dt"   ) ? ins_data["dt"][1] : NaN
+        dt    = haskey(ins_data,"dt"   ) ? ins_data["dt"][1] : dt
         tt    = haskey(ins_data,"tt"   ) ? ins_data["tt"   ] : NaN
         vn    = haskey(ins_data,"vn"   ) ? ins_data["vn"   ] : NaN
         ve    = haskey(ins_data,"ve"   ) ? ins_data["ve"   ] : NaN
@@ -449,7 +448,7 @@ function get_ins(ins_file::String, field::Symbol=:ins_data; dt=0.1, silent::Bool
     # if needed, create P
     if any(isnan.(P))
         silent || @info("creating INS covariance matrix data (zeros)")
-        P = zeros(N,17,17)
+        P = zeros(1,1,N) # unknown
     end
 
     return INS(N, dt, tt, lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, P)
@@ -464,8 +463,8 @@ Get inertial navigation system data at specific indicies.
 **Arguments:**
 - `xyz`:       `XYZ` flight data struct
 - `ind`:       (optional) selected data indices
-- `N_zero_ll`: (optional) number of samples (instances) to zero INS lat/lon to GPS (`xyz.traj`)
-- `t_zero_ll`: (optional) length of time to zero INS lat/lon to GPS (`xyz.traj`), will overwrite `N_zero_ll`
+- `N_zero_ll`: (optional) number of samples (instances) to zero INS lat/lon to truth (`xyz.traj`)
+- `t_zero_ll`: (optional) length of time to zero INS lat/lon to truth (`xyz.traj`), will overwrite `N_zero_ll`
 - `err`:       (optional) initial INS latitude and longitude error [m]
 
 **Returns:**
@@ -474,21 +473,20 @@ Get inertial navigation system data at specific indicies.
 function get_ins(xyz::XYZ, ind=trues(xyz.traj.N);
                  N_zero_ll::Int=0, t_zero_ll=0, err=0.0)
     N_zero_ll = t_zero_ll > 0 ? round(Int,t_zero_ll/xyz.ins.dt) : N_zero_ll
-    lat_gps   = xyz.traj.lat[ind][1:N_zero_ll]
-    lon_gps   = xyz.traj.lon[ind][1:N_zero_ll]
-    xyz.ins(ind;N_zero_ll=N_zero_ll,err=err,lat_gps=lat_gps,lon_gps=lon_gps)
+    lat = xyz.traj.lat[ind][1:N_zero_ll]
+    lon = xyz.traj.lon[ind][1:N_zero_ll]
+    xyz.ins(ind;N_zero_ll=N_zero_ll,err=err,lat=lat,lon=lon)
 end # function get_ins
 
 function (ins::INS)(ind=trues(ins.N);
                     N_zero_ll::Int=0, err=0.0,
-                    lat_gps=ins.lat[ind][1],
-                    lon_gps=ins.lon[ind][1])
+                    lat=ins.lat[ind][1:1],
+                    lon=ins.lon[ind][1:1])
 
     if N_zero_ll > 0
-        (lat_ins,lon_ins) = zero_ins_ll(ins.lat[ind],ins.lon[ind],err,
-                                        lat_gps,lon_gps)
+        (ins_lat,ins_lon) = zero_ins_ll(ins.lat[ind],ins.lon[ind],err,lat,lon)
     else
-        (lat_ins,lon_ins) = (ins.lat[ind],ins.lon[ind])
+        (ins_lat,ins_lon) = (ins.lat[ind],ins.lon[ind])
     end
 
     N = length(ins.lat[ind])
@@ -497,13 +495,13 @@ function (ins::INS)(ind=trues(ins.N);
         Cnb = reshape(ins.Cnb[:,:,ind],(size(ins.Cnb[:,:,ind])...,1))
         P   = reshape(ins.P[:,:,ind]  ,(size(ins.P[:,:,ind])...  ,1))
         return INS(N           ,  ins.dt      , [ins.tt[ind]] ,
-                  [lat_ins]    , [lon_ins]    , [ins.alt[ind]],
+                  [ins_lat]    , [ins_lon]    , [ins.alt[ind]],
                   [ins.vn[ind]], [ins.ve[ind]], [ins.vd[ind]] ,
                   [ins.fn[ind]], [ins.fe[ind]], [ins.fd[ind]] ,
                    Cnb         ,  P)
     else
         return INS(N           ,  ins.dt      , ins.tt[ind]   ,
-                   lat_ins     ,  lon_ins     , ins.alt[ind]  ,
+                   ins_lat     ,  ins_lon     , ins.alt[ind]  ,
                    ins.vn[ind] ,  ins.ve[ind] , ins.vd[ind]   ,
                    ins.fn[ind] ,  ins.fe[ind] , ins.fd[ind]   ,
                    ins.Cnb[:,:,ind], ins.P[:,:,ind])
@@ -511,54 +509,52 @@ function (ins::INS)(ind=trues(ins.N);
 end # function (ins::INS)
 
 """
-    zero_ins_ll(lat_ins, lon_ins, err=0.0,
-                lat_gps=lat_ins[1], lon_gps=lon_ins[1])
+    zero_ins_ll(ins_lat, ins_lon, err=0.0, lat=ins_lat[1:1], lon=ins_lon[1:1])
 
 Zero INS latitude and longitude starting position, with optional error.
 
 **Arguments:**
-- `lat_ins`: INS latitude  vector [rad]
-- `lon_ins`: INS longitude vector [rad]
+- `ins_lat`: INS latitude  vector [rad]
+- `ins_lon`: INS longitude vector [rad]
 - `err`:     (optional) initial INS latitude and longitude error [m]
-- `lat_gps`: (optional) best-guess initial GPS latitude  [rad]
-- `lon_gps`: (optional) best-guess initial GPS longitude [rad]
+- `lat`:     (optional) best-guess (truth) initial latitude  [rad]
+- `lon`:     (optional) best-guess (truth) initial longitude [rad]
 
 **Returns:**
-- `lat_ins`: zeroed INS latitude  vector [rad]
-- `lon_ins`: zeroed INS longitude vector [rad]
+- `ins_lat`: zeroed INS latitude  vector [rad]
+- `ins_lon`: zeroed INS longitude vector [rad]
 """
-function zero_ins_ll(lat_ins, lon_ins, err=0.0,
-                     lat_gps=lat_ins[1], lon_gps=lon_ins[1])
+function zero_ins_ll(ins_lat, ins_lon, err=0.0, lat=ins_lat[1:1], lon=ins_lon[1:1])
 
     # check that INS vectors are the same length and get length
-    N_lat = length(lat_ins)
-    N_lon = length(lon_ins)
+    N_lat = length(ins_lat)
+    N_lon = length(ins_lon)
     N_lat == N_lon ? (N=N_lat) : error("N_lat_ins ≂̸ N_lon_ins")
 
-    # check that GPS vectors (or scalar) are the same length and get length
-    N_zero_lat = length(lat_gps)
-    N_zero_lon = length(lon_gps)
-    N_zero_lat == N_zero_lon ? (N0=N_zero_lat) : error("N_lat_gps ≂̸ N_lon_gps")
+    # check that truth vectors (or scalar) are the same length and get length
+    N_zero_lat = length(lat)
+    N_zero_lon = length(lon)
+    N_zero_lat == N_zero_lon ? (N0=N_zero_lat) : error("N_lat ≂̸ N_lon")
 
     # avoid modifying original data (possibly in xyz struct)
-    lat_ins = deepcopy(lat_ins)
-    lon_ins = deepcopy(lon_ins)
+    ins_lat = deepcopy(ins_lat)
+    ins_lon = deepcopy(ins_lon)
 
     # correct 1:N0
-    δlat = lat_ins[1:N0] - lat_gps
-    δlon = lon_ins[1:N0] - lon_gps
-    lat_ins[1:N0] .-= (δlat .- sign.(δlat) .* dn2dlat.(err,lat_gps))
-    lon_ins[1:N0] .-= (δlon .- sign.(δlon) .* de2dlon.(err,lat_gps))
+    δlat = ins_lat[1:N0] - lat
+    δlon = ins_lon[1:N0] - lon
+    ins_lat[1:N0] .-= (δlat .- sign.(δlat) .* dn2dlat.(err,lat))
+    ins_lon[1:N0] .-= (δlon .- sign.(δlon) .* de2dlon.(err,lat))
 
     # correct N0+1:end
     if N > N0
-        δlat_end = δlat[end] .- sign.(δlat[end]) .* dn2dlat.(err,lat_gps[end])
-        δlon_end = δlon[end] .- sign.(δlon[end]) .* de2dlon.(err,lat_gps[end])
-        lat_ins[N0+1:end] .-= δlat_end
-        lon_ins[N0+1:end] .-= δlon_end
+        δlat_end = δlat[end] .- sign.(δlat[end]) .* dn2dlat.(err,lat[end])
+        δlon_end = δlon[end] .- sign.(δlon[end]) .* de2dlon.(err,lat[end])
+        ins_lat[N0+1:end] .-= δlat_end
+        ins_lon[N0+1:end] .-= δlon_end
     end
 
-    return (lat_ins, lon_ins)
+    return (ins_lat, ins_lon)
 end # function zero_ins_ll
 
 """

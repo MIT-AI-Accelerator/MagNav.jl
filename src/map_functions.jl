@@ -1354,7 +1354,7 @@ function map_cs(map_color::Symbol=:usgs)
 
     if map_color == :usgs # standard for geological maps
         f = readdlm(usgs,',')
-        c = cgrad([RGB(f[i,:]...) for i = 1:size(f,1)])
+        c = cgrad([RGB(f[i,:]...) for i in axes(f,1)])
     elseif map_color == :gray # light gray
         c = cgrad(:gist_gray)[61:90]
     elseif map_color == :gray1 # light gray (lower end)
@@ -1524,7 +1524,7 @@ function plot_path(lat, lon;
                    show_plot::Bool    = true,
                    zoom_plot::Bool    = true,
                    path_color::Symbol = :ignore)
-    p1 = plot(xlab="latitude [deg]",ylab="latitude [deg]",
+    p1 = plot(xlab="longitude [deg]",ylab="latitude [deg]",
               dpi=dpi,margin=margin*mm)
     plot_path!(p1,lat,lon;
                lab        = lab,
@@ -1630,7 +1630,7 @@ function plot_events!(p1, flight::Symbol, df_event::DataFrame;
     df   = df_event[(df_event[:,:flight]  .== flight)  .& 
                     (df_event[:,:t] .- t0 .>  xlim[1]) .& 
                     (df_event[:,:t] .- t0 .<  xlim[2]),:]
-    for i = 1:size(df,1)
+    for i in axes(df,1)
         lab = show_lab ? df[i,:event] : nothing
         plot_events!(p1,df[i,:t]-t0,lab;ylim=ylim,t_units=t_units,legend=legend)
     end
@@ -1692,5 +1692,5 @@ Check if latitude and longitude points are on given map(s).
 - `bool(s)`: if true, all `path[ind]` points are on `map_map`
 """
 function map_check(map_map::Vector{Map}, path::Path, ind=trues(path.N))
-    [map_check(map_map[i],path,ind) for i = 1:length(map_map)]
+    [map_check(map_map[i],path,ind) for i in eachindex(map_map)]
 end # function map_check

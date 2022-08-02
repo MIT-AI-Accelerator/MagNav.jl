@@ -12,7 +12,7 @@ end
 
 test_file = "test_data/test_data_traj.mat"
 traj_data = matopen(test_file,"r") do file
-    read(file,"traj_data")
+    read(file,"traj")
 end
 
 xn  = vec(grid_data["xn"])

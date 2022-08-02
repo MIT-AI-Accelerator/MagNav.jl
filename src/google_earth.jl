@@ -14,7 +14,7 @@ and is thus not meant for large maps (e.g. > 5 deg x 5 deg).
 - `map_xx`:    `nx` x-direction (longitude) map coordinates [rad] or [deg]
 - `map_yy`:    `ny` y-direction (latitude)  map coordinates [rad] or [deg]
 - `map_name`:  map name to save
-- `map_alt`:   (optional) map altitude [m]
+- `alt`:       (optional) map altitude [m]
 - `opacity`:   (optional) map opacity {0:1}
 - `map_units`: (optional) map xx/yy units {`:rad`,`:deg`}
 - `clims`:     (optional) map color scale limits

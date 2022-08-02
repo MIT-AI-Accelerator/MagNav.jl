@@ -16,8 +16,8 @@ module MagNav
     using Geodesy: LLA, LLAfromUTMZ, UTMZ, UTMZfromLLA, WGS84
     using GLMNet: glmnetcv
     using GlobalSensitivity: gsa, Morris
-    using Interpolations: interpolate, scale
-    using Interpolations: BSpline, Cubic, Line, Linear, OnGrid, Quadratic
+    using Interpolations: interpolate, scale, BSpline, Cubic, Line
+    using Interpolations: Linear, LinearInterpolation, OnGrid, Quadratic
     using IterTools: ncycle
     using KernelFunctions: kernelmatrix, PolynomialKernel
     using MAT: matopen
