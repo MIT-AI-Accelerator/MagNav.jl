@@ -134,7 +134,7 @@ Internal helper function to reshape neural network gradients.
 """
 function get_Hnn(g::Tuple)
     Hnn = Float32[]
-    for i = 1:length(g)
+    for i in eachindex(g)
         Hnn = [Hnn;vec(g[i].weight);]
         g[i].bias !== nothing && (Hnn = [Hnn;vec(g[i].bias);])
     end

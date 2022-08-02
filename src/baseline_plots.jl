@@ -143,9 +143,13 @@ function plot_mag(xyz::XYZ;
 
         ylab = "magnetic field error [nT]"
 
-        p1 = plot(lw=2,dpi=dpi,xlab=xlab,ylab=ylab,ylim=ylim)
+        if ylim == []
+            p1 = plot(lw=2,dpi=dpi,xlab=xlab,ylab=ylab)
+        else
+            p1 = plot(lw=2,dpi=dpi,xlab=xlab,ylab=ylab,ylim=ylim)
+        end
 
-        for i = 1:length(mags_c_)
+        for i in eachindex(mags_c_)
             val = (getfield(xyz,list_uc[mags_uc_[i]]) - 
                    getfield(xyz,list_c[ mags_c_[ i]]))[ind]
             detrend_data && (val = detrend(val))
@@ -161,8 +165,12 @@ function plot_mag(xyz::XYZ;
 
         ylab = "magnetic field [nT]"
         ylab = detrend_data ? "detrended $ylab" : ylab
-    
-        p1 = plot(lw=2,dpi=dpi,xlab=xlab,ylab=ylab,ylim=ylim)
+
+        if ylim == []
+            p1 = plot(lw=2,dpi=dpi,xlab=xlab,ylab=ylab)
+        else
+            p1 = plot(lw=2,dpi=dpi,xlab=xlab,ylab=ylab,ylim=ylim)
+        end
 
         for use_mag in use_mags[use_mags .∈ (field_check(xyz,MagV),)]
 
@@ -183,7 +191,11 @@ function plot_mag(xyz::XYZ;
         ylab = "magnetic field [nT]"
         ylab = detrend_data ? "detrended $ylab" : ylab
 
-        p1 = plot(lw=2,dpi=dpi,xlab=xlab,ylab=ylab,ylim=ylim)
+        if ylim == []
+            p1 = plot(lw=2,dpi=dpi,xlab=xlab,ylab=ylab)
+        else
+            p1 = plot(lw=2,dpi=dpi,xlab=xlab,ylab=ylab,ylim=ylim)
+        end
 
         for mag in use_mags
             val = getfield(xyz,mag)[ind]
@@ -195,7 +207,11 @@ function plot_mag(xyz::XYZ;
 
         ylab = ""
 
-        p1 = plot(lw=2,dpi=dpi,xlab=xlab,ylab=ylab,ylim=ylim)
+        if ylim == []
+            p1 = plot(lw=2,dpi=dpi,xlab=xlab,ylab=ylab)
+        else
+            p1 = plot(lw=2,dpi=dpi,xlab=xlab,ylab=ylab,ylim=ylim)
+        end
 
         for mag in use_mags
             val = getfield(xyz,mag)[ind]
@@ -222,7 +238,7 @@ end # function plot_mag
                pass2                    = 0.9,
                fs                       = 10.0,
                use_mags::Vector{Symbol} = [:all_mags],
-               use_vec::Symbol          = :flux_b,
+               use_vec::Symbol          = :flux_a,
                plot_diff::Bool          = false,
                plot_mag_1_uc::Bool      = true,
                plot_mag_1_c::Bool       = true,
@@ -271,7 +287,7 @@ function plot_mag_c(xyz::XYZ,xyz_comp::XYZ;
                     pass2                    = 0.9,
                     fs                       = 10.0,
                     use_mags::Vector{Symbol} = [:all_mags],
-                    use_vec::Symbol          = :flux_b,
+                    use_vec::Symbol          = :flux_a,
                     plot_diff::Bool          = false,
                     plot_mag_1_uc::Bool      = true,
                     plot_mag_1_c::Bool       = true,
@@ -282,7 +298,7 @@ function plot_mag_c(xyz::XYZ,xyz_comp::XYZ;
                     file_name::String        = "scalar_mags_comp")
 
     field_check(xyz,use_vec,MagV)
-    A = create_TL_A(getfield(xyz,use_vec))[ind,:]
+    A = create_TL_A(getfield(xyz,use_vec),terms=terms)[ind,:]
 
     tt       = (xyz.traj.tt[ind] .- xyz.traj.tt[ind][1]) / 60
     mag_1_c  = detrend_data ? detrend(xyz.mag_1_c[ind ]) : xyz.mag_1_c[ind]
@@ -291,20 +307,21 @@ function plot_mag_c(xyz::XYZ,xyz_comp::XYZ;
     xlab = "time [min]"
     ylab = "magnetic field [nT]"
 
-    p1 = plot(lw=2,dpi=dpi,xlab=xlab,ylab=ylab,ylim=ylim)
+    if ylim == []
+        p1 = plot(lw=2,dpi=dpi,xlab=xlab,ylab=ylab)
+    else
+        p1 = plot(lw=2,dpi=dpi,xlab=xlab,ylab=ylab,ylim=ylim)
+    end
 
     if plot_mag_1_uc .& ~plot_diff
         plot!(p1,tt,mag_1_uc,lab="mag_1_uc",color=:cyan)
     end
 
-    fields   = fieldnames(typeof(xyz))
-    list_c   = [Symbol("mag_",i,"_c" ) for i = 1:num_mag_max]
-    list_uc  = [Symbol("mag_",i,"_uc") for i = 1:num_mag_max]
-    mags_c   = list_c[  list_c  .∈ (fields,)]
-    mags_uc  = list_uc[ list_uc .∈ (fields,)]
-    mags_all = [mags_c; mags_uc]
+    fields  = fieldnames(typeof(xyz))
+    list_uc = [Symbol("mag_",i,"_uc") for i = 1:num_mag_max]
+    mags_uc = list_uc[ list_uc .∈ (fields,)]
 
-    :all_mags in use_mags && (use_mags = mags_all)
+    :all_mags in use_mags && (use_mags = mags_uc)
 
     for use_mag in use_mags
 

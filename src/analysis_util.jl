@@ -88,7 +88,7 @@ end # function linreg
 """
     linreg(y; λ=0)
 
-Linear regression to determine best fit line for x = 1:length(y).
+Linear regression to determine best fit line for x = eachindex(y).
 
 **Arguments:**
 - `y`: observed data
@@ -98,13 +98,13 @@ Linear regression to determine best fit line for x = 1:length(y).
 - `coef`: (2) linear regression coefficients
 """
 function linreg(y; λ=0)
-    x = [one.(y) 1:length(y)]
+    x = [one.(y) eachindex(y)]
     coef = linreg(y,x;λ=λ)
     return (coef)
 end # function linreg
 
 """
-    detrend(y, x=[1:length(y);]; mean_only::Bool=false)
+    detrend(y, x=[eachindex(y);]; mean_only::Bool=false)
 
 Detrend signal (remove mean and optionally slope).
 
@@ -116,7 +116,7 @@ Detrend signal (remove mean and optionally slope).
 **Returns:**
 - `y_new`: detrended observed data
 """
-function detrend(y, x=[1:length(y);]; mean_only::Bool=false)
+function detrend(y, x=[eachindex(y);]; mean_only::Bool=false)
     if mean_only
         y_new = y .- mean(y)
     else
@@ -169,7 +169,7 @@ Bandpass (or low-pass or high-pass) filter columns of matrix.
 """
 function bpf_data(x::Matrix; bpf=get_bpf())
     x_f = deepcopy(x)
-    for i = 1:size(x,2)
+    for i in axes(x,2)
         (std(x[:,i]) <= eps(eltype(x))) || (x_f[:,i] = filtfilt(bpf,x[:,i]))
     end
     return (x_f)
@@ -311,56 +311,47 @@ function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
         end
     end
 
-    push!(d,:igrf_diurnal=>(xyz.igrf+xyz.diurnal)[ind])
+    (roll,pitch,yaw) = dcm2euler(xyz.ins.Cnb[:,:,ind],:body2nav) # correct definition
+    push!(d,:dcm=>[reshape(euler2dcm(roll,pitch,yaw,:nav2body),(9,N))';]) # ordered this way initally, leaving for now consistency
+    push!(d,:dcm_1=>euler2dcm(roll,pitch,yaw,:nav2body)[1,1,:])           # note :nav2body contains same terms as :body2nav, just transposed
+    push!(d,:dcm_2=>euler2dcm(roll,pitch,yaw,:nav2body)[2,1,:])
+    push!(d,:dcm_3=>euler2dcm(roll,pitch,yaw,:nav2body)[3,1,:])
+    push!(d,:dcm_4=>euler2dcm(roll,pitch,yaw,:nav2body)[1,2,:])
+    push!(d,:dcm_5=>euler2dcm(roll,pitch,yaw,:nav2body)[2,2,:])
+    push!(d,:dcm_6=>euler2dcm(roll,pitch,yaw,:nav2body)[3,2,:])
+    push!(d,:dcm_7=>euler2dcm(roll,pitch,yaw,:nav2body)[1,3,:])
+    push!(d,:dcm_8=>euler2dcm(roll,pitch,yaw,:nav2body)[2,3,:])
+    push!(d,:dcm_9=>euler2dcm(roll,pitch,yaw,:nav2body)[3,3,:])
+    push!(d,:crcy=>cos.(roll ).*cos.(yaw))
+    push!(d,:cpcy=>cos.(pitch).*cos.(yaw))
+    push!(d,:crsy=>cos.(roll ).*sin.(yaw))
+    push!(d,:cpsy=>cos.(pitch).*sin.(yaw))
+    push!(d,:srcy=>sin.(roll ).*cos.(yaw))
+    push!(d,:spcy=>sin.(pitch).*cos.(yaw))
+    push!(d,:srsy=>sin.(roll ).*sin.(yaw))
+    push!(d,:spsy=>sin.(pitch).*sin.(yaw))
+    push!(d,:crcpcy=>cos.(roll ).*cos.(pitch).*cos.(yaw))
+    push!(d,:srcpcy=>sin.(roll ).*cos.(pitch).*cos.(yaw))
+    push!(d,:crspcy=>cos.(roll ).*sin.(pitch).*cos.(yaw))
+    push!(d,:srspcy=>sin.(roll ).*sin.(pitch).*cos.(yaw))
+    push!(d,:crcpsy=>cos.(roll ).*cos.(pitch).*sin.(yaw))
+    push!(d,:srcpsy=>sin.(roll ).*cos.(pitch).*sin.(yaw))
+    push!(d,:crspsy=>cos.(roll ).*sin.(pitch).*sin.(yaw))
+    push!(d,:srspsy=>sin.(roll ).*sin.(pitch).*sin.(yaw))
+    push!(d,:crcp=>cos.(roll ).*cos.(pitch))
+    push!(d,:srcp=>sin.(roll ).*cos.(pitch))
+    push!(d,:crsp=>cos.(roll ).*sin.(pitch))
+    push!(d,:srsp=>sin.(roll ).*sin.(pitch))
 
-    ins_rpy = [:ins_roll,:ins_pitch,:ins_yaw]
-
-    if all(ins_rpy .∈ (fields,))
-        roll  = xyz.ins_roll[ind]
-        pitch = xyz.ins_pitch[ind]
-        yaw   = xyz.ins_yaw[ind]
-        push!(d,:dcm=>[reshape(euler2dcm(roll,pitch,yaw,:nav2body),(9,N))';])
-        # note :nav2body contains same terms as :body2nav, just transposed
-        push!(d,:dcm_1=>euler2dcm(roll,pitch,yaw,:nav2body)[1,1,:])
-        push!(d,:dcm_2=>euler2dcm(roll,pitch,yaw,:nav2body)[2,1,:])
-        push!(d,:dcm_3=>euler2dcm(roll,pitch,yaw,:nav2body)[3,1,:])
-        push!(d,:dcm_4=>euler2dcm(roll,pitch,yaw,:nav2body)[1,2,:])
-        push!(d,:dcm_5=>euler2dcm(roll,pitch,yaw,:nav2body)[2,2,:])
-        push!(d,:dcm_6=>euler2dcm(roll,pitch,yaw,:nav2body)[3,2,:])
-        push!(d,:dcm_7=>euler2dcm(roll,pitch,yaw,:nav2body)[1,3,:])
-        push!(d,:dcm_8=>euler2dcm(roll,pitch,yaw,:nav2body)[2,3,:])
-        push!(d,:dcm_9=>euler2dcm(roll,pitch,yaw,:nav2body)[3,3,:])
-        push!(d,:crcy=>cos.(roll ).*cos.(yaw))
-        push!(d,:cpcy=>cos.(pitch).*cos.(yaw))
-        push!(d,:crsy=>cos.(roll ).*sin.(yaw))
-        push!(d,:cpsy=>cos.(pitch).*sin.(yaw))
-        push!(d,:srcy=>sin.(roll ).*cos.(yaw))
-        push!(d,:spcy=>sin.(pitch).*cos.(yaw))
-        push!(d,:srsy=>sin.(roll ).*sin.(yaw))
-        push!(d,:spsy=>sin.(pitch).*sin.(yaw))
-        push!(d,:crcpcy=>cos.(roll ).*cos.(pitch).*cos.(yaw))
-        push!(d,:srcpcy=>sin.(roll ).*cos.(pitch).*cos.(yaw))
-        push!(d,:crspcy=>cos.(roll ).*sin.(pitch).*cos.(yaw))
-        push!(d,:srspcy=>sin.(roll ).*sin.(pitch).*cos.(yaw))
-        push!(d,:crcpsy=>cos.(roll ).*cos.(pitch).*sin.(yaw))
-        push!(d,:srcpsy=>sin.(roll ).*cos.(pitch).*sin.(yaw))
-        push!(d,:crspsy=>cos.(roll ).*sin.(pitch).*sin.(yaw))
-        push!(d,:srspsy=>sin.(roll ).*sin.(pitch).*sin.(yaw))
-        push!(d,:crcp=>cos.(roll ).*cos.(pitch))
-        push!(d,:srcp=>sin.(roll ).*cos.(pitch))
-        push!(d,:crsp=>cos.(roll ).*sin.(pitch))
-        push!(d,:srsp=>sin.(roll ).*sin.(pitch))
-    end
-
-    for rpy in ins_rpy
-        if rpy in fields
-            x = getfield(xyz,rpy)[ind]
-            push!(d,Symbol(rpy,"_fdm")=>fdm(x))
-            push!(d,Symbol(rpy,"_sin")=>sin.(x))
-            push!(d,Symbol(rpy,"_cos")=>cos.(x))
-            push!(d,Symbol(rpy,"_sin_fdm")=>fdm(sin.(x)))
-            push!(d,Symbol(rpy,"_cos_fdm")=>fdm(cos.(x)))
-        end
+    for rpy in [:roll,:pitch,:yaw]
+        rpy == :roll  && (x = roll)
+        rpy == :pitch && (x = pitch)
+        rpy == :yaw   && (x = yaw)
+        push!(d,Symbol(rpy,"_fdm")=>fdm(x))
+        push!(d,Symbol(rpy,"_sin")=>sin.(x))
+        push!(d,Symbol(rpy,"_cos")=>cos.(x))
+        push!(d,Symbol(rpy,"_sin_fdm")=>fdm(sin.(x)))
+        push!(d,Symbol(rpy,"_cos_fdm")=>fdm(cos.(x)))
     end
 
     # Try low-passing the current signals
@@ -370,7 +361,7 @@ function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
     hasproperty(xyz, :cur_ac_hi)  ? push!(d,:lpf_cur_ac_hi=> bpf_data(xyz.cur_ac_hi[ind]; bpf=lpf))   : nothing;
     hasproperty(xyz, :cur_ac_lo)  ? push!(d,:lpf_cur_ac_lo=> bpf_data(xyz.cur_ac_lo[ind]; bpf=lpf))   : nothing;
     hasproperty(xyz, :cur_com_1)  ? push!(d,:lpf_cur_com_1=> bpf_data(xyz.cur_com_1[ind]; bpf=lpf))   : nothing;
-
+    
     push!(d,:ins_lat=>xyz.ins.lat[ind])
     push!(d,:ins_lon=>xyz.ins.lon[ind])
     push!(d,:ins_alt=>xyz.ins.alt[ind])
@@ -426,7 +417,7 @@ Get `x` matrix from multiple `XYZ` flight data structs.
 - `no_norm`:  indices of features to not be normalized
 - `features`: full list of features (including components of TL `A`, etc.)
 """
-function get_x(xyz::Vector{XYZ}, ind,
+function get_x(xyz::Vector, ind::Vector,
                features_setup::Vector{Symbol}   = [:mag_1_uc,:TL_A_flux_a];
                features_no_norm::Vector{Symbol} = Symbol[],
                terms             = [:permanent,:induced,:eddy],
@@ -438,7 +429,7 @@ function get_x(xyz::Vector{XYZ}, ind,
     no_norm  = nothing
     features = nothing
 
-    for i = 1:length(xyz)
+    for i in eachindex(xyz)
         if i == 1
             (nn_x,no_norm,features) = get_x(xyz[i],ind[i],features_setup;
                                         features_no_norm = features_no_norm,
@@ -810,7 +801,7 @@ function get_Axy(lines, df_line::DataFrame,
     for i = 1:n_line
         if !(lines[i] in df_line.line)
             @info("line $(lines[i]) is not in df_line, skipping")
-            l_segs = l_segs[1:length(l_segs)-1]
+            l_segs = l_segs[1:end-1]
         else
             flt = df_line.flight[df_line.line .== lines[i]][1]
             if flt != flt_old
@@ -1028,7 +1019,7 @@ Nonparametric Regression and Classification, 2017. (pg. 4)
 """
 function sparse_group_lasso(weights::Params, α=1)
     return ([(1-α)*norm(weights[1][:,i],1) + 
-                α *norm(weights[1][:,i],2) for i = 1:size(weights[1],2)])
+                α *norm(weights[1][:,i],2) for i in axes(weights[1],2)])
 end # function sparse_group_lasso
 
 """
@@ -1047,7 +1038,7 @@ lines within a larger dataset.
 """
 function err_segs(y_hat, y, l_segs; silent::Bool=true)
     err = y_hat - y
-    for i = 1:length(l_segs)
+    for i in eachindex(l_segs)
         (i1,i2) = cumsum(l_segs)[i] .- (l_segs[i]-1,0)
         err[i1:i2] .-= mean(err[i1:i2])
         err_std = round(std(err[i1:i2]),digits=2)
@@ -1082,7 +1073,7 @@ function norm_sets(train;
                    no_norm           = falses(size(train,2)))
 
     if !(typeof(no_norm) <: AbstractVector{Bool})
-        no_norm = 1:size(train,2) .∈ (no_norm,)
+        no_norm = axes(train,2) .∈ (no_norm,)
     end
 
     if norm_type == :standardize
@@ -1101,7 +1092,7 @@ function norm_sets(train;
         error("$norm_type normalization type not defined")
     end
 
-    for i = 1:size(train,2)
+    for i in axes(train,2)
         no_norm[i] && (train_bias[i]  = 0.0)
         no_norm[i] && (train_scale[i] = 1.0)
     end
@@ -1139,7 +1130,7 @@ function norm_sets(train, test;
                    no_norm           = falses(size(train,2)))
 
     if !(typeof(no_norm) <: AbstractVector{Bool})
-        no_norm = 1:size(train,2) .∈ (no_norm,)
+        no_norm = axes(train,2) .∈ (no_norm,)
     end
 
     (train_bias,train_scale,train) = norm_sets(train;
@@ -1182,7 +1173,7 @@ function norm_sets(train, val, test;
                    no_norm           = falses(size(train,2)))
 
     if !(typeof(no_norm) <: AbstractVector{Bool})
-        no_norm = 1:size(train,2) .∈ (no_norm,)
+        no_norm = axes(train,2) .∈ (no_norm,)
     end
 
     (train_bias,train_scale,train) = norm_sets(train;
@@ -1289,7 +1280,7 @@ function get_ind(tt::Vector, line::Vector;
     if typeof(ind) <: AbstractVector{Bool}
         indices = deepcopy(ind)
     else
-        indices = 1:length(tt) .∈ (ind,)
+        indices = eachindex(tt) .∈ (ind,)
     end
 
     sum(splits) ≈ 1.0 || error("sum of splits = $(sum(splits)) ≠ 1")
@@ -1437,7 +1428,7 @@ function get_ind(xyz::XYZ, lines, df_line::DataFrame;
                  l_seq::Int = -1)
 
     ind = falses(xyz.traj.N)
-    for i = 1:length(lines)
+    for i in eachindex(lines)
         ind .= ind .| get_ind(xyz,lines[i],df_line;l_seq=l_seq)
     end
 
@@ -1502,7 +1493,7 @@ function predict_rnn_full(m, x)
     Flux.reset!(m)
 
     # apply model to sequence and convert output to vector
-    y_hat = [yi[1] for yi in m.([convert.(Float32,x[i,:]) for i = 1:size(x,1)])]
+    y_hat = [yi[1] for yi in m.([convert.(Float32,x[i,:]) for i in axes(x,1)])]
 
     return (y_hat)
 end # function predict_rnn_full
@@ -1644,7 +1635,7 @@ end # function eval_shapley
 
 """
     plot_shapley(df_shap, baseline_shap,
-                 range_shap::UnitRange=1:size(df_shap,1);
+                 range_shap::AbstractUnitRange=axes(df_shap,1);
                  title::String = "features \$range_shap",
                  dpi::Int      = 200)
 
@@ -1661,7 +1652,7 @@ Plot horizontal bar graph of feature importance (Shapley effects).
 - `p1`: plot of Shapley effects
 """
 function plot_shapley(df_shap, baseline_shap,
-                      range_shap::UnitRange=1:size(df_shap,1);
+                      range_shap::AbstractUnitRange=axes(df_shap,1);
                       title::String = "features $range_shap",
                       dpi::Int      = 200)
 
@@ -1677,7 +1668,7 @@ function plot_shapley(df_shap, baseline_shap,
     # title = "Feature Importance - Mean Absolute Shapley Value"
 
     # plot horizontal bar graph
-    p1 = bar(x,yticks=(1:length(range_shap),y),lab=false,
+    p1 = bar(x,yticks=(eachindex(range_shap),y),lab=false,
              dpi=dpi,xlab=xlab,ylab=ylab,title=title,
              orientation=:h,yflip=true,margin=4*mm)
 

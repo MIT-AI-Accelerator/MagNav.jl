@@ -48,9 +48,9 @@ function get_XYZ20(xyz_h5::String; tt_sort::Bool=true, silent::Bool=false)
     push!(d,:fd =>  fdm(d[:vd])    / dt .- g_earth)
 
     # Cnb direction cosine matrix (body to navigation) from yaw, pitch, roll
-    push!(d,:Cnb     => zeros(3,3,N))   # unknown
+    push!(d,:Cnb     => zeros(3,3,N)) # unknown
     push!(d,:ins_Cnb => euler2dcm(d[:ins_roll],d[:ins_pitch],d[:ins_yaw],:body2nav))
-    push!(d,:ins_P   => zeros(18,18,N)) # unknown
+    push!(d,:ins_P   => zeros(1,1,N)) # unknown
 
     # INS velocities in NED direction
     push!(d,:ins_ve => -d[:ins_vw])
@@ -211,9 +211,9 @@ function get_XYZ21(xyz_h5::String; tt_sort::Bool=true, silent::Bool=false)
     push!(d,:fd =>  fdm(d[:vd])    / dt .- g_earth)
 
     # Cnb direction cosine matrix (body to navigation) from yaw, pitch, roll
-    push!(d,:Cnb     => zeros(3,3,N))   # unknown
+    push!(d,:Cnb     => zeros(3,3,N)) # unknown
     push!(d,:ins_Cnb => euler2dcm(d[:ins_roll],d[:ins_pitch],d[:ins_yaw],:body2nav))
-    push!(d,:ins_P   => zeros(18,18,N)) # unknown
+    push!(d,:ins_P   => zeros(1,1,N)) # unknown
 
     # INS velocities in NED direction
     push!(d,:ins_ve => -d[:ins_vw])

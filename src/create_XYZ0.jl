@@ -242,7 +242,7 @@ function create_traj(mapS::MapS=get_map(namad);
     N   = 2
     lat = zeros(eltype(mapS.xx),N)
     lon = zeros(eltype(mapS.xx),N)
-    while !map_check(mapS,lat,lon) & (i <= attempts)
+    while (!map_check(mapS,lat,lon) & (i <= attempts)) | (i == 0)
         i += 1
         
         if ll1 == () # put initial point in middle 50% of map
@@ -305,7 +305,11 @@ function create_traj(mapS::MapS=get_map(namad);
             lat = (lat .- lat[1])*frac1 .+ lat[1] # scale to target
             lon = (lon .- lon[1])*frac2 .+ lon[1] # scale to target
         end
-        
+
+        dn = dlat2dn.(fdm(lat),lat) # northing distance per time step
+        de = dlon2de.(fdm(lon),lat) # easting  distance per time step
+        d_now = sum(sqrt.(dn[2:N].^2+de[2:N].^2)) # current distance
+
         if ll2 != () # correct time & N for true distance & given velocity
             range_old = LinRange(0,1,N) # starting range {0:1} with N_old
             t         = d_now/v # true time from true distance & given velocity
@@ -320,6 +324,13 @@ function create_traj(mapS::MapS=get_map(namad);
         # plot!(p1,lon,lat)        
 
     end
+
+    # println(mapS.xx[1]," ",mapS.xx[end]," ",mapS.yy[1]," ",mapS.yy[end])
+    # println(lon[1]," ",lon[end]," ",lat[1]," ",lat[end])
+    # println(minimum(lon)," ",maximum(lon)," ",minimum(lat)," ",maximum(lat))
+    # println(map_check(mapS,lat,lon))
+    # println(i)
+    # println(attempts)
 
     i > attempts && error("maximum attempts reached, decrease t or increase v")
 
@@ -407,7 +418,7 @@ function create_ins(traj::Traj;
                     init_pos_sigma = 3.0,
                     init_alt_sigma = 0.001,
                     init_vel_sigma = 0.01,
-                    init_att_sigma = deg2rad(0.01),
+                    init_att_sigma = deg2rad(0.00001),
                     VRW_sigma      = 0.000238,
                     ARW_sigma      = 0.000000581,
                     baro_sigma     = 1.0,
@@ -472,11 +483,11 @@ function create_ins(traj::Traj;
     fe  = fdm(ve) / dt
     fd  = fdm(vd) / dt .- g_earth
     Cnb = correct_Cnb(traj.Cnb, -err[7:9,:])
-    if any(Cnb .> 1) | any(Cnb .< -1)
-        error("create_ins() failed, likely due to bad trajectory data, re-run")
-    else
-        (roll,pitch,yaw) = dcm2euler(Cnb,:body2nav)
-    end
+    # if any(Cnb .> 1) | any(Cnb .< -1)
+    #     error("create_ins() failed, likely due to bad trajectory data, re-run")
+    # else
+    #     (roll,pitch,yaw) = dcm2euler(Cnb,:body2nav)
+    # end
 
     if save_h5 # save HDF5 file `ins_h5`
         h5open(ins_h5,"cw") do file # read-write, create file if not existing, preserve existing contents
@@ -807,9 +818,14 @@ heading with FOGM noise.
 function create_dcm(vn, ve, dt=0.1, order::Symbol=:body2nav)
 
     N     = length(vn)
-    roll  = fogm(deg2rad(2  ),2,dt,N)                 # roll has more variance
-    pitch = fogm(deg2rad(0.5),2,dt,N) .+ deg2rad(2)   # pitch typically ~2 deg
-    yaw   = fogm(deg2rad(1  ),2,dt,N) .+ atan.(ve,vn) # yaw definition
+    roll  = fogm(deg2rad(2  ),2,dt,N)
+    pitch = fogm(deg2rad(0.5),2,dt,N)
+    yaw   = fogm(deg2rad(1  ),2,dt,N)
+
+    bpf   = get_bpf(;pass1=1e-6,pass2=1)
+    roll  = bpf_data(roll ;bpf=bpf)
+    pitch = bpf_data(pitch;bpf=bpf) .+ deg2rad(2)   # pitch typically ~2 deg
+    yaw   = bpf_data(yaw  ;bpf=bpf) .+ atan.(ve,vn) # yaw definition
     dcm   = euler2dcm(roll,pitch,yaw,order)
 
     return (dcm)

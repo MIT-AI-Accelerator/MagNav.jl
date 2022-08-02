@@ -717,7 +717,7 @@ function linear_fit(x, y;
 
     # trim each line
     ind = []
-    for i = 1:length(l_segs)
+    for i in eachindex(l_segs)
         (i1,i2) = cumsum(l_segs)[i] .- (l_segs[i]-1-trim,trim)
         ind = [ind;i1:i2]
     end
@@ -872,10 +872,10 @@ function comp_train(xyz::XYZ, ind, mapS::MapS=MapS(zeros(1,1),[0.0],[0.0],0.0);
 
     if drop_fi
 
-        for i = 1:size(x,2)
+        for i in axes(x,2)
 
-            x_fi = x[:, 1:size(x,2) .!= i]
-            A_fi = A[:, 1:size(A,2) .!= i]
+            x_fi = x[:, axes(x,2) .!= i]
+            A_fi = A[:, axes(A,2) .!= i]
 
             # train model
             if model_type in [:m1]
@@ -1100,10 +1100,10 @@ function comp_train(lines, df_line::DataFrame, df_flight::DataFrame,
 
     if drop_fi
 
-        for i = 1:size(x,2)
+        for i in axes(x,2)
 
-            x_fi = x[:, 1:size(x,2) .!= i]
-            A_fi = A[:, 1:size(A,2) .!= i]
+            x_fi = x[:, axes(x,2) .!= i]
+            A_fi = A[:, axes(A,2) .!= i]
 
             # train model
             if model_type in [:m1]
@@ -1361,14 +1361,14 @@ function comp_test(xyz::XYZ, ind, mapS::MapS=MapS(zeros(1,1),[0.0],[0.0],0.0);
 
     if drop_fi | perm_fi
 
-        for i = 1:size(x,2)
+        for i in axes(x,2)
 
             if perm_fi
                 x_fi = deepcopy(x)
                 x_fi[:,i] .= x[randperm(size(x,1)),i]
                 fi_csv = perm_fi_csv
             elseif drop_fi
-                x_fi = x[:, 1:size(x,2) .!= i]
+                x_fi = x[:, axes(x,2) .!= i]
                 @load drop_fi_bson*"_$i.bson" weights data_norms
                 fi_csv = drop_fi_csv
             end
@@ -1524,14 +1524,14 @@ function comp_test(lines, df_line::DataFrame, df_flight::DataFrame,
 
     if drop_fi | perm_fi
 
-        for i = 1:size(x,2)
+        for i in axes(x,2)
 
             if perm_fi
                 x_fi = deepcopy(x)
                 x_fi[:,i] .= x[randperm(size(x,1)),i]
                 fi_csv = perm_fi_csv
             elseif drop_fi
-                x_fi = x[:, 1:size(x,2) .!= i]
+                x_fi = x[:, axes(x,2) .!= i]
                 @load drop_fi_bson*"_$i.bson" weights data_norms
                 fi_csv = drop_fi_csv
             end

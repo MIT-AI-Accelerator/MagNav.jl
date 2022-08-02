@@ -198,7 +198,7 @@ function run_filt(traj::Traj, ins::INS, meas, itp_mapS,
                   flux::MagV = MagV([0.0],[0.0],[0.0],[0.0]),
                   x0_TL      = ones(eltype(P0),19))
 
-    for i = 1:length(filt_type)
+    for i in eachindex(filt_type)
         @info ("running $(filt_type[i]) filter")
         run_filt(traj,ins,meas,itp_mapS,filt_type[i];
                  P0          = P0,
