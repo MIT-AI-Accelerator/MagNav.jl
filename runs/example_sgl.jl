@@ -48,6 +48,7 @@ b3 = plot_mag(xyz;ind,show_plot,save_plot,
 ## scalar magnetometer compensations (using Tolles-Lawson)
 b4 = plot_mag_c(xyz,xyz;ind=ind,ind_comp=TL_ind,show_plot,save_plot,
                 use_mags=[:mag_1_uc],
+                use_vec=:flux_b,
                 detrend_data=true,
                 plot_diff=true,
                 file_name="scalar_mags_comp");
