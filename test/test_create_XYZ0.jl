@@ -13,16 +13,16 @@ end
 
 test_file = "test_data/test_data_traj.mat"
 traj_data = matopen(test_file,"r") do file
-    read(file,"traj_data")
+    read(file,"traj")
 end
 
-ins_lat = deg2rad.(vec(ins_data["ins_lat"]))
-ins_lon = deg2rad.(vec(ins_data["ins_lon"]))
-ins_alt = vec(ins_data["ins_alt"])
-ins_vn  = vec(ins_data["ins_vn"])
-ins_ve  = vec(ins_data["ins_ve"])
-ins_vd  = vec(ins_data["ins_vd"])
-ins_Cnb = ins_data["ins_Cnb"]
+ins_lat = deg2rad.(vec(ins_data["lat"]))
+ins_lon = deg2rad.(vec(ins_data["lon"]))
+ins_alt = vec(ins_data["alt"])
+ins_vn  = vec(ins_data["vn"])
+ins_ve  = vec(ins_data["ve"])
+ins_vd  = vec(ins_data["vd"])
+ins_Cnb = ins_data["Cnb"]
 
 dt             = params["dt"]
 num_mc         = round(Int,params["numSims"])
@@ -93,7 +93,17 @@ ins  = create_ins(traj;
                            cor_ind_mag  = cor_ind_mag,
                            cor_eddy_mag = cor_eddy_mag)
 
-@testset "Gen INS Data Tests" begin
+mapS = get_map(MagNav.namad)
+mapS = map_trim(mapS,traj)
+
+@testset "create_XYZ0 tests" begin
+    @test typeof(create_XYZ0(mapS;t=10)) <: MagNav.XYZ0
+    @test typeof(create_XYZ0(mapS;t=10,
+                 ll1 = rad2deg.((traj.lat[1],traj.lon[1])),
+                 ll2 = rad2deg.((traj.lat[end],traj.lon[end])))) <: MagNav.XYZ0
+end
+
+@testset "create_ins tests" begin
     @test isapprox(ins.lat, ins_lat,atol=1e-3)
     @test isapprox(ins.lon, ins_lon,atol=1e-3)
     @test isapprox(ins.alt, ins_alt,atol=1000)
@@ -103,7 +113,7 @@ ins  = create_ins(traj;
     @test isapprox(ins.Cnb, ins_Cnb,atol=0.1)
 end
 
-@testset "Corrupt Measurement Tests" begin
+@testset "corrupt_mag tests" begin
     @test minimum(mag_1_uc .!= mag_1_c )
     @test minimum(abs.(mag_1_uc-mag_1_c) .< mean(abs.(mag_1_c)))
 end
