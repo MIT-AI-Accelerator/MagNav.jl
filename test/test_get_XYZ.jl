@@ -13,11 +13,11 @@ df_flight = DataFrame(flight   = flights,
 @testset "get_XYZ20 tests" begin
     for xyz_h5 in xyz_files
         xyz = get_XYZ20(xyz_h5;tt_sort=true,silent=true)
-        @test xyz.traj.N == length(xyz.traj.lat) == length(xyz.traj.lon)
+        @test xyz.traj.N ≈ length(xyz.traj.lat) ≈ length(xyz.traj.lon)
     end
     for flight in flights
         xyz = get_XYZ(flight,df_flight;tt_sort=true,silent=true)
-        @test xyz.traj.N == length(xyz.traj.lat) == length(xyz.traj.lon)
+        @test xyz.traj.N ≈ length(xyz.traj.lat) ≈ length(xyz.traj.lon)
     end
 end
 

@@ -282,7 +282,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
 - `acc_tau`:    (optional) accelerometer time constant [s]
 - `gyro_tau`:   (optional) gyroscope time constant [s]
 - `fogm_tau`:   (optional) FOGM catch-all time constant [s]
-- `epoch_adam`: (optional) number of epochs for ADAM optimizer
+- `epoch_adam`: (optional) number of epochs for Adam optimizer
 - `hidden`:     (optional) hidden layers & nodes, e.g. `[8,8]` for 2 hidden layers, 8 nodes each
 - `activation`: (optional) activation function
     - `relu`  = rectified linear unit
@@ -360,7 +360,7 @@ function nekf_train(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt,
     end # function loss
 
     # train RNN
-    opt = Flux.ADAM()
+    opt = Flux.Adam()
     for i = 1:epoch_adam
         Flux.train!(loss,Flux.params(m),zip(x_seqs,y_seqs),opt)
         weights = Flux.params(m)
@@ -408,7 +408,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
 - `acc_tau`:    (optional) accelerometer time constant [s]
 - `gyro_tau`:   (optional) gyroscope time constant [s]
 - `fogm_tau`:   (optional) FOGM catch-all time constant [s]
-- `epoch_adam`: (optional) number of epochs for ADAM optimizer
+- `epoch_adam`: (optional) number of epochs for Adam optimizer
 - `hidden`:     (optional) hidden layers & nodes, e.g. `[8,8]` for 2 hidden layers, 8 nodes each
 - `activation`: (optional) activation function
     - `relu`  = rectified linear unit
@@ -487,7 +487,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
 - `acc_tau`:    (optional) accelerometer time constant [s]
 - `gyro_tau`:   (optional) gyroscope time constant [s]
 - `fogm_tau`:   (optional) FOGM catch-all time constant [s]
-- `epoch_adam`: (optional) number of epochs for ADAM optimizer
+- `epoch_adam`: (optional) number of epochs for Adam optimizer
 - `hidden`:     (optional) hidden layers & nodes, e.g. `[8,8]` for 2 hidden layers, 8 nodes each
 - `activation`: (optional) activation function
     - `relu`  = rectified linear unit

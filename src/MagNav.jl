@@ -837,13 +837,13 @@ module MagNav
     |**Parameter**|**Description**
     |:--|:--
     |`TL_coef`     | Tolles-Lawson coefficients, only used for `model_type = :m2b, :m2d` (and `:m2c` initial `TL_coef`)
-    |`η_adam`      | learning rate for ADAM optimizer
-    |`epoch_adam`  | number of epochs for ADAM optimizer
+    |`η_adam`      | learning rate for Adam optimizer
+    |`epoch_adam`  | number of epochs for Adam optimizer
     |`epoch_lbfgs` | number of epochs for LBFGS optimizer
     |`hidden`      | hidden layers & nodes, e.g. `[8,8]` for 2 hidden layers, 8 nodes each
     |`activation`  | activation function (`see below`)
     |`batchsize`   | mini-batch size
-    |`frac_train`  | fraction of training data used for training (remainder for validation), only used for ADAM optimizer
+    |`frac_train`  | fraction of training data used for training (remainder for validation), only used for Adam optimizer
     |`α_sgl`       | Lasso (`α_sgl=0`) vs group Lasso (`α_sgl=1`) balancing parameter {0:1}
     |`λ_sgl`       | sparse group Lasso parameter, typically ~1e-5 (if nonzero)
     |`k_pca`       | number of components for pre-processing with PCA + whitening, `-1` to ignore

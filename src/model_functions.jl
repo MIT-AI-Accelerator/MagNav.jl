@@ -532,7 +532,7 @@ function get_H(itp_mapS, x::Vector, lat, lon, alt;
 end # function get_H
 
 """
-    get_h(itp_mapS, x::Vector, lat, lon, alt;
+    get_h(itp_mapS, x::Array, lat, lon, alt;
           date       = 2020+185/366,
           core::Bool = false)
 
@@ -551,15 +551,15 @@ FOGM catch-all, and optionally IGRF for core magnetic field.
 **Returns:**
 - `h`: expected magnetic measurement [nT]
 """
-function get_h(itp_mapS, x::Vector, lat, lon, alt;
+function get_h(itp_mapS, x::Array, lat, lon, alt;
                date       = 2020+185/366,
                core::Bool = false)
     if core
-        return (itp_mapS.(lon.+x[2,:],lat.+x[1,:]) + x[end,:] + 
+        return (itp_mapS.(lon .+ x[2,:], lat .+ x[1,:]) .+ x[end,:] .+ 
                 norm.(igrf.(date,alt.+x[3,:],lat.+x[1,:],lon.+x[2,:],
                             Val(:geodetic))))
     else
-        return (itp_mapS.(lon.+x[2,:],lat.+x[1,:]) + x[end,:])
+        return (itp_mapS.(lon .+ x[2,:], lat .+ x[1,:]) .+ x[end,:])
     end
 end # function get_h
 

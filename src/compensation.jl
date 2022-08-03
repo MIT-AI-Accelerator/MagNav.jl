@@ -109,7 +109,7 @@ function nn_comp_1_train(x, y, no_norm;
     end
 
     ## setup optimizer and loss function
-    opt = ADAM(η_adam)
+    opt = Adam(η_adam)
     loss_m1(x_l,y_l)   = Flux.mse(m(x_l),y_l)
     loss_m1_λ(x_l,y_l) = Flux.mse(m(x_l),y_l) + λ*sum(sparse_group_lasso(m,α))
     loss =  λ > 0 ? loss_m1_λ : loss_m1
@@ -121,7 +121,7 @@ function nn_comp_1_train(x, y, no_norm;
         l/length(data_l)
     end # function loss_all
 
-    # train NN with ADAM optimizer
+    # train NN with Adam optimizer
     weights   = Flux.params(m)
     best_loss = loss_all(data_val)
     println("Epoch 0: loss = $best_loss")
@@ -350,7 +350,7 @@ function nn_comp_2_train(A, x, y, no_norm;
     TL_coef = TL_coef/y_scale
 
     ## setup optimizer and loss function
-    opt = ADAM(η_adam)
+    opt = Adam(η_adam)
     loss_m2a(  A_l,x_l,y_l) = Flux.mse(vec(sum(A_l.*m(x_l),dims=1)) ,vec(y_l))
     loss_m2b(  A_l,x_l,y_l) = Flux.mse(vec(m(x_l))+vec(A_l'*TL_coef),vec(y_l))
     loss_m2c(  A_l,x_l,y_l) = Flux.mse(vec(m(x_l))+vec(A_l'*TL_coef),vec(y_l))
@@ -371,7 +371,7 @@ function nn_comp_2_train(A, x, y, no_norm;
         l/length(data_l)
     end # function loss_all
 
-    # train NN with ADAM optimizer
+    # train NN with Adam optimizer
     if model_type in [:m2a] # store NN weights only
         weights = deepcopy(Flux.params(m))
     else # store NN weights + de-scaled TL coef
@@ -1761,7 +1761,7 @@ function comp_train_test(xyz_train::XYZ, xyz_test::XYZ, ind_train, ind_test,
 end # function comp_train_test
 
 """
-    comp_train_test(lines_train::Vector, lines_test::Vector,
+    comp_train_test(lines_train, lines_test,
                     df_line::DataFrame, df_flight::DataFrame,
                     df_map::DataFrame, comp_params::CompParams=NNCompParams();
                     silent::Bool=true)
@@ -1788,7 +1788,7 @@ Train and evaluate aeromagnetic compensation model performance.
 - `y_test_hat`:  testing predicted data
 - `err_test`:    mean-corrected (per line) testing compensation error
 """
-function comp_train_test(lines_train::Vector, lines_test::Vector,
+function comp_train_test(lines_train, lines_test,
                          df_line::DataFrame, df_flight::DataFrame,
                          df_map::DataFrame, comp_params::CompParams=NNCompParams();
                          silent::Bool=true)

@@ -199,7 +199,7 @@ end # function ekf_online_nn
 
 #     m    = deepcopy(m) # don't modify original NN model
 #     w_nn = destructure(m)[1] # weights
-#     opt  = ADAM() # optimizer
+#     opt  = Adam() # optimizer
 #     loss(x,y) = Flux.mse(m(x),y) # mean squared error
 
 #     N        = length(y)
