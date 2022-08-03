@@ -64,7 +64,7 @@ end
 
 flight = :Flt1003
 xyz_h5 = string(MagNav.sgl_2020_train(),"/$(flight)_train.h5")
-xyz    = get_XYZ20(xyz_h5)
+xyz    = get_XYZ20(xyz_h5;tt_sort=true,silent=true)
 line   = xyz.line[1]
 ind    = xyz.line .== line
 ind[51:end] .= false
