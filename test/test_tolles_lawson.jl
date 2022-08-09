@@ -29,16 +29,16 @@ TL_a_1    = create_TL_coef(flux_a_x,flux_a_y,flux_a_z,mag_1_uc;
 mag_1_c   = mag_1_uc - A_a*TL_a_1
 mag_1_c_d = mag_1_uc - detrend(A_a*TL_a_1)
 
-@testset "Create TL A Tests" begin
+@testset "create_TL_A tests" begin
     @test A_a ≈ TL_data["A_a"]
 end
 
-@testset "Create TL Coefficients Tests" begin
+@testset "create_TL_coef tests" begin
     @test std(mag_1_c-TL_data["mag_1_c"]) < 0.1
     @test std(mag_1_c_d-TL_data["mag_1_c_d"]) < 0.1
 end
 
-@testset "TL Arguments Tests" begin
+@testset "create_TL_A & create_TL_coef arguments tests" begin
     terms_set = [[:permanent,:induced,:eddy,:bias],
                  [:permanent,:induced,:eddy],
                  [:permanent,:induced],
@@ -61,7 +61,7 @@ end
                               fs=fs,pass1=0,pass2=fs)) >= 0
 end
 
-@testset "FDM Tests" begin
+@testset "fdm tests" begin
     @test_nowarn fdm(mag_1_c_d;central=true ,fourth=false)
     @test_nowarn fdm(mag_1_c_d;central=false,fourth=false)
     @test_nowarn fdm(mag_1_c_d;central=true ,fourth=true)

@@ -979,7 +979,7 @@ module MagNav
     include("ekf_&_crlb.jl")
     include("ekf_online_nn.jl")
     include("ekf_online.jl")
-    include("eval_results.jl")
+    include("eval_filt.jl")
     include("get_map.jl")
     include("get_XYZ.jl")
     include("get_XYZ0.jl")
@@ -989,7 +989,6 @@ module MagNav
     include("model_functions.jl")
     include("mpf.jl")
     include("nekf.jl")
-    include("run_filt.jl")
     include("tolles_lawson.jl")
     include("xyz2h5.jl")
 
@@ -1005,7 +1004,7 @@ module MagNav
     ekf,crlb,
     ekf_online_nn,ekf_online_nn_setup,
     ekf_online,ekf_online_setup,
-    eval_results,eval_crlb,eval_ins,eval_filt,plot_filt!,plot_filt,
+    run_filt,eval_results,eval_crlb,eval_ins,eval_filt,plot_filt!,plot_filt,
     plot_filt_err,plot_mag_map,plot_mag_map_err,plot_autocor,gif_ellipse,
     get_map,save_map,
     get_XYZ20,get_XYZ21,get_XYZ,
@@ -1020,7 +1019,6 @@ module MagNav
     nekf,nekf_train,
     plsr_fit,elasticnet_fit,linear_test,
     comp_train,comp_test,comp_m2bc_test,comp_train_test,
-    run_filt,
     create_TL_A,create_TL_coef,fdm,
     xyz2h5,field_extrema,xyz_fields,
     LinCompParams,NNCompParams
