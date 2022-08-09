@@ -61,7 +61,7 @@ tt       = vec(traj_data["tt"])
 ins = MagNav.INS(N,dt,tt,ins_lat,ins_lon,ins_alt,ins_vn,ins_ve,ins_vd,
                  ins_fn,ins_fe,ins_fd,ins_Cnb,zeros(1,1,1))
 
-itp_mapS = map_interpolate(map_map,map_xx,map_yy,:linear)
+itp_mapS = map_interpolate(map_map,map_xx,map_yy,:linear) # linear to match MATLAB
 
 Random.seed!(2)
 filt_res_1 = mpf(ins_lat,ins_lon,ins_alt,ins_vn,ins_ve,ins_vd,
@@ -96,10 +96,11 @@ filt_res_2 = mpf(ins,mag_1_c,itp_mapS;
     @test filt_res_1.x[:,end]   ≈ filt_res_2.x[:,end]
     @test filt_res_1.P[:,:,1]   ≈ filt_res_2.P[:,:,1]
     @test filt_res_1.P[:,:,end] ≈ filt_res_2.P[:,:,end]
-    @test_nowarn mpf(ins_lat,ins_lon,ins_alt,ins_vn,ins_ve,ins_vd,
-                     ins_fn,ins_fe,ins_fd,ins_Cnb,mag_1_c,dt,itp_mapS;
-                     num_part=100,thresh=0.5)
-    @test_nowarn mpf(ins,mag_1_c,itp_mapS;num_part=100,thresh=0.5)
+    @test mpf(ins_lat,ins_lon,ins_alt,ins_vn,ins_ve,ins_vd,
+              ins_fn,ins_fe,ins_fd,ins_Cnb,mag_1_c,dt,itp_mapS;
+              num_part=100,thresh=0.5).c ≈ true
+    @test mpf(ins,mag_1_c,itp_mapS;num_part=100,thresh=0.5).c ≈ true
+    @test mpf(ins,zero(mag_1_c),itp_mapS;num_part=100,thresh=0.5).c ≈ false
 end
 
 @testset "mpf helper tests" begin

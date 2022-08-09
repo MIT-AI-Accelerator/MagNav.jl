@@ -43,6 +43,7 @@ ins_Cnb  = ins_data["Cnb"]
 map_map  = map_data["map"]
 map_xx   = deg2rad.(vec(map_data["xx"]))
 map_yy   = deg2rad.(vec(map_data["yy"]))
+map_alt  = map_data["alt"]
 
 dt       = params["dt"]
 baro_tau = params["baro_tau"]
@@ -68,7 +69,8 @@ traj = MagNav.Traj(N,dt,tt,lat,lon,alt,vn,ve,vd,fn,fe,fd,Cnb)
 ins  = MagNav.INS( N,dt,tt,ins_lat,ins_lon,ins_alt,ins_vn,ins_ve,ins_vd,
                    ins_fn,ins_fe,ins_fd,ins_Cnb,zeros(1,1,1))
 
-itp_mapS = map_interpolate(map_map,map_xx,map_yy,:linear)
+mapS = MagNav.MapS(map_map,map_xx,map_yy,map_alt)
+(itp_mapS,der_mapS) = map_interpolate(mapS,:linear;vert=true) # linear to match MATLAB
 
 crlb_P = crlb(lat,lon,alt,vn,ve,vd,fn,fe,fd,Cnb,dt,itp_mapS;
               P0       = P0,
@@ -102,5 +104,7 @@ end
     @test isapprox(filt_res.x[:,end]  ,ekf_data["x_out"][:,end]  ,atol=1e-3)
     @test isapprox(filt_res.P[:,:,1]  ,ekf_data["P_out"][:,:,1]  ,atol=1e-6)
     @test isapprox(filt_res.P[:,:,end],ekf_data["P_out"][:,:,end],atol=1e-3)
-    @test_nowarn ekf(ins,mag_1_c,itp_mapS;R=(1,10),core=true)
+    @test_nowarn ekf(ins,mag_1_c,itp_mapS;R=(1,10))
+    @test_nowarn ekf(ins,mag_1_c,itp_mapS;core=true)
+    @test_nowarn ekf(ins,mag_1_c,itp_mapS;der_mapS=der_mapS)
 end
