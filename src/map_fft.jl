@@ -80,6 +80,139 @@ function upward_fft(map_map::Union{MapS,MapV}, alt; expand::Bool=true, α=0)
 end # function upward_fft
 
 """
+    vector_fft(map_map, dx, dy, D, I)
+
+Get potential field (i.e. magnetic anomaly field) map vector components 
+using declination and inclination.
+
+**Arguments:**
+- `map_map`: `ny` x `nx` 2D gridded map data
+- `dx`: x-direction map sample interval [m]
+- `dy`: y-direction map sample interval [m]
+- `D`:  map declination (earth core field) [rad]
+- `I`:  map inclination (earth core field) [rad]
+
+**Returns:**
+- `Bx,By,Bz`: map vector components
+"""
+function vector_fft(map_map, dx, dy, D, I)
+    (ny,nx) = size(map_map)
+    (s,u,v) = create_k(dx,dy,nx,ny)
+
+    l = cos(I)*cos(D)
+    m = cos(I)*sin(D)
+    n = sin(I)
+
+    F = fft(map_map)
+
+    Hx = im*u ./ (im*(u*l+m*v)+n*s)
+    Hy = im*v ./ (im*(u*l+m*v)+n*s)
+    Hz = s    ./ (im*(u*l+m*v)+n*s)
+
+    Hx[1,1] = 1
+    Hy[1,1] = 1
+    Hz[1,1] = 1
+
+    Bx = real(ifft(Hx.*F))
+    By = real(ifft(Hy.*F))
+    Bz = real(ifft(Hz.*F))
+
+    return (Bx, By, Bz)
+end # function vector_fft
+
+"""
+    create_k(dx, dy, nx::Int, ny::Int)
+
+Create radial wavenumber (spatial frequency) grid.
+
+**Arguments:**
+- `dx`: x-direction map sample interval [m]
+- `dy`: y-direction map sample interval [m]
+- `nx`: x-direction map dimension [-]
+- `ny`: y-direction map dimension [-]
+
+**Returns:**
+- `k`:  `ny` x `nx` radial wavenumber (i.e. magnitude of wave vector)
+- `kx`: `ny` x `nx` x-direction radial wavenumber
+- `ky`: `ny` x `nx` y-direction radial wavenumber
+"""
+function create_k(dx, dy, nx::Int, ny::Int)
+    # DFT sample frequencies [rad/m], 1/dx & 1/dy are sampling rates [1/m]
+    kx = nx*dx==0 ? zeros(ny,nx) : repeat(2*pi*fftfreq(nx,1/dx)',ny,1)
+    ky = ny*dy==0 ? zeros(ny,nx) : repeat(2*pi*fftfreq(ny,1/dy) ,1,nx)
+    k  = sqrt.(kx.^2+ky.^2)
+    return (k, kx, ky)
+end # function create_k
+
+"""
+    map_expand(map_map, pad::Int=1)
+
+Expand map with padding on each edge to eliminate discontinuities in 
+discrete Fourier transform. Map is “wrapped around” to make it periodic. 
+Padding expands map to 7-smooth dimensions, allowing for a faster FFT 
+algorithm to be used during upward/downward continuation.
+
+**Arguments**
+- `map_map`: `ny` x `nx` 2D gridded map data
+- `pad`: minimum padding along map edges
+
+**Returns:**
+- `map_out`: `ny` x `nx` 2D gridded map data with padding
+- `padx`: x-direction padding (on first edge)
+- `pady`: y-direction padding (on first edge)
+"""
+function map_expand(map_map, pad::Int=1)
+
+    (ny,nx) = size(map_map) # original map size
+    (Ny,Nx) = smooth7.((ny,nx).+2*pad) # map size with 7-smooth padding
+    # (Ny,Nx) = (ny,nx).+ 2*pad # map size with naive padding
+
+    # padding on each edge
+    pady    = (floor(Int,(Ny-ny)/2),ceil(Int,(Ny-ny)/2))
+    padx    = (floor(Int,(Nx-nx)/2),ceil(Int,(Nx-nx)/2))
+
+    # place original map in middle of new map
+    (y1,y2) = (1,ny) .+ pady[1]
+    (x1,x2) = (1,nx) .+ padx[1]
+    map_out = zeros(Ny,Nx)
+    map_out[y1:y2,x1:x2] = map_map
+
+    # fill row edges (right/left)
+    for i = y1:y2
+        vals = LinRange(map_out[i,x1],map_out[i,x2],Nx-nx+2)[2:end-1]
+        map_out[i,1:x1-1  ] = reverse(vals[1:1:padx[1]])
+        map_out[i,x2+1:end] = reverse(vals[(1:padx[2]).+padx[1]])
+    end
+
+    # fill column edges (top/bottom)
+    for i = 1:Nx
+        vals = LinRange(map_out[y1,i],map_out[y2,i],Ny-ny+2)[2:end-1]
+        map_out[1:y1-1  ,i] = reverse(vals[1:1:pady[1]])
+        map_out[y2+1:end,i] = reverse(vals[(1:pady[2]).+pady[1]])
+    end
+
+    return (map_out, padx[1], pady[1])
+end # function map_expand
+
+"""
+    smooth7(x::Int)
+
+Find the lowest 7-smooth number `y` >= input number `x`.
+"""
+function smooth7(x::Int)
+    y = 2*x
+    for i = 0:ceil(Int,log(7,x))
+        for j = 0:ceil(Int,log(5,x))
+            for k = 0:ceil(Int,log(3,x))
+                z = 7^i*5^j*3^k
+                z < 2*x && (y = min(y, 2^ceil(Int,log(2,x/z))*z))
+            end
+        end
+    end
+    return (y)
+end # function smooth7
+
+"""
     downward_L(mapS::Union{MapS,MapSd}, alt, α::Vector;
                expand::Bool = true,
                ind          = map_params(mapS)[2])
@@ -144,71 +277,6 @@ function downward_L(mapS::Union{MapS,MapSd}, alt, α::Vector;
 end # function downward_L
 
 """
-    vector_fft(map_map, dx, dy, D, I)
-
-Get potential field (i.e. magnetic anomaly field) map vector components 
-using declination and inclination.
-
-**Arguments:**
-- `map_map`: `ny` x `nx` 2D gridded map data
-- `dx`: x-direction map sample interval [m]
-- `dy`: y-direction map sample interval [m]
-- `D`:  map declination (earth core field)
-- `I`:  map inclination (earth core field)
-
-**Returns:**
-- `Bx,By,Bz`: map vector components
-"""
-function vector_fft(map_map, dx, dy, D, I)
-    (ny,nx) = size(map_map)
-    (s,u,v) = create_k(dx,dy,nx,ny)
-
-    l = cosd(I)*cosd(D)
-    m = cosd(I)*sind(D)
-    n = sind(I)
-
-    F = fft(map_map)
-
-    Hx = im*u ./ (im*(u*l+m*v)+n*s)
-    Hy = im*v ./ (im*(u*l+m*v)+n*s)
-    Hz = s    ./ (im*(u*l+m*v)+n*s)
-
-    Hx[1,1] = 1
-    Hy[1,1] = 1
-    Hz[1,1] = 1
-
-    Bx = real(ifft(Hx.*F))
-    By = real(ifft(Hy.*F))
-    Bz = real(ifft(Hz.*F))
-
-    return (Bx, By, Bz)
-end # function vector_fft
-
-"""
-    create_k(dx, dy, nx::Int, ny::Int)
-
-Create radial wavenumber (spatial frequency) grid.
-
-**Arguments:**
-- `dx`: x-direction map sample interval [m]
-- `dy`: y-direction map sample interval [m]
-- `nx`: x-direction map dimension [-]
-- `ny`: y-direction map dimension [-]
-
-**Returns:**
-- `k`:  `ny` x `nx` radial wavenumber (i.e. magnitude of wave vector)
-- `kx`: `ny` x `nx` x-direction radial wavenumber
-- `ky`: `ny` x `nx` y-direction radial wavenumber
-"""
-function create_k(dx, dy, nx::Int, ny::Int)
-    # DFT sample frequencies [rad/m], 1/dx & 1/dy are sampling rates [1/m]
-    kx = nx*dx==0 ? zeros(ny,nx) : repeat(2*pi*fftfreq(nx,1/dx)',ny,1)
-    ky = ny*dy==0 ? zeros(ny,nx) : repeat(2*pi*fftfreq(ny,1/dy) ,1,nx)
-    k  = sqrt.(kx.^2+ky.^2)
-    return (k, kx, ky)
-end # function create_k
-
-"""
     psd(map_map, dx, dy)
 
 Power spectral density of a potential field (i.e. magnetic anomaly field) map. 
@@ -231,82 +299,3 @@ function psd(map_map, dx, dy)
     map_psd   = abs.(fft(map_map)).^2
     return (map_psd, kx, ky)
 end # function psd
-
-"""
-    map_expand(map_map, pad::Int=1)
-
-Expand map with padding on each edge to eliminate discontinuities in 
-discrete Fourier transform. Map is “wrapped around” to make it periodic.
-
-**Arguments**
-- `map_map`: `ny` x `nx` 2D gridded map data
-- `pad`: minimum padding along map edges
-
-**Returns:**
-- `map_out`: `ny` x `nx` 2D gridded map data with padding
-- `padx`: x-direction padding (on first edge)
-- `pady`: y-direction padding (on first edge)
-"""
-function map_expand(map_map, pad::Int=1)
-
-    # original map size
-    (ny,nx) = size(map_map)
-
-    # padded map size, faster with smooth number length dimensions
-    # (Ny,Nx) = (ny,nx) .+ 2*pad
-    # (Ny,Nx) = 2 .^ ceil.(Int, log.(2,(ny,nx).+2*pad) )
-    (Ny,Nx) = smooth7.((ny,nx).+2*pad)
-
-    # padding on each edge
-    pady    = (floor(Int,(Ny-ny)/2),ceil(Int,(Ny-ny)/2))
-    padx    = (floor(Int,(Nx-nx)/2),ceil(Int,(Nx-nx)/2))
-
-    # place original map in middle of new map
-    (y1,y2) = (1,ny) .+ pady[1]
-    (x1,x2) = (1,nx) .+ padx[1]
-    map_out = zeros(Ny,Nx)
-    map_out[y1:y2,x1:x2] = map_map
-
-    # fill row edges (right/left)
-    for i = y1:y2
-        vals = LinRange(map_out[i,x1],map_out[i,x2],Nx-nx+2)[2:end-1]
-        map_out[i,1:x1-1  ] = reverse(vals[1:1:padx[1]])
-        map_out[i,x2+1:end] = reverse(vals[(1:padx[2]).+padx[1]])
-    end
-
-    # fill column edges (top/bottom)
-    for i = 1:Nx
-        vals = LinRange(map_out[y1,i],map_out[y2,i],Ny-ny+2)[2:end-1]
-        map_out[1:y1-1  ,i] = reverse(vals[1:1:pady[1]])
-        map_out[y2+1:end,i] = reverse(vals[(1:pady[2]).+pady[1]])
-    end
-
-    return (map_out, padx[1], pady[1])
-end # function map_expand
-
-"""
-    smooth7(x::Int)
-
-Find the lowest 7-smooth number `y` >= input number `x`.
-
-"""
-function smooth7(x::Int)
-    y = 2*x
-    for i = 0:ceil(Int,log(7,x))
-        for j = 0:ceil(Int,log(5,x))
-            for k = 0:ceil(Int,log(3,x))
-                z = 7^i*5^j*3^k
-                z < 2*x && (y = min(y, 2^ceil(Int,log(2,x/z))*z))
-            end
-        end
-    end
-    return (y)
-end # function smooth7
-
-# 1.820 s (100 allocations: 1.67 GiB) # no pad
-# 2.318 s (104 allocations: 2.21 GiB) # pad
-# 4.175 s (105 allocations: 4.60 GiB) # 2
-# 6.470 s (105 allocations: 5.87 GiB) # 3
-# 2.769 s (104 allocations: 3.70 GiB) # 2 | 3
-# 1.445 s (113 allocations: 2.38 GiB) # 2 & 3
-# 1.310 s (104 allocations: 2.27 GiB) # smooth-7

@@ -129,7 +129,17 @@ function create_XYZ0(mapS::MapS=get_map(namad);
                      xyz_h5::String = "xyz_data.h5")
 
     # create trajectory
-    traj = create_traj(mapS;alt,dt,t,v,ll1,ll2,n_waves,attempts)
+    traj = create_traj(mapS;
+                       alt      = alt,
+                       dt       = dt,
+                       t        = t,
+                       v        = v,
+                       ll1      = ll1,
+                       ll2      = ll2,
+                       n_waves  = n_waves,
+                       attempts = attempts,
+                       save_h5  = save_h5,
+                       traj_h5  = xyz_h5)
 
     # create INS
     ins = create_ins(traj;
@@ -146,7 +156,9 @@ function create_XYZ0(mapS::MapS=get_map(namad);
                      gyro_sigma     = gyro_sigma,
                      baro_tau       = baro_tau,
                      acc_tau        = acc_tau,
-                     gyro_tau       = gyro_tau)
+                     gyro_tau       = gyro_tau,
+                     save_h5        = save_h5,
+                     ins_h5         = xyz_h5)
 
     # create compensated (clean) scalar magnetometer measurements
     mag_1_c = create_mag_c(traj,mapS;
@@ -172,7 +184,7 @@ function create_XYZ0(mapS::MapS=get_map(namad);
                                cor_eddy_mag = cor_eddy_mag)
 
     flights = flight*one.(traj.lat)
-    lines   = line*one.(traj.lat)
+    lines   = line  *one.(traj.lat)
 
     if save_h5 # save HDF5 file `xyz_h5`
         h5open(xyz_h5,"cw") do file # read-write, create file if not existing, preserve existing contents
@@ -217,7 +229,7 @@ map regions without data if the map has data gaps (not completely filled).
 - `ll2`:      (optional) final  (lat,lon) point [deg]
 - `n_waves`:  (optional) number of sine waves along path
 - `attempts`: (optional) maximum attempts at creating flight path on `mapS`
-- `save_h5`:  (optional) if true, save HDF5 file `ins_h5`
+- `save_h5`:  (optional) if true, save HDF5 file `traj_h5`
 - `traj_h5`:  (optional) path/name of HDF5 file to save with trajectory data
 
 **Returns:**
@@ -348,6 +360,7 @@ function create_traj(mapS::MapS=get_map(namad);
 
     # direction cosine matrix (body to navigation) estimate from heading
     Cnb = create_dcm(vn,ve,dt,:body2nav)
+    (roll,pitch,yaw) = dcm2euler(Cnb,:body2nav)
 
     if save_h5 # save HDF5 file `traj_h5`
         h5open(traj_h5,"cw") do file # read-write, create file if not existing, preserve existing contents
@@ -483,11 +496,12 @@ function create_ins(traj::Traj;
     fe  = fdm(ve) / dt
     fd  = fdm(vd) / dt .- g_earth
     Cnb = correct_Cnb(traj.Cnb, -err[7:9,:])
-    # if any(Cnb .> 1) | any(Cnb .< -1)
-    #     error("create_ins() failed, likely due to bad trajectory data, re-run")
-    # else
-    #     (roll,pitch,yaw) = dcm2euler(Cnb,:body2nav)
-    # end
+    if any(Cnb .> 1) | any(Cnb .< -1)
+        @info("create_ins() failed, likely due to bad trajectory data, re-run")
+        (roll,pitch,yaw) = (zero(lat),zero(lat),zero(lat))
+    else
+        (roll,pitch,yaw) = dcm2euler(Cnb,:body2nav)
+    end
 
     if save_h5 # save HDF5 file `ins_h5`
         h5open(ins_h5,"cw") do file # read-write, create file if not existing, preserve existing contents
