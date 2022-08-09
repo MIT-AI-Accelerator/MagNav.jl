@@ -564,7 +564,7 @@ function get_h(itp_mapS, x::Array, lat, lon, alt;
 end # function get_h
 
 """
-    get_h(itp_mapS, der_mapS, x, lat, lon, alt, map_alt;
+    get_h(itp_mapS, der_mapS, x::Array, lat, lon, alt, map_alt;
           date       = 2020+185/366,
           core::Bool = false)
 
@@ -575,10 +575,10 @@ Includes vertical derivative information, currently only for ~constant HAE.
 **Arguments:**
 - `itp_mapS`: scalar map grid interpolation
 - `der_mapS`: scalar map vertical derivative grid interpolation
-- `x`: states [lat, lon, ... S]
-- `lat`: latitude [rad]
-- `lon`: longitude [rad]
-- `alt`: altitude [m]
+- `x`:        states [lat, lon, ... S]
+- `lat`:      latitude [rad]
+- `lon`:      longitude [rad]
+- `alt`:      altitude [m]
 - `map_alt`:  map altitude [m]
 
 - `date`: (optional) measurement date for IGRF [yr]
@@ -587,7 +587,7 @@ Includes vertical derivative information, currently only for ~constant HAE.
 **Returns:**
 - `h`: expected magnetic measurement [nT]
 """
-function get_h(itp_mapS, der_mapS, x, lat, lon, alt, map_alt;
+function get_h(itp_mapS, der_mapS, x::Array, lat, lon, alt, map_alt;
                date       = 2020+185/366,
                core::Bool = false)
     if core

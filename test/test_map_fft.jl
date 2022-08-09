@@ -20,7 +20,7 @@ dz = map_data["dz"]
 mapS = get_map(MagNav.namad)
 mapS = map_trim(mapS,traj)
 
-mapV = get_map(MagNav.namad)
+mapV = get_map(MagNav.emm720)
 mapV = map_trim(mapV,traj)
 
 @testset "upward_fft tests" begin
@@ -30,13 +30,13 @@ mapV = map_trim(mapV,traj)
     @test_nowarn upward_fft(mapS,mapS.alt+dz;expand=true)
     @test_nowarn upward_fft(mapV,mapV.alt+dz;expand=false)
     @test_nowarn upward_fft(mapV,mapV.alt+dz;expand=true)
+    @test upward_fft(mapS,mapS.alt-dz).map ≈ mapS.map
 end
 
 @testset "downward_L tests" begin
     @test_nowarn downward_L(mapS,mapS.alt-dz,[1,10,100];expand=false)
     @test_nowarn downward_L(mapS,mapS.alt-dz,[1,10,100];expand=true)
 end
-
 
 @testset "create_k tests" begin
     @test k  ≈ map_data["k"]

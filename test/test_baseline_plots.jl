@@ -85,10 +85,14 @@ end
                           show_plot    = false,
                           save_plot    = false,
                           file_name    = "mag_1_c");
+    @test_nowarn plot_mag(xyz;use_mags=[:comp_mags],show_plot=false);
+    @test_nowarn plot_mag(xyz;use_mags=[:flux_a],show_plot=false);
+    @test_nowarn plot_mag(xyz;use_mags=[:flight],show_plot=false);
 end
 
 @testset "plot_mag_c tests" begin
     @test_nowarn plot_mag_c(xyz,xyz;show_plot=false);
+    @test_throws ErrorException plot_mag_c(xyz,xyz;use_mags=[:test],show_plot=false);
     @test typeof(plot_mag_c(xyz,xyz;
                             ind           = .!ind,
                             ind_comp      = ind,

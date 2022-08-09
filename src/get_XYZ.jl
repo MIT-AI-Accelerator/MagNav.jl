@@ -101,68 +101,6 @@ function get_XYZ20(xyz_h5::String; tt_sort::Bool=true, silent::Bool=false)
 end # function get_XYZ20
 
 """
-    get_XYZ20(flight::Symbol, xyz_160_h5::String, xyz_h5::String;
-              silent::Bool=false)
-
-Get 160 Hz (partial) `XYZ20` flight data from saved HDF5 file and 
-combine with 10 Hz `XYZ20` flight data from another saved HDF5 file. 
-Data is time sorted to ensure data is aligned.
-
-**Arguments:**
-- `flight`: name of flight data
-- `xyz_160_h5`: path/name of HDF5 file containing flight data at 160 Hz
-- `xyz_h5`: path/name of HDF5 file containing flight data at 10 Hz
-- `silent`: (optional) if true, no print outs
-
-**Returns:**
-- `xyz`: `XYZ20` flight data struct
-"""
-function get_XYZ20(xyz_160_h5::String, xyz_h5::String; silent::Bool=false)
-
-    fields = :fields160
-
-    silent || @info("reading in data: $xyz_160_h5")
-
-    xyz = h5open(xyz_160_h5,"r") # read-only
-    N   = maximum([length(read(xyz,k)) for k in keys(xyz)])
-    d   = Dict()
-    ind = sortperm(read_check(xyz,:tt,N,silent))
-
-    for field in xyz_fields(fields)
-        field != :ignore && push!(d,field=>read_check(xyz,field,N,silent)[ind])
-    end
-
-    close(xyz)
-
-    xyz = get_XYZ20(xyz_h5;tt_sort=true,silent=silent)
-
-    xyz.mag_1_uc .= d[:mag_1_uc]
-    xyz.mag_2_uc .= d[:mag_2_uc]
-    xyz.mag_3_uc .= d[:mag_3_uc]
-    xyz.mag_4_uc .= d[:mag_4_uc]
-    xyz.mag_5_uc .= d[:mag_5_uc]
-    xyz.mag_6_uc .= d[:mag_6_uc]
-    xyz.flux_a.x .= d[:flux_a_x]
-    xyz.flux_a.y .= d[:flux_a_y]
-    xyz.flux_a.z .= d[:flux_a_z]
-    xyz.flux_a.t .= d[:flux_a_t]
-    xyz.flux_b.x .= d[:flux_b_x]
-    xyz.flux_b.y .= d[:flux_b_y]
-    xyz.flux_b.z .= d[:flux_b_z]
-    xyz.flux_b.t .= d[:flux_b_t]
-    xyz.flux_c.x .= d[:flux_c_x]
-    xyz.flux_c.y .= d[:flux_c_y]
-    xyz.flux_c.z .= d[:flux_c_z]
-    xyz.flux_c.t .= d[:flux_c_t]
-    xyz.flux_d.x .= d[:flux_d_x]
-    xyz.flux_d.y .= d[:flux_d_y]
-    xyz.flux_d.z .= d[:flux_d_z]
-    xyz.flux_d.t .= d[:flux_d_t]
-
-    return (xyz)
-end # function get_XYZ20
-
-"""
     get_XYZ21(xyz_h5::String; tt_sort::Bool=true, silent::Bool=false)
 
 Get `XYZ21` flight data from saved HDF5 file. Based on SGL 2021 data fields.
