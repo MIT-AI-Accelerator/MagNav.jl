@@ -120,7 +120,7 @@ end
                      vec_states = false,
                      fogm_state = true) ≈ pinson_data["P18"]
     @test_nowarn get_pinson(17+3,lat[1],vn,ve,vd,fn,fe,fd,Cnb;
-                            vec_states=false,fogm_state=false)
+                            vec_states=true,fogm_state=false)
 end
 
 @testset "get_Phi tests" begin

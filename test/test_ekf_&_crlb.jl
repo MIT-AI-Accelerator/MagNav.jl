@@ -106,5 +106,5 @@ end
     @test isapprox(filt_res.P[:,:,end],ekf_data["P_out"][:,:,end],atol=1e-3)
     @test_nowarn ekf(ins,mag_1_c,itp_mapS;R=(1,10))
     @test_nowarn ekf(ins,mag_1_c,itp_mapS;core=true)
-    @test_nowarn ekf(ins,mag_1_c,itp_mapS;der_mapS=der_mapS)
+    @test_nowarn ekf(ins,mag_1_c,itp_mapS;der_mapS=der_mapS,map_alt=map_alt)
 end
