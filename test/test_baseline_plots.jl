@@ -69,25 +69,50 @@ end
     @test_nowarn plot_activation();
     @test_nowarn plot_activation([:relu,:swish];
                                  plot_der  = true,
-                                 save_plot = false,
-                                 file_name = "act_func_der.png");
+                                 save_plot = false);
 end
 
 @testset "plot_mag tests" begin
     @test_nowarn plot_mag(xyz;show_plot=false);
+    @test_nowarn plot_mag(xyz;use_mags=[:comp_mags],show_plot=false);
+    @test_nowarn plot_mag(xyz;use_mags=[:flux_a],show_plot=false);
+    @test_nowarn plot_mag(xyz;use_mags=[:flight],show_plot=false);
     @test_nowarn plot_mag(xyz;
                           ind          = ind,
                           detrend_data = true,
-                          use_mags     = [:mag_1_c],
+                          use_mags     = [:mag_1_c,:mag_1_uc],
                           vec_terms    = [:all],
                           ylim         = [-300,300],
                           dpi          = 100,
                           show_plot    = false,
-                          save_plot    = false,
-                          file_name    = "mag_1_c");
-    @test_nowarn plot_mag(xyz;use_mags=[:comp_mags],show_plot=false);
-    @test_nowarn plot_mag(xyz;use_mags=[:flux_a],show_plot=false);
-    @test_nowarn plot_mag(xyz;use_mags=[:flight],show_plot=false);
+                          save_plot    = false);
+    @test_nowarn plot_mag(xyz;
+                          ind          = ind,
+                          detrend_data = true,
+                          use_mags     = [:comp_mags],
+                          vec_terms    = [:all],
+                          ylim         = [-1,1],
+                          dpi          = 100,
+                          show_plot    = false,
+                          save_plot    = false);
+    @test_nowarn plot_mag(xyz;
+                          ind          = ind,
+                          detrend_data = true,
+                          use_mags     = [:flux_a],
+                          vec_terms    = [:all],
+                          ylim         = [-1000,1000],
+                          dpi          = 100,
+                          show_plot    = false,
+                          save_plot    = false);
+    @test_nowarn plot_mag(xyz;
+                          ind          = ind,
+                          detrend_data = true,
+                          use_mags     = [:flight],
+                          vec_terms    = [:all],
+                          ylim         = [-1,1],
+                          dpi          = 100,
+                          show_plot    = false,
+                          save_plot    = false);
 end
 
 @testset "plot_mag_c tests" begin
@@ -110,8 +135,7 @@ end
                             dpi           = 100,
                             ylim          = [-50,50],
                             show_plot     = false,
-                            save_plot     = false,
-                            file_name     = "mag_1_comp")) <: Plot
+                            save_plot     = false)) <: Plot
 end
 
 @testset "plot_PSD tests" begin
@@ -120,8 +144,7 @@ end
                           window    = hamming,
                           dpi       = 100,
                           show_plot = false,
-                          save_plot = false,
-                          file_name = "mag_1_c_PSD");
+                          save_plot = false);
 end
 
 @testset "plot_spectrogram tests" begin
@@ -130,8 +153,7 @@ end
                                   window    = hamming,
                                   dpi       = 100,
                                   show_plot = false,
-                                  save_plot = false,
-                                  file_name = "mag_1_c_spectrogram");
+                                  save_plot = false);
 end
 
 @testset "plot_frequency tests" begin
@@ -144,8 +166,7 @@ end
                                 window       = hamming,
                                 dpi          = 100,
                                 show_plot    = false,
-                                save_plot    = false,
-                                file_name    = "mag_1_c_spectrogram");
+                                save_plot    = false);
 end
 
 @testset "plot_correlation tests" begin

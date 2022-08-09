@@ -21,7 +21,7 @@ df_flight = DataFrame(flight   = flights,
     end
 end
 
-df_flight.xyz_type .= :XYZ21
+df_flight[:,:xyz_type] .= :XYZ21
 
 @testset "get_XYZ21 tests" begin #* not actually XYZ21, should still pass
     @test_nowarn get_XYZ21(xyz_files[1];tt_sort=true,silent=true)

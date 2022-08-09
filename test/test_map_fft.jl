@@ -33,15 +33,19 @@ mapV = map_trim(mapV,traj)
     @test upward_fft(mapS,mapS.alt-dz).map ≈ mapS.map
 end
 
-@testset "downward_L tests" begin
-    @test_nowarn downward_L(mapS,mapS.alt-dz,[1,10,100];expand=false)
-    @test_nowarn downward_L(mapS,mapS.alt-dz,[1,10,100];expand=true)
+@testset "vector_fft tests" begin
+    @test_nowarn vector_fft(map_map,dx,dy,0.25*one.(map_map),zero(map_map))
 end
 
 @testset "create_k tests" begin
     @test k  ≈ map_data["k"]
     @test kx ≈ map_data["kx"]
     @test ky ≈ map_data["ky"]
+end
+
+@testset "downward_L tests" begin
+    @test_nowarn downward_L(mapS,mapS.alt-dz,[1,10,100];expand=false)
+    @test_nowarn downward_L(mapS,mapS.alt-dz,[1,10,100];expand=true)
 end
 
 @testset "psd tests" begin

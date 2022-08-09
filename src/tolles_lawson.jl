@@ -281,7 +281,7 @@ function fdm(x::Vector; central::Bool=true, fourth::Bool=false)
         dif_end =  x[end]     - x[end-1]
         dif_mid = (x[2:end-1] - x[1:end-2])
     else
-        return (zero(x))
+        return zero(x)
     end
 
     dif = [dif_1; dif_mid; dif_end]
