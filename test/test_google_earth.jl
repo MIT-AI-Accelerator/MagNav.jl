@@ -39,8 +39,8 @@ map_name  = "test"
 path_name = "test"
 
 @testset "map2kmz tests" begin
-    @test_nowarn map2kmz(map_map,map_xx,map_yy,map_name;test_mode=true)
-    @test_nowarn map2kmz(mapS,map_name;test_mode=true)
+    @test_nowarn map2kmz(map_map,map_xx,map_yy,map_name)
+    @test_nowarn map2kmz(mapS,map_name)
 end
 
 @testset "path2kml tests" begin
