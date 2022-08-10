@@ -23,6 +23,7 @@ ins_fe   = vec(ins_data["fe"])
 ins_fd   = vec(ins_data["fd"])
 ins_Cnb  = ins_data["Cnb"]
 
+tt       = vec(traj_data["tt"])
 lat      = deg2rad.(vec(traj_data["lat"]))
 lon      = deg2rad.(vec(traj_data["lon"]))
 alt      = vec(traj_data["alt"])
@@ -32,7 +33,6 @@ vd       = vec(traj_data["vd"])
 fn       = vec(traj_data["fn"])
 fe       = vec(traj_data["fe"])
 fd       = vec(traj_data["fd"])
-tt       = vec(traj_data["tt"])
 Cnb      = traj_data["Cnb"]
 mag_1_c  = vec(traj_data["mag_1_c"])
 mag_1_uc = vec(traj_data["mag_1_uc"])

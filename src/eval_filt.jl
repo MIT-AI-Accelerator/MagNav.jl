@@ -1125,8 +1125,8 @@ function units_ellipse(P; conf_units::Symbol=:m, lat1=deg2rad(45))
         l = [dlat2dn(1,lat1),dlon2de(1,lat1)] # m/rad
         conf_units == :ft && (l ./= 0.3048)   # ft/rad
         P = P .* (l*l') # m^2 or ft^2
-    else conf_units != :rad
-        @info("$conf_units confidence ellipse units not defined")
+    elseif conf_units != :rad
+        error("$conf_units confidence ellipse units not defined")
     end
 
     return (P)
@@ -1242,8 +1242,8 @@ end # function gif_ellipse
 """
     gif_ellipse(filt_res::FILTres,
                 filt_out::FILTout,
-                map_map::Map       = MapS(zeros(1,1),[0.0],[0.0],0.0),
-                gif_name::String   = "conf_ellipse";
+                gif_name::String   = "conf_ellipse",
+                map_map::Map       = MapS(zeros(1,1),[0.0],[0.0],0.0);
                 dt                 = 0.1,
                 di::Int            = 10,
                 speedup::Int       = 60,
@@ -1268,8 +1268,8 @@ Create a (position) confidence ellipse gif for a 2x2 (xN) covariance matrix.
 **Arguments:**
 - `filt_res`:   `FILTres` filter results struct
 - `filt_out`:   `FILTout` filter extracted output struct
-- `map_map`:    `Map` magnetic anomaly map struct
-- `gif_name`:   map name to save
+- `gif_name`:   (optional) map name to save
+- `map_map`:    (optional) `Map` magnetic anomaly map struct
 - `dt`:         (optional) measurement time step [s]
 - `di`:         (optional) gif measurement interval (e.g. `di = 10` uses every 10th measurement)
 - `speedup`:    (optional) gif speedup (e.g. `speedup = 60` is 60x speed)
@@ -1294,8 +1294,8 @@ Create a (position) confidence ellipse gif for a 2x2 (xN) covariance matrix.
 """
 function gif_ellipse(filt_res::FILTres,
                      filt_out::FILTout,
-                     map_map::Map       = MapS(zeros(1,1),[0.0],[0.0],0.0),
-                     gif_name::String   = "conf_ellipse";
+                     gif_name::String   = "conf_ellipse",
+                     map_map::Map       = MapS(zeros(1,1),[0.0],[0.0],0.0);
                      dt                 = 0.1,
                      di::Int            = 10,
                      speedup::Int       = 60,
@@ -1319,15 +1319,15 @@ function gif_ellipse(filt_res::FILTres,
     dlon = abs(map_map.xx[end]-map_map.xx[1])/(length(map_map.xx)-1)
     dn   = dlat2dn(dlat,mean(map_map.yy))
     de   = dlon2de(dlon,mean(map_map.yy))
-    num  = ceil(Int,1.5*lim/minimum([dn,de]))
 
-    if (dlon != Inf) & (dlat != Inf) & (clims == (0,0))
-        y1 = findmin(abs.(map_map.yy.-minimum(filt_out.lat)))[2]
-        y2 = findmin(abs.(map_map.yy.-maximum(filt_out.lat)))[2]
-        x1 = findmin(abs.(map_map.xx.-minimum(filt_out.lon)))[2]
-        x2 = findmin(abs.(map_map.xx.-maximum(filt_out.lon)))[2]
-        (y1,y2) = sort([y1,y2])
-        (x1,x2) = sort([x1,x2])
+    if (dlon != Inf) & (dlat != Inf) & !isnan(dlon) & !isnan(dlat) & (clims == (0,0))
+        num = ceil(Int,1.5*lim/minimum([dn,de]))
+        y1  = findmin(abs.(map_map.yy.-minimum(filt_out.lat)))[2]
+        y2  = findmin(abs.(map_map.yy.-maximum(filt_out.lat)))[2]
+        x1  = findmin(abs.(map_map.xx.-minimum(filt_out.lon)))[2]
+        x2  = findmin(abs.(map_map.xx.-maximum(filt_out.lon)))[2]
+        (y1,y2)   = sort([y1,y2])
+        (x1,x2)   = sort([x1,x2])
         (_,clims) = map_clims(map_cs(map_color),map_map.map[y1:y2,x1:x2])
     end
 
@@ -1336,7 +1336,7 @@ function gif_ellipse(filt_res::FILTres,
 
     for i = 1:di:size(P,3)
 
-        if (dlon != Inf) & (dlat != Inf)
+        if (dlon != Inf) & (dlat != Inf) & !isnan(dlon) & !isnan(dlat)
             xi   = findmin(abs.(map_map.xx.-filt_out.lon[i]))[2]
             yi   = findmin(abs.(map_map.yy.-filt_out.lat[i]))[2]
             xind = max(xi-num,1):min(xi+num,length(map_map.xx))

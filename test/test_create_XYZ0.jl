@@ -41,6 +41,7 @@ baro_tau       = params["baro_tau"]
 acc_tau        = params["acc_tau"]
 gyro_tau       = params["gyro_tau"]
 
+tt       = vec(traj_data["tt"])
 lat      = deg2rad.(vec(traj_data["lat"]))
 lon      = deg2rad.(vec(traj_data["lon"]))
 alt      = vec(traj_data["alt"])
@@ -50,7 +51,6 @@ vd       = vec(traj_data["vd"])
 fn       = vec(traj_data["fn"])
 fe       = vec(traj_data["fe"])
 fd       = vec(traj_data["fd"])
-tt       = vec(traj_data["tt"])
 Cnb      = traj_data["Cnb"]
 mag_1_c  = vec(traj_data["mag_1_c"])
 flux_a_x = vec(traj_data["flux_a_x"])
