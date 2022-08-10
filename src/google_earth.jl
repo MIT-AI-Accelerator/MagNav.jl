@@ -30,19 +30,13 @@ function map2kmz(map_map::Matrix, map_xx::Vector, map_yy::Vector,
                  clims::Tuple      = (0,0))
 
     if map_units == :rad
-        map_west = rad2deg(minimum(map_xx))
-        map_east = rad2deg(maximum(map_xx))
-    elseif map_units == :deg
-        map_west = minimum(map_xx)
-        map_east = maximum(map_xx)
-    else
-        error("$map_units map xx/yy units not defined")
-    end
-
-    if map_units == :rad
+        map_west  = rad2deg(minimum(map_xx))
+        map_east  = rad2deg(maximum(map_xx))
         map_south = rad2deg(minimum(map_yy))
         map_north = rad2deg(maximum(map_yy))
     elseif map_units == :deg
+        map_west  = minimum(map_xx)
+        map_east  = maximum(map_xx)
         map_south = minimum(map_yy)
         map_north = maximum(map_yy)
     else
