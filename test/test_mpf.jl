@@ -55,8 +55,8 @@ fogm_tau = params["meas_tau"]
 date     = 2020+185/366
 core     = false
 
-mag_1_c  = vec(traj_data["mag_1_c"])
 tt       = vec(traj_data["tt"])
+mag_1_c  = vec(traj_data["mag_1_c"])
 
 ins = MagNav.INS(N,dt,tt,ins_lat,ins_lon,ins_alt,ins_vn,ins_ve,ins_vd,
                  ins_fn,ins_fe,ins_fd,ins_Cnb,zeros(1,1,1))

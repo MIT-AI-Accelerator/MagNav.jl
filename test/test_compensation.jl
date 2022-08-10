@@ -28,6 +28,7 @@ df_flight = DataFrame(flight   = flight,
 
 terms_A   = [:p,:i,:e]
 batchsize = 5
+
 comp_params_1  = MagNav.NNCompParams(model_type=:m1 ,terms_A=terms_A,batchsize=batchsize)
 comp_params_2a = MagNav.NNCompParams(model_type=:m2a,terms_A=terms_A,batchsize=batchsize)
 comp_params_2b = MagNav.NNCompParams(model_type=:m2b,terms_A=terms_A,batchsize=batchsize)
@@ -88,6 +89,48 @@ end
                         comp_params_2c,silent=true)[end-1]) < 1
 end
 
+terms_A     = [:p,:i,:e]
+batchsize   = 5
+epoch_lbfgs = 1
+k_pca       = 5
+frac_train  = 1
+
+comp_params_1  = MagNav.NNCompParams(model_type  = :m1,
+                                     terms_A     = terms_A,
+                                     epoch_lbfgs = epoch_lbfgs,
+                                     batchsize   = batchsize,
+                                     k_pca       = k_pca,
+                                     frac_train  = frac_train)
+comp_params_2a = MagNav.NNCompParams(model_type=:m2a,
+                                     terms_A     = terms_A,
+                                     epoch_lbfgs = epoch_lbfgs,
+                                     batchsize   = batchsize,
+                                     k_pca       = k_pca,
+                                     frac_train  = frac_train)
+comp_params_2b = MagNav.NNCompParams(model_type=:m2b,
+                                     terms_A     = terms_A,
+                                     epoch_lbfgs = epoch_lbfgs,
+                                     batchsize   = batchsize,
+                                     k_pca       = k_pca,
+                                     frac_train  = frac_train)
+comp_params_2c = MagNav.NNCompParams(model_type=:m2c,
+                                     terms_A     = terms_A,
+                                     epoch_lbfgs = epoch_lbfgs,
+                                     batchsize   = batchsize,
+                                     k_pca       = k_pca,
+                                     frac_train  = frac_train)
+comp_params_2d = MagNav.NNCompParams(model_type=:m2d,
+                                     terms_A     = terms_A,
+                                     epoch_lbfgs = epoch_lbfgs,
+                                     batchsize   = batchsize,
+                                     k_pca       = k_pca,
+                                     frac_train  = frac_train)
+
+comp_params_TL         = MagNav.LinCompParams(model_type=:TL)
+comp_params_mod_TL     = MagNav.LinCompParams(model_type=:mod_TL)
+comp_params_elasticnet = MagNav.LinCompParams(model_type=:elasticnet)
+comp_params_plsr       = MagNav.LinCompParams(model_type=:plsr,k_plsr=1)
+
 @testset "comp_train_test tests" begin
     @test std(comp_train_test(xyz,xyz,ind_train,ind_test;
                               comp_params=comp_params_1 )[end-1]) < 1
@@ -99,6 +142,14 @@ end
                               comp_params=comp_params_2c)[end-1]) < 1
     @test std(comp_train_test(xyz,xyz,ind_train,ind_test;
                               comp_params=comp_params_2d)[end-1]) < 1
+    @test std(comp_train_test(xyz,xyz,ind_train,ind_test;
+                              comp_params=comp_params_TL)[end-1]) < 1
+    @test std(comp_train_test(xyz,xyz,ind_train,ind_test;
+                              comp_params=comp_params_mod_TL)[end-1]) < 1
+    @test std(comp_train_test(xyz,xyz,ind_train,ind_test;
+                              comp_params=comp_params_elasticnet)[end-1]) < 1
+    @test std(comp_train_test(xyz,xyz,ind_train,ind_test;
+                              comp_params=comp_params_plsr)[end-1]) < 1
     @test std(comp_train_test(line_train,line_test,df_line,df_flight,
                               DataFrame(),comp_params_1 )[end-1]) < 1
     @test std(comp_train_test(line_train,line_test,df_line,df_flight,
@@ -109,4 +160,12 @@ end
                               DataFrame(),comp_params_2c)[end-1]) < 1
     @test std(comp_train_test(line_train,line_test,df_line,df_flight,
                               DataFrame(),comp_params_2d)[end-1]) < 1
+    @test std(comp_train_test(line_train,line_test,df_line,df_flight,
+                              DataFrame(),comp_params_TL)[end-1]) < 1
+    @test std(comp_train_test(line_train,line_test,df_line,df_flight,
+                              DataFrame(),comp_params_mod_TL)[end-1]) < 1
+    @test std(comp_train_test(line_train,line_test,df_line,df_flight,
+                              DataFrame(),comp_params_elasticnet)[end-1]) < 1
+    @test std(comp_train_test(line_train,line_test,df_line,df_flight,
+                              DataFrame(),comp_params_plsr)[end-1]) < 1
 end

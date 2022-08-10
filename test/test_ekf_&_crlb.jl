@@ -51,7 +51,6 @@ acc_tau  = params["acc_tau"]
 gyro_tau = params["gyro_tau"]
 fogm_tau = params["meas_tau"]
 
-mag_1_c  = vec(traj_data["mag_1_c"])
 tt       = vec(traj_data["tt"])
 lat      = deg2rad.(vec(traj_data["lat"]))
 lon      = deg2rad.(vec(traj_data["lon"]))
@@ -63,6 +62,7 @@ fn       = vec(traj_data["fn"])
 fe       = vec(traj_data["fe"])
 fd       = vec(traj_data["fd"])
 Cnb      = traj_data["Cnb"]
+mag_1_c  = vec(traj_data["mag_1_c"])
 N        = length(lat)
 
 traj = MagNav.Traj(N,dt,tt,lat,lon,alt,vn,ve,vd,fn,fe,fd,Cnb)
