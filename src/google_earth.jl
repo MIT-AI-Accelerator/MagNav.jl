@@ -4,8 +4,7 @@
             alt               = 0,
             opacity           = 0.75,
             map_units::Symbol = :rad,
-            clims::Tuple      = (0,0),
-            test_mode::Bool   = false)
+            clims::Tuple      = (0,0))
 
 Create kmz file of map for use with Google Earth. Generates an "icon" overlay, 
 and is thus not meant for large maps (e.g. > 5 deg x 5 deg).
@@ -19,7 +18,6 @@ and is thus not meant for large maps (e.g. > 5 deg x 5 deg).
 - `opacity`:   (optional) map opacity {0:1}
 - `map_units`: (optional) map xx/yy units {`:rad`,`:deg`}
 - `clims`:     (optional) map color scale limits
-- `test_mode`: (optional) if true, use gr backend instead of pyplot
 
 **Returns:**
 - `nothing`: kmz file `map_name`.kmz is created
@@ -29,8 +27,7 @@ function map2kmz(map_map::Matrix, map_xx::Vector, map_yy::Vector,
                  alt               = 0,
                  opacity           = 0.75,
                  map_units::Symbol = :rad,
-                 clims::Tuple      = (0,0),
-                 test_mode::Bool   = false)
+                 clims::Tuple      = (0,0))
 
     if map_units == :rad
         map_west = rad2deg(minimum(map_xx))
@@ -57,20 +54,17 @@ function map2kmz(map_map::Matrix, map_xx::Vector, map_yy::Vector,
     map_png   = string(map_name,".png")
     map_trans = string(string(round(Int,opacity*255),base=16),"ffffff") # ABGR
 
-    # using pyplot(), since gr() can't remove margin & plotly() can't save
-    b_e = test_mode ? gr() : pyplot()
     p1  = plot_map(map_map;
                    clims     = clims,
                    dpi       = 200,
-                   bg_color  = :transparent,
-                   margin    = 0,
+                   margin    = -2, # includes 2mm otherwise
                    legend    = false,
                    axis      = false,
                    fewer_pts = false,
-                   b_e       = b_e)
+                   bg_color  = :transparent)
 
     plot!(p1,size=min.(size(map_map),10000))
-    
+
     try
         png(p1,map_name)
 
@@ -129,8 +123,7 @@ end # function map2kmz
             map_name::String = "map";
             alt              = 0,
             opacity          = 0.75,
-            clims::Tuple     = (0,0),
-            test_mode::Bool  = false)
+            clims::Tuple     = (0,0))
 
 Create kmz file of map for use with Google Earth. Generates an "icon" overlay, 
 and is thus not meant for large maps (e.g. > 5 deg x 5 deg).
@@ -141,7 +134,6 @@ and is thus not meant for large maps (e.g. > 5 deg x 5 deg).
 - `alt`:       (optional) map altitude [m]
 - `opacity`:   (optional) map opacity {0:1}
 - `clims`:     (optional) map color scale limits
-- `test_mode`: (optional) if true, use gr backend instead of pyplot
 
 **Returns:**
 - `nothing`: kmz file `map_name`.kmz is created
@@ -150,14 +142,12 @@ function map2kmz(mapS::Union{MapS,MapSd},
                  map_name::String = "map";
                  alt              = 0,
                  opacity          = 0.75,
-                 clims::Tuple     = (0,0),
-                 test_mode::Bool  = false)
+                 clims::Tuple     = (0,0))
     map2kmz(mapS.map,mapS.xx,mapS.yy,map_name,
             alt       = alt,
             opacity   = opacity,
             map_units = :rad,
-            clims     = clims,
-            test_mode = test_mode)
+            clims     = clims)
 end # function map2kmz
 
 """

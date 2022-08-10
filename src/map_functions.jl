@@ -1110,11 +1110,11 @@ function plot_map!(p1, map_map::Matrix,
     end
 
     if map_units in [:rad,:deg]
-        xlab = (map_xx[end] == nx | !axis) ? "" : "longitude [deg]"
-        ylab = (map_yy[end] == ny | !axis) ? "" : "latitude [deg]"
+        xlab = ((map_xx[end] == nx) | !axis) ? "" : "longitude [deg]"
+        ylab = ((map_yy[end] == ny) | !axis) ? "" : "latitude [deg]"
     elseif map_units in [:utm,:m]
-        xlab = (map_xx[end] == nx | !axis) ? "" : "easting [m]"
-        ylab = (map_yy[end] == ny | !axis) ? "" : "northing [m]"
+        xlab = ((map_xx[end] == nx) | !axis) ? "" : "easting [m]"
+        ylab = ((map_yy[end] == ny) | !axis) ? "" : "northing [m]"
     else
         error("map_units $map_units  not defined")
     end
