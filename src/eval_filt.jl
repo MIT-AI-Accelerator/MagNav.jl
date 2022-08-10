@@ -1098,6 +1098,8 @@ function conf_ellipse(P;
                   bg_color   = bg_color,
                   ce_color   = ce_color,
                   b_e        = b_e)
+
+    return (p1)
 end # function conf_ellipse
 
 """
@@ -1219,22 +1221,22 @@ function gif_ellipse(P,
     a1 = Animation()
 
     for i = 1:di:size(P,3)
-        conf_ellipse(P[:,:,i];
-                     μ          = μ,
-                     conf       = conf,
-                     clip       = clip,
-                     n          = n,
-                     lim        = lim,
-                     margin     = margin,
-                     axis       = axis,
-                     plot_eigax = plot_eigax,
-                     bg_color   = bg_color,
-                     ce_color   = ce_color,
-                     b_e        = b_e);
-        frame(a1)
+        p1 = conf_ellipse(P[:,:,i];
+                          μ          = μ,
+                          conf       = conf,
+                          clip       = clip,
+                          n          = n,
+                          lim        = lim,
+                          margin     = margin,
+                          axis       = axis,
+                          plot_eigax = plot_eigax,
+                          bg_color   = bg_color,
+                          ce_color   = ce_color,
+                          b_e        = b_e);
+        frame(a1,p1);
     end
 
-    g1 = gif(a1,"$gif_name.gif",fps=1/dt/di*speedup);
+    g1 = gif(a1,"$gif_name.gif";fps=1/dt/di*speedup);
 
     return (g1)
 end # function gif_ellipse
@@ -1284,7 +1286,7 @@ Create a (position) confidence ellipse gif for a 2x2 (xN) covariance matrix.
 - `plot_eigax`: (optional) if true, show major and minor axes
 - `bg_color`:   (optional) background color
 - `ce_color`:   (optional) confidence ellipse color
-- `map_color`:  (optional) filled contour color scheme {`:usgs`,`:gray`,`:gray1`,`:gray2`}
+- `map_color`:  (optional) filled contour color scheme {`:usgs`,`:gray`,`:gray1`,`:gray2`,`:plasma`,`:magma`}
 - `clims`:      (optional) map color scale limits
 - `dpi`:        (optional) dots per inch (image resolution)
 - `b_e`:        (optional) plotting backend
@@ -1363,10 +1365,10 @@ function gif_ellipse(filt_res::FILTres,
                       bg_color   = bg_color,
                       ce_color   = ce_color,
                       b_e        = b_e);
-        frame(a1)
+        frame(a1,p1)
     end
 
-    g1 = gif(a1,"$gif_name.gif",fps=1/dt/di*speedup)
+    g1 = gif(a1,"$gif_name.gif";fps=1/dt/di*speedup)
 
     return (g1)
 end # function gif_ellipse

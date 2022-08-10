@@ -1054,7 +1054,7 @@ Plot map on an existing plot.
 - `legend`:     (optional) if true, show legend
 - `axis`:       (optional) if true, show axes
 - `fewer_pts`:  (optional) if true, reduce number of data points plotted
-- `map_color`:  (optional) filled contour color scheme {`:usgs`,`:gray`,`:gray1`,`:gray2`}
+- `map_color`:  (optional) filled contour color scheme {`:usgs`,`:gray`,`:gray1`,`:gray2`,`:plasma`,`:magma`}
 - `bg_color`:   (optional) background color
 - `map_units`:  (optional) map  xx/yy units {`:rad`,`:deg`}
 - `plot_units`: (optional) plot xx/yy units {`:rad`,`:deg`,`:utm`,`:m`}
@@ -1174,7 +1174,7 @@ Plot map on an existing plot.
 - `legend`:     (optional) if true, show legend
 - `axis`:       (optional) if true, show axes
 - `fewer_pts`:  (optional) if true, reduce number of data points plotted
-- `map_color`:  (optional) filled contour color scheme {`:usgs`,`:gray`,`:gray1`,`:gray2`}
+- `map_color`:  (optional) filled contour color scheme {`:usgs`,`:gray`,`:gray1`,`:gray2`,`:plasma`,`:magma`}
 - `bg_color`:   (optional) background color
 - `map_units`:  (optional) map  xx/yy units {`:rad`,`:deg`}
 - `plot_units`: (optional) plot xx/yy units {`:rad`,`:deg`,`:utm`,`:m`}
@@ -1238,7 +1238,7 @@ Plot map.
 - `legend`:     (optional) if true, show legend
 - `axis`:       (optional) if true, show axes
 - `fewer_pts`:  (optional) if true, reduce number of data points plotted
-- `map_color`:  (optional) filled contour color scheme {`:usgs`,`:gray`,`:gray1`,`:gray2`}
+- `map_color`:  (optional) filled contour color scheme {`:usgs`,`:gray`,`:gray1`,`:gray2`,`:plasma`,`:magma`}
 - `bg_color`:   (optional) background color
 - `map_units`:  (optional) map  xx/yy units {`:rad`,`:deg`}
 - `plot_units`: (optional) plot xx/yy units {`:rad`,`:deg`,`:utm`,`:m`}
@@ -1301,7 +1301,7 @@ Plot map.
 - `legend`:     (optional) if true, show legend
 - `axis`:       (optional) if true, show axes
 - `fewer_pts`:  (optional) if true, reduce number of data points plotted
-- `map_color`:  (optional) filled contour color scheme {`:usgs`,`:gray`,`:gray1`,`:gray2`}
+- `map_color`:  (optional) filled contour color scheme {`:usgs`,`:gray`,`:gray1`,`:gray2`,`:plasma`,`:magma`}
 - `bg_color`:   (optional) background color
 - `map_units`:  (optional) map  xx/yy units {`:rad`,`:deg`}
 - `plot_units`: (optional) plot xx/yy units {`:rad`,`:deg`,`:utm`,`:m`}
@@ -1345,7 +1345,7 @@ Select map color scale. Default is from the USGS:
 https://mrdata.usgs.gov/magnetic/namag.png
 
 **Arguments:**
-- `map_color`: (optional) filled contour color scheme {`:usgs`,`:gray`,`:gray1`,`:gray2`}
+- `map_color`: (optional) filled contour color scheme {`:usgs`,`:gray`,`:gray1`,`:gray2`,`:plasma`,`:magma`}
 
 **Returns:**
 - `c`: color scale
@@ -1356,12 +1356,12 @@ function map_cs(map_color::Symbol=:usgs)
         f = readdlm(usgs,',')
         c = cgrad([RGB(f[i,:]...) for i in axes(f,1)])
     elseif map_color == :gray # light gray
-        c = cgrad(:gist_gray)[61:90]
+        c = cgrad(cgrad(:gist_gray)[61:90])
     elseif map_color == :gray1 # light gray (lower end)
-        c = cgrad(:gist_gray)[61:81]
+        c = cgrad(cgrad(:gist_gray)[61:81])
     elseif map_color == :gray2 # light gray (upper end)
-        c = cgrad(:gist_gray)[71:90]
-    else # :viridis, :plasma, :inferno, :magma
+        c = cgrad(cgrad(:gist_gray)[71:90])
+    else # :plasma, :magma
         c = cgrad(map_color)
     end
 
@@ -1650,7 +1650,7 @@ Check if latitude and longitude points are on given map.
 - `bool`: if true, all `lat` and `lon` points are on `map_map`
 """
 function map_check(map_map::Map, lat, lon)
-    itp_map = map_itp(map_map,:linear)
+    itp_map = map_itp(map_map)
     N   = length(lat)
     val = trues(N)
     for i = 1:N
@@ -1658,7 +1658,7 @@ function map_check(map_map::Map, lat, lon)
         minimum(map_map.yy) < lat[i] < maximum(map_map.yy) || (val[i] = false)
         val[i] == true && (itp_map(lon[i],lat[i]) != 0     || (val[i] = false))
     end
-    return (all(val))
+    return all(val)
 end # function map_check
 
 """
@@ -1679,7 +1679,7 @@ function map_check(map_map::Map, path::Path, ind=trues(path.N))
 end # function map_check
 
 """
-    map_map::Vector{Map}, path::Path, ind=trues(path.N))
+    map_map::Vector, path::Path, ind=trues(path.N))
 
 Check if latitude and longitude points are on given map(s).
 
@@ -1691,6 +1691,6 @@ Check if latitude and longitude points are on given map(s).
 **Returns:**
 - `bool(s)`: if true, all `path[ind]` points are on `map_map`
 """
-function map_check(map_map::Vector{Map}, path::Path, ind=trues(path.N))
+function map_check(map_map::Vector, path::Path, ind=trues(path.N))
     [map_check(map_map[i],path,ind) for i in eachindex(map_map)]
 end # function map_check

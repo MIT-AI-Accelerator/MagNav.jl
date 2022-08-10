@@ -126,6 +126,7 @@ p1 = plot();
 gif_name = "conf_ellipse"
 
 @testset "ellipse tests" begin
+    ENV["GKSwstype"] = "100"
     @test typeof(MagNav.points_ellipse(P[:,:,1])) <: Tuple{Vector,Vector}
     @test_nowarn MagNav.conf_ellipse!(p1,P[:,:,1])
     @test_nowarn MagNav.conf_ellipse!(p1,P[:,:,1];plot_eigax=true)
