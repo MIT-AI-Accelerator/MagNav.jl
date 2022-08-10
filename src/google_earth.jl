@@ -4,7 +4,8 @@
             alt               = 0,
             opacity           = 0.75,
             map_units::Symbol = :rad,
-            clims::Tuple      = (0,0))
+            clims::Tuple      = (0,0),
+            test_mode::Bool   = false)
 
 Create kmz file of map for use with Google Earth. Generates an "icon" overlay, 
 and is thus not meant for large maps (e.g. > 5 deg x 5 deg).
@@ -18,6 +19,7 @@ and is thus not meant for large maps (e.g. > 5 deg x 5 deg).
 - `opacity`:   (optional) map opacity {0:1}
 - `map_units`: (optional) map xx/yy units {`:rad`,`:deg`}
 - `clims`:     (optional) map color scale limits
+- `test_mode`: (optional) if true, use gr backend instead of pyplot
 
 **Returns:**
 - `nothing`: kmz file `map_name`.kmz is created
@@ -27,7 +29,8 @@ function map2kmz(map_map::Matrix, map_xx::Vector, map_yy::Vector,
                  alt               = 0,
                  opacity           = 0.75,
                  map_units::Symbol = :rad,
-                 clims::Tuple      = (0,0))
+                 clims::Tuple      = (0,0),
+                 test_mode::Bool   = false)
 
     if map_units == :rad
         map_west = rad2deg(minimum(map_xx))
@@ -55,15 +58,16 @@ function map2kmz(map_map::Matrix, map_xx::Vector, map_yy::Vector,
     map_trans = string(string(round(Int,opacity*255),base=16),"ffffff") # ABGR
 
     # using pyplot(), since gr() can't remove margin & plotly() can't save
-    p1 = plot_map(map_map;
-                  clims     = clims,
-                  dpi       = 200,
-                  bg_color  = :transparent,
-                  margin    = 0,
-                  legend    = false,
-                  axis      = false,
-                  fewer_pts = false,
-                  b_e       = pyplot())
+    b_e = test_mode ? gr() : pyplot()
+    p1  = plot_map(map_map;
+                   clims     = clims,
+                   dpi       = 200,
+                   bg_color  = :transparent,
+                   margin    = 0,
+                   legend    = false,
+                   axis      = false,
+                   fewer_pts = false,
+                   b_e       = b_e)
 
     plot!(p1,size=min.(size(map_map),10000))
     
@@ -125,19 +129,19 @@ end # function map2kmz
             map_name::String = "map";
             alt              = 0,
             opacity          = 0.75,
-            clims::Tuple     = (0,0))
+            clims::Tuple     = (0,0),
+            test_mode::Bool  = false)
 
 Create kmz file of map for use with Google Earth. Generates an "icon" overlay, 
 and is thus not meant for large maps (e.g. > 5 deg x 5 deg).
 
 **Arguments:**
-- `mapS`: `MapS` or `MapSd` scalar magnetic anomaly map struct
-- `map_name`: map name to save
-- `alt`:      (optional) map altitude [m]
-- `opacity`:  (optional) map opacity {0:1}
-- `clims`:    (optional) map color scale limits
-- `zone_utm`: (optional) UTM zone
-- `is_north`: (optional) if true, map is in northern hemisphere
+- `mapS`:      `MapS` or `MapSd` scalar magnetic anomaly map struct
+- `map_name`:  map name to save
+- `alt`:       (optional) map altitude [m]
+- `opacity`:   (optional) map opacity {0:1}
+- `clims`:     (optional) map color scale limits
+- `test_mode`: (optional) if true, use gr backend instead of pyplot
 
 **Returns:**
 - `nothing`: kmz file `map_name`.kmz is created
@@ -146,12 +150,14 @@ function map2kmz(mapS::Union{MapS,MapSd},
                  map_name::String = "map";
                  alt              = 0,
                  opacity          = 0.75,
-                 clims::Tuple     = (0,0))
+                 clims::Tuple     = (0,0),
+                 test_mode::Bool  = false)
     map2kmz(mapS.map,mapS.xx,mapS.yy,map_name,
             alt       = alt,
             opacity   = opacity,
             map_units = :rad,
-            clims     = clims)
+            clims     = clims,
+            test_mode = test_mode)
 end # function map2kmz
 
 """
@@ -166,9 +172,9 @@ end # function map2kmz
 Create kml file of flight path for use with Google Earth.
 
 **Arguments:**
-- `lat`: latitude  [rad] or [deg]
-- `lon`: longitude [rad] or [deg]
-- `alt`: altitude  [m]
+- `lat`:        latitude  [rad] or [deg]
+- `lon`:        longitude [rad] or [deg]
+- `alt`:        altitude  [m]
 - `path_name`:  (optional) flight path name
 - `path_units`: (optional) `lat`/`lon` units {`:rad`,`:deg`}
 - `width`:      (optional) line width
@@ -319,7 +325,7 @@ end # function path2kml
 Create kml file of flight path for use with Google Earth.
 
 **Arguments:**
-- `path`: `Path` struct, i.e. `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
+- `path`:       `Path` struct, i.e. `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
 - `ind`:        (optional) selected data indices
 - `path_name`:  (optional) flight path name
 - `path_units`: (optional) `lat`/`lon` units {`:rad`,`:deg`}

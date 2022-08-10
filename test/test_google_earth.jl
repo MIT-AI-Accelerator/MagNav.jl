@@ -37,11 +37,10 @@ ind[51:end] .= false
 
 map_name  = "test"
 path_name = "test"
-map2kmz(map_map,map_xx,map_yy,map_name) # initial run due to unavoidable error
 
 @testset "map2kmz tests" begin
-    @test typeof(map2kmz(map_map,map_xx,map_yy,map_name)) == Nothing
-    @test typeof(map2kmz(mapS,map_name)) == Nothing
+    @test_nowarn map2kmz(map_map,map_xx,map_yy,map_name;test_mode=true)
+    @test_nowarn map2kmz(mapS,map_name;test_mode=true)
 end
 
 @testset "path2kml tests" begin
