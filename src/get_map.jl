@@ -56,18 +56,21 @@ function get_map(map_file::String; map_units::Symbol=:deg)
         error("$map_file map file is incorrect or invalid")
     end
 
+    map_xx = vec(map_xx)
+    map_yy = vec(map_yy)
+
     if map_units == :deg
-        map_xx = deg2rad.(vec(map_xx))
-        map_yy = deg2rad.(vec(map_yy))
+        map_xx = deg2rad.(map_xx)
+        map_yy = deg2rad.(map_yy)
     elseif map_units != :rad
         @info("$map_units map xx/yy units not defined")
     end
 
     if length(map_alt) == 1 # not drape map
-        map_d  = false
+        map_d   = false
         map_alt = map_alt[1]
     else # drape map
-        map_d  = true
+        map_d   = true
     end
 
     if map_vec

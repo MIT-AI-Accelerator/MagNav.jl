@@ -35,19 +35,24 @@ mapS = MagNav.MapS(map_map,map_xx,map_yy,map_alt)
 ind = trues(length(tt))
 ind[51:end] .= false
 
+map_map = map_map[ind,ind]
+map_xx  = map_xx[ind]
+map_yy  = map_yy[ind]
+
 map_name  = "test"
 path_name = "test"
 
 @testset "map2kmz tests" begin
     @test_nowarn map2kmz(map_map,map_xx,map_yy,map_name)
-    @test_nowarn map2kmz(mapS,map_name)
+    @test_nowarn map2kmz(map_map,map_xx,map_yy,map_name;map_units=:deg)
+    @test_throws ErrorException map2kmz(map_map,map_xx,map_yy,map_name;map_units=:test)
+    @test_nowarn map2kmz(mapS,map_name;plot_alt=mapS.alt)
 end
 
 @testset "path2kml tests" begin
-    @test_nowarn path2kml(lat,lon,alt;path_name=path_name,points=false)
-    @test_nowarn path2kml(lat,lon,alt;path_name=path_name,points=true)
-    @test_nowarn path2kml(traj;path_name=path_name,points=false)
-    @test_nowarn path2kml(traj,ind;path_name=path_name,points=true)
+    @test_nowarn path2kml(lat,lon,alt,path_name)
+    @test_throws ErrorException path2kml(lat,lon,alt,path_name;path_units=:test)
+    @test_nowarn path2kml(traj(ind),path_name;points=true)
 end
 
 rm(map_name*".kmz")

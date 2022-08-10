@@ -38,9 +38,9 @@ plot!(p2,tt,ins_out.e_err,lab="easting")
 (p3,p4) = plot_filt_err(traj,filt_out,crlb_out)
 
 ## generating Google Earth map -----------------------------------------------
-# map2kmz(mapS,"example_sim_map") # likely need to run twice
+# map2kmz(mapS,"example_sim_map")
 
 ## generating Google Earth flight paths --------------------------------------
-# path2kml(traj;path_name="example_sim_gps")
-# path2kml(ins;path_name="example_sim_ins")
-# path2kml(filt_out;path_name="example_sim_filt")
+# path2kml(traj,"example_sim_gps")
+# path2kml(ins,"example_sim_ins")
+# path2kml(filt_out,"example_sim_filt")

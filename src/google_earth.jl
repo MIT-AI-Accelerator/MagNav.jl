@@ -1,9 +1,9 @@
 """
     map2kmz(map_map::Matrix, map_xx::Vector, map_yy::Vector,
             map_name::String  = "map";
-            alt               = 0,
-            opacity           = 0.75,
             map_units::Symbol = :rad,
+            plot_alt          = 0,
+            opacity           = 0.75,
             clims::Tuple      = (0,0))
 
 Create kmz file of map for use with Google Earth. Generates an "icon" overlay, 
@@ -13,10 +13,10 @@ and is thus not meant for large maps (e.g. > 5 deg x 5 deg).
 - `map_map`:   `ny` x `nx` 2D gridded map data
 - `map_xx`:    `nx` x-direction (longitude) map coordinates [rad] or [deg]
 - `map_yy`:    `ny` y-direction (latitude)  map coordinates [rad] or [deg]
-- `map_name`:  map name to save
-- `alt`:       (optional) map altitude [m]
-- `opacity`:   (optional) map opacity {0:1}
+- `map_name`:  (optional) map name to save
 - `map_units`: (optional) map xx/yy units {`:rad`,`:deg`}
+- `plot_alt`:  (optional) map altitude in Google Earth [m]
+- `opacity`:   (optional) map opacity {0:1}
 - `clims`:     (optional) map color scale limits
 
 **Returns:**
@@ -24,9 +24,9 @@ and is thus not meant for large maps (e.g. > 5 deg x 5 deg).
 """
 function map2kmz(map_map::Matrix, map_xx::Vector, map_yy::Vector,
                  map_name::String  = "map";
-                 alt               = 0,
-                 opacity           = 0.75,
                  map_units::Symbol = :rad,
+                 plot_alt          = 0,
+                 opacity           = 0.75,
                  clims::Tuple      = (0,0))
 
     if map_units == :rad
@@ -65,63 +65,59 @@ function map2kmz(map_map::Matrix, map_xx::Vector, map_yy::Vector,
 
     plot!(p1,size=min.(size(map_map),10000))
 
-    try
-        png(p1,map_name)
+    png(p1,map_name)
 
-        open(map_kml,"w") do file
-            println(file,
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n",
-            "<kml xmlns=\"http://www.opengis.net/kml/2.2\" xmlns:gx=\"http://www.google.com/kml/ext/2.2\" xmlns:kml=\"http://www.opengis.net/kml/2.2\" xmlns:atom=\"http://www.w3.org/2005/Atom\"> \n",
-            "  <Document> ")
+    open(map_kml,"w") do file
+        println(file,
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n",
+        "<kml xmlns=\"http://www.opengis.net/kml/2.2\" xmlns:gx=\"http://www.google.com/kml/ext/2.2\" xmlns:kml=\"http://www.opengis.net/kml/2.2\" xmlns:atom=\"http://www.w3.org/2005/Atom\"> \n",
+        "  <Document> ")
 
-            println(file,
-            "    <Folder> \n",
-            "      <GroundOverlay> \n",
-            "        <Icon> \n",
-            "          <href>",map_png,"</href> \n",
-            "        </Icon> \n",
-            "        <color>",map_trans,"</color> ")
-            if alt > 0 # put map at altitude specified, otherwise ground
-            println(file,
-            "        <altitude>",alt,"</altitude> \n",
-            "   	   <altitudeMode>absolute</altitudeMode> ")
-            end
-            println(file,
-            "        <LatLonBox> \n",
-            "          <north>",map_north,"</north> \n",
-            "          <south>",map_south,"</south> \n",
-            "          <east>",map_east,"</east> \n",
-            "          <west>",map_west,"</west> \n",
-            "          <rotation>0</rotation> \n",
-            "        </LatLonBox> \n",
-            "      </GroundOverlay> \n",
-            "    </Folder> ")
-
-            println(file,
-            "  </Document> \n",
-            "</kml> ")
+        println(file,
+        "    <Folder> \n",
+        "      <GroundOverlay> \n",
+        "        <Icon> \n",
+        "          <href>",map_png,"</href> \n",
+        "        </Icon> \n",
+        "        <color>",map_trans,"</color> ")
+        if plot_alt > 0 # put map at altitude specified, otherwise ground
+        println(file,
+        "        <altitude>",plot_alt,"</altitude> \n",
+        "   	   <altitudeMode>absolute</altitudeMode> ")
         end
+        println(file,
+        "        <LatLonBox> \n",
+        "          <north>",map_north,"</north> \n",
+        "          <south>",map_south,"</south> \n",
+        "          <east>",map_east,"</east> \n",
+        "          <west>",map_west,"</west> \n",
+        "          <rotation>0</rotation> \n",
+        "        </LatLonBox> \n",
+        "      </GroundOverlay> \n",
+        "    </Folder> ")
 
-        w = ZipFile.Writer(map_kmz)
-        for file in [map_kml,map_png]
-            f = ZipFile.addfile(w,file,method=ZipFile.Deflate)
-            write(f,read(file))
-        end
-        close(w)
-        rm(map_kml)
-        rm(map_png)
-
-    catch _
-        @info("map2kmz errored on first attempt, run again")
-        rm(map_png)
+        println(file,
+        "  </Document> \n",
+        "</kml> ")
     end
+
+    w = ZipFile.Writer(map_kmz)
+
+    for file in [map_kml,map_png]
+        f = ZipFile.addfile(w,file,method=ZipFile.Deflate)
+        write(f,read(file))
+    end
+
+    close(w)
+    rm(map_kml)
+    rm(map_png)
 
 end # function map2kmz
 
 """
     map2kmz(mapS::Union{MapS,MapSd},
             map_name::String = "map";
-            alt              = 0,
+            plot_alt         = 0,
             opacity          = 0.75,
             clims::Tuple     = (0,0))
 
@@ -130,8 +126,8 @@ and is thus not meant for large maps (e.g. > 5 deg x 5 deg).
 
 **Arguments:**
 - `mapS`:      `MapS` or `MapSd` scalar magnetic anomaly map struct
-- `map_name`:  map name to save
-- `alt`:       (optional) map altitude [m]
+- `map_name`:  (optional) map name to save
+- `plot_alt`:  (optional) map altitude in Google Earth [m]
 - `opacity`:   (optional) map opacity {0:1}
 - `clims`:     (optional) map color scale limits
 
@@ -140,19 +136,19 @@ and is thus not meant for large maps (e.g. > 5 deg x 5 deg).
 """
 function map2kmz(mapS::Union{MapS,MapSd},
                  map_name::String = "map";
-                 alt              = 0,
+                 plot_alt         = 0,
                  opacity          = 0.75,
                  clims::Tuple     = (0,0))
-    map2kmz(mapS.map,mapS.xx,mapS.yy,map_name,
-            alt       = alt,
-            opacity   = opacity,
+    map2kmz(mapS.map,mapS.xx,mapS.yy,map_name;
             map_units = :rad,
+            plot_alt  = plot_alt,
+            opacity   = opacity,
             clims     = clims)
 end # function map2kmz
 
 """
-    path2kml(lat::Vector, lon::Vector, alt::Vector;
-             path_name::String  = "path",
+    path2kml(lat::Vector, lon::Vector, alt::Vector,
+             path_name::String  = "path";
              path_units::Symbol = :rad,
              width::Int         = 3,
              color1::String     = "ff000000",
@@ -175,8 +171,8 @@ Create kml file of flight path for use with Google Earth.
 **Returns:**
 - `nothing`: kml file `path_name`.kml is created
 """
-function path2kml(lat::Vector, lon::Vector, alt::Vector;
-                  path_name::String  = "path",
+function path2kml(lat::Vector, lon::Vector, alt::Vector,
+                  path_name::String  = "path";
                   path_units::Symbol = :rad,
                   width::Int         = 3,
                   color1::String     = "ff000000",
@@ -304,36 +300,32 @@ function path2kml(lat::Vector, lon::Vector, alt::Vector;
 end # function path2kml
 
 """
-    path2kml(path::Path, ind=trues(length(path.lat));
-             path_name::String  = "path",
-             path_units::Symbol = :rad,
-             width::Int         = 3,
-             color1::String     = "",
-             color2::String     = "",
-             points::Bool       = false)
+    path2kml(path::Path,
+             path_name::String = "path";
+             width::Int        = 3,
+             color1::String    = "",
+             color2::String    = "00ffffff",
+             points::Bool      = false)
 
 Create kml file of flight path for use with Google Earth.
 
 **Arguments:**
-- `path`:       `Path` struct, i.e. `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
-- `ind`:        (optional) selected data indices
-- `path_name`:  (optional) flight path name
-- `path_units`: (optional) `lat`/`lon` units {`:rad`,`:deg`}
-- `width`:      (optional) line width
-- `color1`:     (optional) path color
-- `color2`:     (optional) below-path color
-- `points`      (optional) if true, create points instead of line
+- `path`:      `Path` struct, i.e. `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
+- `path_name`: (optional) flight path name
+- `width`:     (optional) line width
+- `color1`:    (optional) path color
+- `color2`:    (optional) below-path color
+- `points`     (optional) if true, create points instead of line
 
 **Returns:**
 - `nothing`: kml file `path_name`.kml is created
 """
-function path2kml(path::Path, ind=trues(length(path.lat));
-                  path_name::String  = "path",
-                  path_units::Symbol = :rad,
-                  width::Int         = 3,
-                  color1::String     = "",
-                  color2::String     = "00ffffff",
-                  points::Bool       = false)
+function path2kml(path::Path,
+                  path_name::String = "path";
+                  width::Int        = 3,
+                  color1::String    = "",
+                  color2::String    = "00ffffff",
+                  points::Bool      = false)
 
     if color1 == ""
         typeof(path) == Traj    && (color1 = "ffff8500")
@@ -344,9 +336,8 @@ function path2kml(path::Path, ind=trues(length(path.lat));
     color1 in ["black","k"] && (color1 = "ff000000")
     color2 in ["black","k"] && (color2 = "80000000")
 
-    path2kml(path.lat[ind],path.lon[ind],path.alt[ind];
-             path_name  = path_name,
-             path_units = path_units,
+    path2kml(path.lat,path.lon,path.alt,path_name;
+             path_units = :rad,
              width      = width,
              color1     = color1,
              color2     = color2,

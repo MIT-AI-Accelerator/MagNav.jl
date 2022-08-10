@@ -442,7 +442,7 @@ function nn_comp_2_train(A, x, y, no_norm;
     elseif model_type in [:m2d]
         y_hat = denorm_sets(y_bias,y_scale,vec(sum(A_norm'.*(m(x_norm').+TL_coef),dims=1)))
     end
-    err   = err_segs(y_hat,y,l_segs;silent=silent)
+    err = err_segs(y_hat,y,l_segs;silent=silent)
     @info("train error: $(round(std(err),digits=2)) nT")
 
     # pack normalizations
@@ -506,7 +506,7 @@ function nn_comp_2_test(A, x, y, data_norms::Tuple, weights::Params;
     elseif model_type in [:m2d]
         y_hat = denorm_sets(y_bias,y_scale,vec(sum(A_norm'.*(m(x_norm').+TL_coef),dims=1)))
     end
-    err   = err_segs(y_hat,y,l_segs;silent=silent)
+    err = err_segs(y_hat,y,l_segs;silent=silent)
     @info("test  error: $(round(std(err),digits=2)) nT")
 
     return (y_hat, err)
@@ -936,7 +936,10 @@ function comp_train(xyz::XYZ, ind, mapS::MapS=MapS(zeros(1,1),[0.0],[0.0],0.0);
                 err   = err_fi
             end
 
-            @save drop_fi_bson*"_$i.bson" weights data_norms d
+            comp_params = NNCompParams(comp_params,
+                                       weights    = weights,
+                                       data_norms = data_norms)
+            @save drop_fi_bson*"_$i.bson" comp_params
 
         end
 
@@ -1010,12 +1013,7 @@ function comp_train(xyz::XYZ, ind, mapS::MapS=MapS(zeros(1,1),[0.0],[0.0],0.0);
                                     weights    = weights)
     end
 
-    t = time()-t0
-    if t < 60
-        @info("time: $(round(t   ,digits=1)) sec")
-    else
-        @info("time: $(round(t/60,digits=1)) min")
-    end
+    print_time(time()-t0,1)
 
     return (comp_params, y, y_hat, err, features)
 end # function comp_train
@@ -1171,7 +1169,10 @@ function comp_train(lines, df_line::DataFrame, df_flight::DataFrame,
                 err   = err_fi
             end
 
-            @save drop_fi_bson*"_$i.bson" weights data_norms d
+            comp_params = NNCompParams(comp_params,
+                                       weights    = weights,
+                                       data_norms = data_norms)
+            @save drop_fi_bson*"_$i.bson" comp_params
 
         end
 
@@ -1254,12 +1255,7 @@ function comp_train(lines, df_line::DataFrame, df_flight::DataFrame,
                                     weights    = weights)
     end
 
-    t = time()-t0
-    if t < 60
-        @info("time: $(round(t   ,digits=1)) sec")
-    else
-        @info("time: $(round(t/60,digits=1)) min")
-    end
+    print_time(time()-t0,1)
 
     return (comp_params, y, y_hat, err, features)
 end # function comp_train
@@ -1369,8 +1365,10 @@ function comp_test(xyz::XYZ, ind, mapS::MapS=MapS(zeros(1,1),[0.0],[0.0],0.0);
                 fi_csv = perm_fi_csv
             elseif drop_fi
                 x_fi = x[:, axes(x,2) .!= i]
-                @load drop_fi_bson*"_$i.bson" weights data_norms
-                fi_csv = drop_fi_csv
+                @load drop_fi_bson*"_$i.bson" comp_params
+                data_norms = comp_params.data_norms
+                weights    = comp_params.weights
+                fi_csv     = drop_fi_csv
             end
 
             # evaluate model
@@ -1430,12 +1428,7 @@ function comp_test(xyz::XYZ, ind, mapS::MapS=MapS(zeros(1,1),[0.0],[0.0],0.0);
 
     end
 
-    t = time()-t0
-    if t < 60
-        @info("time: $(round(t   ,digits=1)) sec")
-    else
-        @info("time: $(round(t/60,digits=1)) min")
-    end
+    print_time(time()-t0,1)
 
     return (y, y_hat, err, features)
 end # function comp_test
@@ -1532,8 +1525,10 @@ function comp_test(lines, df_line::DataFrame, df_flight::DataFrame,
                 fi_csv = perm_fi_csv
             elseif drop_fi
                 x_fi = x[:, axes(x,2) .!= i]
-                @load drop_fi_bson*"_$i.bson" weights data_norms
-                fi_csv = drop_fi_csv
+                @load drop_fi_bson*"_$i.bson" comp_params
+                data_norms = comp_params.data_norms
+                weights    = comp_params.weights
+                fi_csv     = drop_fi_csv
             end
 
             # evaluate model
@@ -1601,12 +1596,7 @@ function comp_test(lines, df_line::DataFrame, df_flight::DataFrame,
 
     end
 
-    t = time()-t0
-    if t < 60
-        @info("time: $(round(t   ,digits=1)) sec")
-    else
-        @info("time: $(round(t/60,digits=1)) min")
-    end
+    print_time(time()-t0,1)
 
     return (y, y_hat, err, features)
 end # function comp_test
@@ -1700,12 +1690,7 @@ function comp_m2bc_test(lines, df_line::DataFrame,
     @info("std    y_TL: $(round(std(y_TL),digits=2)) nT")
     @info("test  error: $(round(std(err),digits=2)) nT")
 
-    t = time()-t0
-    if t < 60
-        @info("time: $(round(t   ,digits=1)) sec")
-    else
-        @info("time: $(round(t/60,digits=1)) min")
-    end
+    print_time(time()-t0,1)
 
     return (y_nn, y_TL, y, y_hat, err, features)
 end # function comp_m2bc_test
@@ -1804,3 +1789,16 @@ function comp_train_test(lines_train, lines_test,
     return (comp_params, y_train, y_train_hat, err_train,
                          y_test , y_test_hat , err_test , features)
 end # function comp_train_test
+
+"""
+    function print_time(t)
+
+Internal helper function to print time `t` in `sec` if <1 min, otherwise `min`.
+"""
+function print_time(t, digits=1)
+    if t < 60
+        @info("time: $(round(t   ,digits=digits)) sec")
+    else
+        @info("time: $(round(t/60,digits=digits)) min")
+    end
+end # function print_time
