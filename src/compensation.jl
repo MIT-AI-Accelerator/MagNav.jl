@@ -913,20 +913,6 @@ function comp_train(xyz::XYZ, ind, mapS::MapS=MapS(zeros(1,1),[0.0],[0.0],0.0);
                                     λ_sgl       = λ_sgl,
                                     k_pca       = k_pca,
                                     silent      = silent)
-            elseif model_type in [:TL,:mod_TL,:map_TL]
-                trim = model_type in [:TL,:mod_TL] ? 20 : 0
-                (weights,data_norms,y_hat_fi,err_fi) = 
-                    linear_fit(A_fi,y;
-                               trim=trim, λ=λ_TL,
-                               norm_type_x = norm_type_A,
-                               norm_type_y = norm_type_y,
-                               silent      = silent)
-            elseif model_type in [:elasticnet]
-                (weights,data_norms,y_hat_fi,err_fi) = 
-                    elasticnet_fit(x_fi,y; silent=silent)
-            elseif model_type in [:plsr]
-                (weights,data_norms,y_hat_fi,err_fi) = 
-                    plsr_fit(x_fi,y,k_plsr; silent=silent)
             else
                 error("$model_type model type not defined")
             end
@@ -1141,25 +1127,6 @@ function comp_train(lines, df_line::DataFrame, df_flight::DataFrame,
                                     k_pca       = k_pca,
                                     l_segs      = l_segs,
                                     silent      = silent)
-            elseif model_type in [:TL,:mod_TL,:map_TL]
-                trim = model_type in [:TL,:mod_TL] ? 20 : 0
-                (weights,data_norms,y_hat_fi,err_fi) = 
-                    linear_fit(A_fi,y;
-                               trim=trim, λ=λ_TL,
-                               norm_type_x = norm_type_A,
-                               norm_type_y = norm_type_y,
-                               l_segs      = l_segs,
-                               silent      = silent)
-            elseif model_type in [:elasticnet]
-                (weights,data_norms,y_hat_fi,err_fi) = 
-                    elasticnet_fit(x_fi,y;
-                                   l_segs      = l_segs,
-                                   silent      = silent)
-            elseif model_type in [:plsr]
-                (weights,data_norms,y_hat_fi,err_fi) = 
-                    plsr_fit(x_fi,y,k_plsr;
-                             l_segs      = l_segs,
-                             silent      = silent)
             else
                 error("$model_type model type not defined")
             end
@@ -1381,12 +1348,6 @@ function comp_test(xyz::XYZ, ind, mapS::MapS=MapS(zeros(1,1),[0.0],[0.0],0.0);
                                                    model_type = model_type,
                                                    activation = activation,
                                                    silent     = silent)
-            elseif model_type in [:TL,:mod_TL,:map_TL]
-                (y_hat_fi,err_fi) = linear_test(A_fi,y,data_norms,weights;
-                                                   silent     = silent)
-            elseif model_type in [:elasticnet,:plsr]
-                (y_hat_fi,err_fi) = linear_test(x_fi,y,data_norms,weights;
-                                                   silent     = silent)
             else
                 error("$model_type model type not defined")
             end
@@ -1541,14 +1502,6 @@ function comp_test(lines, df_line::DataFrame, df_flight::DataFrame,
                 (y_hat_fi,err_fi) = nn_comp_2_test(A,x_fi,y,data_norms,weights;
                                                    model_type = model_type,
                                                    activation = activation,
-                                                   l_segs     = l_segs,
-                                                   silent     = silent)
-            elseif model_type in [:TL,:mod_TL,:map_TL]
-                (y_hat_fi,err_fi) = linear_test(A_fi,y,data_norms,weights;
-                                                   l_segs     = l_segs,
-                                                   silent     = silent)
-            elseif model_type in [:elasticnet,:plsr]
-                (y_hat_fi,err_fi) = linear_test(x_fi,y,data_norms,weights;
                                                    l_segs     = l_segs,
                                                    silent     = silent)
             else
