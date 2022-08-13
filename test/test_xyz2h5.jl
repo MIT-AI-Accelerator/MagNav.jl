@@ -19,6 +19,8 @@ flights = [:fields20,:fields21,:fields160,
     @test typeof(xyz2h5(xyz_file,xyz_h5,:Flt1003;
                  lines=[(1003.02,50713.0,50713.2)],lines_type=:exclude)) == Nothing
     rm(xyz_h5)
+    @test_throws ErrorException xyz2h5(xyz_file,xyz_h5,:Flt1003;
+                 lines=[(1003.02,50713.0,50713.2)],lines_type=:test)
     @test typeof(xyz2h5(xyz_file,xyz_h5,:Flt1003;return_data=true)) <: Matrix
     @test typeof(xyz2h5(xyz_file,xyz_h5,:Flt1001_160Hz;return_data=true)) <: Matrix
     @test typeof(xyz2h5(data,xyz_h5,:Flt1003)) == Nothing

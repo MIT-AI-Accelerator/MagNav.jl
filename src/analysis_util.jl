@@ -688,8 +688,7 @@ function get_y(lines, df_line::DataFrame, df_flight::DataFrame,
         if y_type in [:b,:c]
             map_name = df_line.map_name[df_line.line .== line][1]
             traj_alt = mean(xyz.traj.alt[ind])
-            mapS     = get_map(map_name,df_map)
-            mapS.alt > 0 && (mapS = upward_fft(mapS,traj_alt))
+            mapS     = upward_fft(get_map(map_name,df_map),traj_alt;α=200)
             itp_mapS = map_itp(mapS)
             map_val  = itp_mapS.(xyz.traj.lon[ind],xyz.traj.lat[ind])
         else
@@ -848,8 +847,7 @@ function get_Axy(lines, df_line::DataFrame,
         if y_type in [:b,:c]
             map_name = df_line.map_name[df_line.line .== line][1]
             traj_alt = mean(xyz.traj.alt[ind])
-            mapS     = get_map(map_name,df_map)
-            mapS.alt > 0 && (mapS = upward_fft(mapS,traj_alt))
+            mapS     = upward_fft(get_map(map_name,df_map),traj_alt;α=200)
             itp_mapS = map_itp(mapS)
             map_val  = itp_mapS.(xyz.traj.lon[ind],xyz.traj.lat[ind])
         else
@@ -1262,6 +1260,39 @@ function denorm_sets(train_bias, train_scale, train, val, test)
     test  = test  .* train_scale .+ train_bias
     return (train, val, test)
 end # function denorm_sets
+
+"""
+    unpack_data_norms(data_norms)
+
+Internal helper function that unpacks data normalizations, some of which may 
+not be present due to earlier package versions being used.
+
+**Arguments:**
+- `data_norms`: Tuple of data normalizations, e.g. `(A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale)`
+
+**Returns:**
+- `data_norms`: length-7 Tuple of data normalizations, `(A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale)`
+"""
+function unpack_data_norms(data_norms::Tuple)
+    if length(data_norms) == 7
+        (A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale) = data_norms
+    elseif length(data_norms) == 6
+        (A_bias,A_scale,x_bias,x_scale,y_bias,y_scale) = data_norms
+        v_scale = I(size(x_scale,2))
+    elseif length(data_norms) == 5
+        (v_scale,x_bias,x_scale,y_bias,y_scale) = data_norms
+        (A_bias,A_scale) = (0,1)
+    elseif length(data_norms) == 4
+        (x_bias,x_scale,y_bias,y_scale) = data_norms
+        (A_bias,A_scale) = (0,1)
+        v_scale = I(size(x_scale,2))
+    elseif length(data_norms) > 7
+        error("length of data_norms = $(length(data_norms)) > 7")
+    else
+        error("length of data_norms = $(length(data_norms)) < 4")
+    end
+    return (A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale)
+end # function unpack_data_norms
 
 """
     get_ind(tt::Vector, line::Vector;

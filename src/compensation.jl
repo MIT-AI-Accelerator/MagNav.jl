@@ -59,20 +59,8 @@ function nn_comp_1_train(x, y, no_norm;
             v_scale = I(size(x,2))
         end
         x_norm = x_norm * v_scale
-    else # unpack normalizations
-        if length(data_norms) == 7
-            (A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale) = data_norms
-        elseif length(data_norms) == 6
-            v_scale = I(size(x,2))
-            (A_bias,A_scale,x_bias,x_scale,y_bias,y_scale) = data_norms
-        elseif length(data_norms) == 5
-            (A_bias,A_scale) = (0,1)
-            (v_scale,x_bias,x_scale,y_bias,y_scale) = data_norms
-        elseif length(data_norms) == 4
-            (A_bias,A_scale) = (0,1)
-            v_scale = I(size(x,2))
-            (x_bias,x_scale,y_bias,y_scale) = data_norms
-        end
+    else # unpack data normalizations
+        (_,_,v_scale,x_bias,x_scale,y_bias,y_scale) = unpack_data_norms(data_norms)
         x_norm = ((x .- x_bias) ./ x_scale) * v_scale
         y_norm =  (y .- y_bias) ./ y_scale
     end
@@ -167,7 +155,7 @@ function nn_comp_1_train(x, y, no_norm;
     err   = err_segs(y_hat,y,l_segs;silent=silent)
     @info("train error: $(round(std(err),digits=2)) nT")
 
-    # pack normalizations
+    # pack data normalizations
     weights = deepcopy(Flux.params(m))
     data_norms = (zeros(1,1),zeros(1,1),v_scale,x_bias,x_scale,y_bias,y_scale)
 
@@ -187,20 +175,8 @@ function nn_comp_1_test(x, y, data_norms::Tuple, weights::Params;
                         l_segs::Vector       = [length(y)],
                         silent::Bool         = false)
 
-    # unpack normalizations
-    if length(data_norms) == 7
-        (A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale) = data_norms
-    elseif length(data_norms) == 6
-        v_scale = I(size(x,2))
-        (A_bias,A_scale,x_bias,x_scale,y_bias,y_scale) = data_norms
-    elseif length(data_norms) == 5
-        (A_bias,A_scale) = (0,1)
-        (v_scale,x_bias,x_scale,y_bias,y_scale) = data_norms
-    elseif length(data_norms) == 4
-        (A_bias,A_scale) = (0,1)
-        v_scale = I(size(x,2))
-        (x_bias,x_scale,y_bias,y_scale) = data_norms
-    end
+    # unpack data normalizations
+    (_,_,v_scale,x_bias,x_scale,y_bias,y_scale) = unpack_data_norms(data_norms)
 
     x_norm = ((x .- x_bias) ./ x_scale) * v_scale
 
@@ -286,20 +262,9 @@ function nn_comp_2_train(A, x, y, no_norm;
             v_scale = I(size(x,2))
         end
         x_norm = x_norm * v_scale
-    else # unpack normalizations
-        if length(data_norms) == 7
-            (A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale) = data_norms
-        elseif length(data_norms) == 6
-            v_scale = I(size(x,2))
-            (A_bias,A_scale,x_bias,x_scale,y_bias,y_scale) = data_norms
-        elseif length(data_norms) == 5
-            (A_bias,A_scale) = (0,1)
-            (v_scale,x_bias,x_scale,y_bias,y_scale) = data_norms
-        elseif length(data_norms) == 4
-            (A_bias,A_scale) = (0,1)
-            v_scale = I(size(x,2))
-            (x_bias,x_scale,y_bias,y_scale) = data_norms
-        end
+    else # unpack data normalizations
+        (A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale) = 
+            unpack_data_norms(data_norms)
         A_norm =  (A .- A_bias) ./ A_scale
         x_norm = ((x .- x_bias) ./ x_scale) * v_scale
         y_norm =  (y .- y_bias) ./ y_scale
@@ -445,7 +410,7 @@ function nn_comp_2_train(A, x, y, no_norm;
     err = err_segs(y_hat,y,l_segs;silent=silent)
     @info("train error: $(round(std(err),digits=2)) nT")
 
-    # pack normalizations
+    # pack data normalizations
     if model_type in [:m2a] # store NN weights only
         weights = deepcopy(Flux.params(m))
     else # store NN weights + de-scaled TL coef
@@ -471,20 +436,9 @@ function nn_comp_2_test(A, x, y, data_norms::Tuple, weights::Params;
                         l_segs::Vector       = [length(y)],
                         silent::Bool         = false)
 
-    # unpack normalizations
-    if length(data_norms) == 7
-        (A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale) = data_norms
-    elseif length(data_norms) == 6
-        v_scale = I(size(x,2))
-        (A_bias,A_scale,x_bias,x_scale,y_bias,y_scale) = data_norms
-    elseif length(data_norms) == 5
-        (A_bias,A_scale) = (0,1)
-        (v_scale,x_bias,x_scale,y_bias,y_scale) = data_norms
-    elseif length(data_norms) == 4
-        (A_bias,A_scale) = (0,1)
-        v_scale = I(size(x,2))
-        (x_bias,x_scale,y_bias,y_scale) = data_norms
-    end
+    # unpack data normalizations
+    (A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale) = 
+        unpack_data_norms(data_norms)
 
     if model_type in [:m2b,:m2c,:m2d] # contain NN weights + TL coef
         TL_coef = vec(weights[length(weights)])/y_scale
@@ -607,7 +561,7 @@ function plsr_fit(x, y, k::Int=size(x,2);   # N x nx , N x ny , k
     err        = err_segs(y_hat,y,l_segs;silent=silent)
     @info("fit  error: $(round(std(err),digits=2)) nT")
 
-    # pack normalizations
+    # pack data normalizations
     data_norms = (x_bias,x_scale,y_bias,y_scale)
 
     return ((coef, bias), data_norms, y_hat, err)
@@ -672,7 +626,7 @@ function elasticnet_fit(x, y, α=0.99;  λ = -1,
     err        = err_segs(y_hat,y,l_segs;silent=silent)
     @info("fit  error: $(round(std(err),digits=2)) nT")
 
-    # pack normalizations
+    # pack data normalizations
     data_norms = (x_bias,x_scale,y_bias,y_scale)
 
     return ((coef, bias), data_norms, y_hat, err)
@@ -732,7 +686,7 @@ function linear_fit(x, y;
     @info("fit  error: $(round(std(err),digits=2)) nT")
     @info("note that error may be misleading if using bpf")
 
-    # pack normalizations
+    # pack data normalizations
     data_norms = (x_bias,x_scale,y_bias,y_scale)
 
     return ((coef, bias), data_norms, y_hat, err)
@@ -764,7 +718,7 @@ function linear_test(x, y, data_norms::Tuple, weights;
     # unpack weights
     (coef,bias) = weights
 
-    # unpack normalizations
+    # unpack data normalizations
     (x_bias,x_scale,y_bias,y_scale) = data_norms
 
     x_norm = (x .- x_bias) ./ x_scale
@@ -1610,20 +1564,9 @@ function comp_m2bc_test(lines, df_line::DataFrame,
                                         bpf_mag          = bpf_mag,
                                         silent           = true)
 
-    # unpack normalizations
-    if length(data_norms) == 7
-        (A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale) = data_norms
-    elseif length(data_norms) == 6
-        v_scale = I(size(x,2))
-        (A_bias,A_scale,x_bias,x_scale,y_bias,y_scale) = data_norms
-    elseif length(data_norms) == 5
-        (A_bias,A_scale) = (0,1)
-        (v_scale,x_bias,x_scale,y_bias,y_scale) = data_norms
-    elseif length(data_norms) == 4
-        (A_bias,A_scale) = (0,1)
-        v_scale = I(size(x,2))
-        (x_bias,x_scale,y_bias,y_scale) = data_norms
-    end
+    # unpack data normalizations
+    (A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale) = 
+        unpack_data_norms(data_norms)
 
     TL_coef = vec(weights[length(weights)])/y_scale
     weights = Flux.params(weights[1:length(weights)-1])

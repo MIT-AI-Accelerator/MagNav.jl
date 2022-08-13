@@ -1,4 +1,4 @@
-using MagNav, Test, MAT, DataFrames, Flux
+using MagNav, Test, MAT, DataFrames, Flux, LinearAlgebra, Statistics
 
 test_file = "test_data/test_data_params.mat"
 params    = matopen(test_file,"r") do file
@@ -72,49 +72,59 @@ end
     @test_nowarn bpf_data!(mag_1_uc_f_t)
 end
 
-flight = :Flt1003
-xyz_h5 = string(MagNav.sgl_2020_train(),"/$(flight)_train.h5")
-xyz    = get_XYZ20(xyz_h5;tt_sort=true,silent=true)
-line   = xyz.line[1]
-ind    = xyz.line .== line
-ind[51:end] .= false
+flight   = :Flt1003
+xyz_type = :XYZ20
+map_name = :Eastern_395
+xyz_h5   = string(MagNav.sgl_2020_train(),"/$(flight)_train.h5")
+map_h5   = string(MagNav.ottawa_area_maps(),"/Eastern_395.h5")
+xyz      = get_XYZ20(xyz_h5;tt_sort=true,silent=true)
+line     = unique(xyz.line)[2]
+ind      = xyz.line .== line
+ind[findall(ind)[51:end]] .= false
 
-df_line = DataFrame(flight  = flight,
-                    line    = line,
-                    t_start = xyz.traj.tt[ind][1],
-                    t_end   = xyz.traj.tt[ind][end],
-                    test    = false)
+df_line = DataFrame(flight   = flight,
+                    line     = line,
+                    t_start  = xyz.traj.tt[ind][1],
+                    t_end    = xyz.traj.tt[ind][end],
+                    map_name = map_name)
 
 df_flight = DataFrame(flight   = flight,
-                      xyz_type = :XYZ20,
+                      xyz_type = xyz_type,
                       xyz_set  = 1,
                       xyz_h5   = xyz_h5)
+
+df_map = DataFrame(map_name = map_name,
+                   map_h5   = map_h5)
 
 @testset "get_x tests" begin
     @test_nowarn get_x(xyz,ind)
     @test_nowarn get_x(xyz,ind,[:flight])
     @test_throws ErrorException get_x(xyz,ind,[:test])
-    @test_throws ErrorException get_x(xyz,ind,[:ogs_mag])
+    @test_throws ErrorException get_x(xyz,ind,[:mag_6_uc])
     @test_nowarn get_x([xyz,xyz],[ind,ind])
     @test_nowarn get_x(line,df_line,df_flight)
     @test typeof(get_x([-1,line],df_line,df_flight)[1]) <: Matrix
     @test_throws ErrorException get_x([line,line],df_line,df_flight)
 end
 
+map_val = randn(sum(ind))
+
 @testset "get_y tests" begin
     @test_nowarn get_y(xyz,ind;y_type=:a)
+    @test_nowarn get_y(xyz,ind,map_val;y_type=:b)
+    @test_nowarn get_y(xyz,ind,map_val;y_type=:c)
     @test_nowarn get_y(xyz,ind;y_type=:d)
     @test_nowarn get_y(xyz,ind;y_type=:e,use_mag=:flux_a)
     @test_throws ErrorException get_y(xyz,ind;y_type=:test)
-    @test_nowarn get_y(line,df_line,df_flight,DataFrame())
-    @test typeof(get_y([-1,line],df_line,df_flight,DataFrame())) <: Vector
-    @test_throws ErrorException get_y([line,line],df_line,df_flight,DataFrame())
+    @test typeof(get_y(line,df_line,df_flight,df_map;y_type=:b)) <: Vector
+    @test typeof(get_y([-1,line],df_line,df_flight,df_map;y_type=:c)) <: Vector
+    @test_throws ErrorException get_y([line,line],df_line,df_flight,df_map)
 end
 
 @testset "get_Axy tests" begin
-    @test_nowarn get_Axy(line,df_line,df_flight,DataFrame())
-    @test typeof(get_Axy([-1,line],df_line,df_flight,DataFrame())[1]) <: Matrix
-    @test_throws ErrorException get_Axy([line,line],df_line,df_flight,DataFrame())
+    @test_nowarn get_Axy(line,df_line,df_flight,df_map)
+    @test typeof(get_Axy([-1,line],df_line,df_flight,df_map)[1]) <: Matrix
+    @test_throws ErrorException get_Axy([line,line],df_line,df_flight,df_map)
 end
 
 @testset "get_nn_m tests" begin
@@ -138,18 +148,28 @@ weights = Flux.params(m)
     @test sparse_group_lasso(m,0.5) ≈ sparse_group_lasso(weights,0.5)
 end
 
+A = randn(5,9)
 x = randn(5,3)
+y = randn(5)
+(A_bias,A_scale,A_norm) = norm_sets(A)
 (x_bias,x_scale,x_norm) = norm_sets(x)
+(y_bias,y_scale,y_norm) = norm_sets(y)
 
 @testset "norm_sets tests" begin
     for norm_type in [:standardize,:normalize,:scale,:none]
-        @test_nowarn norm_sets(x;norm_type=norm_type)
-        @test_nowarn norm_sets(x,x;norm_type=norm_type)
-        @test_nowarn norm_sets(x,x,x;norm_type=norm_type)
+        @test_nowarn norm_sets(x;norm_type=norm_type,no_norm=2)
+        @test_nowarn norm_sets(x,x;norm_type=norm_type,no_norm=2)
+        @test_nowarn norm_sets(x,x,x;norm_type=norm_type,no_norm=2)
+        @test_nowarn norm_sets(y;norm_type=norm_type)
+        @test_nowarn norm_sets(y,y;norm_type=norm_type)
+        @test_nowarn norm_sets(y,y,y;norm_type=norm_type)
     end
     @test_throws ErrorException norm_sets(x;norm_type=:test)
     @test_throws ErrorException norm_sets(x,x;norm_type=:test)
     @test_throws ErrorException norm_sets(x,x,x;norm_type=:test)
+    @test_throws ErrorException norm_sets(y;norm_type=:test)
+    @test_throws ErrorException norm_sets(y,y;norm_type=:test)
+    @test_throws ErrorException norm_sets(y,y,y;norm_type=:test)
 end
 
 @testset "denorm_sets tests" begin
@@ -159,38 +179,71 @@ end
     @test denorm_sets(x_bias,x_scale,x_norm,x_norm,x_norm)[1] ≈ x
     @test denorm_sets(x_bias,x_scale,x_norm,x_norm,x_norm)[2] ≈ x
     @test denorm_sets(x_bias,x_scale,x_norm,x_norm,x_norm)[3] ≈ x
+    @test denorm_sets(y_bias,y_scale,y_norm) ≈ y
+    @test denorm_sets(y_bias,y_scale,y_norm,y_norm)[1] ≈ y
+    @test denorm_sets(y_bias,y_scale,y_norm,y_norm)[2] ≈ y
+    @test denorm_sets(y_bias,y_scale,y_norm,y_norm,y_norm)[1] ≈ y
+    @test denorm_sets(y_bias,y_scale,y_norm,y_norm,y_norm)[2] ≈ y
+    @test denorm_sets(y_bias,y_scale,y_norm,y_norm,y_norm)[3] ≈ y
+end
+
+v_scale      = I(size(x,2))
+data_norms_7 = (A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale)
+data_norms_6 = (A_bias,A_scale,x_bias,x_scale,y_bias,y_scale)
+data_norms_5 = (v_scale,x_bias,x_scale,y_bias,y_scale)
+data_norms_4 = (x_bias,x_scale,y_bias,y_scale)
+data_norms_A = (0,1,v_scale,x_bias,x_scale,y_bias,y_scale)
+
+
+@testset "unpack_data_norms tests" begin
+    @test MagNav.unpack_data_norms(data_norms_7) == data_norms_7
+    @test MagNav.unpack_data_norms(data_norms_6) == data_norms_7
+    @test MagNav.unpack_data_norms(data_norms_5) == data_norms_A
+    @test MagNav.unpack_data_norms(data_norms_4) == data_norms_A
+    @test_throws ErrorException MagNav.unpack_data_norms((0,0,0,0,0,0,0,0))
+    @test_throws ErrorException MagNav.unpack_data_norms((0,0,0))
 end
 
 tt   = xyz.traj.tt
 line = xyz.line
-lines = [-1,1003.01]
+lines = [-1,1003.02]
 
 @testset "get_ind tests" begin
     @test sum(get_ind(tt,line;ind=ind)) ≈ 50
     @test sum(get_ind(tt[ind],line[ind];ind=1:50)) ≈ 50
-    @test sum(get_ind(tt[ind],line[ind];tt_lim=(49820.4))) ≈ 5
-    @test sum(get_ind(tt[ind],line[ind];tt_lim=(49820.4,49820.8))) ≈ 5
+    @test sum(get_ind(tt[ind],line[ind];tt_lim=(tt[ind][5]))) ≈ 5
+    @test sum(get_ind(tt[ind],line[ind];tt_lim=(tt[ind][5],tt[ind][9]))) ≈ 5
     @test sum.(get_ind(tt,line;ind=ind,splits=(0.5,0.5))) == (25,25)
     @test sum.(get_ind(tt,line;ind=ind,splits=(0.7,0.2,0.1))) == (35,10,5)
     @test_throws ErrorException get_ind(tt[ind],line[ind];tt_lim=(1,1,1))
     @test_throws ErrorException get_ind(tt[ind],line[ind];splits=(1,1,1))
-    @test_throws ErrorException get_ind(tt[ind],line[ind];splits=(1,1,1,1))
-    @test sum(get_ind(xyz;lines=lines,tt_lim=(49820.4))) ≈ 5
+    @test_throws ErrorException get_ind(tt[ind],line[ind];splits=(1,0,0,0))
+    @test sum(get_ind(xyz;lines=lines,tt_lim=(xyz.traj.tt[ind][5]))) ≈ 5
     @test sum(get_ind(xyz,lines[2],df_line;l_seq=15)) ≈ 45
     @test sum.(get_ind(xyz,lines[2],df_line;splits=(0.5,0.5),l_seq=15)) == (15,15)
     @test sum(get_ind(xyz,lines,df_line)) ≈ 50
     @test sum.(get_ind(xyz,lines,df_line;splits=(0.5,0.5))) == (25,25)
     @test sum.(get_ind(xyz,lines,df_line;splits=(0.7,0.2,0.1))) == (35,10,5)
     @test_throws ErrorException get_ind(xyz,lines,df_line;splits=(1,1,1))
-    @test_throws ErrorException get_ind(xyz,lines,df_line;splits=(1,1,1,1))
+    @test_throws ErrorException get_ind(xyz,lines,df_line;splits=(1,0,0,0))
 end
 
 @testset "chunk_data tests" begin
     @test chunk_data(ones(3,2),ones(3),3) == ([[[1,1],[1,1],[1,1]]],[[1,1,1]])
 end
 
-features = [:f1,:f2,:f3]
+m_rnn = Chain(GRU(3,1),Dense(1,1))
 
+@testset "predict_rnn tests" begin
+    @test_nowarn predict_rnn_full(m_rnn,x)
+    @test_nowarn predict_rnn_windowed(m_rnn,x,3)
+end
+
+@testset "krr tests" begin
+    @test typeof(krr(x,y,x,y)) <: Tuple{Vector,Vector}
+end
+
+features = [:f1,:f2,:f3]
 (df_shap,baseline_shap) = eval_shapley(m,x,features)
 
 @testset "shapley & gsa tests" begin
