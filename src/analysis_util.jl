@@ -491,8 +491,18 @@ function get_x(lines, df_line::DataFrame, df_flight::DataFrame,
                l_seq::Int        = -1,
                silent::Bool      = true)
 
+    # check if lines are in df_line, remove if not
+    for l in lines
+        if !(l in df_line.line)
+            @info("line $l is not in df_line, skipping")
+            lines = lines[lines.!=l]
+        end
+    end
+
+    # check if lines are duplicated in df_line, throw error if so
+    length(lines) != length(unique(lines)) && error("df_line contains duplicated lines")
+
     # check if flight data matches up
-    n_line   = length(lines)
     flights  = [df_line.flight[df_line.line .== l][1] for l in lines]
     xyz_sets = [df_flight.xyz_set[df_flight.flight .== f][1] for f in flights]
     any(xyz_sets.!=xyz_sets[1]) && error("incompatible xyz_sets in df_flight")
@@ -504,34 +514,29 @@ function get_x(lines, df_line::DataFrame, df_flight::DataFrame,
     xyz      = nothing
     features = nothing
 
-    for i = 1:n_line
-        if !(lines[i] in df_line.line)
-            @info("line $(lines[i]) is not in df_line, skipping")
-        else
-            flt = df_line.flight[df_line.line .== lines[i]][1]
-            if flt != flt_old
-                xyz = get_XYZ(flt,df_flight;silent=silent)
-            end
-            flt_old = flt
+    for line in lines
+        flt = df_line.flight[df_line.line .== line][1]
+        if flt != flt_old
+            xyz = get_XYZ(flt,df_flight;silent=silent)
+        end
+        flt_old = flt
 
-            ind = get_ind(xyz,lines[i],df_line;l_seq=l_seq)
+        ind = get_ind(xyz,line,df_line;l_seq=l_seq)
 
-            if nn_x === nothing
-                (nn_x,no_norm,features) = get_x(xyz,ind,features_setup;
+        if nn_x === nothing
+            (nn_x,no_norm,features) = get_x(xyz,ind,features_setup;
                                             features_no_norm = features_no_norm,
                                             terms            = terms,
                                             sub_diurnal      = sub_diurnal,
                                             sub_igrf         = sub_igrf,
                                             bpf_mag          = bpf_mag)
-            else
-                nn_x = vcat(nn_x,get_x(xyz,ind,features_setup;
-                                       features_no_norm = features_no_norm,
-                                       terms            = terms,
-                                       sub_diurnal      = sub_diurnal,
-                                       sub_igrf         = sub_igrf,
-                                       bpf_mag          = bpf_mag)[1])
-            end
-
+        else
+            nn_x = vcat(nn_x,get_x(xyz,ind,features_setup;
+                                   features_no_norm = features_no_norm,
+                                   terms            = terms,
+                                   sub_diurnal      = sub_diurnal,
+                                   sub_igrf         = sub_igrf,
+                                   bpf_mag          = bpf_mag)[1])
         end
     end
 
@@ -654,53 +659,57 @@ function get_y(lines, df_line::DataFrame, df_flight::DataFrame,
                l_seq::Int        = -1,
                silent::Bool      = true)
 
-    n_line = length(lines)
+    # check if lines are in df_line, remove if not
+    for l in lines
+        if !(l in df_line.line)
+            @info("line $l is not in df_line, skipping")
+            lines = lines[lines.!=l]
+        end
+    end
+
+    # check if lines are duplicated in df_line, throw error if so
+    length(lines) != length(unique(lines)) && error("df_line contains duplicated lines")
 
     # initial values
     flt_old = :FltInitial
     nn_y    = nothing
     xyz     = nothing
 
-    for i = 1:n_line
-        if !(lines[i] in df_line.line)
-            @info("line $(lines[i]) is not in df_line, skipping")
+    for line in lines
+        flt = df_line.flight[df_line.line .== line][1]
+        if flt != flt_old
+            xyz = get_XYZ(flt,df_flight;silent=silent)
+        end
+        flt_old = flt
+
+        ind = get_ind(xyz,line,df_line;l_seq=l_seq)
+
+        # map values along trajectory (if needed)
+        if y_type in [:b,:c]
+            map_name = df_line.map_name[df_line.line .== line][1]
+            traj_alt = mean(xyz.traj.alt[ind])
+            mapS     = get_map(map_name,df_map)
+            mapS.alt > 0 && (mapS = upward_fft(mapS,traj_alt))
+            itp_mapS = map_itp(mapS)
+            map_val  = itp_mapS.(xyz.traj.lon[ind],xyz.traj.lat[ind])
         else
-            flt = df_line.flight[df_line.line .== lines[i]][1]
-            if flt != flt_old
-                xyz = get_XYZ(flt,df_flight;silent=silent)
-            end
-            flt_old = flt
+            map_val  = -1
+        end
 
-            ind = get_ind(xyz,lines[i],df_line;l_seq=l_seq)
-
-            # map values along trajectory (if needed)
-            if y_type in [:b,:c]
-                map_name = df_line.map_name[df_line.line .== lines[i]][1]
-                traj_alt = mean(xyz.traj.alt[ind])
-                mapS     = get_map(map_name,df_map)
-                mapS.alt > 0 && (mapS = upward_fft(mapS,traj_alt))
-                itp_mapS = map_itp(mapS)
-                map_val  = itp_mapS.(xyz.traj.lon[ind],xyz.traj.lat[ind])
-            else
-                map_val  = -1
-            end
-
-            if nn_y === nothing
-                nn_y = get_y(xyz,ind,map_val;
-                             y_type      = y_type,
-                             use_mag     = use_mag,
-                             use_mag_c   = use_mag_c,
-                             sub_diurnal = sub_diurnal,
-                             sub_igrf    = sub_igrf)
-            else
-                nn_y = vcat(nn_y,get_y(xyz,ind,map_val;
-                                       y_type      = y_type,
-                                       use_mag     = use_mag,
-                                       use_mag_c   = use_mag_c,
-                                       sub_diurnal = sub_diurnal,
-                                       sub_igrf    = sub_igrf))
-            end
-
+        if nn_y === nothing
+            nn_y = get_y(xyz,ind,map_val;
+                         y_type      = y_type,
+                         use_mag     = use_mag,
+                         use_mag_c   = use_mag_c,
+                         sub_diurnal = sub_diurnal,
+                         sub_igrf    = sub_igrf)
+        else
+            nn_y = vcat(nn_y,get_y(xyz,ind,map_val;
+                                   y_type      = y_type,
+                                   use_mag     = use_mag,
+                                   use_mag_c   = use_mag_c,
+                                   sub_diurnal = sub_diurnal,
+                                   sub_igrf    = sub_igrf))
         end
     end
 
@@ -781,8 +790,18 @@ function get_Axy(lines, df_line::DataFrame,
                  map_TL::Bool      = false,
                  silent::Bool      = true)
 
+    # check if lines are in df_line, remove if not
+    for l in lines
+        if !(l in df_line.line)
+            @info("line $l is not in df_line, skipping")
+            lines = lines[lines.!=l]
+        end
+    end
+
+    # check if lines are duplicated in df_line, throw error if so
+    length(lines) != length(unique(lines)) && error("df_line contains duplicated lines")
+
     # check if flight data matches up
-    n_line   = length(lines)
     flights  = [df_line.flight[df_line.line .== l][1] for l in lines]
     xyz_sets = [df_flight.xyz_set[df_flight.flight .== f][1] for f in flights]
     any(xyz_sets.!=xyz_sets[1]) && error("incompatible xyz_sets in df_flight")
@@ -796,84 +815,78 @@ function get_Axy(lines, df_line::DataFrame,
     features = nothing
     nn_y     = nothing
     xyz      = nothing
-    l_segs   = zeros(Int,n_line)
+    l_segs   = zeros(Int,length(lines))
 
-    for i = 1:n_line
-        if !(lines[i] in df_line.line)
-            @info("line $(lines[i]) is not in df_line, skipping")
-            l_segs = l_segs[1:end-1]
-        else
-            flt = df_line.flight[df_line.line .== lines[i]][1]
-            if flt != flt_old
-                xyz = get_XYZ(flt,df_flight;silent=silent)
-            end
-            flt_old = flt
+    for line in lines
+        flt = df_line.flight[df_line.line .== line][1]
+        if flt != flt_old
+            xyz = get_XYZ(flt,df_flight;silent=silent)
+        end
+        flt_old = flt
 
-            ind = get_ind(xyz,lines[i],df_line;l_seq=l_seq)
-            l_segs[findfirst(l_segs .== 0)] = length(xyz.traj.lat[ind])
+        ind = get_ind(xyz,line,df_line;l_seq=l_seq)
+        l_segs[findfirst(l_segs .== 0)] = length(xyz.traj.lat[ind])
 
-            # x matrix
-            if nn_x === nothing
-                (nn_x,no_norm,features) = get_x(xyz,ind,features_setup;
+        # x matrix
+        if nn_x === nothing
+            (nn_x,no_norm,features) = get_x(xyz,ind,features_setup;
                                             features_no_norm = features_no_norm,
                                             terms            = terms,
                                             sub_diurnal      = sub_diurnal,
                                             sub_igrf         = sub_igrf,
                                             bpf_mag          = bpf_mag)
-            else
-                nn_x = vcat(nn_x,get_x(xyz,ind,features_setup;
-                                       features_no_norm = features_no_norm,
-                                       terms            = terms,
-                                       sub_diurnal      = sub_diurnal,
-                                       sub_igrf         = sub_igrf,
-                                       bpf_mag          = bpf_mag)[1])
-            end
+        else
+            nn_x = vcat(nn_x,get_x(xyz,ind,features_setup;
+                                   features_no_norm = features_no_norm,
+                                   terms            = terms,
+                                   sub_diurnal      = sub_diurnal,
+                                   sub_igrf         = sub_igrf,
+                                   bpf_mag          = bpf_mag)[1])
+        end
 
-            # map values along trajectory (if needed)
-            if y_type in [:b,:c]
-                map_name = df_line.map_name[df_line.line .== lines[i]][1]
-                traj_alt = mean(xyz.traj.alt[ind])
-                mapS     = get_map(map_name,df_map)
-                mapS.alt > 0 && (mapS = upward_fft(mapS,traj_alt))
-                itp_mapS = map_itp(mapS)
-                map_val  = itp_mapS.(xyz.traj.lon[ind],xyz.traj.lat[ind])
-            else
-                map_val  = -1
-            end
+        # map values along trajectory (if needed)
+        if y_type in [:b,:c]
+            map_name = df_line.map_name[df_line.line .== line][1]
+            traj_alt = mean(xyz.traj.alt[ind])
+            mapS     = get_map(map_name,df_map)
+            mapS.alt > 0 && (mapS = upward_fft(mapS,traj_alt))
+            itp_mapS = map_itp(mapS)
+            map_val  = itp_mapS.(xyz.traj.lon[ind],xyz.traj.lat[ind])
+        else
+            map_val  = -1
+        end
 
-            # `A` matrix for selected vector magnetometer
-            field_check(xyz,use_vec,MagV)
-            if mod_TL
-                A = create_TL_A(getfield(xyz,use_vec),ind;
-                                Bt=getfield(xyz,use_mag),terms=terms_A)
-            elseif map_TL
-                A = create_TL_A(getfield(xyz,use_vec),ind;
-                                Bt=map_val,terms=terms_A)
-            else
-                A = create_TL_A(getfield(xyz,use_vec),ind;terms=terms_A)
-            end
-            fs = 1 / xyz.traj.dt
-            y_type == :e && bpf_data!(A;bpf=get_bpf(;fs=fs))
+        # `A` matrix for selected vector magnetometer
+        field_check(xyz,use_vec,MagV)
+        if mod_TL
+            A = create_TL_A(getfield(xyz,use_vec),ind;
+                            Bt=getfield(xyz,use_mag),terms=terms_A)
+        elseif map_TL
+            A = create_TL_A(getfield(xyz,use_vec),ind;
+                            Bt=map_val,terms=terms_A)
+        else
+            A = create_TL_A(getfield(xyz,use_vec),ind;terms=terms_A)
+        end
+        fs = 1 / xyz.traj.dt
+        y_type == :e && bpf_data!(A;bpf=get_bpf(;fs=fs))
 
-            nn_A = vcat(nn_A,A)
+        nn_A = vcat(nn_A,A)
 
-            # y vector
-            if nn_y === nothing
-                nn_y = get_y(xyz,ind,map_val;
-                             y_type      = y_type,
-                             use_mag     = use_mag,
-                             use_mag_c   = use_mag_c,
-                             sub_diurnal = sub_diurnal,
-                             sub_igrf    = sub_igrf)
-            else
-                nn_y = vcat(nn_y,get_y(xyz,ind,map_val;
-                                       y_type      = y_type,
-                                       use_mag     = use_mag,
-                                       use_mag_c   = use_mag_c,
-                                       sub_diurnal = sub_diurnal,
-                                       sub_igrf    = sub_igrf))
-            end
-
+        # y vector
+        if nn_y === nothing
+            nn_y = get_y(xyz,ind,map_val;
+                         y_type      = y_type,
+                         use_mag     = use_mag,
+                         use_mag_c   = use_mag_c,
+                         sub_diurnal = sub_diurnal,
+                         sub_igrf    = sub_igrf)
+        else
+            nn_y = vcat(nn_y,get_y(xyz,ind,map_val;
+                                   y_type      = y_type,
+                                   use_mag     = use_mag,
+                                   use_mag_c   = use_mag_c,
+                                   sub_diurnal = sub_diurnal,
+                                   sub_igrf    = sub_igrf))
         end
     end
 
@@ -1277,13 +1290,13 @@ function get_ind(tt::Vector, line::Vector;
                  tt_lim = (),
                  splits = (1))
 
+    sum(splits) ≈ 1.0 || error("sum of splits = $(sum(splits)) ≠ 1")
+
     if typeof(ind) <: AbstractVector{Bool}
         indices = deepcopy(ind)
     else
         indices = eachindex(tt) .∈ (ind,)
     end
-
-    sum(splits) ≈ 1.0 || error("sum of splits = $(sum(splits)) ≠ 1")
 
     N = length(tt)
 
@@ -1427,9 +1440,13 @@ function get_ind(xyz::XYZ, lines, df_line::DataFrame;
                  splits     = (1),
                  l_seq::Int = -1)
 
+    sum(splits) ≈ 1.0 || error("sum of splits = $(sum(splits)) ≠ 1")
+
     ind = falses(xyz.traj.N)
-    for i in eachindex(lines)
-        ind .= ind .| get_ind(xyz,lines[i],df_line;l_seq=l_seq)
+    for line in lines
+        if line in df_line.line
+            ind .= ind .| get_ind(xyz,line,df_line;l_seq=l_seq)
+        end
     end
 
     if length(splits) == 1
@@ -1662,7 +1679,7 @@ function plot_shapley(df_shap, baseline_shap,
 
     # get data & axis labels
     x    = df_shap.mean_effect[range_shap]
-    y    = df_shap.feature[range_shap]
+    y    = df_shap.feature_name[range_shap]
     xlab = "|Shapley effect| (baseline = $baseline_shap)"
     ylab = "feature"
     # title = "Feature Importance - Mean Absolute Shapley Value"

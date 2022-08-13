@@ -1,4 +1,4 @@
-using MagNav, Test, MAT, DataFrames
+using MagNav, Test, MAT, DataFrames, Flux
 
 test_file = "test_data/test_data_params.mat"
 params    = matopen(test_file,"r") do file
@@ -13,7 +13,7 @@ end
 λ = params["TL"]["lambda"]
 
 A_a_f_t      = TL_data["A_a_f_t"]
-mag_1_uc_f_t = TL_data["mag_1_uc_f_t"]
+mag_1_uc_f_t = vec(TL_data["mag_1_uc_f_t"])
 
 TL_a_1       = linreg(mag_1_uc_f_t,A_a_f_t;λ=λ)
 mag_1_comp_d = detrend(TL_data["mag_1_comp"])
@@ -43,7 +43,7 @@ end
 end
 
 @testset "linreg tests" begin
-    @test TL_a_1           ≈ TL_data["TL_a_1"]
+    @test TL_a_1           ≈ vec(TL_data["TL_a_1"])
     @test linreg([3,6,9])  ≈ [0,3]
 end
 
@@ -55,7 +55,17 @@ end
     @test detrend([1,1],[1 0.1; 0.1 1];mean_only=true) ≈ zeros(2)
 end
 
-@testset "detrend tests" begin
+@testset "get_bpf tests" begin
+    @test_nowarn get_bpf(;pass1=0.1,pass2=0.9)
+    @test_nowarn get_bpf(;pass1= -1,pass2=0.9)
+    @test_nowarn get_bpf(;pass1=Inf,pass2=0.9)
+    @test_nowarn get_bpf(;pass1=0.1,pass2= -1)
+    @test_nowarn get_bpf(;pass1=0.1,pass2=Inf)
+    @test_throws ErrorException get_bpf(;pass1=-1,pass2=-1)
+    @test_throws ErrorException get_bpf(;pass1=Inf,pass2=Inf)
+end
+
+@testset "bpf_data tests" begin
     @test_nowarn bpf_data(A_a_f_t)
     @test_nowarn bpf_data(mag_1_uc_f_t)
     @test_nowarn bpf_data!(A_a_f_t)
@@ -82,16 +92,110 @@ df_flight = DataFrame(flight   = flight,
 
 @testset "get_x tests" begin
     @test_nowarn get_x(xyz,ind)
+    @test_nowarn get_x(xyz,ind,[:flight])
+    @test_throws ErrorException get_x(xyz,ind,[:test])
+    @test_throws ErrorException get_x(xyz,ind,[:ogs_mag])
     @test_nowarn get_x([xyz,xyz],[ind,ind])
     @test_nowarn get_x(line,df_line,df_flight)
+    @test typeof(get_x([-1,line],df_line,df_flight)[1]) <: Matrix
+    @test_throws ErrorException get_x([line,line],df_line,df_flight)
 end
 
 @testset "get_y tests" begin
-    @test_nowarn get_y(xyz,ind;)
     @test_nowarn get_y(xyz,ind;y_type=:a)
-    @test_nowarn get_y(line,df_line,df_flight,DataFrame();y_type=:e)
+    @test_nowarn get_y(xyz,ind;y_type=:d)
+    @test_nowarn get_y(xyz,ind;y_type=:e,use_mag=:flux_a)
+    @test_throws ErrorException get_y(xyz,ind;y_type=:test)
+    @test_nowarn get_y(line,df_line,df_flight,DataFrame())
+    @test typeof(get_y([-1,line],df_line,df_flight,DataFrame())) <: Vector
+    @test_throws ErrorException get_y([line,line],df_line,df_flight,DataFrame())
 end
 
 @testset "get_Axy tests" begin
     @test_nowarn get_Axy(line,df_line,df_flight,DataFrame())
+    @test typeof(get_Axy([-1,line],df_line,df_flight,DataFrame())[1]) <: Matrix
+    @test_throws ErrorException get_Axy([line,line],df_line,df_flight,DataFrame())
+end
+
+@testset "get_nn_m tests" begin
+    @test_nowarn get_nn_m(1,1;hidden=[])
+    @test_nowarn get_nn_m(1,1;hidden=[1])
+    @test_nowarn get_nn_m(1,1;hidden=[1,1])
+    @test_nowarn get_nn_m(1,1;hidden=[1,1,1])
+    @test_nowarn get_nn_m(1,1;hidden=[1],final_bias=false)
+    @test_nowarn get_nn_m(1,1;hidden=[1],skip_con=true)
+    @test typeof(get_nn_m(Flux.params(get_nn_m(1,1;hidden=[1],final_bias=true)))) <: Flux.Chain
+    @test typeof(get_nn_m(Flux.params(get_nn_m(1,1;hidden=[1],final_bias=false)))) <: Flux.Chain
+    @test_throws ErrorException get_nn_m(1,1;hidden=[1,1,1,1])
+    @test_throws ErrorException get_nn_m(1,1;hidden=[1,1],skip_con=true)
+end
+
+m = get_nn_m(3,1;hidden=[1])
+weights = Flux.params(m)
+
+@testset "sparse_group_lasso tests" begin
+    @test sparse_group_lasso(m)     ≈ sparse_group_lasso(weights)
+    @test sparse_group_lasso(m,0.5) ≈ sparse_group_lasso(weights,0.5)
+end
+
+x = randn(5,3)
+(x_bias,x_scale,x_norm) = norm_sets(x)
+
+@testset "norm_sets tests" begin
+    for norm_type in [:standardize,:normalize,:scale,:none]
+        @test_nowarn norm_sets(x;norm_type=norm_type)
+        @test_nowarn norm_sets(x,x;norm_type=norm_type)
+        @test_nowarn norm_sets(x,x,x;norm_type=norm_type)
+    end
+    @test_throws ErrorException norm_sets(x;norm_type=:test)
+    @test_throws ErrorException norm_sets(x,x;norm_type=:test)
+    @test_throws ErrorException norm_sets(x,x,x;norm_type=:test)
+end
+
+@testset "denorm_sets tests" begin
+    @test denorm_sets(x_bias,x_scale,x_norm) ≈ x
+    @test denorm_sets(x_bias,x_scale,x_norm,x_norm)[1] ≈ x
+    @test denorm_sets(x_bias,x_scale,x_norm,x_norm)[2] ≈ x
+    @test denorm_sets(x_bias,x_scale,x_norm,x_norm,x_norm)[1] ≈ x
+    @test denorm_sets(x_bias,x_scale,x_norm,x_norm,x_norm)[2] ≈ x
+    @test denorm_sets(x_bias,x_scale,x_norm,x_norm,x_norm)[3] ≈ x
+end
+
+tt   = xyz.traj.tt
+line = xyz.line
+lines = [-1,1003.01]
+
+@testset "get_ind tests" begin
+    @test sum(get_ind(tt,line;ind=ind)) ≈ 50
+    @test sum(get_ind(tt[ind],line[ind];ind=1:50)) ≈ 50
+    @test sum(get_ind(tt[ind],line[ind];tt_lim=(49820.4))) ≈ 5
+    @test sum(get_ind(tt[ind],line[ind];tt_lim=(49820.4,49820.8))) ≈ 5
+    @test sum.(get_ind(tt,line;ind=ind,splits=(0.5,0.5))) == (25,25)
+    @test sum.(get_ind(tt,line;ind=ind,splits=(0.7,0.2,0.1))) == (35,10,5)
+    @test_throws ErrorException get_ind(tt[ind],line[ind];tt_lim=(1,1,1))
+    @test_throws ErrorException get_ind(tt[ind],line[ind];splits=(1,1,1))
+    @test_throws ErrorException get_ind(tt[ind],line[ind];splits=(1,1,1,1))
+    @test sum(get_ind(xyz;lines=lines,tt_lim=(49820.4))) ≈ 5
+    @test sum(get_ind(xyz,lines[2],df_line;l_seq=15)) ≈ 45
+    @test sum.(get_ind(xyz,lines[2],df_line;splits=(0.5,0.5),l_seq=15)) == (15,15)
+    @test sum(get_ind(xyz,lines,df_line)) ≈ 50
+    @test sum.(get_ind(xyz,lines,df_line;splits=(0.5,0.5))) == (25,25)
+    @test sum.(get_ind(xyz,lines,df_line;splits=(0.7,0.2,0.1))) == (35,10,5)
+    @test_throws ErrorException get_ind(xyz,lines,df_line;splits=(1,1,1))
+    @test_throws ErrorException get_ind(xyz,lines,df_line;splits=(1,1,1,1))
+end
+
+@testset "chunk_data tests" begin
+    @test chunk_data(ones(3,2),ones(3),3) == ([[[1,1],[1,1],[1,1]]],[[1,1,1]])
+end
+
+features = [:f1,:f2,:f3]
+
+(df_shap,baseline_shap) = eval_shapley(m,x,features)
+
+@testset "shapley & gsa tests" begin
+    @test_nowarn MagNav.predict_shapley(m,DataFrame(x,features))
+    @test_nowarn eval_shapley(m,x,features)
+    @test_nowarn plot_shapley(df_shap,baseline_shap)
+    @test_nowarn eval_gsa(m,x)
 end

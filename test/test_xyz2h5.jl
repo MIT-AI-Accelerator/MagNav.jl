@@ -13,7 +13,14 @@ flights = [:fields20,:fields21,:fields160,
 @testset "xyz2h5 tests" begin
     @test typeof(xyz2h5(xyz_file,xyz_h5,:Flt1003)) == Nothing
     rm(xyz_h5)
+    @test typeof(xyz2h5(xyz_file,xyz_h5,:Flt1003;
+                 lines=[(1003.02,50713.0,50713.2)],lines_type=:include)) == Nothing
+    rm(xyz_h5)
+    @test typeof(xyz2h5(xyz_file,xyz_h5,:Flt1003;
+                 lines=[(1003.02,50713.0,50713.2)],lines_type=:exclude)) == Nothing
+    rm(xyz_h5)
     @test typeof(xyz2h5(xyz_file,xyz_h5,:Flt1003;return_data=true)) <: Matrix
+    @test typeof(xyz2h5(xyz_file,xyz_h5,:Flt1001_160Hz;return_data=true)) <: Matrix
     @test typeof(xyz2h5(data,xyz_h5,:Flt1003)) == Nothing
 end
 
@@ -39,11 +46,13 @@ rm(xyz_h5)
 end
 
 @testset "field_extrema tests" begin
-    @test MagNav.field_extrema(xyz,:flight,1003.0) == (49820.0,49820.2)
+    @test MagNav.field_extrema(xyz,:line,1003.01) == (49820.0,49820.2)
+    @test_throws ErrorException MagNav.field_extrema(xyz,:flight,-1)
 end
 
 @testset "xyz_fields tests" begin
     for flight in flights
         @test_nowarn xyz_fields(flight)
     end
+    @test_throws ErrorException xyz_fields(:test)
 end
