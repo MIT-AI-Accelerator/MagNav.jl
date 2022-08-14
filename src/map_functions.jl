@@ -285,12 +285,12 @@ function map_trim(map_map::Matrix, map_xx::Vector, map_yy::Vector, alt;
     length(alt) > 1 && (alt = median(alt[ind1])) # in case 2D altitude map provided
     alt < 0 && (alt = 300) # in case drape map altitude (-1) provided
 
-    # xx limits of data-containing UTMZ map
+    # xx limits of data-containing map
     xx_sum  = vec(sum(map_map,dims=1))
     xx_1    = findfirst(xx_sum .!= 0) # 2491,  580
     xx_nx   = findlast(xx_sum  .!= 0) # 8588, 3743
 
-    # yy limits of data-containing UTMZ map
+    # yy limits of data-containing map
     yy_sum = vec(sum(map_map,dims=2))
     yy_1   = findfirst(yy_sum .!= 0) #  494, 2604
     yy_ny  = findlast(yy_sum  .!= 0) # 5290, 6301
@@ -336,16 +336,16 @@ function map_trim(map_map::Matrix, map_xx::Vector, map_yy::Vector, alt;
     end
 
     # minimum padding (per edge) to prevent data loss during utm2lla
-    pad_xx_1 = xxs[1] < map_xx[1] ? xx_1-1 : xx_1 - findlast(map_xx .< xxs[1])
-    pad_yy_1 = yys[1] < map_yy[1] ? yy_1-1 : yy_1 - findlast(map_yy .< yys[1])
+    pad_xx_1 = xxs[1] <= map_xx[1] ? xx_1-1 : xx_1 - findlast(map_xx .< xxs[1])
+    pad_yy_1 = yys[1] <= map_yy[1] ? yy_1-1 : yy_1 - findlast(map_yy .< yys[1])
 
-    if xxs[end] > map_xx[end]
+    if xxs[end] >= map_xx[end]
         pad_xx_nx = nx - xx_nx
     else
         pad_xx_nx = findfirst(map_xx .> xxs[end]) - xx_nx
     end
 
-    if yys[end] > map_yy[end]
+    if yys[end] >= map_yy[end]
         pad_yy_ny = ny - yy_ny
     else
         pad_yy_ny = findfirst(map_yy .> yys[end]) - yy_ny
@@ -1600,6 +1600,7 @@ function plot_events!(p1, t, lab=nothing; ylim=ylims(p1), t_units::Symbol=:sec,
     ylim = ylim .+ 0.05 .* (1,-1) .* (ylim[2]-ylim[1]) # not quite to edge
     t_units == :min && (t = t/60)
     plot!(p1,[t,t],[ylim[1],ylim[2]],lab=lab,c=:red,ls=:dash,legend=legend)
+    return (p1)
 end # function plot_events
 
 """
@@ -1631,9 +1632,10 @@ function plot_events!(p1, flight::Symbol, df_event::DataFrame;
                     (df_event[:,:t] .- t0 .>  xlim[1]) .& 
                     (df_event[:,:t] .- t0 .<  xlim[2]),:]
     for i in axes(df,1)
-        lab = show_lab ? df[i,:event] : nothing
+        lab = show_lab ? string(df[i,:event]) : nothing
         plot_events!(p1,df[i,:t]-t0,lab;ylim=ylim,t_units=t_units,legend=legend)
     end
+    return (p1)
 end # function plot_events
 
 """

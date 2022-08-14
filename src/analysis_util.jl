@@ -322,14 +322,14 @@ function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
     push!(d,:dcm_7=>euler2dcm(roll,pitch,yaw,:nav2body)[1,3,:])
     push!(d,:dcm_8=>euler2dcm(roll,pitch,yaw,:nav2body)[2,3,:])
     push!(d,:dcm_9=>euler2dcm(roll,pitch,yaw,:nav2body)[3,3,:])
-    push!(d,:crcy=>cos.(roll ).*cos.(yaw))
-    push!(d,:cpcy=>cos.(pitch).*cos.(yaw))
-    push!(d,:crsy=>cos.(roll ).*sin.(yaw))
-    push!(d,:cpsy=>cos.(pitch).*sin.(yaw))
-    push!(d,:srcy=>sin.(roll ).*cos.(yaw))
-    push!(d,:spcy=>sin.(pitch).*cos.(yaw))
-    push!(d,:srsy=>sin.(roll ).*sin.(yaw))
-    push!(d,:spsy=>sin.(pitch).*sin.(yaw))
+    push!(d,:crcy  =>cos.(roll ).*cos.(yaw))
+    push!(d,:cpcy  =>cos.(pitch).*cos.(yaw))
+    push!(d,:crsy  =>cos.(roll ).*sin.(yaw))
+    push!(d,:cpsy  =>cos.(pitch).*sin.(yaw))
+    push!(d,:srcy  =>sin.(roll ).*cos.(yaw))
+    push!(d,:spcy  =>sin.(pitch).*cos.(yaw))
+    push!(d,:srsy  =>sin.(roll ).*sin.(yaw))
+    push!(d,:spsy  =>sin.(pitch).*sin.(yaw))
     push!(d,:crcpcy=>cos.(roll ).*cos.(pitch).*cos.(yaw))
     push!(d,:srcpcy=>sin.(roll ).*cos.(pitch).*cos.(yaw))
     push!(d,:crspcy=>cos.(roll ).*sin.(pitch).*cos.(yaw))
@@ -338,10 +338,10 @@ function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
     push!(d,:srcpsy=>sin.(roll ).*cos.(pitch).*sin.(yaw))
     push!(d,:crspsy=>cos.(roll ).*sin.(pitch).*sin.(yaw))
     push!(d,:srspsy=>sin.(roll ).*sin.(pitch).*sin.(yaw))
-    push!(d,:crcp=>cos.(roll ).*cos.(pitch))
-    push!(d,:srcp=>sin.(roll ).*cos.(pitch))
-    push!(d,:crsp=>cos.(roll ).*sin.(pitch))
-    push!(d,:srsp=>sin.(roll ).*sin.(pitch))
+    push!(d,:crcp  =>cos.(roll ).*cos.(pitch))
+    push!(d,:srcp  =>sin.(roll ).*cos.(pitch))
+    push!(d,:crsp  =>cos.(roll ).*sin.(pitch))
+    push!(d,:srsp  =>sin.(roll ).*sin.(pitch))
 
     for rpy in [:roll,:pitch,:yaw]
         rpy == :roll  && (x = roll)
@@ -354,14 +354,16 @@ function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
         push!(d,Symbol(rpy,"_cos_fdm")=>fdm(cos.(x)))
     end
 
-    # Try low-passing the current signals
-    lpf = get_bpf(;pass1=0.0, pass2=0.2,fs=1/xyz.traj.dt);
-    hasproperty(xyz, :cur_strb)   ? push!(d,:lpf_cur_strb=>bpf_data(xyz.cur_strb[ind]; bpf=lpf))      : nothing;
-    hasproperty(xyz, :cur_outpwr) ? push!(d,:lpf_cur_outpwr=> bpf_data(xyz.cur_outpwr[ind]; bpf=lpf)) : nothing;
-    hasproperty(xyz, :cur_ac_hi)  ? push!(d,:lpf_cur_ac_hi=> bpf_data(xyz.cur_ac_hi[ind]; bpf=lpf))   : nothing;
-    hasproperty(xyz, :cur_ac_lo)  ? push!(d,:lpf_cur_ac_lo=> bpf_data(xyz.cur_ac_lo[ind]; bpf=lpf))   : nothing;
-    hasproperty(xyz, :cur_com_1)  ? push!(d,:lpf_cur_com_1=> bpf_data(xyz.cur_com_1[ind]; bpf=lpf))   : nothing;
-    
+    # low-pass filter current sensors
+    if N > 12
+        lpf = get_bpf(;pass1=0.0,pass2=0.2,fs=1/xyz.traj.dt);
+        hasproperty(xyz, :cur_strb)   && push!(d,:lpf_cur_strb  =>bpf_data(xyz.cur_strb[ind];  bpf=lpf))
+        hasproperty(xyz, :cur_outpwr) && push!(d,:lpf_cur_outpwr=>bpf_data(xyz.cur_outpwr[ind];bpf=lpf))
+        hasproperty(xyz, :cur_ac_hi)  && push!(d,:lpf_cur_ac_hi =>bpf_data(xyz.cur_ac_hi[ind]; bpf=lpf))
+        hasproperty(xyz, :cur_ac_lo)  && push!(d,:lpf_cur_ac_lo =>bpf_data(xyz.cur_ac_lo[ind]; bpf=lpf))
+        hasproperty(xyz, :cur_com_1)  && push!(d,:lpf_cur_com_1 =>bpf_data(xyz.cur_com_1[ind]; bpf=lpf))
+    end
+
     push!(d,:ins_lat=>xyz.ins.lat[ind])
     push!(d,:ins_lon=>xyz.ins.lon[ind])
     push!(d,:ins_alt=>xyz.ins.alt[ind])
