@@ -60,7 +60,7 @@ ind[51:end] .= false
     @test_nowarn plot_basic(tt,mag_1_c);
     @test_nowarn plot_basic(tt,mag_1_c;
                             ind  = ind,
-                            xlab = "time [s]",
+                            xlab = "time [min]",
                             ylab = "mag_1_c [nT]",
                             lab  = "mag_1_c vs time");
 end

@@ -108,7 +108,7 @@ xyz_h5 = "test.h5"
     @test typeof(create_XYZ0(mapS;alt=2000,t=10,
                  save_h5=true,xyz_h5=xyz_h5)) <: MagNav.XYZ0
     @test typeof(create_XYZ0(mapS;t=10,VRW_sigma=1e6)) <: MagNav.XYZ0
-    @test typeof(create_XYZ0(mapS_mod;t=10,
+    @test typeof(create_XYZ0(mapS_mod;N_waves=0,
                  ll1 = rad2deg.((traj.lat[1],traj.lon[1])),
                  ll2 = rad2deg.((traj.lat[end],traj.lon[end])))) <: MagNav.XYZ0
 end

@@ -67,11 +67,11 @@ function nn_comp_1_train(x, y, no_norm;
 
     # separate into training and validation
     if frac_train < 1
-        n = size(x_norm,1)
-        p = randperm(n)
-        n_train = floor(Int,frac_train*n)
-        p_train = p[1:n_train]
-        p_val   = p[n_train+1:end]
+        N = size(x_norm,1)
+        p = randperm(N)
+        N_train = floor(Int,frac_train*N)
+        p_train = p[1:N_train]
+        p_val   = p[N_train+1:end]
         x_norm_train = x_norm[p_train,:]
         x_norm_val   = x_norm[p_val  ,:]
         y_norm_train = y_norm[p_train,:]
@@ -272,11 +272,11 @@ function nn_comp_2_train(A, x, y, no_norm;
 
     # separate into training and validation
     if frac_train < 1
-        n = size(x_norm,1)
-        p = randperm(n)
-        n_train = floor(Int,frac_train*n)
-        p_train = p[1:n_train]
-        p_val   = p[n_train+1:end]
+        N = size(x_norm,1)
+        p = randperm(N)
+        N_train = floor(Int,frac_train*N)
+        p_train = p[1:N_train]
+        p_val   = p[N_train+1:end]
         A_train = A_norm[p_train,:]
         A_val   = A_norm[p_val  ,:]
         x_norm_train = x_norm[p_train,:]

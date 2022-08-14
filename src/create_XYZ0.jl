@@ -6,7 +6,7 @@
                 v   = 68,
                 ll1 = (),
                 ll2 = (),
-                n_waves        = 1,
+                N_waves        = 1,
                 flight         = 1,
                 line           = 1,
                 attempts::Int  = 10,
@@ -49,7 +49,7 @@ No required arguments, though many are available to create custom data.
 - `v`:        (optional) approximate aircraft velocity [m/s]
 - `ll1`:      (optional) inital (lat,lon) point [deg]
 - `ll2`:      (optional) final  (lat,lon) point [deg]
-- `n_waves`:  (optional) number of sine waves along path
+- `N_waves`:  (optional) number of sine waves along path
 - `mapV`:     (optional) `MapV` vector magnetic anomaly map struct
 - `flight`:   (optional) flight number
 - `line`:     (optional) line number, i.e. segment within `flight`
@@ -97,7 +97,7 @@ function create_XYZ0(mapS::MapS=get_map(namad);
                      v   = 68,
                      ll1 = (), # (0.54, -1.44)
                      ll2 = (), # (0.55, -1.45)
-                     n_waves        = 1,
+                     N_waves        = 1,
                      flight         = 1,
                      line           = 1,
                      attempts::Int  = 10,
@@ -136,7 +136,7 @@ function create_XYZ0(mapS::MapS=get_map(namad);
                        v        = v,
                        ll1      = ll1,
                        ll2      = ll2,
-                       n_waves  = n_waves,
+                       N_waves  = N_waves,
                        attempts = attempts,
                        save_h5  = save_h5,
                        traj_h5  = xyz_h5)
@@ -210,7 +210,7 @@ end # function create_XYZ0
                 v   = 68,
                 ll1 = (),
                 ll2 = (),
-                n_waves         = 1,
+                N_waves         = 1,
                 attempts::Int   = 10,
                 save_h5::Bool   = false,
                 traj_h5::String = "traj_data.h5")
@@ -227,7 +227,7 @@ map regions without data if the map has data gaps (not completely filled).
 - `v`:        (optional) approximate aircraft velocity [m/s]
 - `ll1`:      (optional) inital (lat,lon) point [deg]
 - `ll2`:      (optional) final  (lat,lon) point [deg]
-- `n_waves`:  (optional) number of sine waves along path
+- `N_waves`:  (optional) number of sine waves along path
 - `attempts`: (optional) maximum attempts at creating flight path on `mapS`
 - `save_h5`:  (optional) if true, save HDF5 file `traj_h5`
 - `traj_h5`:  (optional) path/name of HDF5 file to save with trajectory data
@@ -242,7 +242,7 @@ function create_traj(mapS::MapS=get_map(namad);
                      v   = 68,
                      ll1 = (),
                      ll2 = (),
-                     n_waves         = 1,
+                     N_waves         = 1,
                      attempts::Int   = 10,
                      save_h5::Bool   = false,
                      traj_h5::String = "traj_data.h5")
@@ -256,7 +256,7 @@ function create_traj(mapS::MapS=get_map(namad);
     lon = zeros(eltype(mapS.xx),N)
     while (!map_check(mapS,lat,lon) & (i <= attempts)) | (i == 0)
         i += 1
-        
+
         if ll1 == () # put initial point in middle 50% of map
             (map_yy_1,map_yy_2) = extrema(mapS.yy)
             (map_xx_1,map_xx_2) = extrema(mapS.xx)
@@ -265,7 +265,7 @@ function create_traj(mapS::MapS=get_map(namad);
         else # use given inital point
             (lat1,lon1) = deg2rad.(ll1)
         end
-        
+
         if ll2 == () # use given velocity & time to set distance
             N     = round(Int,t/dt+1)
             d     = v*t # distance
@@ -273,23 +273,23 @@ function create_traj(mapS::MapS=get_map(namad);
             lat2  = lat1 + dn2dlat(d*sin(θ_utm),lat1)
             lon2  = lon1 + de2dlon(d*cos(θ_utm),lat1)
         else # use given final point directly
-            N = 1000*n_waves # estimated N, to be corrected
+            N = 1000*(N_waves+1) # estimated N, to be corrected
             (lat2,lon2) = deg2rad.(ll2)
         end
-        
+
         dlat = lat2 - lat1 # straight line Δ latitude,  to be corrected
         dlon = lon2 - lon1 # straight line Δ longitude, to be corrected
-        
+
         θ_ll = atan(dlat,dlon) # heading in lat & lon coordinates
-        
+
         lat  = [LinRange(lat1,lat2,N);] # initial latitudes
         lon  = [LinRange(lon1,lon2,N);] # initial longitudes
-        
+
         # p1 = plot(lon,lat)
         # plot!(p1,[lon[1],lon[1]],[lat[1],lat[1]],markershape=:circle)
-        
-        if n_waves > 0
-            ϕ   = LinRange(0,n_waves*2*pi,N) # waves steps
+
+        if N_waves > 0
+            ϕ   = LinRange(0,N_waves*2*pi,N) # waves steps
             wav = [ϕ sin.(ϕ)] # waves
             rot = [cos(θ_ll) -sin(θ_ll); sin(θ_ll) cos(θ_ll)] # rotation matrix
             cor = wav*rot' # waves correction after rotation
@@ -298,7 +298,7 @@ function create_traj(mapS::MapS=get_map(namad);
             # plot(wav[:,1],wav[:,2])
             # plot(cor[:,1],cor[:,2])
         end
-        
+
         frac1 = 0
         frac2 = 0
         while !(frac1 ≈ 1) | !(frac2 ≈ 1) # typically 4-5 iterations
@@ -332,7 +332,7 @@ function create_traj(mapS::MapS=get_map(namad);
             lat       = itp_lat.(range_new) # get interpolated lat
             lon       = itp_lon.(range_new) # get interpolated lat
         end
-        
+
         # plot!(p1,lon,lat)        
 
     end

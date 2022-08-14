@@ -78,15 +78,19 @@ map_name = :Eastern_395
 xyz_h5   = string(MagNav.sgl_2020_train(),"/$(flight)_train.h5")
 map_h5   = string(MagNav.ottawa_area_maps(),"/Eastern_395.h5")
 xyz      = get_XYZ20(xyz_h5;tt_sort=true,silent=true)
-line     = unique(xyz.line)[2]
-ind      = xyz.line .== line
+tt       = xyz.traj.tt
+line     = xyz.line
+line2    = unique(line)[2]
+line3    = unique(line)[3]
+lines    = [-1,line2]
+ind      = line .== line2
 ind[findall(ind)[51:end]] .= false
 
-df_line = DataFrame(flight   = flight,
-                    line     = line,
-                    t_start  = xyz.traj.tt[ind][1],
-                    t_end    = xyz.traj.tt[ind][end],
-                    map_name = map_name)
+df_line = DataFrame(flight   = [flight,flight],
+                    line     = [line2,line3],
+                    t_start  = [tt[ind][1]  ,tt[get_ind(xyz;lines=line3)][1]],
+                    t_end    = [tt[ind][end],tt[get_ind(xyz;lines=line3)][5]],
+                    map_name = [map_name,map_name])
 
 df_flight = DataFrame(flight   = flight,
                       xyz_type = xyz_type,
@@ -102,9 +106,10 @@ df_map = DataFrame(map_name = map_name,
     @test_throws ErrorException get_x(xyz,ind,[:test])
     @test_throws ErrorException get_x(xyz,ind,[:mag_6_uc])
     @test_nowarn get_x([xyz,xyz],[ind,ind])
-    @test_nowarn get_x(line,df_line,df_flight)
-    @test typeof(get_x([-1,line],df_line,df_flight)[1]) <: Matrix
-    @test_throws ErrorException get_x([line,line],df_line,df_flight)
+    @test_nowarn get_x(line2,df_line,df_flight)
+    @test typeof(get_x(lines,df_line,df_flight)[1]) <: Matrix
+    @test typeof(get_x([line2,line3],df_line,df_flight)[1]) <: Matrix
+    @test_throws ErrorException get_x([line2,line2],df_line,df_flight)
 end
 
 map_val = randn(sum(ind))
@@ -116,15 +121,17 @@ map_val = randn(sum(ind))
     @test_nowarn get_y(xyz,ind;y_type=:d)
     @test_nowarn get_y(xyz,ind;y_type=:e,use_mag=:flux_a)
     @test_throws ErrorException get_y(xyz,ind;y_type=:test)
-    @test typeof(get_y(line,df_line,df_flight,df_map;y_type=:b)) <: Vector
-    @test typeof(get_y([-1,line],df_line,df_flight,df_map;y_type=:c)) <: Vector
-    @test_throws ErrorException get_y([line,line],df_line,df_flight,df_map)
+    @test typeof(get_y(line2,df_line,df_flight,df_map;y_type=:a)) <: Vector
+    @test typeof(get_y(lines,df_line,df_flight,df_map;y_type=:c)) <: Vector
+    @test typeof(get_y([line2,line3],df_line,df_flight,df_map;y_type=:d)) <: Vector
+    @test_throws ErrorException get_y([line2,line2],df_line,df_flight,df_map)
 end
 
 @testset "get_Axy tests" begin
-    @test_nowarn get_Axy(line,df_line,df_flight,df_map)
-    @test typeof(get_Axy([-1,line],df_line,df_flight,df_map)[1]) <: Matrix
-    @test_throws ErrorException get_Axy([line,line],df_line,df_flight,df_map)
+    @test_nowarn get_Axy(line2,df_line,df_flight,df_map;y_type=:a,mod_TL=true)
+    @test typeof(get_Axy(lines,df_line,df_flight,df_map;y_type=:b,map_TL=true)[1]) <: Matrix
+    @test typeof(get_Axy([line2,line3],df_line,df_flight,df_map)[1]) <: Matrix
+    @test_throws ErrorException get_Axy([line2,line2],df_line,df_flight,df_map)
 end
 
 @testset "get_nn_m tests" begin
@@ -204,10 +211,6 @@ data_norms_A = (0,1,v_scale,x_bias,x_scale,y_bias,y_scale)
     @test_throws ErrorException MagNav.unpack_data_norms((0,0,0))
 end
 
-tt   = xyz.traj.tt
-line = xyz.line
-lines = [-1,1003.02]
-
 @testset "get_ind tests" begin
     @test sum(get_ind(tt,line;ind=ind)) ≈ 50
     @test sum(get_ind(tt[ind],line[ind];ind=1:50)) ≈ 50
@@ -218,7 +221,7 @@ lines = [-1,1003.02]
     @test_throws ErrorException get_ind(tt[ind],line[ind];tt_lim=(1,1,1))
     @test_throws ErrorException get_ind(tt[ind],line[ind];splits=(1,1,1))
     @test_throws ErrorException get_ind(tt[ind],line[ind];splits=(1,0,0,0))
-    @test sum(get_ind(xyz;lines=lines,tt_lim=(xyz.traj.tt[ind][5]))) ≈ 5
+    @test sum(get_ind(xyz;lines=lines,tt_lim=(tt[ind][5]))) ≈ 5
     @test sum(get_ind(xyz,lines[2],df_line;l_seq=15)) ≈ 45
     @test sum.(get_ind(xyz,lines[2],df_line;splits=(0.5,0.5),l_seq=15)) == (15,15)
     @test sum(get_ind(xyz,lines,df_line)) ≈ 50
