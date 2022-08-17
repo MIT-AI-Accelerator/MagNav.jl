@@ -129,7 +129,7 @@ Save map data to HDF5 file. Map files are typically saved with `:deg` units.
 - `map_yy`:   `ny` y-direction (latitude)  map coordinates [rad] or [m]
 - `map_alt`:   map altitude or `ny` x `nx` 2D gridded altitude map data [m]
 - `map_h5`:    map path/name to save
-- `map_units`: (optional) map xx/yy units to use in HDF5 file {`:deg`,`:rad`}
+- `map_units`: (optional) map xx/yy units to use in HDF5 file {`:deg`,`:rad`,`:utm`}
 
 **Returns:**
 - `nothing`: HDF5 file `map_h5` is created
@@ -140,9 +140,11 @@ function save_map(map_map, map_xx, map_yy, map_alt, map_h5::String="map.h5";
     if map_units == :deg
         map_xx = rad2deg.(map_xx)
         map_yy = rad2deg.(map_yy)
-    elseif map_units in [:utm,:m]
+    end
+
+    if map_units in [:deg,:rad,:utm]
         @info("saving map with $map_units map xx/yy units")
-    elseif map_units != :rad
+    else
         @info("$map_units map xx/yy units not defined")
     end
 
@@ -164,7 +166,7 @@ Save map data to HDF5 file. Map files are typically saved with `:deg` units.
 **Arguments:**
 - `mapS`:      `MapS` or `MapSd` scalar magnetic anomaly map struct
 - `map_h5`:    map path/name to save
-- `map_units`: (optional) map xx/yy units to use in HDF5 file {`:deg`,`:rad`}
+- `map_units`: (optional) map xx/yy units to use in HDF5 file {`:deg`,`:rad`,`:utm`}
 
 **Returns:**
 - `nothing`: HDF5 file `map_h5` is created

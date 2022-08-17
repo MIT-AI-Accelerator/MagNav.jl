@@ -84,22 +84,24 @@ function get_XYZ0(xyz_file::String,
 
     traj = get_traj(xyz_file,traj_field;dt=dt,silent=silent)
 
-    if ins_field == :none
-        ins = create_ins(traj)
-    else
-        ins = get_ins(xyz_file,ins_field;dt=traj.dt,silent=silent)
-    end
-
     if occursin(".h5",xyz_file) # get data from HDF5 file
 
-        xyz_data   = h5open(xyz_file,"r") # read-only
+        xyz_data = h5open(xyz_file,"r") # read-only
+
+        if any(isnan.(MagNav.read_check(xyz_data,:ins_lat,1,true))) | 
+           any(isnan.(MagNav.read_check(xyz_data,:ins_lon,1,true))) |
+           any(isnan.(MagNav.read_check(xyz_data,:ins_alt,1,true)))
+            ins = create_ins(traj)
+        else
+            ins = get_ins(xyz_file,ins_field;dt=traj.dt,silent=silent)
+        end
 
         # these fields might not be included
         if !any(isnan.(read_check(xyz_data,:flight,1,true)))
             flights = read_check(xyz_data ,:flight,1,true)
         end
         if !any(isnan.(read_check(xyz_data,:line,1,true)))
-            lines   = read_check(xyz_data ,:line,1,true)
+            lines = read_check(xyz_data ,:line,1,true)
         end
         mag_1_uc   = read_check(xyz_data,:mag_1_uc,1,true)
         mag_1_c    = read_check(xyz_data,:mag_1_c ,1,true)
@@ -111,6 +113,12 @@ function get_XYZ0(xyz_file::String,
         close(xyz_data)
 
     elseif occursin(".mat",xyz_file) # get data from MAT file
+
+        if ins_field == :none
+            ins = create_ins(traj)
+        else
+            ins = get_ins(xyz_file,ins_field;dt=traj.dt,silent=silent)
+        end
 
         xyz_data = matopen(xyz_file,"r") do file
             read(file,string(traj_field))
@@ -470,7 +478,7 @@ Get inertial navigation system data at specific indicies.
 **Returns:**
 - `ins`: `INS` inertial navigation system struct at specific indicies
 """
-function get_ins(xyz::XYZ, ind=trues(xyz.traj.N);
+function get_ins(xyz::XYZ, ind=trues(xyz.ins.N);
                  N_zero_ll::Int=0, t_zero_ll=0, err=0.0)
     N_zero_ll = t_zero_ll > 0 ? round(Int,t_zero_ll/xyz.ins.dt) : N_zero_ll
     lat = xyz.traj.lat[ind][1:N_zero_ll]
@@ -480,8 +488,10 @@ end # function get_ins
 
 function (ins::INS)(ind=trues(ins.N);
                     N_zero_ll::Int=0, err=0.0,
-                    lat=ins.lat[ind][1:1],
-                    lon=ins.lon[ind][1:1])
+                    lat=zero(ins.lat[ind]),
+                    lon=zero(ins.lon[ind]))
+
+    ind = findall((1:ins.N) .∈ ((1:ins.N)[ind],))
 
     if N_zero_ll > 0
         (ins_lat,ins_lon) = zero_ins_ll(ins.lat[ind],ins.lon[ind],err,lat,lon)
@@ -489,23 +499,11 @@ function (ins::INS)(ind=trues(ins.N);
         (ins_lat,ins_lon) = (ins.lat[ind],ins.lon[ind])
     end
 
-    N = length(ins.lat[ind])
-
-    if N == 1
-        Cnb = reshape(ins.Cnb[:,:,ind],(size(ins.Cnb[:,:,ind])...,1))
-        P   = reshape(ins.P[:,:,ind]  ,(size(ins.P[:,:,ind])...  ,1))
-        return INS(N           ,  ins.dt      , [ins.tt[ind]] ,
-                  [ins_lat]    , [ins_lon]    , [ins.alt[ind]],
-                  [ins.vn[ind]], [ins.ve[ind]], [ins.vd[ind]] ,
-                  [ins.fn[ind]], [ins.fe[ind]], [ins.fd[ind]] ,
-                   Cnb         ,  P)
-    else
-        return INS(N           ,  ins.dt      , ins.tt[ind]   ,
-                   ins_lat     ,  ins_lon     , ins.alt[ind]  ,
-                   ins.vn[ind] ,  ins.ve[ind] , ins.vd[ind]   ,
-                   ins.fn[ind] ,  ins.fe[ind] , ins.fd[ind]   ,
-                   ins.Cnb[:,:,ind], ins.P[:,:,ind])
-    end
+    return INS(length(ind) ,  ins.dt      , ins.tt[ind]   ,
+               ins_lat     ,  ins_lon     , ins.alt[ind]  ,
+               ins.vn[ind] ,  ins.ve[ind] , ins.vd[ind]   ,
+               ins.fn[ind] ,  ins.fe[ind] , ins.fd[ind]   ,
+               ins.Cnb[:,:,ind], ins.P[:,:,ind])
 end # function (ins::INS)
 
 """
@@ -529,7 +527,7 @@ function zero_ins_ll(ins_lat, ins_lon, err=0.0, lat=ins_lat[1:1], lon=ins_lon[1:
     # check that INS vectors are the same length and get length
     N_lat = length(ins_lat)
     N_lon = length(ins_lon)
-    N_lat == N_lon ? (N=N_lat) : error("N_lat_ins ≂̸ N_lon_ins")
+    N_lat == N_lon ? (N=N_lat) : error("N_ins_lat ≂̸ N_ins_lon")
 
     # check that truth vectors (or scalar) are the same length and get length
     N_zero_lat = length(lat)
@@ -575,22 +573,13 @@ end # function get_traj
 
 function (traj::Traj)(ind=trues(traj.N))
 
-    N = length(traj.lat[ind])
+    ind = findall((1:traj.N) .∈ ((1:traj.N)[ind],))
 
-    if N == 1
-        Cnb = reshape(traj.Cnb[:,:,ind],(size(traj.Cnb[:,:,ind])...,1))
-        return Traj(N             ,  traj.dt       , [traj.tt[ind]] ,
-                   [traj.lat[ind]], [traj.lon[ind]], [traj.alt[ind]],
-                   [traj.vn[ind]] , [traj.ve[ind]] , [traj.vd[ind]] ,
-                   [traj.fn[ind]] , [traj.fe[ind]] , [traj.fd[ind]] ,
-                    Cnb)
-    else
-        return Traj(N             , traj.dt        , traj.tt[ind]   ,
-                    traj.lat[ind] , traj.lon[ind]  , traj.alt[ind]  ,
-                    traj.vn[ind]  , traj.ve[ind]   , traj.vd[ind]   ,
-                    traj.fn[ind]  , traj.fe[ind]   , traj.fd[ind]   ,
-                    traj.Cnb[:,:,ind])
-    end
+    return Traj(length(ind)   , traj.dt        , traj.tt[ind]   ,
+                traj.lat[ind] , traj.lon[ind]  , traj.alt[ind]  ,
+                traj.vn[ind]  , traj.ve[ind]   , traj.vd[ind]   ,
+                traj.fn[ind]  , traj.fe[ind]   , traj.fd[ind]   ,
+                traj.Cnb[:,:,ind])
 end # function (traj::Traj)
 
 function (flux::MagV)(ind=trues(length(flux.x)))

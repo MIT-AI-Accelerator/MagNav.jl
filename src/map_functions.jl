@@ -150,8 +150,8 @@ Internal helper function to get basic map parameters.
 **Returns:**
 - `ind0`: map indices with zeros
 - `ind1`: map indices without zeros
-- `nx`: x-direction map dimension
-- `ny`: y-direction map dimension
+- `nx`:   x-direction map dimension
+- `ny`:   y-direction map dimension
 """
 function map_params(map_map::Matrix, map_xx::Vector, map_yy::Vector)
 
@@ -180,8 +180,8 @@ Internal helper function to get basic map parameters.
 **Returns:**
 - `ind0`: map indices with zeros
 - `ind1`: map indices without zeros
-- `nx`: x-direction map dimension
-- `ny`: y-direction map dimension
+- `nx`:   x-direction map dimension
+- `ny`:   y-direction map dimension
 """
 function map_params(map_map::Map)
     if typeof(map_map) <: Union{MapS,MapSd} # scalar map
@@ -260,11 +260,11 @@ indices for the original map that will produce the appropriate trimmed map.
 - `map_yy`:    `ny` y-direction map coordinates [m] or [rad] or [deg]
 - `alt`:       nominal map altitude, median used for 2D altitude map [m]
 - `pad`:       (optional) minimum padding along map edges
-- `xx_lim`:    (optional) x-direction map limits (xx_min,xx_max) [m] or [rad] or [deg]
-- `yy_lim`:    (optional) y-direction map limits (yy_min,yy_max) [m] or [rad] or [deg]
+- `xx_lim`:    (optional) x-direction map limits `(xx_min,xx_max)` [m] or [rad] or [deg]
+- `yy_lim`:    (optional) y-direction map limits `(yy_min,yy_max)` [m] or [rad] or [deg]
 - `zone_utm`:  (optional) UTM zone
 - `is_north`:  (optional) if true, map is in northern hemisphere
-- `map_units`: (optional) map xx/yy units {`:utm`,`:m`,`:rad`,`:deg`}
+- `map_units`: (optional) map xx/yy units {`:utm`,`:rad`,`:deg`}
 - `silent`:    (optional) if true, no print outs
 
 **Returns:**
@@ -307,7 +307,7 @@ function map_trim(map_map::Matrix, map_xx::Vector, map_yy::Vector, alt;
     yy_1   = maximum([yy_1 ,yy_lim[1]])
     yy_ny  = minimum([yy_ny,yy_lim[2]])
 
-    if map_units in [:utm,:m]
+    if map_units == :utm
 
         # get xx/yy limits at 4 corners of data-containing UTMZ map for no data loss
         (lons,lats) = map_lla_lim(map_xx,map_yy,alt,xx_1,xx_nx,yy_1,yy_ny;
@@ -384,8 +384,8 @@ trimmed magnetic anomaly map struct.
 **Arguments:**
 - `map_map`:  `Map` magnetic anomaly map struct
 - `pad`:      (optional) minimum padding along map edges
-- `xx_lim`:   (optional) x-direction map limits (xx_min,xx_max) [rad]
-- `yy_lim`:   (optional) y-direction map limits (yy_min,yy_max) [rad]
+- `xx_lim`:   (optional) x-direction map limits `(xx_min,xx_max)` [rad]
+- `yy_lim`:   (optional) y-direction map limits `(yy_min,yy_max)` [rad]
 - `zone_utm`: (optional) UTM zone
 - `is_north`: (optional) if true, map is in northern hemisphere
 - `silent`:   (optional) if true, no print outs
@@ -479,10 +479,10 @@ Correct the International Geomagnetic Reference Field (IGRF), i.e. core field,
 of a map by subtracting and/or adding the IGRF on specified date(s).
 
 **Arguments:**
-- `map_map`:       `ny` x `nx` 2D gridded map data
+- `map_map`:       `ny` x `nx` 2D gridded map data on UTMZ grid
 - `map_alt`:       `ny` x `nx` 2D gridded altitude map data [m]
-- `map_xx`:        `nx` x-direction map coordinates
-- `map_yy`:        `ny` y-direction map coordinates
+- `map_xx`:        `nx` x-direction map coordinates [m]
+- `map_yy`:        `ny` y-direction map coordinates [m]
 - `sub_igrf_date`: (optional) date of IGRF core field to subtract [yr], -1 to ignore
 - `add_igrf_date`: (optional) date of IGRF core field to add [yr], -1 to ignore
 - `zone_utm`:      (optional) UTM zone
@@ -623,7 +623,7 @@ end # function map_fill!
                     down_max        = 150,
                     α               = 200)
 
-The "chessboard method", which upward (and possibly downward) continues a map 
+The `chessboard method`, which upward (and possibly downward) continues a map 
 to multiple altitudes to create a 3D map, then vertically interpolates at each 
 horizontal grid point.
 
@@ -631,7 +631,7 @@ Reference: Cordell, Phillips, & Godson, U.S. Geological Survey Potential-Field
 Software Version 2.0, 1992.
 
 **Arguments:**
-- `map_map`:  `ny` x `nx` 2D gridded target (e.g. magnetic) map data
+- `map_map`:  `ny` x `nx` 2D gridded target (e.g. magnetic) map data on [m] grid
 - `map_alt`:  `ny` x `nx` 2D gridded altitude map data [m]
 - `map_xx`:   `nx` x-direction map coordinates [m]
 - `map_yy`:   `ny` y-direction map coordinates [m]
@@ -681,7 +681,7 @@ function map_chessboard!(map_map::Matrix, map_alt::Matrix, map_xx::Vector, map_y
             map_d[:,:,k] = deepcopy(map_map)
         else
             @inbounds map_d[:,:,k] = upward_fft(map_map,dx,dy,alt_lev[k];
-                                                 expand=true,α=α)
+                                                expand=true,α=α)
         end
     end
 
@@ -710,7 +710,7 @@ end # function map_chessboard!
                    down_max        = 150,
                    α               = 200)
 
-The "chessboard method", which upward (and possibly downward) continues a map 
+The `chessboard method`, which upward (and possibly downward) continues a map 
 to multiple altitudes to create a 3D map, then vertically interpolates at each 
 horizontal grid point.
 
@@ -718,7 +718,7 @@ Reference: Cordell, Phillips, & Godson, U.S. Geological Survey Potential-Field
 Software Version 2.0, 1992.
 
 **Arguments:**
-- `MapSd`:   `MapSd` scalar magnetic anomaly map struct with UTMZ map grid
+- `MapSd`:   `MapSd` scalar magnetic anomaly map struct
 - `alt`:      final map altitude after upward continuation [m], -1 for drape map
 - `down_cont`:(optional) if true, downward continue if needed
 - `dz`:       (optional) upward continuation step size [m]
@@ -726,14 +726,24 @@ Software Version 2.0, 1992.
 - `α`:        (optional) regularization parameter for downward continuation
 
 **Returns:**
-- `map_map`: `MapS` scalar magnetic anomaly map struct with UTMZ map grid
+- `map_map`: `MapS` scalar magnetic anomaly map struct
 """
 function map_chessboard(mapSd::MapSd, alt;
                         down_cont::Bool = true,
                         dz              = 5,
                         down_max        = 150,
                         α               = 200)
-    map_chessboard!(mapSd.map,mapSd.alt,mapSd.xx,mapSd.yy,alt;
+    map_xx = zero(mapSd.xx)
+    map_yy = zero(mapSd.yy)
+    for i in eachindex(map_xx)[2:end]
+        map_xx[i] = map_xx[i-1] + dlon2de(mapSd.xx[i] - mapSd.xx[i-1],
+                                          mean(mapSd.yy[i-1:i]))
+    end
+    for i in eachindex(map_yy)[2:end]
+        map_yy[i] = map_yy[i-1] + dlat2dn(mapSd.yy[i] - mapSd.yy[i-1],
+                                          mean(mapSd.yy[i-1:i]))
+    end
+    map_chessboard!(mapSd.map,mapSd.alt,map_xx,map_yy,alt;
                     down_cont = down_cont,
                     dz        = dz,
                     down_max  = down_max,
@@ -751,7 +761,7 @@ end # function map_chessboard
 Convert map grid from UTMZ to LLA.
 
 **Arguments:**
-- `map_map`:  `ny` x `nx` 2D gridded map data with UTMZ map grid
+- `map_map`:  `ny` x `nx` 2D gridded map data on UTMZ grid
 - `map_xx`:   `nx` x-direction map coordinates [m]
 - `map_yy`:   `ny` y-direction map coordinates [m]
 - `alt`:      nominal map altitude, median used for 2D altitude map [m]
@@ -761,7 +771,7 @@ Convert map grid from UTMZ to LLA.
 - `map_h5`:   (optional) path/name of HDF5 file to save with map data
 
 **Returns:**
-- `mapS`: `MapS` or `MapSd` scalar magnetic anomaly map struct with LLA map grid
+- `mapS`: `MapS` or `MapSd` scalar magnetic anomaly map struct (mutated `map_map` into `map` field)
 """
 function map_utm2lla!(map_map::Matrix, map_xx::Vector, map_yy::Vector, alt;
                       zone_utm::Int  = 18,
@@ -820,14 +830,14 @@ end # function map_utm2lla!
 Convert map grid from UTMZ to LLA.
 
 **Arguments:**
-- `mapS`:     `MapS` or `MapSd` scalar magnetic anomaly map struct with UTMZ map grid
+- `mapS`:     `MapS` or `MapSd` scalar magnetic anomaly map struct `on UTMZ grid`
 - `zone_utm`: (optional) UTM zone
 - `is_north`: (optional) if true, map is in northern hemisphere
 - `save_h5`:  (optional) if true, save HDF5 file `map_h5`
 - `map_h5`:   (optional) path/name of HDF5 file to save with map data
 
 **Returns:**
-- `mapS`: `MapS` or `MapSd` scalar magnetic anomaly map struct with LLA map grid (mutated)
+- `mapS`: `MapS` or `MapSd` scalar magnetic anomaly map struct (mutated)
 """
 function map_utm2lla!(mapS::Union{MapS,MapSd};
                       zone_utm::Int  = 18,
@@ -1057,7 +1067,7 @@ Plot map on an existing plot.
 - `map_color`:  (optional) filled contour color scheme {`:usgs`,`:gray`,`:gray1`,`:gray2`,`:plasma`,`:magma`}
 - `bg_color`:   (optional) background color
 - `map_units`:  (optional) map  xx/yy units {`:rad`,`:deg`}
-- `plot_units`: (optional) plot xx/yy units {`:rad`,`:deg`,`:utm`,`:m`}
+- `plot_units`: (optional) plot xx/yy units {`:rad`,`:deg`,`:m`}
 - `b_e`:        (optional) plotting backend
 
 **Returns:**
@@ -1089,7 +1099,7 @@ function plot_map!(p1, map_map::Matrix,
         if plot_units == :deg
             map_xx = rad2deg.(map_xx)
             map_yy = rad2deg.(map_yy)
-        elseif plot_units in [:utm,:m] # inaccuracy scales with map size
+        elseif plot_units == :m # inaccuracy scales with map size # todo
             mid_xx = floor(Int,nx/2)
             mid_yy = floor(Int,ny/2)
             map_xx = dlon2de.(map_xx .- map_xx[mid_xx], map_yy[mid_yy])
@@ -1099,7 +1109,7 @@ function plot_map!(p1, map_map::Matrix,
         if plot_units == :rad
             map_xx = deg2rad.(map_xx)
             map_yy = deg2rad.(map_yy)
-        elseif plot_units in [:utm,:m] # inaccuracy scales with map size
+        elseif plot_units == :m # inaccuracy scales with map size # todo
             mid_xx = floor(Int,nx/2)
             mid_yy = floor(Int,ny/2)
             map_xx = dlon2de.(deg2rad.(map_xx .- map_xx[mid_xx]),
@@ -1107,16 +1117,21 @@ function plot_map!(p1, map_map::Matrix,
             map_yy = dlat2dn.(deg2rad.(map_yy .- map_yy[mid_yy]),
                               deg2rad( map_yy[mid_yy]))
         end
+    else
+        error("map_units $map_units not defined")
     end
 
-    if map_units in [:rad,:deg]
+    if plot_units == :rad
+        xlab = ((map_xx[end] == nx) | !axis) ? "" : "longitude [rad]"
+        ylab = ((map_yy[end] == ny) | !axis) ? "" : "latitude [rad]"
+    elseif plot_units == :deg
         xlab = ((map_xx[end] == nx) | !axis) ? "" : "longitude [deg]"
         ylab = ((map_yy[end] == ny) | !axis) ? "" : "latitude [deg]"
-    elseif map_units in [:utm,:m]
+    elseif plot_units == :m
         xlab = ((map_xx[end] == nx) | !axis) ? "" : "easting [m]"
         ylab = ((map_yy[end] == ny) | !axis) ? "" : "northing [m]"
     else
-        error("map_units $map_units  not defined")
+        error("plot_units $plot_units  not defined")
     end
 
     # map indices with zeros (ind0)
@@ -1177,7 +1192,7 @@ Plot map on an existing plot.
 - `map_color`:  (optional) filled contour color scheme {`:usgs`,`:gray`,`:gray1`,`:gray2`,`:plasma`,`:magma`}
 - `bg_color`:   (optional) background color
 - `map_units`:  (optional) map  xx/yy units {`:rad`,`:deg`}
-- `plot_units`: (optional) plot xx/yy units {`:rad`,`:deg`,`:utm`,`:m`}
+- `plot_units`: (optional) plot xx/yy units {`:rad`,`:deg`,`:m`}
 - `b_e`:        (optional) plotting backend
 
 **Returns:**
@@ -1195,8 +1210,7 @@ function plot_map!(p1, mapS::Union{MapS,MapSd};
                    map_units::Symbol  = :rad,
                    plot_units::Symbol = :deg,
                    b_e                = gr())
-    plot_map!(p1,
-              mapS.map,mapS.xx,mapS.yy;
+    plot_map!(p1,mapS.map,mapS.xx,mapS.yy;
               clims      = clims,
               dpi        = dpi,
               margin     = margin,
@@ -1241,7 +1255,7 @@ Plot map.
 - `map_color`:  (optional) filled contour color scheme {`:usgs`,`:gray`,`:gray1`,`:gray2`,`:plasma`,`:magma`}
 - `bg_color`:   (optional) background color
 - `map_units`:  (optional) map  xx/yy units {`:rad`,`:deg`}
-- `plot_units`: (optional) plot xx/yy units {`:rad`,`:deg`,`:utm`,`:m`}
+- `plot_units`: (optional) plot xx/yy units {`:rad`,`:deg`,`:m`}
 - `b_e`:        (optional) plotting backend
 
 **Returns:**
@@ -1304,7 +1318,7 @@ Plot map.
 - `map_color`:  (optional) filled contour color scheme {`:usgs`,`:gray`,`:gray1`,`:gray2`,`:plasma`,`:magma`}
 - `bg_color`:   (optional) background color
 - `map_units`:  (optional) map  xx/yy units {`:rad`,`:deg`}
-- `plot_units`: (optional) plot xx/yy units {`:rad`,`:deg`,`:utm`,`:m`}
+- `plot_units`: (optional) plot xx/yy units {`:rad`,`:deg`,`:m`}
 - `b_e`:        (optional) plotting backend
 
 **Returns:**
@@ -1402,7 +1416,8 @@ end # function map_clims
                fewer_pts::Bool    = true,
                show_plot::Bool    = true,
                zoom_plot::Bool    = false,
-               path_color::Symbol = :ignore)
+               path_color::Symbol = :ignore,
+               Nmax::Int          = 5000
 
 Plot flight path on an existing plot.
 
@@ -1415,6 +1430,7 @@ Plot flight path on an existing plot.
 - `show_plot`:  (optional) if true, show plot
 - `zoom_plot`:  (optional) if true, zoom plot onto flight path
 - `path_color`: (optional) path color {`:ignore`,`:black`,`:gray`,`:red`,`:orange`,`:yellow`,`:green`,`:cyan`,`:blue`,`:purple`}
+- `Nmax`:       (optional) maximum number of data points plotted, only used if `fewer_pts = true`
 
 **Returns:**
 - `nothing`: flight path is plotted on `p1`
@@ -1424,13 +1440,13 @@ function plot_path!(p1, lat, lon;
                     fewer_pts::Bool    = true,
                     show_plot::Bool    = true,
                     zoom_plot::Bool    = false,
-                    path_color::Symbol = :ignore)
+                    path_color::Symbol = :ignore,
+                    Nmax::Int          = 5000)
 
     lon = rad2deg.(deepcopy(lon))
     lat = rad2deg.(deepcopy(lat))
 
     N    = length(lat)
-    Nmax = 5000
     if fewer_pts & (N > Nmax)
         lat = lat[1:round(Int,N/Nmax):N]
         lon = lon[1:round(Int,N/Nmax):N]
@@ -1456,22 +1472,24 @@ end # function plot_path!
 """
     plot_path!(p1, path::Path, ind=trues(length(path.lat));
                lab = "",
-               fewer_pts::Bool = true,
-               show_plot::Bool = true,
-               zoom_plot::Bool = false,
-               path_color::Symbol = :ignore)
+               fewer_pts::Bool    = true,
+               show_plot::Bool    = true,
+               zoom_plot::Bool    = false,
+               path_color::Symbol = :ignore,
+               Nmax::Int          = 5000)
 
 Plot flight path on an existing plot.
 
 **Arguments:**
-- `p1`: existing plot
-- `path`: `Path` struct, i.e. `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
+- `p1`:         existing plot
+- `path`:       `Path` struct, i.e. `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
 - `ind`:        (optional) selected data indices
 - `lab`:        (optional) data (legend) label
 - `fewer_pts`:  (optional) if true, reduce number of data points plotted
 - `show_plot`:  (optional) if true, show plot
 - `zoom_plot`:  (optional) if true, zoom plot onto flight path
 - `path_color`: (optional) path color {`:ignore`,`:black`,`:gray`,`:red`,`:orange`,`:yellow`,`:green`,`:cyan`,`:blue`,`:purple`}
+- `Nmax`:       (optional) maximum number of data points plotted, only used if `fewer_pts = true`
 
 **Returns:**
 - `nothing`: flight path is plotted on `p1`
@@ -1481,13 +1499,15 @@ function plot_path!(p1, path::Path, ind=trues(length(path.lat));
                     fewer_pts::Bool    = true,
                     show_plot::Bool    = true,
                     zoom_plot::Bool    = false,
-                    path_color::Symbol = :ignore)
+                    path_color::Symbol = :ignore,
+                    Nmax::Int          = 5000)
     plot_path!(p1,path.lat[ind],path.lon[ind];
                lab        = lab,
                fewer_pts  = fewer_pts,
                show_plot  = show_plot,
                zoom_plot  = zoom_plot,
-               path_color = path_color)
+               path_color = path_color,
+               Nmax       = Nmax)
 end # function plot_path!
 
 """
@@ -1498,7 +1518,8 @@ end # function plot_path!
               fewer_pts::Bool    = false,
               show_plot::Bool    = true,
               zoom_plot::Bool    = true,
-              path_color::Symbol = :ignore)
+              path_color::Symbol = :ignore,
+              Nmax::Int          = 5000)
 
 Plot flight path.
 
@@ -1512,6 +1533,7 @@ Plot flight path.
 - `show_plot`:  (optional) if true, show plot
 - `zoom_plot`:  (optional) if true, zoom plot onto flight path
 - `path_color`: (optional) path color {`:ignore`,`:black`,`:gray`,`:red`,`:orange`,`:yellow`,`:green`,`:cyan`,`:blue`,`:purple`}
+- `Nmax`:       (optional) maximum number of data points plotted, only used if `fewer_pts = true`
 
 **Returns:**
 - `p1`: plot with flight path
@@ -1523,7 +1545,8 @@ function plot_path(lat, lon;
                    fewer_pts::Bool    = false,
                    show_plot::Bool    = true,
                    zoom_plot::Bool    = true,
-                   path_color::Symbol = :ignore)
+                   path_color::Symbol = :ignore,
+                   Nmax::Int          = 5000)
     p1 = plot(xlab="longitude [deg]",ylab="latitude [deg]",
               dpi=dpi,margin=margin*mm)
     plot_path!(p1,lat,lon;
@@ -1531,18 +1554,20 @@ function plot_path(lat, lon;
                fewer_pts  = fewer_pts,
                show_plot  = show_plot,
                zoom_plot  = zoom_plot,
-               path_color = path_color)
+               path_color = path_color,
+               Nmax       = Nmax)
 end # function plot_path
 
 """
     plot_path(path::Path, ind=trues(length(path.lat));
               lab = "",
-              dpi::Int        = 200,
-              margin::Int     = 2,
-              fewer_pts::Bool = false,
-              show_plot::Bool = true,
-              zoom_plot::Bool = true,
-              path_color::Symbol = :ignore)
+              dpi::Int           = 200,
+              margin::Int        = 2,
+              fewer_pts::Bool    = false,
+              show_plot::Bool    = true,
+              zoom_plot::Bool    = true,
+              path_color::Symbol = :ignore,
+              Nmax::Int          = 5000)
 
 Plot flight path.
 
@@ -1556,18 +1581,20 @@ Plot flight path.
 - `show_plot`:  (optional) if true, show plot
 - `zoom_plot`:  (optional) if true, zoom plot onto flight path
 - `path_color`: (optional) path color {`:ignore`,`:black`,`:gray`,`:red`,`:orange`,`:yellow`,`:green`,`:cyan`,`:blue`,`:purple`}
+- `Nmax`:       (optional) maximum number of data points plotted, only used if `fewer_pts = true`
 
 **Returns:**
 - `p1`: plot with flight path
 """
 function plot_path(path::Path, ind=trues(length(path.lat));
                    lab = "",
-                   dpi::Int        = 200,
-                   margin::Int     = 2,
-                   fewer_pts::Bool = false,
-                   show_plot::Bool = true,
-                   zoom_plot::Bool = true,
-                   path_color::Symbol = :ignore)
+                   dpi::Int           = 200,
+                   margin::Int        = 2,
+                   fewer_pts::Bool    = false,
+                   show_plot::Bool    = true,
+                   zoom_plot::Bool    = true,
+                   path_color::Symbol = :ignore,
+                   Nmax::Int          = 5000)
     plot_path(path.lat[ind],path.lon[ind];
               lab        = lab,
               dpi        = dpi,
@@ -1575,7 +1602,8 @@ function plot_path(path::Path, ind=trues(length(path.lat));
               fewer_pts  = fewer_pts,
               show_plot  = show_plot,
               zoom_plot  = zoom_plot,
-              path_color = path_color)
+              path_color = path_color,
+              Nmax       = Nmax)
 end # function plot_path
 
 """
