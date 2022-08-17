@@ -137,7 +137,7 @@ function get_XYZ0(xyz_file::String,
         flux_a_t = haskey(xyz_data,"flux_a_t") ? xyz_data["flux_a_t"] : NaN
     end
 
-    # ensure row vectors
+    # ensure vectors
     mag_1_uc = length(mag_1_uc) > 1 ? vec(mag_1_uc) : mag_1_uc[1]
     mag_1_c  = length(mag_1_c ) > 1 ? vec(mag_1_c ) : mag_1_c[1]
     flux_a_x = length(flux_a_x) > 1 ? vec(flux_a_x) : flux_a_x[1]
@@ -250,7 +250,7 @@ function get_traj(traj_file::String, field::Symbol=:traj; dt=0.1, silent::Bool=f
         error("$traj_file trajectory file is invalid")
     end
 
-    # ensure row vectors
+    # ensure vectors
     lat   = length(lat  ) > 1 ? vec(lat  ) : lat[1]
     lon   = length(lon  ) > 1 ? vec(lon  ) : lon[1]
     alt   = length(alt  ) > 1 ? vec(alt  ) : alt[1]
@@ -389,7 +389,7 @@ function get_ins(ins_file::String, field::Symbol=:ins_data; dt=0.1, silent::Bool
         error("$ins_file INS file is invalid")
     end
 
-    # ensure row vectors
+    # ensure vectors
     lat   = length(lat  ) > 1 ? vec(lat  ) : lat[1]
     lon   = length(lon  ) > 1 ? vec(lon  ) : lon[1]
     alt   = length(alt  ) > 1 ? vec(alt  ) : alt[1]

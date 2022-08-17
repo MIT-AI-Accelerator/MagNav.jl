@@ -163,7 +163,7 @@ terms       = [:p]
 terms_A     = [:p,:i,:e]
 batchsize   = 5
 epoch_lbfgs = 1
-k_pca       = 1
+k_pca       = 5
 frac_train  = 1
 
 comp_params_1  = MagNav.NNCompParams(model_type  = :m1,
