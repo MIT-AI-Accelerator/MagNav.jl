@@ -82,12 +82,16 @@ mapUTMd  = MagNav.MapSd(mapS.map,[utm_temp[i].x for i = 1:length(mapS.xx)],
 end
 
 @testset "map_gxf2h5 tests" begin
-    @test typeof(map_gxf2h5(gxf_file,5181.0;get_lla=true,save_h5=false)) <: MagNav.MapS
-    @test typeof(map_gxf2h5(gxf_file,5181.0;get_lla=false,save_h5=false)) <: MagNav.MapS
-    @test typeof(map_gxf2h5(gxf_file,gxf_file,5181.0;
-                            up_cont=false,get_lla=true,save_h5=false)) <: MagNav.MapSd
-    @test typeof(map_gxf2h5(gxf_file,gxf_file,5181.0;
+    @test typeof(map_gxf2h5(gxf_file,5181;get_lla=true ,save_h5=false)) <: MagNav.MapS
+    @test typeof(map_gxf2h5(gxf_file,5181;get_lla=false,save_h5=false)) <: MagNav.MapS
+    @test typeof(map_gxf2h5(gxf_file,gxf_file,5181;
+                            up_cont=false,get_lla=true ,save_h5=false)) <: MagNav.MapSd
+    @test typeof(map_gxf2h5(gxf_file,gxf_file,5181;
                             up_cont=false,get_lla=false,save_h5=false)) <: MagNav.MapSd
+    @test typeof(map_gxf2h5(gxf_file,gxf_file,120;
+                            up_cont=true ,get_lla=true ,save_h5=false)) <: MagNav.MapS
+    @test typeof(map_gxf2h5(gxf_file,gxf_file,120;
+                            up_cont=true ,get_lla=false,save_h5=false)) <: MagNav.MapS
 end
 
 p1 = plot();
