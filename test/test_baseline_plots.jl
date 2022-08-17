@@ -53,7 +53,7 @@ ins      = MagNav.INS( N,dt,tt,ins_lat,ins_lon,ins_alt,ins_vn,ins_ve,ins_vd,
 flux_a   = MagNav.MagV(flux_a_x,flux_a_y,flux_a_z,flux_a_t)
 xyz      = MagNav.XYZ0(traj,ins,flux_a, flights, lines,mag_1_c,mag_1_uc)
 
-ind = trues(length(tt))
+ind = trues(N)
 ind[51:end] .= false
 
 @testset "plot_basic tests" begin

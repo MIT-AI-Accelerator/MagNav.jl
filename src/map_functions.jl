@@ -1099,7 +1099,7 @@ function plot_map!(p1, map_map::Matrix,
         if plot_units == :deg
             map_xx = rad2deg.(map_xx)
             map_yy = rad2deg.(map_yy)
-        elseif plot_units == :m # inaccuracy scales with map size # todo
+        elseif plot_units == :m
             mid_xx = floor(Int,nx/2)
             mid_yy = floor(Int,ny/2)
             map_xx = dlon2de.(map_xx .- map_xx[mid_xx], map_yy[mid_yy])
@@ -1109,7 +1109,7 @@ function plot_map!(p1, map_map::Matrix,
         if plot_units == :rad
             map_xx = deg2rad.(map_xx)
             map_yy = deg2rad.(map_yy)
-        elseif plot_units == :m # inaccuracy scales with map size # todo
+        elseif plot_units == :m
             mid_xx = floor(Int,nx/2)
             mid_yy = floor(Int,ny/2)
             map_xx = dlon2de.(deg2rad.(map_xx .- map_xx[mid_xx]),

@@ -741,7 +741,7 @@ Train an aeromagnetic compensation model.
 **Arguments:**
 - `xyz`:         `XYZ` flight data struct
 - `ind`:         selected data indices
-- `mapS`:        `MapS` scalar magnetic anomaly map struct, only used for `y_type = :b, :c`
+- `mapS`:        (optional) `MapS` scalar magnetic anomaly map struct, only used for `y_type = :b, :c`
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct, either:
     - `NNCompParams`:  neural network-based aeromagnetic compensation parameters struct
     - `LinCompParams`: linear aeromagnetic compensation parameters struct
@@ -787,6 +787,8 @@ function comp_train(xyz::XYZ, ind, mapS::MapS=MapS(zeros(1,1),[0.0],[0.0],0.0);
 
     # map values along trajectory (if needed)
     if y_type in [:b,:c]
+        traj_alt = median(xyz.traj.alt[ind])
+        mapS.alt > 0 && (mapS = upward_fft(mapS,traj_alt;α=200))
         itp_mapS = map_itp(mapS)
         map_val  = itp_mapS.(xyz.traj.lon[ind],xyz.traj.lat[ind])
     else
@@ -1190,7 +1192,7 @@ Evaluate aeromagnetic compensation model performance.
 **Arguments:**
 - `xyz`:  `XYZ` flight data struct
 - `ind`:  selected data indices
-- `mapS`: `MapS` scalar magnetic anomaly map struct, only used for `y_type = :b, :c`
+- `mapS`: (optional) `MapS` scalar magnetic anomaly map struct, only used for `y_type = :b, :c`
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct, either:
     - `NNCompParams`:  neural network-based aeromagnetic compensation parameters struct
     - `LinCompParams`: linear aeromagnetic compensation parameters struct
@@ -1239,6 +1241,8 @@ function comp_test(xyz::XYZ, ind, mapS::MapS=MapS(zeros(1,1),[0.0],[0.0],0.0);
 
     # map values along trajectory (if needed)
     if y_type in [:b,:c]
+        traj_alt = median(xyz.traj.alt[ind])
+        mapS.alt > 0 && (mapS = upward_fft(mapS,traj_alt;α=200))
         itp_mapS = map_itp(mapS)
         map_val  = itp_mapS.(xyz.traj.lon[ind],xyz.traj.lat[ind])
     else
@@ -1605,8 +1609,8 @@ Train and evaluate aeromagnetic compensation model performance.
 - `xyz_test`:    `XYZ` flight data struct for testing
 - `ind_train`:   selected data indices for training
 - `ind_test`:    selected data indices for testing
-- `mapS_train`:  `MapS` scalar magnetic anomaly map struct for training, only used for `y_type = :b, :c`
-- `mapS_test`:   `MapS` scalar magnetic anomaly map struct for testing,  only used for `y_type = :b, :c`
+- `mapS_train`:  (optional) `MapS` scalar magnetic anomaly map struct for training, only used for `y_type = :b, :c`
+- `mapS_test`:   (optional) `MapS` scalar magnetic anomaly map struct for testing,  only used for `y_type = :b, :c`
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct, either:
     - `NNCompParams`:  neural network-based aeromagnetic compensation parameters struct
     - `LinCompParams`: linear aeromagnetic compensation parameters struct

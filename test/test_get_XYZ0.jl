@@ -8,13 +8,15 @@ traj   = xyz.traj
 ins    = xyz.ins
 flux_a = xyz.flux_a
 
-ind = trues(length(xyz.traj.tt))
+ind = trues(traj.N)
 ind[51:end] .= false
 
 xyz_h5 = "test.h5"
+MagNav.write_field(xyz_h5,:tt,traj.tt)
 MagNav.write_field(xyz_h5,:lat,rad2deg.(traj.lat))
 MagNav.write_field(xyz_h5,:lon,rad2deg.(traj.lon))
 MagNav.write_field(xyz_h5,:alt,traj.alt)
+MagNav.write_field(xyz_h5,:ins_tt,ins.tt)
 MagNav.write_field(xyz_h5,:ins_lat,rad2deg.(ins.lat))
 MagNav.write_field(xyz_h5,:ins_lon,rad2deg.(ins.lon))
 MagNav.write_field(xyz_h5,:ins_alt,ins.alt)
@@ -26,7 +28,20 @@ MagNav.write_field(xyz_h5,:mag_1_uc,xyz.mag_1_uc)
                           line   = 1,
                           dt     = 1,
                           silent = true)
-    @test typeof(get_XYZ0(xyz_h5)) <: MagNav.XYZ0
+    @test typeof(get_XYZ0(xyz_h5;silent=true)) <: MagNav.XYZ0
+    MagNav.delete_field(xyz_h5,:tt)
+    MagNav.delete_field(xyz_h5,:ins_tt)
+    MagNav.delete_field(xyz_h5,:mag_1_uc)
+    MagNav.write_field(xyz_h5,:mag_1_c,xyz.mag_1_c)
+    MagNav.write_field(xyz_h5,:flight,xyz.flight)
+    MagNav.write_field(xyz_h5,:line,xyz.line)
+    MagNav.write_field(xyz_h5,:dt,traj.dt)
+    MagNav.write_field(xyz_h5,:ins_dt,ins.dt)
+    MagNav.write_field(xyz_h5,:ins_roll,zero(ins.lat))
+    MagNav.write_field(xyz_h5,:ins_pitch,zero(ins.lat))
+    MagNav.write_field(xyz_h5,:ins_yaw,zero(ins.lat))
+    MagNav.overwrite_field(xyz_h5,:ins_alt,ins.alt*NaN)
+    @test typeof(get_XYZ0(xyz_h5;silent=true)) <: MagNav.XYZ0
     @test_throws ErrorException get_XYZ0("test")
 end
 

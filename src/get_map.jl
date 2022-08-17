@@ -53,7 +53,7 @@ function get_map(map_file::String; map_units::Symbol=:deg)
         end
 
     else
-        error("$map_file map file is incorrect or invalid")
+        error("$map_file map file is invalid")
     end
 
     map_xx = vec(map_xx)
