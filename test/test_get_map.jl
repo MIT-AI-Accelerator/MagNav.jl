@@ -94,10 +94,9 @@ mapS   = get_map(test_data_map)
 map_h5 = "test.h5"
 
 @testset "save_map tests" begin
-    @test_nowarn save_map(mapS,map_h5;map_units=:deg)
-    @test_nowarn save_map(mapS,map_h5;map_units=:rad)
-    @test typeof(save_map(mapS,map_h5;map_units=:utm)) <: Nothing
-    @test typeof(save_map(mapS,map_h5;map_units=:m)) <: Nothing
+    @test typeof(save_map(mapS,map_h5;map_units=:deg )) <: Nothing
+    @test typeof(save_map(mapS,map_h5;map_units=:rad )) <: Nothing
+    @test typeof(save_map(mapS,map_h5;map_units=:utm )) <: Nothing
     @test typeof(save_map(mapS,map_h5;map_units=:test)) <: Nothing
 end
 
