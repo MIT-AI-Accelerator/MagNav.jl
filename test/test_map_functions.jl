@@ -63,10 +63,10 @@ end
 end
 
 @testset "map_chessboard tests" begin
-    mapSd.alt[1,1] = mapS.alt+10
-    mapSd.alt[2,2] = mapS.alt-10
-    @test typeof(map_chessboard(mapSd,mapS.alt+5.1;down_cont=false)) <: MagNav.MapS
-    @test typeof(map_chessboard(mapSd,mapS.alt-5.1)) <: MagNav.MapS
+    mapSd.alt[1,1] = mapS.alt+200
+    mapSd.alt[2,2] = mapS.alt-601
+    @test typeof(map_chessboard(mapSd,mapS.alt;dz=200)) <: MagNav.MapS
+    @test typeof(map_chessboard(mapSd,mapS.alt;down_cont=false,dz=200)) <: MagNav.MapS
 end
 
 lla2utm  = UTMZfromLLA(WGS84)
