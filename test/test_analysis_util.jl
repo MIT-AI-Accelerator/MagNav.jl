@@ -76,14 +76,15 @@ flight   = :Flt1003
 xyz_type = :XYZ20
 map_name = :Eastern_395
 xyz_h5   = string(MagNav.sgl_2020_train(),"/$(flight)_train.h5")
-map_h5   = string(MagNav.ottawa_area_maps(),"/Eastern_395.h5")
+map_h5   = string(MagNav.ottawa_area_maps(),"/$(map_name).h5")
 xyz      = get_XYZ20(xyz_h5;tt_sort=true,silent=true)
-tt       = xyz.traj.tt
-line     = xyz.line
-line2    = unique(line)[2]
-line3    = unique(line)[3]
-lines    = [-1,line2]
-ind      = line .== line2
+
+tt    = xyz.traj.tt
+line  = xyz.line
+line2 = unique(line)[2]
+line3 = unique(line)[3]
+lines = [-1,line2]
+ind   = line .== line2
 ind[findall(ind)[51:end]] .= false
 
 df_line = DataFrame(flight   = [flight,flight],

@@ -32,7 +32,7 @@ dt  = tt[2] - tt[1]
 traj = MagNav.Traj(N,dt,tt,lat,lon,alt,vn,ve,vd,fn,fe,fd,Cnb)
 mapS = MagNav.MapS(map_map,map_xx,map_yy,map_alt)
 
-ind = trues(length(tt))
+ind = trues(N)
 ind[51:end] .= false
 
 map_map = map_map[ind,ind]

@@ -58,12 +58,14 @@ end
 end
 
 @testset "map_correct_igrf! tests" begin
-    @test_logs (:info,) map_correct_igrf!(deepcopy(mapS ))
-    @test_logs (:info,) map_correct_igrf!(deepcopy(mapSd))
+    @test_logs (:info,) map_correct_igrf!(deepcopy(mapS );add_igrf_date=2013+293/365)
+    @test_logs (:info,) map_correct_igrf!(deepcopy(mapSd);add_igrf_date=2013+293/365)
 end
 
 @testset "map_chessboard tests" begin
-    @test typeof(map_chessboard(mapSd,mapS.alt+5.1)) <: MagNav.MapS
+    mapSd.alt[1,1] = mapS.alt+10
+    mapSd.alt[2,2] = mapS.alt-10
+    @test typeof(map_chessboard(mapSd,mapS.alt+5.1;down_cont=false)) <: MagNav.MapS
     @test typeof(map_chessboard(mapSd,mapS.alt-5.1)) <: MagNav.MapS
 end
 
@@ -80,20 +82,27 @@ mapUTMd  = MagNav.MapSd(mapS.map,[utm_temp[i].x for i = 1:length(mapS.xx)],
 end
 
 @testset "map_gxf2h5 tests" begin
-    @test typeof(map_gxf2h5(gxf_file,5181.0;save_h5=false)) <: MagNav.MapS
+    @test typeof(map_gxf2h5(gxf_file,5181.0;get_lla=true,save_h5=false)) <: MagNav.MapS
+    @test typeof(map_gxf2h5(gxf_file,5181.0;get_lla=false,save_h5=false)) <: MagNav.MapS
     @test typeof(map_gxf2h5(gxf_file,gxf_file,5181.0;
-                            up_cont=false,save_h5=false)) <: MagNav.MapSd
+                            up_cont=false,get_lla=true,save_h5=false)) <: MagNav.MapSd
+    @test typeof(map_gxf2h5(gxf_file,gxf_file,5181.0;
+                            up_cont=false,get_lla=false,save_h5=false)) <: MagNav.MapSd
 end
 
 p1 = plot();
 
 @testset "plot_map tests" begin
     @test typeof(plot_map!(p1,mapS)) <: Plots.Plot
-    @test typeof(plot_map(mapS)) <: Plots.Plot
+    @test typeof(plot_map(mapS;plot_units=:deg)) <: Plots.Plot
     @test typeof(plot_map(mapS;plot_units=:rad)) <: Plots.Plot
-    @test typeof(plot_map(mapS;plot_units=:m)) <: Plots.Plot
-    @test typeof(plot_map(mapS.map,rad2deg.(mapS.xx),
-                          rad2deg.(mapS.yy);map_units=:deg)) <: Plots.Plot
+    @test typeof(plot_map(mapS;plot_units=:m  )) <: Plots.Plot
+    @test typeof(plot_map(mapS.map,rad2deg.(mapS.xx),rad2deg.(mapS.yy);
+                          map_units=:deg,plot_units=:deg)) <: Plots.Plot
+    @test typeof(plot_map(mapS.map,rad2deg.(mapS.xx),rad2deg.(mapS.yy);
+                          map_units=:deg,plot_units=:rad)) <: Plots.Plot
+    @test typeof(plot_map(mapS.map,rad2deg.(mapS.xx),rad2deg.(mapS.yy);
+                          map_units=:deg,plot_units=:m  )) <: Plots.Plot
     @test_throws ErrorException plot_map(mapS;map_units=:test)
     @test_throws ErrorException plot_map(mapS;plot_units=:test)
 end
@@ -108,7 +117,7 @@ p1 = plot_path(traj;show_plot=false);
 
 @testset "plot_path tests" begin
     @test_nowarn plot_path!(p1,traj;show_plot=false,path_color=:black)
-    @test typeof(plot_path(traj;show_plot=false,Nmax=50)) <: Plots.Plot
+    @test typeof(plot_path(traj;fewer_pts=true,show_plot=false,Nmax=50)) <: Plots.Plot
 end
 
 p1 = plot_basic(traj.tt,traj.lat);

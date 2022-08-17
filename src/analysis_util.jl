@@ -689,8 +689,9 @@ function get_y(lines, df_line::DataFrame, df_flight::DataFrame,
         # map values along trajectory (if needed)
         if y_type in [:b,:c]
             map_name = df_line.map_name[df_line.line .== line][1]
-            traj_alt = mean(xyz.traj.alt[ind])
-            mapS     = upward_fft(get_map(map_name,df_map),traj_alt;α=200)
+            mapS     = get_map(map_name,df_map)
+            traj_alt = median(xyz.traj.alt[ind])
+            mapS.alt > 0 && (mapS = upward_fft(mapS,traj_alt;α=200))
             itp_mapS = map_itp(mapS)
             map_val  = itp_mapS.(xyz.traj.lon[ind],xyz.traj.lat[ind])
         else
@@ -848,8 +849,9 @@ function get_Axy(lines, df_line::DataFrame,
         # map values along trajectory (if needed)
         if y_type in [:b,:c]
             map_name = df_line.map_name[df_line.line .== line][1]
-            traj_alt = mean(xyz.traj.alt[ind])
-            mapS     = upward_fft(get_map(map_name,df_map),traj_alt;α=200)
+            mapS     = get_map(map_name,df_map)
+            traj_alt = median(xyz.traj.alt[ind])
+            mapS.alt > 0 && (mapS = upward_fft(mapS,traj_alt;α=200))
             itp_mapS = map_itp(mapS)
             map_val  = itp_mapS.(xyz.traj.lon[ind],xyz.traj.lat[ind])
         else

@@ -193,7 +193,7 @@ function ekf_online_nn(ins::INS, meas, itp_mapS, nn_x, m, y_norms, P0, Qd, R;
 end # function ekf_online_nn
 
 # # old attempt
-# function ekf_online_nn_setup(x, y, m, y_norms, N_sigma::Int=1000)
+# function ekf_online_nn_setup(x, y, m, y_norms; N_sigma::Int=1000)
 
 #     (y_bias,y_scale) = y_norms # unpack normalizations
 
@@ -237,7 +237,7 @@ Setup for extended Kalman filter (EKF) with online learning of neural network we
 - `P0_nn`:    initial neural network weights covariance matrix
 - `nn_sigma`: initial neural network weights estimate std dev
 """
-function ekf_online_nn_setup(x, y, m, y_norms, N_sigma::Int=1000)
+function ekf_online_nn_setup(x, y, m, y_norms; N_sigma::Int=1000)
     (y_bias,y_scale) = y_norms # unpack normalizations
     m = deepcopy(m) # don't modify original NN model
     (w_nn,re) = destructure(m) # weights, restucture

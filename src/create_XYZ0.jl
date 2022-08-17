@@ -305,7 +305,7 @@ function create_traj(mapS::MapS=get_map(namad);
             dn = dlat2dn.(fdm(lat),lat) # northing distance per time step
             de = dlon2de.(fdm(lon),lat) # easting  distance per time step
             d_now = sum(sqrt.(dn[2:N].^2+de[2:N].^2)) # current distance
-        
+
             if ll2 == () # scale to target distance
                 frac1 = d / d_now # scaling factor
                 frac2 = frac1
@@ -313,7 +313,7 @@ function create_traj(mapS::MapS=get_map(namad);
                 frac1 = (lat2 - lat[1])/(lat[end] - lat[1]) # scaling factor
                 frac2 = (lon2 - lon[1])/(lon[end] - lon[1]) # scaling factor
             end
-            
+
             lat = (lat .- lat[1])*frac1 .+ lat[1] # scale to target
             lon = (lon .- lon[1])*frac2 .+ lon[1] # scale to target
         end
@@ -564,8 +564,8 @@ function create_mag_c(lat, lon, mapS::MapS=get_map(namad);
             @info("filling in scalar map")
             map_fill!(mapS)
         end
-        mapS.alt > 0 && @info("upward continuing scalar map")
-        mapS.alt > 0 && (mapS = upward_fft(mapS,alt))
+        @info("upward continuing scalar map")
+        mapS = upward_fft(mapS,alt)
     end
 
     # add FOGM & white noise to perfect measurements

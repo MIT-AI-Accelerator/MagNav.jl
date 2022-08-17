@@ -82,6 +82,8 @@ function get_XYZ0(xyz_file::String,
                   dt                 = 0.1,
                   silent::Bool       = false)
 
+    any(occursin.([".h5",".mat"],xyz_file)) || error("$xyz_file flight data file is invalid")
+
     traj = get_traj(xyz_file,traj_field;dt=dt,silent=silent)
 
     if occursin(".h5",xyz_file) # get data from HDF5 file
@@ -133,9 +135,6 @@ function get_XYZ0(xyz_file::String,
         flux_a_y = haskey(xyz_data,"flux_a_y") ? xyz_data["flux_a_y"] : NaN
         flux_a_z = haskey(xyz_data,"flux_a_z") ? xyz_data["flux_a_z"] : NaN
         flux_a_t = haskey(xyz_data,"flux_a_t") ? xyz_data["flux_a_t"] : NaN
-
-    else
-        error("$xyz_file flight data file is incorrect or invalid")
     end
 
     # ensure row vectors
@@ -234,7 +233,7 @@ function get_traj(traj_file::String, field::Symbol=:traj; dt=0.1, silent::Bool=f
         alt   = traj_data["alt"]
 
         # these fields might not be included (especially dt vs tt & Cnb vs RPY)
-        dt    = haskey(traj_data,"dt"   ) ? traj_data["dt"][1] : NaN
+        dt    = haskey(traj_data,"dt"   ) ? traj_data["dt"][1] : dt
         tt    = haskey(traj_data,"tt"   ) ? traj_data["tt"   ] : NaN
         vn    = haskey(traj_data,"vn"   ) ? traj_data["vn"   ] : NaN
         ve    = haskey(traj_data,"ve"   ) ? traj_data["ve"   ] : NaN
@@ -248,7 +247,7 @@ function get_traj(traj_file::String, field::Symbol=:traj; dt=0.1, silent::Bool=f
         yaw   = haskey(traj_data,"yaw"  ) ? traj_data["yaw"  ] : NaN
 
     else
-        error("$traj_file trajectory file is incorrect or invalid")
+        error("$traj_file trajectory file is invalid")
     end
 
     # ensure row vectors
@@ -277,10 +276,7 @@ function get_traj(traj_file::String, field::Symbol=:traj; dt=0.1, silent::Bool=f
 
     # if needed, create tt
     if any(isnan.(tt))
-        if any(isnan.(dt))
-            silent || @info("creating time data")
-            dt = 0.1
-        end
+        silent || @info("creating time data")
         tt = [LinRange(0:dt:dt*(N-1));]
     else
         dt = tt[2] - tt[1]
@@ -390,7 +386,7 @@ function get_ins(ins_file::String, field::Symbol=:ins_data; dt=0.1, silent::Bool
         P     = haskey(ins_data,"P"    ) ? ins_data["P"    ] : NaN
 
     else
-        error("$ins_file INS file is incorrect or invalid")
+        error("$ins_file INS file is invalid")
     end
 
     # ensure row vectors
