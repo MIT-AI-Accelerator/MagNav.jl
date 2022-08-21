@@ -355,20 +355,16 @@ function nekf_train(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt,
                  dlon2de(y_nn[t][2] - (lon[t]+x[2]), lat[t]+x[1])^2
         end
 
-        Flux.reset!(m)
         return sqrt(l/N) # DRMS
     end # function loss
 
     # train RNN
     opt = Flux.Adam()
-    for i = 1:epoch_adam
-        Flux.train!(loss,Flux.params(m),zip(x_seqs,y_seqs),opt)
-        weights = Flux.params(m)
-        # if R > 60^2
-        #     @save "../dev/thesis/nekf/epochs_4/weights_epoch$i.bson" weights
-        # else
-        #     @save "../dev/thesis/nekf/epochs_5/weights_epoch$i.bson" weights
-        # end
+    for _ = 1:epoch_adam
+        for j in eachindex(x_seqs)
+            Flux.train!(loss,Flux.params(m),zip(x_seqs[j:j],y_seqs[j:j]),opt)
+            Flux.reset!(m)
+        end
     end
 
     weights = Flux.params(m)
