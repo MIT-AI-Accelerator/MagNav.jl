@@ -345,7 +345,7 @@ function nekf_train(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt,
         N = size(y_nn,1)
         x = zero(P[:,1])
 
-        l = 0f0
+        l = 0
         for t = 1:N
             (P,x) = ekf_single(lat[t],lon[t],alt[t],Phi[:,:,t],meas[t],
                                itp_mapS,x_nn[t],m,
