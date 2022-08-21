@@ -25,6 +25,7 @@ Cbn_temp = euler2dcm(rpy[1],rpy[2],rpy[3],:nav2body)
     @test Cnb            ≈ dcm_data["Cnb"]
     @test Cnb_estimate_1 ≈ dcm_data["Cnb_estimate"][:,:,1]
     @test Cnb_estimate   ≈ dcm_data["Cnb_estimate"]
+    @test_nowarn correct_Cnb(Cnb_1,zeros(3,1))
 end
 
 @testset "euler2dcm & dcm2euler tests" begin
