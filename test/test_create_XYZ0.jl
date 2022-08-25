@@ -102,13 +102,16 @@ ind_xx_mod = rand(1:size(mapS.map,2),N_mod)
 ind_yy_mod = rand(1:size(mapS.map,1),N_mod)
 [mapS_mod.map[ind_yy_mod[i],ind_xx_mod[i]] = 0 for i in 1:N_mod]
 
+mapV = get_map(MagNav.emm720)
+mapV = map_trim(mapV,traj)
+
 xyz_h5 = "test.h5"
 
 @testset "create_XYZ0 tests" begin
-    @test typeof(create_XYZ0(mapS;alt=2000,t=10,
+    @test typeof(create_XYZ0(mapS;alt=2000,t=10,mapV=mapV,
                  save_h5=true,xyz_h5=xyz_h5)) <: MagNav.XYZ0
-    @test typeof(create_XYZ0(mapS;t=10,VRW_sigma=1e6)) <: MagNav.XYZ0
-    @test typeof(create_XYZ0(mapS_mod;N_waves=0,
+    @test typeof(create_XYZ0(mapS;t=10,mapV=mapV,VRW_sigma=1e6)) <: MagNav.XYZ0
+    @test typeof(create_XYZ0(mapS_mod;N_waves=0,mapV=mapV,
                  ll1 = rad2deg.((traj.lat[1],traj.lon[1])),
                  ll2 = rad2deg.((traj.lat[end],traj.lon[end])))) <: MagNav.XYZ0
 end
