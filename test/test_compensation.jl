@@ -4,9 +4,9 @@ flight   = :Flt1003
 xyz_type = :XYZ20
 map_name = :Eastern_395
 xyz_h5   = string(MagNav.sgl_2020_train(),"/$(flight)_train.h5")
-map_h5   = string(MagNav.ottawa_area_maps(),"/$(map_name).h5")
+mapE_h5  = string(MagNav.ottawa_area_maps(),"/$(map_name).h5")
 xyz      = get_XYZ20(xyz_h5;tt_sort=true,silent=true)
-mapS     = get_map(map_h5)
+mapS     = get_map(mapE_h5)
 
 line_train = unique(xyz.line)[2]
 line_test  = unique(xyz.line)[3]
@@ -14,6 +14,9 @@ ind_train  = xyz.line .== line_train
 ind_test   = xyz.line .== line_test
 ind_train[findall(ind_train)[51:end]] .= false
 ind_test[ findall(ind_test )[51:end]] .= false
+mapS = map_trim(mapS,xyz.traj(ind_train .| ind_test))
+map_h5 = "test.h5"
+save_map(mapS,map_h5)
 
 t_start = [xyz.traj.tt[ind_train][1],xyz.traj.tt[ind_test][1]]
 t_end   = [xyz.traj.tt[ind_train][end],xyz.traj.tt[ind_test][end]]
@@ -246,3 +249,4 @@ rm("drop_fi_3.bson")
 rm("drop_fi_4.bson")
 rm("drop_fi.csv")
 rm("perm_fi.csv")
+rm(map_h5)
