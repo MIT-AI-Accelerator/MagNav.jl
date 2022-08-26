@@ -8,6 +8,7 @@ Pages = [
     "maps.md",
     "comp.md",
     "nav.md",
+    "datatypes.md",
 ]
 Depth = 1
 ```
