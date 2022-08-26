@@ -1,6 +1,6 @@
 # Magnetic Anomaly Maps
 
-Placeholder page for magnetic anomaly maps documentation.
+The following are key functions related to magnetic anomaly maps.
 
 ## Load Map Data
 

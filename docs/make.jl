@@ -9,6 +9,7 @@ makedocs(
     sitename = "MagNav.jl",
     pages = Any[
         "index.md",
+        "structs.md",
         "data.md",
         "maps.md",
         "comp.md",

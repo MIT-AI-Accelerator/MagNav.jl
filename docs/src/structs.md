@@ -1,8 +1,8 @@
-# Custom Datatypes
+# Custom Structs
 
-The following structs are defined to contain parameters and other useful metadata.
+The following are custom structs used within the package.
 
-## Magnetic Maps
+## Magnetic Anomaly Maps
 ```@docs
 Map
 ```
@@ -14,6 +14,7 @@ MapS
 ```@docs
 MapSd
 ```
+
 ```@docs
 MapV
 ```
@@ -22,12 +23,16 @@ MapV
 MapVd
 ```
 
-## Measurement Structs
+## Vector Magnetometer
 ```@docs
 MagV
 ```
 
-## Navigation Structs
+## Flight Paths
+```@docs
+Path
+```
+
 ```@docs
 Traj
 ```
@@ -36,9 +41,13 @@ Traj
 INS
 ```
 
-## Flight Structs
+## Flight Data
 ```@docs
 XYZ
+```
+
+```@docs
+XYZ0
 ```
 
 ```@docs
@@ -53,7 +62,7 @@ XYZ20
 XYZ21
 ```
 
-## Output Wrapper Structs
+## Output Wrappers
 ```@docs
 FILTres
 ```
@@ -70,11 +79,15 @@ INSout
 FILTout
 ```
 
-## Model Parameter Structs
+## Aeromagnetic Compensation Model Parameters
 ```@docs
 CompParams
 ```
 
 ```@docs
 LinCompParams
+```
+
+```@docs
+NNCompParams
 ```
