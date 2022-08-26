@@ -4,90 +4,90 @@ The following are custom structs used within the package.
 
 ## Magnetic Anomaly Maps
 ```@docs
-Map
+MagNav.Map
 ```
 
 ```@docs
-MapS
+MagNav.MapS
 ```
 
 ```@docs
-MapSd
+MagNav.MapSd
 ```
 
 ```@docs
-MapV
+MagNav.MapV
 ```
 
 ```@docs
-MapVd
+MagNav.MapVd
 ```
 
 ## Vector Magnetometer
 ```@docs
-MagV
+MagNav.MagV
 ```
 
 ## Flight Paths
 ```@docs
-Path
+MagNav.Path
 ```
 
 ```@docs
-Traj
+MagNav.Traj
 ```
 
 ```@docs
-INS
+MagNav.INS
 ```
 
 ## Flight Data
 ```@docs
-XYZ
+MagNav.XYZ
 ```
 
 ```@docs
-XYZ0
+MagNav.XYZ0
 ```
 
 ```@docs
-XYZ1
+MagNav.XYZ1
 ```
 
 ```@docs
-XYZ20
+MagNav.XYZ20
 ```
 
 ```@docs
-XYZ21
+MagNav.XYZ21
 ```
 
 ## Output Wrappers
 ```@docs
-FILTres
+MagNav.FILTres
 ```
 
 ```@docs
-CRLBout
+MagNav.CRLBout
 ```
 
 ```@docs
-INSout
+MagNav.INSout
 ```
 
 ```@docs
-FILTout
+MagNav.FILTout
 ```
 
 ## Aeromagnetic Compensation Model Parameters
 ```@docs
-CompParams
+MagNav.CompParams
 ```
 
 ```@docs
-LinCompParams
+MagNav.LinCompParams
 ```
 
 ```@docs
-NNCompParams
+MagNav.NNCompParams
 ```
