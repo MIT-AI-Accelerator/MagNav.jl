@@ -1,6 +1,6 @@
 # Navigation Algorithms
 
-Placeholder page for navigation algorithms documentation.
+The following are key functions related to navigation algorithms.
 
 ## Cramér–Rao Lower Bound
 

@@ -1,6 +1,6 @@
 # Aeromagnetic Compensation
 
-Placeholder page for aeromagnetic compensation documentation.
+The following are key functions related to aeromagnetic compensation.
 
 ## Tolles-Lawson
 
@@ -10,18 +10,6 @@ create_TL_A
 
 ```@docs
 create_TL_coef
-```
-
-## Linear Model Parameters
-
-```@docs
-LinCompParams
-```
-
-## Neural Network Model Parameters
-
-```@docs
-NNCompParams
 ```
 
 ## Model Training/Fitting

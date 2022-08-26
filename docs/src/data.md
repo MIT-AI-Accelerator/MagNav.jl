@@ -1,6 +1,6 @@
 # Flight Path & INS Data
 
-Placeholder page for flight path & INS data documentation.
+The following are key functions related to obtaining flight path & INS data.
 
 ## Load Flight Data
 
