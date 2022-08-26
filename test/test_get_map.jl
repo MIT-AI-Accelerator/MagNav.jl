@@ -79,9 +79,11 @@ df_map    = DataFrame(map_h5=map_files,map_name=map_names)
 
 @testset "get_map tests" begin
     for map_file in map_files
+        println(map_file)
         @test_nowarn get_map(map_file)
     end
     for map_name in map_names
+        println(map_name)
         @test_nowarn get_map(map_name,df_map)
     end
     @test typeof(get_map(test_data_map;map_units=:utm)) <: MagNav.MapS
