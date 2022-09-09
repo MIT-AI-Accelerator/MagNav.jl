@@ -12,9 +12,7 @@
     </a>
 </p>
 
-MagNav.jl contains a full suite of tools for airborne Magnetic anomaly Navigation (MagNav), including flight path & INS data import or simulation, mapping, aeromagnetic compensation, and navigation. Julia source code files are in the `src` folder and examples are in the `runs` folder. This package was developed as part of the [DAF-MIT Artificial Intelligence Accelerator](https://aia.mit.edu/). More information on this effort is provided on the [challenge problem website](https://magnav.mit.edu/).
-
-Note that the unit tests and examples, based on the [doctoral thesis](https://www.dropbox.com/s/forort8b6ilpi8j/Gnadt_Thesis.pdf) work by Albert Gnadt, are currently being expanded throughout the summer of 2022.
+MagNav.jl contains a full suite of tools for airborne Magnetic anomaly Navigation (MagNav), including flight path & INS data import or simulation, mapping, aeromagnetic compensation, and navigation. Julia source code files are in the `src` folder and examples are in the `runs` folder. This package was developed as part of the [DAF-MIT Artificial Intelligence Accelerator](https://aia.mit.edu/). More information on this effort, including a list of relevant publications, is provided on the [challenge problem website](https://magnav.mit.edu/).
 
 ## Data
 
