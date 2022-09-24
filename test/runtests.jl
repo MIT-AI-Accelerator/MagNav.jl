@@ -1,7 +1,5 @@
 ##* top-level file for running unit tests
-#*  note that all non-hardcoded test data was generated using the MagNav 
-#*  MATLAB-companion (run test_baseline.m & copy the test_data folder over)
-using Flux, MagNav, SafeTestsets, Zygote # todo: https://github.com/JuliaIO/BSON.jl#notes
+using Flux, MagNav, SafeTestsets, Zygote
 
 @safetestset "analysis_util   " begin include("test_analysis_util.jl") end
 @safetestset "baseline_plots  " begin include("test_baseline_plots.jl") end
