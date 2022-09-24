@@ -659,7 +659,7 @@ Represents unmeasureable time-correlated errors.
 """
 function fogm(sigma, tau, dt, N)
 
-    x    = zeros(typeof(sigma),N)
+    x    = zeros(N)
     x[1] = sigma*randn()
     Phi  = exp(-dt/tau)
     Q    = 2*sigma^2/tau
