@@ -81,6 +81,6 @@ RUN git clone "https://github.com/MIT-AI-Accelerator/MagNav.jl" /home/$NB_USER/w
 RUN julia -e 'cd("work/MagNav.jl/runs"); include("common_setup.jl");'
 
 # Bring in the notebook for convenience
-RUN cp /home/$NB_USER/work/MagNav.jl/demonstration/Demo.ipynb /home/$NB_USER/Demo.ipynb
+RUN cp /home/$NB_USER/work/MagNav.jl/runs/Demo.ipynb /home/$NB_USER/Demo.ipynb
 
 RUN fix-permissions /home/$NB_USER
