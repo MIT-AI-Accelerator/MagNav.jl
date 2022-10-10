@@ -28,7 +28,7 @@ end # function plot_basic
     plot_activation(activation = [:relu,:σ,:swish,:tanh];
                     plot_der::Bool    = false,
                     save_plot::Bool   = false,
-                    file_name::String = "act_func.png")
+                    file_name::String = "act_func")
 
 Plot activation function(s) or their derivative(s).
 
@@ -48,7 +48,7 @@ Plot activation function(s) or their derivative(s).
 function plot_activation(activation = [:relu,:σ,:swish,:tanh];
                          plot_der::Bool    = false,
                          save_plot::Bool   = false,
-                         file_name::String = "act_func.png")
+                         file_name::String = "act_func")
 
     save_plot ? dpi = 500 : dpi = 200
 

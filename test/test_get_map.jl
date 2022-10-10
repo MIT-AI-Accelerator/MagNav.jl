@@ -87,7 +87,7 @@ df_map    = DataFrame(map_h5=map_files,map_name=map_names)
         @test_nowarn get_map(map_name,df_map)
     end
     @test typeof(get_map(test_data_map;map_units=:utm)) <: MagNav.MapS
-    @test_throws ErrorException get_map("test.png")
+    @test_throws ErrorException get_map("test")
     @test_throws ErrorException get_map(test_data_map_badS)
     @test_throws ErrorException get_map(test_data_map_badV)
 end

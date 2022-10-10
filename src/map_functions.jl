@@ -1089,33 +1089,33 @@ function plot_map!(p1, map_map::Matrix,
                    b_e                = gr())
 
     (ny,nx) = size(map_map)
+    mid_xx  = floor(Int,nx/2)
+    mid_yy  = floor(Int,ny/2)
 
     # avoid changing map struct data
-    map_map = deepcopy(map_map)
-    map_xx  = length(map_xx) < nx ? [1:nx;] : deepcopy(map_xx)
-    map_yy  = length(map_yy) < ny ? [1:ny;] : deepcopy(map_yy)
+    map_map = float.(map_map)
+    map_xx  = length(map_xx) < nx ? float.([1:nx;]) : float.(map_xx)
+    map_yy  = length(map_yy) < ny ? float.([1:ny;]) : float.(map_yy)
 
     if map_units == :rad
         if plot_units == :deg
-            map_xx = rad2deg.(map_xx)
-            map_yy = rad2deg.(map_yy)
-        elseif plot_units == :m
-            mid_xx = floor(Int,nx/2)
-            mid_yy = floor(Int,ny/2)
-            map_xx = dlon2de.(map_xx .- map_xx[mid_xx], map_yy[mid_yy])
-            map_yy = dlat2dn.(map_yy .- map_yy[mid_yy], map_yy[mid_yy])
+            map_xx .= rad2deg.(map_xx)
+            map_yy .= rad2deg.(map_yy)
+        elseif plot_units == :m # longitude inaccuracy scales with map size
+            mid_lon = map_xx[mid_xx]
+            mid_lat = map_yy[mid_yy]
+            map_xx .= dlon2de.(map_xx .- mid_lon, mid_lat)
+            map_yy .= dlat2dn.(map_yy .- mid_lat, map_yy)
         end
     elseif map_units == :deg
         if plot_units == :rad
-            map_xx = deg2rad.(map_xx)
-            map_yy = deg2rad.(map_yy)
-        elseif plot_units == :m
-            mid_xx = floor(Int,nx/2)
-            mid_yy = floor(Int,ny/2)
-            map_xx = dlon2de.(deg2rad.(map_xx .- map_xx[mid_xx]),
-                              deg2rad( map_yy[mid_yy]))
-            map_yy = dlat2dn.(deg2rad.(map_yy .- map_yy[mid_yy]),
-                              deg2rad( map_yy[mid_yy]))
+            map_xx .= deg2rad.(map_xx)
+            map_yy .= deg2rad.(map_yy)
+        elseif plot_units == :m # longitude inaccuracy scales with map size
+            mid_lon = map_xx[mid_xx]
+            mid_lat = map_yy[mid_yy]
+            map_xx .= dlon2de.(deg2rad.(map_xx .- mid_lon), deg2rad.(mid_lat))
+            map_yy .= dlat2dn.(deg2rad.(map_yy .- mid_lat), deg2rad.(map_yy))
         end
     else
         error("map_units $map_units not defined")

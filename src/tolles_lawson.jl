@@ -2,23 +2,29 @@
     create_TL_A(Bx, By, Bz;
                 Bt       = sqrt.(Bx.^2+By.^2+Bz.^2),
                 terms    = [:permanent,:induced,:eddy],
-                Bt_scale = 50000)
+                Bt_scale = 50000,
+                return_B = false)
 
-Create Tolles-Lawson `A` matrix using vector magnetometer measurements.
+Create Tolles-Lawson `A` matrix using vector magnetometer measurements. 
+Optionally returns the magnitude and derivatives of total field.
 
 **Arguments:**
 - `Bx,By,Bz`: vector magnetometer measurements [nT]
 - `Bt`:       (optional) magnitude of vector magnetometer measurements or scalar magnetometer measurements for modified Tolles-Lawson [nT]
 - `terms`:    (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
 - `Bt_scale`: (optional) scaling factor for induced and eddy current terms [nT]
+- `return_B`: (optional) if true, also return magnitude and derivatives of `Bt`
 
 **Returns:**
-- `A`: Tolles-Lawson `A` matrix
+- `A`:     Tolles-Lawson `A` matrix
+- `Bt`:    (optional) magnitude of total field measurements [nT]
+- `B_dot`: (optional) derivative of total field unit vector [-]
 """
 function create_TL_A(Bx, By, Bz;
                      Bt       = sqrt.(Bx.^2+By.^2+Bz.^2),
                      terms    = [:permanent,:induced,:eddy],
-                     Bt_scale = 50000)
+                     Bt_scale = 50000,
+                     return_B = false)
 
     cosX     = Bx ./ Bt
     cosY     = By ./ Bt
@@ -96,16 +102,23 @@ function create_TL_A(Bx, By, Bz;
         A = [A ones(eltype(Bt),size(Bt))]
     end
 
-    return (A)
+    if return_B
+        B_dot = [cosX_dot cosY_dot cosZ_dot]
+        return (A, Bt, B_dot)
+    else
+        return (A)
+    end
 end # function create_TL_A
 
 """
     create_TL_A(flux::MagV, ind=trues(length(flux.x));
                 Bt       = sqrt.(flux.x.^2+flux.y.^2+flux.z.^2)[ind],
                 terms    = [:permanent,:induced,:eddy],
-                Bt_scale = 50000)
+                Bt_scale = 50000,
+                return_B = false)
 
-Create Tolles-Lawson `A` matrix using vector magnetometer measurements.
+Create Tolles-Lawson `A` matrix using vector magnetometer measurements. 
+Optionally returns the magnitude and derivatives of total field.
 
 **Arguments:**
 - `flux`:     `MagV` vector magnetometer measurement struct
@@ -113,17 +126,21 @@ Create Tolles-Lawson `A` matrix using vector magnetometer measurements.
 - `Bt`:       (optional) magnitude of vector magnetometer measurements or scalar magnetometer measurements for modified Tolles-Lawson [nT]
 - `terms`:    (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
 - `Bt_scale`: (optional) scaling factor for induced and eddy current terms [nT]
+- `return_B`: (optional) if true, also return magnitude and derivatives of `Bt`
 
 **Returns:**
-- `A`: Tolles-Lawson `A` matrix
+- `A`:     Tolles-Lawson `A` matrix
+- `Bt`:    (optional) magnitude of total field measurements [nT]
+- `B_dot`: (optional) derivative of total field unit vector [-]
 """
 function create_TL_A(flux::MagV, ind=trues(length(flux.x));
                      Bt       = sqrt.(flux.x.^2+flux.y.^2+flux.z.^2)[ind],
                      terms    = [:permanent,:induced,:eddy],
-                     Bt_scale = 50000)
+                     Bt_scale = 50000,
+                     return_B = false)
     length(Bt) != length(flux.x[ind]) && (Bt = Bt[ind])
     create_TL_A(flux.x[ind],flux.y[ind],flux.z[ind];
-                Bt=Bt,terms=terms,Bt_scale=Bt_scale)
+                Bt=Bt,terms=terms,Bt_scale=Bt_scale,return_B=return_B)
 end # function create_TL_A
 
 """
@@ -191,10 +208,13 @@ function create_TL_coef(Bx, By, Bz, B;
     # linear regression to get Tolles-Lawson coefficients
     coef = vec(linreg(B,A;λ=λ))
 
-    B_var = var(B - A*coef)
-    # @info("TL fit error variance: $(B_var)")
-
-    return return_var ? (coef, B_var) : (coef)
+    if return_var
+        B_var = var(B - A*coef)
+        @info("TL fit error variance: $(B_var)")
+        return (coef, B_var)
+    else
+        return (coef)
+    end
 end # function create_TL_coef
 
 """
