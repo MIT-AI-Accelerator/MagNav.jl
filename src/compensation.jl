@@ -1290,10 +1290,11 @@ function comp_test(xyz::XYZ, ind, mapS::MapS=MapS(zeros(1,1),[0.0],[0.0],0.0);
                 fi_csv = perm_fi_csv
             elseif drop_fi
                 x_fi = x[:, axes(x,2) .!= i]
-                @load drop_fi_bson*"_$i.bson" comp_params
-                data_norms = comp_params.data_norms
-                weights    = comp_params.weights
-                fi_csv     = drop_fi_csv
+                df_i = drop_fi_bson*"_$i.bson"
+                comp_params = load(df_i,@__MODULE__)[:comp_params]
+                data_norms  = comp_params.data_norms
+                weights     = comp_params.weights
+                fi_csv      = drop_fi_csv
             end
 
             # evaluate model
@@ -1444,10 +1445,11 @@ function comp_test(lines, df_line::DataFrame, df_flight::DataFrame,
                 fi_csv = perm_fi_csv
             elseif drop_fi
                 x_fi = x[:, axes(x,2) .!= i]
-                @load drop_fi_bson*"_$i.bson" comp_params
-                data_norms = comp_params.data_norms
-                weights    = comp_params.weights
-                fi_csv     = drop_fi_csv
+                df_i = drop_fi_bson*"_$i.bson"
+                comp_params = load(df_i,@__MODULE__)[:comp_params]
+                data_norms  = comp_params.data_norms
+                weights     = comp_params.weights
+                fi_csv      = drop_fi_csv
             end
 
             # evaluate model
