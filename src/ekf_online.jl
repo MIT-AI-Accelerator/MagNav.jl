@@ -256,8 +256,11 @@ function ekf_online_setup(flux::MagV, meas, ind=trues(length(meas));
     A     = create_TL_A(flux,ind;Bt=Bt,terms=terms,Bt_scale=Bt_scale)
     P0_TL = inv(A'*A)*y_var
     N_ind = length(meas[ind])
-    N     = min(N_ind,N_sigma)
+    N     = min(N_ind - max(2*trim,50), N_sigma) # avoid bpf issues
     inds  = sortperm(ind.==1,rev=true)[1:N_ind]
+
+    N_min = 10
+    N < N_min && error("increase N_sigma to $N_min or use more data")
 
     coef_set = zeros(size(A,2),N)
     for i = 1:N

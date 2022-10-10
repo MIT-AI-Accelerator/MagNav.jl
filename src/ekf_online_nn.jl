@@ -238,6 +238,8 @@ Setup for extended Kalman filter (EKF) with online learning of neural network we
 - `nn_sigma`: initial neural network weights estimate std dev
 """
 function ekf_online_nn_setup(x, y, m, y_norms; N_sigma::Int=1000)
+    N_sigma_min = 10
+    N_sigma < N_sigma_min && error("increase N_sigma to $N_sigma_min")
     (y_bias,y_scale) = y_norms # unpack normalizations
     m = deepcopy(m) # don't modify original NN model
     (w_nn,re) = destructure(m) # weights, restucture

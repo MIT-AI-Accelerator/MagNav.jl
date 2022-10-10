@@ -1,5 +1,5 @@
 ##* top-level file for running unit tests
-using Flux, MagNav, SafeTestsets, Zygote
+using SafeTestsets
 
 @safetestset "analysis_util   " begin include("test_analysis_util.jl") end
 @safetestset "baseline_plots  " begin include("test_baseline_plots.jl") end

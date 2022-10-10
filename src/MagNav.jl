@@ -2,14 +2,14 @@
     MagNav: airborne Magnetic anomaly Navigation
 """
 module MagNav
-    using Flux, ForwardDiff, LinearAlgebra, Plots
+    using Flux, ForwardDiff, LinearAlgebra, Plots, Zygote
     using ArchGDAL, HDF5, LazyArtifacts, ZipFile
-    using BSON: @load, @save
+    using BSON: load, @save
     using DataFrames: combine, groupby, order, sort, DataFrame
     using DelimitedFiles: readdlm, writedlm
     using Distributions: MvNormal, Normal
-    using DSP: digitalfilter, fft, fftfreq, filtfilt, hamming, ifft, welch_pgram
-    using DSP: pow2db, spectrogram, Bandpass, Butterworth, Highpass, Lowpass
+    using DSP: digitalfilter, fft, fftfreq, filtfilt, hamming, ifft, pow2db
+    using DSP: spectrogram, welch_pgram, Bandpass, Butterworth, Highpass, Lowpass
     using ExponentialUtilities: exponential!
     using Flux: destructure, Chain, Dense
     using FluxOptTools: optfuns
@@ -37,13 +37,40 @@ module MagNav
     using StatsBase: autocor, skewness
     using Zygote: refresh, Params
 
-    const num_mag_max = 10 # maximum number of scalar & vector mags (each)
+    """
+        const num_mag_max = 10
 
-    # earth constants and color scale
-    const e_earth = 0.0818191908426 # first eccentricity of earth [-]
-    const g_earth = 9.80665         # gravity of earth [m/s^2]
-    const r_earth = 6378137         # WGS-84 radius of earth [m]
-    const ω_earth = 7.2921151467e-5 # rotation rate of earth [rad/s]
+    Maximum number of scalar & vector magnetometers (each)
+    """
+    const num_mag_max = 10
+
+    """
+        const e_earth = 0.0818191908426
+
+    First eccentricity of earth [-]
+    """
+    const e_earth = 0.0818191908426
+
+    """
+        const g_earth = 9.80665
+
+    Gravity of earth [m/s^2]
+    """
+    const g_earth = 9.80665
+
+    """
+        const r_earth = 6378137
+
+    WGS-84 radius of earth [m]
+    """
+    const r_earth = 6378137
+
+    """
+        const ω_earth = 7.2921151467e-5
+
+    Rotation rate of earth [rad/s]
+    """
+    const ω_earth = 7.2921151467e-5
 
     """
         const usgs
@@ -52,20 +79,56 @@ module MagNav
     USGS. Same as the color scale for the "Bouguer gravity anomaly map."
 
     Reference: https://mrdata.usgs.gov/magnetic/namag.png
-
     """
     const usgs = joinpath(artifact"color_scale_usgs","color_scale_usgs.csv")
 
+    """
+        const icon_circle
+
+    Point icon for optional use in path2kml(;points=true)
+    """
     const icon_circle = joinpath(artifact"icon_circle","icon_circle.dae")
 
-    # flight data artifacts
-    sgl_fields()     = joinpath(artifact"sgl_fields","sgl_fields")
+    """
+        sgl_fields()
+
+    Data fields in SGL data collections
+    """
+    sgl_fields() = joinpath(artifact"sgl_fields","sgl_fields")
+
+    """
+        sgl_2020_train()
+
+    Flight data from SGL 2020 data collection - training portion
+    """
     sgl_2020_train() = joinpath(artifact"sgl_2020_train","sgl_2020_train")
 
-    # map artifacts
-    const emag2        = joinpath(artifact"EMAG2","EMAG2.h5")               # Earth Magnetic Anomaly Grid (2-arc-minute resolution)
-    const emm720       = joinpath(artifact"EMM720_World","EMM720_World.h5") # Enhanced Magnetic Model
-    const namad        = joinpath(artifact"NAMAD_305","NAMAD_305.h5")       # North American Magnetic Anomaly Map
+    """
+        const emag2
+
+    Earth Magnetic Anomaly Grid (2-arc-minute resolution)
+    """
+    const emag2 = joinpath(artifact"EMAG2","EMAG2.h5")
+
+    """
+        const emm720
+
+    Enhanced Magnetic Model
+    """
+    const emm720 = joinpath(artifact"EMM720_World","EMM720_World.h5")
+
+    """
+        const namad
+
+    North American Magnetic Anomaly Map
+    """
+    const namad = joinpath(artifact"NAMAD_305","NAMAD_305.h5")
+
+    """
+        ottawa_area_maps()
+
+    Magnetic anomaly maps near Ottawa, Ontario, Canada
+    """
     ottawa_area_maps() = joinpath(artifact"ottawa_area_maps","ottawa_area_maps")
 
     """
@@ -221,7 +284,7 @@ module MagNav
         fn  :: Vector{T2}
         fe  :: Vector{T2}
         fd  :: Vector{T2}
-        Cnb :: Array{T2,3} # zeros if unavailable
+        Cnb :: Array{T2,3}
     end
 
     """
