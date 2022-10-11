@@ -270,7 +270,7 @@ function ekf_online_setup(flux::MagV, meas, ind=trues(length(meas));
                                        Bt_scale=Bt_scale,return_var=false)
     end
 
-    TL_sigma = std(coef_set,dims=2)
+    TL_sigma = vec(std(coef_set,dims=2))
     # TL_sigma = vec(minimum(abs.(coef_set[:,2:end]-coef_set[:,1:end-1]),dims=2))
     # TL_sigma = vec(abs.(median(coef_set[:,2:end]-coef_set[:,1:end-1],dims=2)))
 

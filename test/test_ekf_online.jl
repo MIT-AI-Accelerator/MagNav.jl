@@ -22,7 +22,7 @@ flux_a = xyz.flux_a
                                P0_TL      = P0_TL)
 
 @testset "ekf_online tests" begin
-    @test_nowarn ekf_online_setup(flux_a,xyz.mag_1_c;N_sigma=10)
+    @test typeof(ekf_online_setup(flux_a,xyz.mag_1_c;N_sigma=10)) <: Tuple{Vector,Matrix,Vector}
     @test_nowarn ekf_online(ins,xyz.mag_1_c,flux_a,itp_mapS,x0_TL,P0_1,Qd_1,R_1)
     @test_nowarn ekf_online(ins,xyz.mag_1_c,flux_a,itp_mapS,x0_TL,P0_2,Qd_2,R_2)
     @test typeof(run_filt(traj,ins,xyz.mag_1_c,itp_mapS,:ekf_online;
