@@ -1,7 +1,7 @@
 using MagNav, Test, MAT
 
-map_file  = "test_data/test_data_map.mat"
-traj_file = "test_data/test_data_traj.mat"
+map_file  = joinpath(@__DIR__,"test_data/test_data_map.mat")
+traj_file = joinpath(@__DIR__,"test_data/test_data_traj.mat")
 
 mapS      = get_map(map_file)
 itp_mapS  = map_interpolate(mapS)

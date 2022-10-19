@@ -1,18 +1,18 @@
 using MagNav, Test, MAT, DataFrames, Geodesy, Plots
 
-test_file = "test_data/test_data_grid.mat"
+test_file = joinpath(@__DIR__,"test_data/test_data_grid.mat")
 grid_data = matopen(test_file,"r") do file
     read(file,"grid_data")
 end
 
-map_file  = "test_data/test_data_map.mat"
+map_file  = joinpath(@__DIR__,"test_data/test_data_map.mat")
 mapS      = get_map(map_file)
 itp_mapS  = map_interpolate(mapS,:linear) # linear to match MATLAB
 
-traj_file = "test_data/test_data_traj.mat"
+traj_file = joinpath(@__DIR__,"test_data/test_data_traj.mat")
 traj      = get_traj(traj_file,:traj,silent=true)
 
-gxf_file = "test_data/HighAlt_Mag.gxf"
+gxf_file  = joinpath(@__DIR__,"test_data/HighAlt_Mag.gxf")
 (map_map,map_xx,map_yy) = map_get_gxf(gxf_file)
 mapP = get_map(string(MagNav.ottawa_area_maps(),"/HighAlt_5181.h5"))
 

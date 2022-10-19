@@ -1,17 +1,17 @@
 using MagNav, Test, MAT, LinearAlgebra, Random, Statistics
 Random.seed!(2)
 
-test_file = "test_data/test_data_ins.mat"
+test_file = joinpath(@__DIR__,"test_data/test_data_ins.mat")
 ins_data  = matopen(test_file,"r") do file
     read(file,"ins_data")
 end
 
-test_file = "test_data/test_data_params.mat"
+test_file = joinpath(@__DIR__,"test_data/test_data_params.mat")
 params    = matopen(test_file,"r") do file
     read(file,"params")
 end
 
-test_file = "test_data/test_data_traj.mat"
+test_file = joinpath(@__DIR__,"test_data/test_data_traj.mat")
 traj_data = matopen(test_file,"r") do file
     read(file,"traj")
 end
@@ -105,7 +105,7 @@ ind_yy_mod = rand(1:size(mapS.map,1),N_mod)
 mapV = get_map(MagNav.emm720)
 mapV = map_trim(mapV,traj)
 
-xyz_h5 = "test.h5"
+xyz_h5 = joinpath(@__DIR__,"test_create_XYZ0.h5")
 
 @testset "create_XYZ0 tests" begin
     @test typeof(create_XYZ0(mapS;alt=2000,t=10,mapV=mapV,

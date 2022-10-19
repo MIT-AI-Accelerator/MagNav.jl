@@ -1,7 +1,7 @@
 using MagNav, Test, MAT
 
-traj_file = "test_data/test_data_traj.mat"
-ins_file  = "test_data/test_data_ins.mat"
+traj_file = joinpath(@__DIR__,"test_data/test_data_traj.mat")
+ins_file  = joinpath(@__DIR__,"test_data/test_data_ins.mat")
 
 xyz    = get_XYZ0(traj_file,:traj,:none;silent=true)
 traj   = xyz.traj
@@ -11,7 +11,7 @@ flux_a = xyz.flux_a
 ind = trues(traj.N)
 ind[51:end] .= false
 
-xyz_h5 = "test.h5"
+xyz_h5 = joinpath(@__DIR__,"test_get_XYZ0.h5")
 MagNav.write_field(xyz_h5,:tt,traj.tt)
 MagNav.write_field(xyz_h5,:lat,rad2deg.(traj.lat))
 MagNav.write_field(xyz_h5,:lon,rad2deg.(traj.lon))

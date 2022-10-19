@@ -1,6 +1,6 @@
 using MagNav, Test, MAT, DataFrames
 
-test_data_map = "test_data/test_data_map.mat"
+test_data_map = joinpath(@__DIR__,"test_data/test_data_map.mat")
 map_data  = matopen(test_data_map,"r") do file
     read(file,"map_data")
 end
@@ -37,22 +37,22 @@ map_data_drpV = Dict("mapX" => map_map[ind,ind],
                      "yy"   => map_yy[ind],
                      "alt"  => map_map[ind,ind])
 
-test_data_map_badS = "test_data_map_badS.mat"
+test_data_map_badS = joinpath(@__DIR__,"test_data_map_badS.mat")
 map_data  = matopen(test_data_map_badS,"w") do file
     write(file,"map_data",map_data_badS)
 end
 
-test_data_map_badV = "test_data_map_badV.mat"
+test_data_map_badV = joinpath(@__DIR__,"test_data_map_badV.mat")
 map_data  = matopen(test_data_map_badV,"w") do file
     write(file,"map_data",map_data_badV)
 end
 
-test_data_map_drpS = "test_data_map_drpS.mat"
+test_data_map_drpS = joinpath(@__DIR__,"test_data_map_drpS.mat")
 map_data  = matopen(test_data_map_drpS,"w") do file
     write(file,"map_data",map_data_drpS)
 end
 
-test_data_map_drpV = "test_data_map_drpV.mat"
+test_data_map_drpV = joinpath(@__DIR__,"test_data_map_drpV.mat")
 map_data  = matopen(test_data_map_drpV,"w") do file
     write(file,"map_data",map_data_drpV)
 end
@@ -93,7 +93,7 @@ df_map    = DataFrame(map_h5=map_files,map_name=map_names)
 end
 
 mapS   = get_map(test_data_map)
-map_h5 = "test.h5"
+map_h5 = joinpath(@__DIR__,"test_get_map.h5")
 
 @testset "save_map tests" begin
     @test typeof(save_map(mapS,map_h5;map_units=:deg )) <: Nothing

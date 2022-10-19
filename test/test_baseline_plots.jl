@@ -2,12 +2,12 @@ using MagNav, Test, MAT
 using DSP: hamming
 using Plots: Plot
 
-test_file = "test_data/test_data_ins.mat"
+test_file = joinpath(@__DIR__,"test_data/test_data_ins.mat")
 ins_data  = matopen(test_file,"r") do file
     read(file,"ins_data")
 end
 
-test_file = "test_data/test_data_traj.mat"
+test_file = joinpath(@__DIR__,"test_data/test_data_traj.mat")
 traj_data = matopen(test_file,"r") do file
     read(file,"traj")
 end

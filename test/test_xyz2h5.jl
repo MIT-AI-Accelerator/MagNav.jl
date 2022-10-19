@@ -1,7 +1,7 @@
 using MagNav, Test, MAT
 
-xyz_file = "test_data/Flt1003_sample.xyz"
-xyz_h5   = "Flt1003_sample.h5"
+xyz_file = joinpath(@__DIR__,"test_data/Flt1003_sample.xyz")
+xyz_h5   = joinpath(@__DIR__,"Flt1003_sample.h5")
 
 data = xyz2h5(xyz_file,xyz_h5,:Flt1003;return_data=true)
 

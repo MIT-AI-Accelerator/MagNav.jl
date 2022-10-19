@@ -1,26 +1,26 @@
 using MagNav, Test, MAT
 
-test_file = "test_data/test_data_ekf.mat"
+test_file = joinpath(@__DIR__,"test_data/test_data_ekf.mat")
 ekf_data  = matopen(test_file,"r") do file
     read(file,"ekf_data")
 end
 
-test_file = "test_data/test_data_ins.mat"
+test_file = joinpath(@__DIR__,"test_data/test_data_ins.mat")
 ins_data  = matopen(test_file,"r") do file
     read(file,"ins_data")
 end
 
-test_file = "test_data/test_data_map.mat"
+test_file = joinpath(@__DIR__,"test_data/test_data_map.mat")
 map_data  = matopen(test_file,"r") do file
     read(file,"map_data")
 end
 
-test_file = "test_data/test_data_params.mat"
+test_file = joinpath(@__DIR__,"test_data/test_data_params.mat")
 params    = matopen(test_file,"r") do file
     read(file,"params")
 end
 
-test_file = "test_data/test_data_traj.mat"
+test_file = joinpath(@__DIR__,"test_data/test_data_traj.mat")
 traj_data = matopen(test_file,"r") do file
     read(file,"traj")
 end
