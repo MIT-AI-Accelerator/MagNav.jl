@@ -1,11 +1,11 @@
 using MagNav, Test, MAT
 
-test_file = "test_data/test_data_map.mat"
+test_file = joinpath(@__DIR__,"test_data/test_data_map.mat")
 map_data  = matopen(test_file,"r") do file
     read(file,"map_data")
 end
 
-test_file = "test_data/test_data_traj.mat"
+test_file = joinpath(@__DIR__,"test_data/test_data_traj.mat")
 traj_data = matopen(test_file,"r") do file
     read(file,"traj")
 end
@@ -39,8 +39,8 @@ map_map = map_map[ind,ind]
 map_xx  = map_xx[ind]
 map_yy  = map_yy[ind]
 
-map_name  = "test"
-path_name = "test"
+map_name  = joinpath(@__DIR__,"test")
+path_name = joinpath(@__DIR__,"test")
 
 @testset "map2kmz tests" begin
     @test_nowarn map2kmz(map_map,map_xx,map_yy,map_name)

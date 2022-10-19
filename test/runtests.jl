@@ -1,23 +1,25 @@
 ##* top-level file for running unit tests
-using SafeTestsets
+using TestItemRunner
 
-@safetestset "analysis_util   " begin include("test_analysis_util.jl") end
-@safetestset "baseline_plots  " begin include("test_baseline_plots.jl") end
-@safetestset "compensation    " begin include("test_compensation.jl") end
-@safetestset "create_XYZ0     " begin include("test_create_XYZ0.jl") end
-@safetestset "dcm             " begin include("test_dcm.jl") end
-@safetestset "ekf_&_crlb      " begin include("test_ekf_&_crlb.jl") end
-@safetestset "ekf_online_nn   " begin include("test_ekf_online_nn.jl") end
-@safetestset "ekf_online      " begin include("test_ekf_online.jl") end
-@safetestset "eval_filt       " begin include("test_eval_filt.jl") end
-@safetestset "get_map         " begin include("test_get_map.jl") end
-@safetestset "get_XYZ         " begin include("test_get_XYZ.jl") end
-@safetestset "get_XYZ0        " begin include("test_get_XYZ0.jl") end
-@safetestset "google_earth    " begin include("test_google_earth.jl") end
-@safetestset "map_fft         " begin include("test_map_fft.jl") end
-@safetestset "map_functions   " begin include("test_map_functions.jl") end
-@safetestset "model_functions " begin include("test_model_functions.jl") end
-@safetestset "mpf             " begin include("test_mpf.jl") end
-@safetestset "nekf            " begin include("test_nekf.jl") end
-@safetestset "tolles_lawson   " begin include("test_tolles_lawson.jl") end
-@safetestset "xyz2h5          " begin include("test_xyz2h5.jl") end
+@testitem "analysis_util   " begin include("test_analysis_util.jl") end
+@testitem "baseline_plots  " begin include("test_baseline_plots.jl") end
+@testitem "compensation    " begin include("test_compensation.jl") end
+@testitem "create_XYZ0     " begin include("test_create_XYZ0.jl") end
+@testitem "dcm             " begin include("test_dcm.jl") end
+@testitem "ekf_&_crlb      " begin include("test_ekf_&_crlb.jl") end
+@testitem "ekf_online_nn   " begin include("test_ekf_online_nn.jl") end
+@testitem "ekf_online      " begin include("test_ekf_online.jl") end
+@testitem "eval_filt       " begin include("test_eval_filt.jl") end
+@testitem "get_map         " begin include("test_get_map.jl") end
+@testitem "get_XYZ         " begin include("test_get_XYZ.jl") end
+@testitem "get_XYZ0        " begin include("test_get_XYZ0.jl") end
+@testitem "google_earth    " begin include("test_google_earth.jl") end
+@testitem "map_fft         " begin include("test_map_fft.jl") end
+@testitem "map_functions   " begin include("test_map_functions.jl") end
+@testitem "model_functions " begin include("test_model_functions.jl") end
+@testitem "mpf             " begin include("test_mpf.jl") end
+@testitem "nekf            " begin include("test_nekf.jl") end # 40
+@testitem "tolles_lawson   " begin include("test_tolles_lawson.jl") end
+@testitem "xyz2h5          " begin include("test_xyz2h5.jl") end
+
+@run_package_tests

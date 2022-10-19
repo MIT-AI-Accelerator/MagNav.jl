@@ -14,8 +14,8 @@ ind_train  = xyz.line .== line_train
 ind_test   = xyz.line .== line_test
 ind_train[findall(ind_train)[51:end]] .= false
 ind_test[ findall(ind_test )[51:end]] .= false
-mapS = map_trim(mapS,xyz.traj(ind_train .| ind_test))
-map_h5 = "test.h5"
+mapS   = map_trim(mapS,xyz.traj(ind_train .| ind_test))
+map_h5 = joinpath(@__DIR__,"test_compensation.h5")
 save_map(mapS,map_h5)
 
 t_start = [xyz.traj.tt[ind_train][1],xyz.traj.tt[ind_test][1]]
@@ -52,7 +52,11 @@ comp_params_2d = MagNav.NNCompParams(model_type=:m2d,terms=terms,
 
 comp_params_nn_bad      = MagNav.NNCompParams( model_type=:test)
 comp_params_lin_bad     = MagNav.LinCompParams(model_type=:test)
-comp_params_nn_bad_drop = MagNav.NNCompParams( model_type=:test,drop_fi=true)
+drop_fi_bson = joinpath(@__DIR__,"drop_fi")
+drop_fi_csv  = joinpath(@__DIR__,"drop_fi.csv")
+comp_params_nn_bad_drop = MagNav.NNCompParams(model_type=:test,drop_fi=true, 
+                                              drop_fi_bson=drop_fi_bson,
+                                              drop_fi_csv=drop_fi_csv)
 
 x = [1:5;;]
 y = [1:5;]
@@ -95,7 +99,9 @@ comp_params_2b = comp_train(xyz,ind_train;comp_params=comp_params_2b)[1]
 comp_params_2c = comp_train(xyz,ind_train;comp_params=comp_params_2c)[1]
 comp_params_2d = comp_train(xyz,ind_train;comp_params=comp_params_2d)[1]
 
-comp_train(xyz,ind_train;comp_params=MagNav.NNCompParams(comp_params_1,drop_fi=true))
+drop_fi_bson = joinpath(@__DIR__,"drop_fi")
+comp_train(xyz,ind_train;comp_params=MagNav.NNCompParams(comp_params_1,
+           drop_fi=true,drop_fi_bson=drop_fi_bson,drop_fi_csv=drop_fi_csv))
 
 @testset "comp_train (re-train) tests" begin
     @test std(comp_train(xyz,ind_train;comp_params=comp_params_1 )[end-1]) < 1
@@ -150,10 +156,10 @@ end
                                           comp_params_nn_bad_drop)
 end
 
-rm("drop_fi_1.bson")
-rm("drop_fi_2.bson")
-rm("drop_fi_3.bson")
-rm("drop_fi_4.bson")
+rm(drop_fi_bson*"_1.bson")
+rm(drop_fi_bson*"_2.bson")
+rm(drop_fi_bson*"_3.bson")
+rm(drop_fi_bson*"_4.bson")
 
 @testset "comp_m2bc_test tests" begin
     @test std(comp_m2bc_test(line_test,df_line,df_flight,DataFrame(),
@@ -219,10 +225,15 @@ comp_params_map_TL     = MagNav.LinCompParams(model_type=:map_TL,y_type=:a,sub_i
 comp_params_elasticnet = MagNav.LinCompParams(model_type=:elasticnet,y_type=:a)
 comp_params_plsr       = MagNav.LinCompParams(model_type=:plsr,y_type=:a,k_plsr=1)
 
-comp_params_1_drop     = MagNav.NNCompParams(comp_params_1 ,drop_fi=true)
-comp_params_1_perm     = MagNav.NNCompParams(comp_params_1 ,perm_fi=true)
-comp_params_2c_drop    = MagNav.NNCompParams(comp_params_2c,drop_fi=true)
-comp_params_2c_perm    = MagNav.NNCompParams(comp_params_2c,perm_fi=true)
+perm_fi_csv = joinpath(@__DIR__,"perm_fi.csv")
+comp_params_1_drop  = MagNav.NNCompParams(comp_params_1,drop_fi=true,
+                      drop_fi_bson=drop_fi_bson,drop_fi_csv=drop_fi_csv)
+comp_params_1_perm  = MagNav.NNCompParams(comp_params_1,perm_fi=true,
+                      perm_fi_csv=perm_fi_csv)
+comp_params_2c_drop = MagNav.NNCompParams(comp_params_2c,drop_fi=true,
+                      drop_fi_bson=drop_fi_bson,drop_fi_csv=drop_fi_csv)
+comp_params_2c_perm = MagNav.NNCompParams(comp_params_2c,perm_fi=true,
+                      perm_fi_csv=perm_fi_csv)
 
 @testset "comp_train_test tests" begin
     for comp_params in [comp_params_1,comp_params_2a,comp_params_2b,
@@ -243,10 +254,10 @@ end
     @test typeof(MagNav.print_time(90)) == Nothing
 end
 
-rm("drop_fi_1.bson")
-rm("drop_fi_2.bson")
-rm("drop_fi_3.bson")
-rm("drop_fi_4.bson")
-rm("drop_fi.csv")
-rm("perm_fi.csv")
+rm(drop_fi_bson*"_1.bson")
+rm(drop_fi_bson*"_2.bson")
+rm(drop_fi_bson*"_3.bson")
+rm(drop_fi_bson*"_4.bson")
+rm(drop_fi_csv)
+rm(perm_fi_csv)
 rm(map_h5)

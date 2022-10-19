@@ -1,16 +1,16 @@
 using MagNav, Test, MAT, Plots
 
-test_file = "test_data/test_data_ins.mat"
+test_file = joinpath(@__DIR__,"test_data/test_data_ins.mat")
 ins_data  = matopen(test_file,"r") do file
     read(file,"ins_data")
 end
 
-test_file = "test_data/test_data_map.mat"
+test_file = joinpath(@__DIR__,"test_data/test_data_map.mat")
 map_data  = matopen(test_file,"r") do file
     read(file,"map_data")
 end
 
-test_file = "test_data/test_data_traj.mat"
+test_file = joinpath(@__DIR__,"test_data/test_data_traj.mat")
 traj_data = matopen(test_file,"r") do file
     read(file,"traj")
 end
@@ -123,7 +123,7 @@ P = crlb_P[1:2,1:2,:]
 
 p1 = plot();
 
-gif_name = "conf_ellipse"
+gif_name = joinpath(@__DIR__,"conf_ellipse")
 
 @testset "ellipse tests" begin
     ENV["GKSwstype"] = "100"
