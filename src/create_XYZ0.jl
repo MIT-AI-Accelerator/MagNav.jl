@@ -327,8 +327,8 @@ function create_traj(mapS::MapS=get_map(namad);
             t         = d_now/v # true time from true distance & given velocity
             N         = round(Int,t/dt+1) # time steps needed for t with dt
             range_new = LinRange(0,1,N) # ending range {0:1} with N_new
-            itp_lat   = LinearInterpolation(range_old,lat) # lat itp = f(0:1)
-            itp_lon   = LinearInterpolation(range_old,lon) # lon itp = f(0:1)
+            itp_lat   = linear_interpolation(range_old,lat) # lat itp = f(0:1)
+            itp_lon   = linear_interpolation(range_old,lon) # lon itp = f(0:1)
             lat       = itp_lat.(range_new) # get interpolated lat
             lon       = itp_lon.(range_new) # get interpolated lat
         end
@@ -344,7 +344,7 @@ function create_traj(mapS::MapS=get_map(namad);
     # println(i)
     # println(attempts)
 
-    i > attempts && error("maximum attempts reached, decrease t or increase v")
+    @assert i <= attempts "maximum attempts reached, decrease t or increase v"
 
     lla2utm = UTMZfromLLA(WGS84)
     llas    = LLA.(rad2deg.(lat),rad2deg.(lon),alt)

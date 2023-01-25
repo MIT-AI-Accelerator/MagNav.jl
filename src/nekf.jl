@@ -9,7 +9,7 @@
          acc_tau      = 3600.0,
          gyro_tau     = 3600.0,
          fogm_tau     = 600.0,
-         date         = 2020+185/366,
+         date         = get_years(2020,185),
          core::Bool   = false)
 
 Measurement noise covariance-adaptive neural extended Kalman filter (nEKF) 
@@ -54,7 +54,7 @@ function nekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS,
               acc_tau      = 3600.0,
               gyro_tau     = 3600.0,
               fogm_tau     = 600.0,
-              date         = 2020+185/366,
+              date         = get_years(2020,185),
               core::Bool   = false)
 
     N      = length(lat)
@@ -63,7 +63,7 @@ function nekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS,
     x_out  = zeros(nx,N)
     P_out  = zeros(nx,nx,N)
     r_out  = zeros(ny,N)
-    x_seqs = Flux.unstack(convert.(Float32,nn_x),1)
+    x_seqs = Flux.unstack(convert.(Float32,nn_x);dims=1)
 
     x = zeros(nx) # state estimate
     P = P0        # covariance matrix
@@ -119,7 +119,7 @@ end # function nekf
          acc_tau      = 3600.0,
          gyro_tau     = 3600.0,
          fogm_tau     = 600.0,
-         date         = 2020+185/366,
+         date         = get_years(2020,185),
          core::Bool   = false)
 
 Measurement noise covariance-adaptive neural extended Kalman filter (nEKF) 
@@ -154,7 +154,7 @@ function nekf(ins::INS, meas, itp_mapS,
               acc_tau      = 3600.0,
               gyro_tau     = 3600.0,
               fogm_tau     = 600.0,
-              date         = 2020+185/366,
+              date         = get_years(2020,185),
               core::Bool   = false)
 
     nekf(ins.lat,ins.lon,ins.alt,ins.vn,ins.ve,ins.vd,
@@ -179,7 +179,7 @@ end # function nekf
                Qd           = create_Qd(),
                R            = 1.0,
                x            = zeros(18);
-               date         = 2020+185/366,
+               date         = get_years(2020,185),
                core::Bool   = false)
 
 Internal helper function to run an extended Kalman filter (EKF) for a single 
@@ -211,7 +211,7 @@ function ekf_single(lat, lon, alt, Phi, meas, itp_mapS,
                     Qd           = create_Qd(),
                     R            = 1.0,
                     x            = zeros(18);
-                    date         = 2020+185/366,
+                    date         = get_years(2020,185),
                     core::Bool   = false)
 
     ny = length(meas)
@@ -253,7 +253,7 @@ end # function ekf_single
                hidden::Int          = 1,
                activation::Function = swish,
                l_seq::Int           = 50,
-               date                 = 2020+185/366,
+               date                 = get_years(2020,185),
                core::Bool           = false)
 
 Train a measurement noise covariance-adaptive neural extended Kalman filter 
@@ -311,7 +311,7 @@ function nekf_train(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt,
                     hidden::Int          = 1,
                     activation::Function = swish,
                     l_seq::Int           = 50,
-                    date                 = 2020+185/366,
+                    date                 = get_years(2020,185),
                     core::Bool           = false)
 
     x_seqs = chunk_data(convert.(Float32,nn_x),zero(lat),l_seq)[1]
@@ -385,7 +385,7 @@ end # function nekf_train
                hidden::Int          = 1,
                activation::Function = swish,
                l_seq::Int           = 50,
-               date                 = 2020+185/366,
+               date                 = get_years(2020,185),
                core::Bool           = false)
 
 Train a measurement noise covariance-adaptive neural extended Kalman filter 
@@ -432,7 +432,7 @@ function nekf_train(ins::INS, meas, itp_mapS, nn_x::Matrix, nn_y::Matrix;
                     hidden::Int          = 1,
                     activation::Function = swish,
                     l_seq::Int           = 50,
-                    date                 = 2020+185/366,
+                    date                 = get_years(2020,185),
                     core::Bool           = false)
 
     nekf_train(ins.lat,ins.lon,ins.alt,ins.vn,ins.ve,ins.vd,
@@ -464,7 +464,7 @@ end # function nekf_train
                hidden::Int          = 1,
                activation::Function = swish,
                l_seq::Int           = 50,
-               date                 = 2020+185/366,
+               date                 = get_years(2020,185),
                core::Bool           = false)
 
 Train a measurement noise covariance-adaptive neural extended Kalman filter 
@@ -512,7 +512,7 @@ function nekf_train(xyz::XYZ, ind, meas, itp_mapS, x::Matrix;
                     hidden::Int          = 1,
                     activation::Function = swish,
                     l_seq::Int           = 50,
-                    date                 = 2020+185/366,
+                    date                 = get_years(2020,185),
                     core::Bool           = false)
 
     # get traj, ins, and nn_y (position)

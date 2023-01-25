@@ -163,8 +163,8 @@ function map_params(map_map::Matrix, map_xx::Vector, map_yy::Vector)
 
     # map size
     (ny,nx) = size(map_map)
-    nx == length(map_xx) || error("xx map dimensions are inconsistent")
-    ny == length(map_yy) || error("yy map dimensions are inconsistent")
+    @assert nx == length(map_xx) "xx map dimensions are inconsistent"
+    @assert ny == length(map_yy) "yy map dimensions are inconsistent"
 
     return (ind0, ind1, nx, ny)
 end # function map_params
@@ -470,7 +470,7 @@ end # function map_trim
 """
     map_correct_igrf!(map_map::Matrix, map_alt,
                       map_xx::Vector, map_yy::Vector;
-                      sub_igrf_date  = 2013+293/365, # 20-Oct-2013
+                      sub_igrf_date  = get_years(2013,293), # 20-Oct-2013
                       add_igrf_date  = -1,
                       zone_utm::Int  = 18,
                       is_north::Bool = true)
@@ -493,7 +493,7 @@ of a map by subtracting and/or adding the IGRF on specified date(s).
 """
 function map_correct_igrf!(map_map::Matrix, map_alt,
                            map_xx::Vector, map_yy::Vector;
-                           sub_igrf_date  = 2013+293/365,
+                           sub_igrf_date  = get_years(2013,293),
                            add_igrf_date  = -1,
                            zone_utm::Int  = 18,
                            is_north::Bool = true)
@@ -534,7 +534,7 @@ end # function map_correct_igrf!
 
 """
     map_correct_igrf!(mapS::Union{MapS,MapSd};
-                      sub_igrf_date  = 2013+293/365, # 20-Oct-2013
+                      sub_igrf_date  = get_years(2013,293), # 20-Oct-2013
                       add_igrf_date  = -1,
                       zone_utm::Int  = 18,
                       is_north::Bool = true)
@@ -553,7 +553,7 @@ of a map by subtracting and/or adding the IGRF on specified date(s).
 - `mapS`: IGRF-corrected `MapS` or `MapSd` scalar magnetic anomaly map struct (mutated)
 """
 function map_correct_igrf!(mapS::Union{MapS,MapSd};
-                           sub_igrf_date  = 2013+293/365,
+                           sub_igrf_date  = get_years(2013,293),
                            add_igrf_date  = -1,
                            zone_utm::Int  = 18,
                            is_north::Bool = true)
@@ -854,7 +854,7 @@ end # function map_utm2lla!
 """
     map_gxf2h5(map_gxf::String, alt_gxf::String, alt;
                pad::Int        = 0,
-               sub_igrf_date   = 2013+293/365, # 20-Oct-2013
+               sub_igrf_date   = get_years(2013,293), # 20-Oct-2013
                add_igrf_date   = -1,
                zone_utm::Int   = 18,
                is_north::Bool  = true,
@@ -903,7 +903,7 @@ a `MapSd` struct is returned, while has an included altitude map.
 """
 function map_gxf2h5(map_gxf::String, alt_gxf::String, alt;
                     pad::Int        = 0,
-                    sub_igrf_date   = 2013+293/365,
+                    sub_igrf_date   = get_years(2013,293),
                     add_igrf_date   = -1,
                     zone_utm::Int   = 18,
                     is_north::Bool  = true,
@@ -924,7 +924,7 @@ function map_gxf2h5(map_gxf::String, alt_gxf::String, alt;
     (map_alt,map_xx_,map_yy_) = map_get_gxf(alt_gxf)
 
     # make sure grids match
-    (map_xx ≈ map_xx_) & (map_yy ≈ map_yy_) || error("grids do not match")
+    @assert (map_xx ≈ map_xx_) & (map_yy ≈ map_yy_) "grids do not match"
 
     @info("starting trim")
 

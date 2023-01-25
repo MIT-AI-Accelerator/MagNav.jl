@@ -9,7 +9,7 @@
              acc_tau        = 3600.0,
              gyro_tau       = 3600.0,
              fogm_tau       = 600.0,
-             date           = 2020+185/366,
+             date           = get_years(2020,185),
              core::Bool     = false,
              map_alt        = 0,
              nn_x           = nothing,
@@ -73,7 +73,7 @@ function run_filt(traj::Traj, ins::INS, meas, itp_mapS, filt_type::Symbol=:ekf;
                   acc_tau        = 3600.0,
                   gyro_tau       = 3600.0,
                   fogm_tau       = 600.0,
-                  date           = 2020+185/366,
+                  date           = get_years(2020,185),
                   core::Bool     = false,
                   map_alt        = 0,
                   nn_x           = nothing,
@@ -187,7 +187,7 @@ function run_filt(traj::Traj, ins::INS, meas, itp_mapS,
                   acc_tau    = 3600.0,
                   gyro_tau   = 3600.0,
                   fogm_tau   = 600.0,
-                  date       = 2020+185/366,
+                  date       = get_years(2020,185),
                   core::Bool = false,
                   der_mapS   = map_itp(zeros(2,2),[-pi,pi],[-pi/2,pi/2]),
                   map_alt    = 0,
@@ -1009,10 +1009,10 @@ function conf_ellipse!(p1, P;
     # check arguments
     xlim = ylim = lim === nothing  ? lim : (-lim,lim)
     xlab = ylab = axis == true     ? lab : nothing
-    all(real(eigval) .> 0) || error("P is not positive definite")
-    size(P) == (2,2)       || error("P is size $(size(P)) ≂̸ (2,2)")
-    length(μ) == 2         || error("μ is length $length(μ) ≂̸ 2")
-    0 < conf < 1           || error("conf = $conf < 0 or conf = $conf > 1")
+    @assert all(real(eigval) .> 0) "P is not positive definite"
+    @assert size(P) == (2,2)       "P is size $(size(P)) ≂̸ (2,2)"
+    @assert length(μ) == 2         "μ is length $length(μ) ≂̸ 2"
+    @assert 0 < conf < 1           "conf = $conf < 0 or conf = $conf > 1"
 
     k  = sqrt(chisq_q(conf,2)) # compute quantile for desired percentile
     b_e # backend
@@ -1116,8 +1116,8 @@ Convert (position) confidence ellipse units for a 2x2 covariance matrix.
 - `P`: 2x2 covariance matrix with converted units
 """
 function units_ellipse(P; conf_units::Symbol=:m, lat1=deg2rad(45))
-    size(P,1) == 2 || error("P is size $(size(P)) ≂̸ (2,2)")
-    size(P,2) == 2 || error("P is size $(size(P)) ≂̸ (2,2)")
+    @assert size(P,1) == 2 "P is size $(size(P)) ≂̸ (2,2)"
+    @assert size(P,2) == 2 "P is size $(size(P)) ≂̸ (2,2)"
 
     P = deepcopy(P)
 

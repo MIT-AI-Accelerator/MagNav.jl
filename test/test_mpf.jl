@@ -52,7 +52,7 @@ baro_tau = params["baro_tau"]
 acc_tau  = params["acc_tau"]
 gyro_tau = params["gyro_tau"]
 fogm_tau = params["meas_tau"]
-date     = 2020+185/366
+date     = get_years(2020,185)
 core     = false
 
 tt       = vec(traj_data["tt"])

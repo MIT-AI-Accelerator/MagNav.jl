@@ -26,75 +26,75 @@ function create_TL_A(Bx, By, Bz;
                      Bt_scale = 50000,
                      return_B = false)
 
-    cosX     = Bx ./ Bt
-    cosY     = By ./ Bt
-    cosZ     = Bz ./ Bt
+    Bx_hat = Bx ./ Bt
+    By_hat = By ./ Bt
+    Bz_hat = Bz ./ Bt
 
-    cosX_dot = fdm(cosX)
-    cosY_dot = fdm(cosY)
-    cosZ_dot = fdm(cosZ)
+    Bx_dot = fdm(Bx)
+    By_dot = fdm(By)
+    Bz_dot = fdm(Bz)
 
-    cosXX    = Bt .* cosX.*cosX ./ Bt_scale
-    cosXY    = Bt .* cosX.*cosY ./ Bt_scale
-    cosXZ    = Bt .* cosX.*cosZ ./ Bt_scale
-    cosYY    = Bt .* cosY.*cosY ./ Bt_scale
-    cosYZ    = Bt .* cosY.*cosZ ./ Bt_scale
-    cosZZ    = Bt .* cosZ.*cosZ ./ Bt_scale
+    Bx_hat_Bx = Bx_hat .* Bx ./ Bt_scale
+    Bx_hat_By = Bx_hat .* By ./ Bt_scale
+    Bx_hat_Bz = Bx_hat .* Bz ./ Bt_scale
+    By_hat_By = By_hat .* By ./ Bt_scale
+    By_hat_Bz = By_hat .* Bz ./ Bt_scale
+    Bz_hat_Bz = Bz_hat .* Bz ./ Bt_scale
 
-    cosXcosX_dot = Bt .* cosX.*cosX_dot ./ Bt_scale
-    cosXcosY_dot = Bt .* cosX.*cosY_dot ./ Bt_scale
-    cosXcosZ_dot = Bt .* cosX.*cosZ_dot ./ Bt_scale
-    cosYcosX_dot = Bt .* cosY.*cosX_dot ./ Bt_scale
-    cosYcosY_dot = Bt .* cosY.*cosY_dot ./ Bt_scale
-    cosYcosZ_dot = Bt .* cosY.*cosZ_dot ./ Bt_scale
-    cosZcosX_dot = Bt .* cosZ.*cosX_dot ./ Bt_scale
-    cosZcosY_dot = Bt .* cosZ.*cosY_dot ./ Bt_scale
-    cosZcosZ_dot = Bt .* cosZ.*cosZ_dot ./ Bt_scale
+    Bx_hat_Bx_dot = Bx_hat .* Bx_dot ./ Bt_scale
+    Bx_hat_By_dot = Bx_hat .* By_dot ./ Bt_scale
+    Bx_hat_Bz_dot = Bx_hat .* Bz_dot ./ Bt_scale
+    By_hat_Bx_dot = By_hat .* Bx_dot ./ Bt_scale
+    By_hat_By_dot = By_hat .* By_dot ./ Bt_scale
+    By_hat_Bz_dot = By_hat .* Bz_dot ./ Bt_scale
+    Bz_hat_Bx_dot = Bz_hat .* Bx_dot ./ Bt_scale
+    Bz_hat_By_dot = Bz_hat .* By_dot ./ Bt_scale
+    Bz_hat_Bz_dot = Bz_hat .* Bz_dot ./ Bt_scale
 
     A = Array{eltype(Bt)}(undef,size(Bt,1),0)
 
     # add (3) permanent field terms - all
     if any([:permanent,:p,:permanent3,:p3] .∈ (terms,))
-    	A = [A cosX cosY cosZ]
+    	A = [A Bx_hat By_hat Bz_hat]
     end
 
     # add (6) induced field terms - all
     if any([:induced,:i,:induced6,:i6] .∈ (terms,))
-        A = [A cosXX cosXY cosXZ cosYY cosYZ cosZZ]
+        A = [A Bx_hat_Bx Bx_hat_By Bx_hat_Bz By_hat_By By_hat_Bz Bz_hat_Bz]
     end
 
-    # add (5) induced field terms - all except cosZZ
+    # add (5) induced field terms - all except Bz_hat_Bz
     if any([:induced5,:i5] .∈ (terms,))
-        A = [A cosXX cosXY cosXZ cosYY cosYZ]
+        A = [A Bx_hat_Bx Bx_hat_By Bx_hat_Bz By_hat_By By_hat_Bz]
     end
 
-    # add (3) induced field terms - cosXX, cosYY, cosZZ
+    # add (3) induced field terms - Bx_hat_Bx, By_hat_By, Bz_hat_Bz
     if any([:induced3,:i3] .∈ (terms,))
-        A = [A cosXX cosYY cosZZ]
+        A = [A Bx_hat_Bx By_hat_By Bz_hat_Bz]
     end
 
     # add (9) eddy current terms - all
     if any([:eddy,:e,:eddy9,:e9] .∈ (terms,))
-        A = [A cosXcosX_dot cosXcosY_dot cosXcosZ_dot]
-        A = [A cosYcosX_dot cosYcosY_dot cosYcosZ_dot]
-        A = [A cosZcosX_dot cosZcosY_dot cosZcosZ_dot]
+        A = [A Bx_hat_Bx_dot Bx_hat_By_dot Bx_hat_Bz_dot]
+        A = [A By_hat_Bx_dot By_hat_By_dot By_hat_Bz_dot]
+        A = [A Bz_hat_Bx_dot Bz_hat_By_dot Bz_hat_Bz_dot]
     end
 
-    # add (8) eddy current terms - all except cosZcosZ_dot
+    # add (8) eddy current terms - all except Bz_hat_Bz_dot
     if any([:eddy8,:e8] .∈ (terms,))
-        A = [A cosXcosX_dot cosXcosY_dot cosXcosZ_dot]
-        A = [A cosYcosX_dot cosYcosY_dot cosYcosZ_dot]
-        A = [A cosZcosX_dot cosZcosY_dot]
+        A = [A Bx_hat_Bx_dot Bx_hat_By_dot Bx_hat_Bz_dot]
+        A = [A By_hat_Bx_dot By_hat_By_dot By_hat_Bz_dot]
+        A = [A Bz_hat_Bx_dot Bz_hat_By_dot]
     end
 
-    # add (3) eddy current terms - cosXcosX_dot, cosYcosY_dot, cosZcosZ_dot
+    # add (3) eddy current terms - Bx_hat_Bx_dot, By_hat_By_dot, Bz_hat_Bz_dot
     if any([:eddy3,:e3] .∈ (terms,))
-        A = [A cosXcosX_dot cosYcosY_dot cosZcosZ_dot]
+        A = [A Bx_hat_Bx_dot By_hat_By_dot Bz_hat_Bz_dot]
     end
 
-    # add (3) derivative terms - cosX_dot, cosY_dot, cosZ_dot
+    # add (3) derivative terms - Bx_dot, By_dot, Bz_dot
     if any([:fdm,:f,:d,:fdm3,:f3,:d3] .∈ (terms,))
-        A = [A cosX_dot cosY_dot cosZ_dot]
+        A = [A Bx_dot By_dot Bz_dot]
     end
 
     # add (1) bias term
@@ -103,7 +103,7 @@ function create_TL_A(Bx, By, Bz;
     end
 
     if return_B
-        B_dot = [cosX_dot cosY_dot cosZ_dot]
+        B_dot = [Bx_dot By_dot Bz_dot]
         return (A, Bt, B_dot)
     else
         return (A)
@@ -201,7 +201,7 @@ function create_TL_coef(Bx, By, Bz, B;
     # create Tolles-Lawson `A` matrix
     A = create_TL_A(Bx,By,Bz;Bt=Bt,terms=terms,Bt_scale=Bt_scale)
 
-    # filter columns of A (e.g. cosX) & measurements and trim edges
+    # filter columns of A (e.g. Bx_hat) & measurements and trim edges
     perform_filter && (A = bpf_data(A;bpf=bpf)[trim+1:end-trim,:])
     perform_filter && (B = bpf_data(B;bpf=bpf)[trim+1:end-trim,:])
 

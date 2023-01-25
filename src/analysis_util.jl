@@ -434,11 +434,11 @@ function get_x(xyz::Vector, ind::Vector,
     for i in eachindex(xyz)
         if i == 1
             (nn_x,no_norm,features) = get_x(xyz[i],ind[i],features_setup;
-                                        features_no_norm = features_no_norm,
-                                        terms            = terms,
-                                        sub_diurnal      = sub_diurnal,
-                                        sub_igrf         = sub_igrf,
-                                        bpf_mag          = bpf_mag)
+                                            features_no_norm = features_no_norm,
+                                            terms            = terms,
+                                            sub_diurnal      = sub_diurnal,
+                                            sub_igrf         = sub_igrf,
+                                            bpf_mag          = bpf_mag)
         else
             nn_x = vcat(nn_x,get_x(xyz[i],ind[i],features_setup;
                                    features_no_norm = features_no_norm,
@@ -502,12 +502,12 @@ function get_x(lines, df_line::DataFrame, df_flight::DataFrame,
     end
 
     # check if lines are duplicated in df_line, throw error if so
-    length(lines) != length(unique(lines)) && error("df_line contains duplicated lines")
+    @assert length(lines) == length(unique(lines)) "df_line contains duplicated lines"
 
     # check if flight data matches up
     flights  = [df_line.flight[df_line.line .== l][1] for l in lines]
     xyz_sets = [df_flight.xyz_set[df_flight.flight .== f][1] for f in flights]
-    any(xyz_sets.!=xyz_sets[1]) && error("incompatible xyz_sets in df_flight")
+    @assert all(xyz_sets.==xyz_sets[1]) "incompatible xyz_sets in df_flight"
 
     # initial values
     flt_old  = :FltInitial
@@ -670,7 +670,7 @@ function get_y(lines, df_line::DataFrame, df_flight::DataFrame,
     end
 
     # check if lines are duplicated in df_line, throw error if so
-    length(lines) != length(unique(lines)) && error("df_line contains duplicated lines")
+    @assert length(lines) == length(unique(lines)) "df_line contains duplicated lines"
 
     # initial values
     flt_old = :FltInitial
@@ -723,22 +723,24 @@ end # function get_y
             df_flight::DataFrame, df_map::DataFrame,
             features_setup::Vector{Symbol}   = [:mag_1_uc,:TL_A_flux_a];
             features_no_norm::Vector{Symbol} = Symbol[],
-            y_type::Symbol    = :d,
-            use_mag::Symbol   = :mag_1_uc,
-            use_mag_c::Symbol = :mag_1_c,
-            use_vec::Symbol   = :flux_a,
-            terms             = [:permanent,:induced,:eddy],
-            terms_A           = [:permanent,:induced,:eddy,:bias],
-            sub_diurnal::Bool = false,
-            sub_igrf::Bool    = false,
-            bpf_mag::Bool     = false,
-            l_seq::Int        = -1,
-            mod_TL::Bool      = false,
-            map_TL::Bool      = false,
-            silent::Bool      = true)
+            y_type::Symbol     = :d,
+            use_mag::Symbol    = :mag_1_uc,
+            use_mag_c::Symbol  = :mag_1_c,
+            use_vec::Symbol    = :flux_a,
+            terms              = [:permanent,:induced,:eddy],
+            terms_A            = [:permanent,:induced,:eddy,:bias],
+            sub_diurnal::Bool  = false,
+            sub_igrf::Bool     = false,
+            bpf_mag::Bool      = false,
+            l_seq::Int         = -1,
+            mod_TL::Bool       = false,
+            map_TL::Bool       = false,
+            silent::Bool       = true,
+            reorient_vec::Bool = false,
+            return_B::Bool     = false)
 
 Get Tolles-Lawson `A` matrix, `x` matrix, and `y` target vector for multiple 
-lines, possibly multiple flights.
+lines, possibly multiple flights. Optionally get vector magnetometer `B` and `B'`.
 
 **Arguments:**
 - `lines`:            selected line number(s)
@@ -753,18 +755,20 @@ lines, possibly multiple flights.
     - `:c` = aircraft field #1, difference between uncompensated cabin total field scalar magnetometer measurements and interpolated `magnetic anomaly map` values
     - `:d` = aircraft field #2, difference between uncompensated cabin and compensated tail stinger total field scalar magnetometer measurements
     - `:e` = BPF'd total field, bandpass filtered uncompensated cabin total field scalar magnetometer measurements
-- `use_mag`:     (optional) scalar magnetometer to use {`:mag_1_uc`, etc.}, only used for `y_type = :c, :d, :e`
-- `use_mag_c`:   (optional) compensated scalar magnetometer to use {`:mag_1_c`, etc.}, only used for `y_type = :a, :d`
-- `use_vec`:     (optional) vector magnetometer (fluxgate) to use for Tolles-Lawson `A` matrix {`:flux_a`, etc.}
-- `terms`:       (optional) Tolles-Lawson terms to use for `A` within `x` matrix {`:permanent`,`:induced`,`:eddy`,`:bias`}
-- `terms_A`:     (optional) Tolles-Lawson terms to use for "external" `A` matrix {`:permanent`,`:induced`,`:eddy`,`:bias`}
-- `sub_diurnal`: (optional) if true, subtract diurnal from scalar magnetometer measurements
-- `sub_igrf`:    (optional) if true, subtract IGRF from scalar magnetometer measurements
-- `bpf_mag`:     (optional) if true, bpf scalar magnetometer measurements in `x` matrix
-- `l_seq`:       (optional) trim data by `mod(N,l_seq)`, `-1` to ignore
-- `mod_TL`:      (optional) if true, create modified  Tolles-Lawson `A` matrix with `use_mag` 
-- `map_TL`:      (optional) if true, create map-based Tolles-Lawson `A` matrix 
-- `silent`:      (optional) if true, no print outs
+- `use_mag`:      (optional) scalar magnetometer to use {`:mag_1_uc`, etc.}, only used for `y_type = :c, :d, :e`
+- `use_mag_c`:    (optional) compensated scalar magnetometer to use {`:mag_1_c`, etc.}, only used for `y_type = :a, :d`
+- `use_vec`:      (optional) vector magnetometer (fluxgate) to use for Tolles-Lawson `A` matrix {`:flux_a`, etc.}
+- `terms`:        (optional) Tolles-Lawson terms to use for `A` within `x` matrix {`:permanent`,`:induced`,`:eddy`,`:bias`}
+- `terms_A`:      (optional) Tolles-Lawson terms to use for "external" `A` matrix {`:permanent`,`:induced`,`:eddy`,`:bias`}
+- `sub_diurnal`:  (optional) if true, subtract diurnal from scalar magnetometer measurements
+- `sub_igrf`:     (optional) if true, subtract IGRF from scalar magnetometer measurements
+- `bpf_mag`:      (optional) if true, bpf scalar magnetometer measurements in `x` matrix
+- `l_seq`:        (optional) trim data by `mod(N,l_seq)`, `-1` to ignore
+- `mod_TL`:       (optional) if true, create modified  Tolles-Lawson `A` matrix with `use_mag` 
+- `map_TL`:       (optional) if true, create map-based Tolles-Lawson `A` matrix 
+- `silent`:       (optional) if true, no print outs
+- `reorient_vec`: (optional) if true, align vector magnetometer with body frame
+- `return_B`:     (optional) if true, return vector magnetometer `B` and `B'`
 
 **Returns:**
 - `nn_A`:     Tolles-Lawson `A` matrix
@@ -773,24 +777,28 @@ lines, possibly multiple flights.
 - `no_norm`:  indices of features to not be normalized
 - `features`: full list of features (including components of TL `A`, etc.)
 - `l_segs`:   vector of lengths of `lines`, sum(l_segs) == length(y)
+- `nn_B`:     if `return_B = true`, magnitude of total field measurements
+- `nn_B_dot`: if `return_B = true`, derivative of total field unit vector
 """
 function get_Axy(lines, df_line::DataFrame,
                  df_flight::DataFrame, df_map::DataFrame,
                  features_setup::Vector{Symbol}   = [:mag_1_uc,:TL_A_flux_a];
                  features_no_norm::Vector{Symbol} = Symbol[],
-                 y_type::Symbol    = :d,
-                 use_mag::Symbol   = :mag_1_uc,
-                 use_mag_c::Symbol = :mag_1_c,
-                 use_vec::Symbol   = :flux_a,
-                 terms             = [:permanent,:induced,:eddy],
-                 terms_A           = [:permanent,:induced,:eddy,:bias],
-                 sub_diurnal::Bool = false,
-                 sub_igrf::Bool    = false,
-                 bpf_mag::Bool     = false,
-                 l_seq::Int        = -1,
-                 mod_TL::Bool      = false,
-                 map_TL::Bool      = false,
-                 silent::Bool      = true)
+                 y_type::Symbol     = :d,
+                 use_mag::Symbol    = :mag_1_uc,
+                 use_mag_c::Symbol  = :mag_1_c,
+                 use_vec::Symbol    = :flux_a,
+                 terms              = [:permanent,:induced,:eddy],
+                 terms_A            = [:permanent,:induced,:eddy,:bias],
+                 sub_diurnal::Bool  = false,
+                 sub_igrf::Bool     = false,
+                 bpf_mag::Bool      = false,
+                 l_seq::Int         = -1,
+                 mod_TL::Bool       = false,
+                 map_TL::Bool       = false,
+                 silent::Bool       = true,
+                 reorient_vec::Bool = false,
+                 return_B::Bool     = false)
 
     # check if lines are in df_line, remove if not
     for l in lines
@@ -801,17 +809,19 @@ function get_Axy(lines, df_line::DataFrame,
     end
 
     # check if lines are duplicated in df_line, throw error if so
-    length(lines) != length(unique(lines)) && error("df_line contains duplicated lines")
+    @assert length(lines) == length(unique(lines)) "df_line contains duplicated lines"
 
-    # check if flight data matches up
+    # check if flight data matches up, throw error if not
     flights  = [df_line.flight[df_line.line .== l][1] for l in lines]
     xyz_sets = [df_flight.xyz_set[df_flight.flight .== f][1] for f in flights]
-    any(xyz_sets.!=xyz_sets[1]) && error("incompatible xyz_sets in df_flight")
+    @assert all(xyz_sets.==xyz_sets[1]) "incompatible xyz_sets in df_flight"
 
     # initial values
     flt_old  = :FltInitial
     A_test   = create_TL_A([1.0],[1.0],[1.0];terms=terms_A)
     nn_A     = Array{eltype(A_test)}(undef,0,length(A_test))
+    nn_B     = Array{eltype(A_test)}(undef,0,1)
+    nn_B_dot = Array{eltype(A_test)}(undef,0,3)
     nn_x     = nothing
     no_norm  = nothing
     features = nothing
@@ -822,7 +832,7 @@ function get_Axy(lines, df_line::DataFrame,
     for line in lines
         flt = df_line.flight[df_line.line .== line][1]
         if flt != flt_old
-            xyz = get_XYZ(flt,df_flight;silent=silent)
+            xyz = get_XYZ(flt,df_flight;silent=silent,reorient_vec=reorient_vec)
         end
         flt_old = flt
 
@@ -858,21 +868,29 @@ function get_Axy(lines, df_line::DataFrame,
             map_val  = -1
         end
 
-        # `A` matrix for selected vector magnetometer
+        # `A` matrix for selected vector magnetometer and `B` measurements
         field_check(xyz,use_vec,MagV)
         if mod_TL
-            A = create_TL_A(getfield(xyz,use_vec),ind;
-                            Bt=getfield(xyz,use_mag),terms=terms_A)
+            (A,B_t,B_dot) = create_TL_A(getfield(xyz,use_vec),ind;
+                                        Bt       = getfield(xyz,use_mag),
+                                        terms    = terms_A,
+                                        return_B = true)
         elseif map_TL
-            A = create_TL_A(getfield(xyz,use_vec),ind;
-                            Bt=map_val,terms=terms_A)
+            (A,B_t,B_dot) = create_TL_A(getfield(xyz,use_vec),ind;
+                                        Bt       = map_val,
+                                        terms    = terms_A,
+                                        return_B = true)
         else
-            A = create_TL_A(getfield(xyz,use_vec),ind;terms=terms_A)
+            (A,B_t,B_dot) = create_TL_A(getfield(xyz,use_vec),ind;
+                                        terms    = terms_A,
+                                        return_B = true)
         end
         fs = 1 / xyz.traj.dt
         y_type == :e && bpf_data!(A;bpf=get_bpf(;fs=fs))
 
         nn_A = vcat(nn_A,A)
+        nn_B = vcat(nn_B,B_t)
+        nn_B_dot = vcat(nn_B_dot,B_dot)
 
         # y vector
         if nn_y === nothing
@@ -892,7 +910,11 @@ function get_Axy(lines, df_line::DataFrame,
         end
     end
 
-    return (nn_A, nn_x, nn_y, no_norm, features, l_segs)
+    if return_B == true
+        return (nn_A, nn_B, nn_B_dot, nn_x, nn_y, no_norm, features, l_segs)
+    else
+        return (nn_A, nn_x, nn_y, no_norm, features, l_segs)
+    end
 end # function get_Axy
 
 """
@@ -1325,7 +1347,9 @@ function get_ind(tt::Vector, line::Vector;
                  tt_lim = (),
                  splits = (1))
 
-    sum(splits) ≈ 1.0 || error("sum of splits = $(sum(splits)) ≠ 1")
+    @assert sum(splits) ≈ 1 "sum of splits = $(sum(splits)) ≠ 1"
+    @assert length(tt_lim) <= 2 "length of tt_lim = $(length(tt_lim)) > 2"
+    @assert length(splits) <= 3 "number of splits = $(length(splits)) > 3"
 
     if typeof(ind) <: AbstractVector{Bool}
         indices = deepcopy(ind)
@@ -1348,8 +1372,6 @@ function get_ind(tt::Vector, line::Vector;
         ind = ind .& (tt .<= minimum(tt_lim[1]))
     elseif length(tt_lim) == 2
         ind = ind .& (tt .>= minimum(tt_lim[1])) .& (tt .<= maximum(tt_lim[2]))
-    elseif length(tt_lim) > 2
-        error("length of tt_lim = ",length(tt_lim)," > 2")
     end
 
     ind = ind .& indices
@@ -1367,8 +1389,6 @@ function get_ind(tt::Vector, line::Vector;
         ind2 = ind .& (cumsum(ind) .<= round(Int,sum(ind)*(splits[1]+splits[2]))) .& .!ind1
         ind3 = ind .& .!(ind1 .| ind2)
         return (ind1, ind2, ind3)
-    else
-        error("number of splits = ",length(splits)," > 3")
     end
 
 end # function get_ind
@@ -1475,7 +1495,8 @@ function get_ind(xyz::XYZ, lines, df_line::DataFrame;
                  splits     = (1),
                  l_seq::Int = -1)
 
-    sum(splits) ≈ 1.0 || error("sum of splits = $(sum(splits)) ≠ 1")
+    @assert sum(splits) ≈ 1 "sum of splits = $(sum(splits)) ≠ 1"
+    @assert length(splits) <= 3 "number of splits = $(length(splits)) > 3"
 
     ind = falses(xyz.traj.N)
     for line in lines
@@ -1495,8 +1516,6 @@ function get_ind(xyz::XYZ, lines, df_line::DataFrame;
         ind2 = ind .& (cumsum(ind) .<= round(Int,sum(ind)*(splits[1]+splits[2]))) .& .!ind1
         ind3 = ind .& .!(ind1 .| ind2)
         return (ind1, ind2, ind3)
-    else
-        error("number of splits = ",length(splits)," > 3")
     end
 
 end # function get_ind
@@ -1610,8 +1629,8 @@ Kernel ridge regression (KRR).
 function krr(x_train, y_train, x_test, y_test;
              k=PolynomialKernel(;degree=1), λ=0.5)
 
-    K  = kernelmatrix(k,x_train')
-    K★ = kernelmatrix(k,x_test',x_train')
+    K  = kernelmatrix(k,x_train;obsdim=1)
+    K★ = kernelmatrix(k,x_test,x_train;obsdim=1)
     kt = (K + λ*I) \ y_train
 
     y_train_hat = K  * kt
@@ -1752,3 +1771,184 @@ function eval_gsa(m, x, N::Int=min(10000,size(x,1)))
     
     return (means)
 end # function eval_gsa
+
+"""
+    get_igrf(xyz, ind;
+             date_start      = get_years(2020,185),
+             frame           = :body,
+             norm_igrf::Bool = false)
+
+Returns the IGRF Earth vector in the body or navigation frame given 
+an `XYZ` struct containing trajectory information, valid indices, a 
+start date in IGRF time (years since 0 CE), and reference frame.
+
+**Arguments:**
+- `xyz`:        `XYZ` flight data struct
+- `ind`:        (optional) selected data indices
+- `date_start`: (optional) midnight of date on which flight occurred [yr]
+- `frame`:      (optional) desired reference frame {`:body`,`:nav`}
+- `norm_igrf`:  (optional) if true, return normalized IGRF
+
+**Returns:**
+- `igrf_vec`: `N`x`3` stacked vector for N indices and 3 coordinates of IGRF in desired frame
+"""
+function get_igrf(xyz, ind;
+                  date_start      = get_years(2020,185),
+                  frame           = :body,
+                  norm_igrf::Bool = false)
+    @assert frame in [:body,:nav] "Must choose `:body` or `:nav` reference frame"
+    @assert 1900 <= date_start <= 2030  "Start date must be in valid IGRF date range"
+
+    N   = length(xyz.traj.lat[ind])
+    tt  = xyz.traj.tt[ind] / (60 * 60 * 24 * get_days_per_year(date_start)) # [yr]
+    alt = xyz.traj.alt[ind]
+    lat = xyz.traj.lat[ind]
+    lon = xyz.traj.lon[ind]
+    #date1 = get_years(2020,187.5) # (Flt1006)
+    #date1 = get_years(2020,188) # 6-Jul-2020 (Flt1007) - midnight day before
+    date1 = date_start
+    igrf_time = date1 .+ tt
+
+    # get the IGRF field, igrf() outputs length N vector of [Bx, By, Bz] with
+    # Bx: north component [nT]
+    # By: east  component [nT]
+    # Bz: down  component [nT]
+    igrf_vec = [igrf(igrf_time[i], alt[i], lat[i], lon[i], Val(:geodetic)) for i = 1:N]
+    igrf_error = rms(norm.(igrf_vec) - xyz.igrf[ind])
+    # println("Error is ", igrf_error)
+    @assert igrf_error < 1 "Large IGRF discrepancy, check `date_start`"
+    # normalize (or not) and rotate (or not)
+    norm_igrf && (igrf_vec = normalize.(igrf_vec))
+    if (frame == :nav)
+        return (igrf_vec)
+    else  # convert to body frame
+        Cnb = xyz.ins.Cnb[:,:,ind] # body to navigation
+        # transpose is navigation to body
+        igrf_vec_body = [Cnb[:,:,i]'*igrf_vec[i] for i=1:N]
+        return (igrf_vec_body)
+    end
+end # function get_igrf
+
+"""
+    project_vector_to_2d(vec_in, uvec_x, uvec_y)
+
+Projects a 3D vector into 2D given two orthogonal 3D unit vectors.
+
+**Arguments:**
+- `vec_in`: 3D vector desired to be projected onto a 2D plane
+- `uvec_x`: 3D unit vector
+- `uvec_y`: 3D unit vector orthogonal to `uvec_x`
+
+**Returns:**
+- `v_out`: 2D vector representing the 3D projection onto the plane 
+"""
+function project_vector_to_2d(vec_in, uvec_x, uvec_y)
+    @assert abs(dot(uvec_x, uvec_y)) <= 1e-7 "Projected vectors must be orthogonal: ", dot(uvec_x, uvec_y)
+    @assert norm(uvec_x) ≈ 1 "Unit vector norm = $(norm(uvec_x)) ≠ 1"
+    @assert norm(uvec_y) ≈ 1 "Unit vector norm = $(norm(uvec_y)) ≠ 1"
+    [dot(vec_in,uvec_x), dot(vec_in,uvec_y)]
+end # function project_vector_to_2d
+
+"""
+    project_body_field_to_2d_igrf(vec_body, igrf_in, dcm)
+
+Projects a body frame vector onto a 2D plane defined by the direction 
+of the IGRF field and a tangent vector to the Earth ellipsoid, which is 
+computed by taking the cross product of the IGRF field with the upward 
+direction. Returns a 2D vector whose components describe the amount of 
+the body field that is in alignment with the Earth field and an orthogonal 
+direction to the Earth field (roughly to the East).
+
+**Arguments:**
+- `vec_body`: vector in the body reference frame (e.g., the aircraft induced field)
+- `igrf_in`:  IGRF field unit vector in the navigation reference frame
+- `dcm`:      direction cosine matrix (body to navigation)
+
+**Returns:**
+- `v_out`: 2D vector whose components illustrate projection onto the Earth field and an orthogonal component
+"""
+function project_body_field_to_2d_igrf(vec_body, igrf_in, dcm)
+    # assume igrf_in is "north" in navigation frame and rotate about Z axis to get "East"
+    igrf_north     = igrf_in  # components are actually [north, east, down]
+    igrf_tan_earth = cross(igrf_north, [0.0, 0.0, -1.0]) # cross product with "up" direction
+    igrf_east      = normalize(igrf_tan_earth)
+
+    # transform aircraft vector from body to navigation frame
+    vec_nav = dcm*vec_body
+
+    v_out = project_vector_to_2d(vec_nav, igrf_east, igrf_north) 
+    return (v_out)
+end # function project_body_field_to_2d_igrf
+
+"""
+    get_optimal_rotation_matrix(v1s, v2s)
+
+Returns the `3`x`3` rotation matrix rotating the directions of v1s into v2s. 
+Uses the Kabsch algorithm.
+
+Reference: https://en.wikipedia.org/wiki/Kabsch_algorithm
+
+**Arguments:**
+- `v1s`: `N`x`3` matrix for first  set of 3D points
+- `v2s`: `N`x`3` matrix for second set of 3D points
+
+**Returns:**
+- `R`: 3D matrix rotatating v1s into v2s' directions
+"""
+function get_optimal_rotation_matrix(v1s, v2s)
+    @assert size(v1s)[1] == size(v2s)[1] "size(`v1s`)[1] ≂̸ size(`v2s`)[1]"
+    @assert size(v1s)[2] == 3 "size(`v1s`)[1] ≂̸ 3"
+    @assert size(v2s)[2] == 3 "size(`v2s`)[1] ≂̸ 3"
+
+    # compute centroids and recenter point clouds
+    v1_centroid   = mean(v1s,dims=1)
+    v2_centroid   = mean(v2s,dims=1)
+    v1_recentered = v1s .- v1_centroid
+    v2_recentered = v2s .- v2_centroid
+
+    # calculate cross-covariance matrix
+    cov_matrix = v1_recentered'*v2_recentered
+
+    # compute rotation matrix using least squares
+    # R = sqrt(cov_matrix'*cov_matrix)*inv(cov_matrix)
+
+    # compute rotation matrix using the Kabsch algorithm
+    (U,_,V) = svd(cov_matrix)
+    d = sign(det(V*transpose(U)))
+    R = V*diagm([1.0,1.0,d])*transpose(U)
+
+    @assert det(R) ≈ 1 "Rotation matrix shouldn't scale"
+    @assert R*R' ≈ diagm([1.0,1.0,1.0]) "Rotation matrix transpose should be its inverse"
+    return (R)
+end # function get_optimal_rotation_matrix
+
+"""
+    get_days_per_year(year)
+
+Internal helper function to get days per year based on (rounded down) year.
+
+**Arguments:**
+- `year`: year (rounded down)
+
+**Returns:**
+- `days_per_year`: days per `year`
+"""
+function get_days_per_year(year)
+    mod(floor(Int,year),4) == 0 ? 366 : 365
+end # function get_days_per_year
+
+"""
+    get_years(year, doy=0)
+
+Internal helper function to get years from year and day of year.
+
+**Arguments:**
+- `year`: year
+- `doy`:  day of year
+
+**Returns:**
+- `years`: `year` with fractional `doy`
+"""
+function get_years(year, doy)
+    round(Int,year) + doy/get_days_per_year(year)
+end # function get_years

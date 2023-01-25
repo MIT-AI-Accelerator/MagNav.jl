@@ -503,7 +503,7 @@ end # function get_Phi
 
 """
     get_H(itp_mapS, x::Vector, lat, lon, alt;
-          date       = 2020+185/366,
+          date       = get_years(2020,185),
           core::Bool = false)
 
 Get expected magnetic measurement Jacobian (gradient here) for EKF.
@@ -521,7 +521,7 @@ Get expected magnetic measurement Jacobian (gradient here) for EKF.
 - `H`: expected magnetic measurement Jacobian [nT/rad]
 """
 function get_H(itp_mapS, x::Vector, lat, lon, alt;
-               date       = 2020+185/366,
+               date       = get_years(2020,185),
                core::Bool = false)
     if core
         return ([(igrf_grad(lat+x[1],lon+x[2],alt+x[3];date=date) + 
@@ -533,7 +533,7 @@ end # function get_H
 
 """
     get_h(itp_mapS, x::Array, lat, lon, alt;
-          date       = 2020+185/366,
+          date       = get_years(2020,185),
           core::Bool = false)
 
 Get expected magnetic measurement using magnetic anomaly map interpolation, 
@@ -552,7 +552,7 @@ FOGM catch-all, and optionally IGRF for core magnetic field.
 - `h`: expected magnetic measurement [nT]
 """
 function get_h(itp_mapS, x::Array, lat, lon, alt;
-               date       = 2020+185/366,
+               date       = get_years(2020,185),
                core::Bool = false)
     if core
         return (itp_mapS.(lon .+ x[2,:], lat .+ x[1,:]) .+ x[end,:] .+ 
@@ -565,7 +565,7 @@ end # function get_h
 
 """
     get_h(itp_mapS, der_mapS, x::Array, lat, lon, alt, map_alt;
-          date       = 2020+185/366,
+          date       = get_years(2020,185),
           core::Bool = false)
 
 Get expected magnetic measurement using magnetic anomaly map interpolation, 
@@ -588,7 +588,7 @@ Includes vertical derivative information, currently only for ~constant HAE.
 - `h`: expected magnetic measurement [nT]
 """
 function get_h(itp_mapS, der_mapS, x::Array, lat, lon, alt, map_alt;
-               date       = 2020+185/366,
+               date       = get_years(2020,185),
                core::Bool = false)
     if core
         return (itp_mapS.(lon.+x[2,:],lat.+x[1,:]) + x[end,:] + 
@@ -610,7 +610,7 @@ Local map gradient.
 - `itp_mapS`: scalar map grid interpolation
 - `lat`: latitude [rad]
 - `lon`: longitude [rad]
-- `δ`: (optional) finite difference map sample interval
+- `δ`:   (optional) finite difference map sample interval
 
 **Returns:**
 - `map_grad`: local map gradient: δmap/δlat, δmap/δlon [nT/rad]
@@ -621,21 +621,21 @@ function map_grad(itp_mapS, lat, lon; δ=1.0f-8)
 end # function map_grad
 
 """
-    igrf_grad(lat, lon, alt; date=2020+185/366, δ=1.0f-8)
+    igrf_grad(lat, lon, alt; date=get_years(2020,185), δ=1.0f-8)
 
 Core magnetic field gradient using IGRF model.
 
 **Arguments:**
-- `lat`: latitude [rad]
-- `lon`: longitude [rad]
-- `alt`: altitude [m]
+- `lat`:  latitude [rad]
+- `lon`:  longitude [rad]
+- `alt`:  altitude [m]
 - `date`: (optional) measurement date for IGRF [yr]
-- `δ`: (optional) finite difference map sample interval
+- `δ`:    (optional) finite difference map sample interval
 
 **Returns:**
 - `igrf_grad`: local core magnetic field gradient: δmap/δlat, δmap/δlon [nT/rad]
 """
-function igrf_grad(lat, lon, alt; date=2020+185/366, δ=1.0f-8)
+function igrf_grad(lat, lon, alt; date=get_years(2020,185), δ=1.0f-8)
     return ([(norm(igrf(date,alt,lat+δ,lon,Val(:geodetic))) - 
               norm(igrf(date,alt,lat-δ,lon,Val(:geodetic)))) /2/δ,
              (norm(igrf(date,alt,lat,lon+δ,Val(:geodetic))) - 

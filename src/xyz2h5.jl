@@ -108,7 +108,7 @@ function xyz2h5(data::Array, xyz_h5::String, flight::Symbol;
     # number of valid data rows & data fields
     (Nd,Nf) = size(data)
 
-    Nf != Nf_chk && error("xyz fields don't match up, $Nf ≂̸ $Nf_chk")
+    @assert Nf == Nf_chk "xyz fields don't match up, $Nf ≂̸ $Nf_chk"
 
     # check for duplicated data
     N_tt   = length(unique(data[:,ind_tt  ]))
@@ -321,7 +321,7 @@ Compare data for each data field in 2 structs of the same type.
 function compare_fields(s1, s2)
     t1 = typeof(s1)
     t2 = typeof(s2)
-    t1 == t2 || error("$t1 & $t2 types do no match")
+    @assert t1 == t2 "$t1 & $t2 types do no match"
     N_dif = 0;
     for field in fieldnames(t1)
         t = typeof(getfield(s1,field))
@@ -368,11 +368,11 @@ Check if a specified data field is in a given struct.
 - `field`: data field
 
 **Returns:**
-- `true` if `field` is in struct `s`, otherwise `error`
+- `AssertionError` if `field` is not in struct `s`
 """
 function field_check(s, field::Symbol)
     t = typeof(s)
-    field in fieldnames(t) || error("field $field not in $t")
+    @assert field in fieldnames(t) "field $field not in $t"
 end # function field_check
 
 """
@@ -386,11 +386,11 @@ Check if a specified data field is in a given struct and of a given type.
 - `t`:     type
 
 **Returns:**
-- `true` if `field` is in struct `s` and of type `t`, otherwise `error`
+- `AssertionError` if `field` is not in struct `s` or not type `t`
 """
 function field_check(s, field::Symbol, t)
     field_check(s,field)
-    typeof(getfield(s,field)) <: t || error("$field is not $t type")
+    @assert typeof(getfield(s,field)) <: t "$field is not $t type"
 end # function field_check
 
 """

@@ -43,8 +43,8 @@ rm(xyz_h5)
     @test_nowarn MagNav.print_fields(xyz)
     @test_nowarn MagNav.compare_fields(xyz,xyz)
     @test MagNav.field_check(xyz,MagNav.Traj) == [:traj]
-    @test MagNav.field_check(xyz,:traj)
-    @test MagNav.field_check(xyz,:traj,MagNav.Traj)
+    @test_nowarn MagNav.field_check(xyz,:traj)
+    @test_nowarn MagNav.field_check(xyz,:traj,MagNav.Traj)
 end
 
 @testset "field_extrema tests" begin

@@ -163,9 +163,9 @@ rm(drop_fi_bson*"_4.bson")
 
 @testset "comp_m2bc_test tests" begin
     @test std(comp_m2bc_test(line_test,df_line,df_flight,DataFrame(),
-                        comp_params_2b,silent=true)[end-1]) < 1
+                             comp_params_2b,silent=true)[end-1]) < 1
     @test std(comp_m2bc_test(line_test,df_line,df_flight,DataFrame(),
-                        comp_params_2c,silent=true)[end-1]) < 1
+                             comp_params_2c,silent=true)[end-1]) < 1
 end
 
 terms       = [:p]

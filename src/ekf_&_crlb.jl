@@ -7,7 +7,7 @@
         acc_tau    = 3600.0,
         gyro_tau   = 3600.0,
         fogm_tau   = 600.0,
-        date       = 2020+185/366,
+        date       = get_years(2020,185),
         core::Bool = false,
         der_mapS   = nothing,
         map_alt    = 0)
@@ -51,7 +51,7 @@ function ekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS;
              acc_tau    = 3600.0,
              gyro_tau   = 3600.0,
              fogm_tau   = 600.0,
-             date       = 2020+185/366,
+             date       = get_years(2020,185),
              core::Bool = false,
              der_mapS   = nothing,
              map_alt    = 0)
@@ -136,7 +136,7 @@ end # function ekf
         acc_tau    = 3600.0,
         gyro_tau   = 3600.0,
         fogm_tau   = 600.0,
-        date       = 2020+185/366,
+        date       = get_years(2020,185),
         core::Bool = false,
         der_mapS   = map_itp(zeros(2,2),[-pi,pi],[-pi/2,pi/2]),
         map_alt    = 0)
@@ -170,7 +170,7 @@ function ekf(ins::INS, meas, itp_mapS;
              acc_tau    = 3600.0,
              gyro_tau   = 3600.0,
              fogm_tau   = 600.0,
-             date       = 2020+185/366,
+             date       = get_years(2020,185),
              core::Bool = false,
              der_mapS   = map_itp(zeros(2,2),[-pi,pi],[-pi/2,pi/2]),
              map_alt    = 0)
@@ -200,7 +200,7 @@ end # function ekf
          acc_tau    = 3600.0,
          gyro_tau   = 3600.0,
          fogm_tau   = 600.0,
-         date       = 2020+185/366,
+         date       = get_years(2020,185),
          core::Bool = false)
 
 Cramér–Rao lower bound (CRLB) computed with classic Kalman Filter. 
@@ -240,7 +240,7 @@ function crlb(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, dt, itp_mapS;
               acc_tau    = 3600.0,
               gyro_tau   = 3600.0,
               fogm_tau   = 600.0,
-              date       = 2020+185/366,
+              date       = get_years(2020,185),
               core::Bool = false)
 
     N     = length(lat)
@@ -276,7 +276,7 @@ end # function crlb
          acc_tau    = 3600.0,
          gyro_tau   = 3600.0,
          fogm_tau   = 600.0,
-         date       = 2020+185/366,
+         date       = get_years(2020,185),
          core::Bool = false)
 
 Cramér–Rao lower bound (CRLB) computed with classic Kalman Filter. 
@@ -306,7 +306,7 @@ function crlb(traj::Traj, itp_mapS;
               acc_tau    = 3600.0,
               gyro_tau   = 3600.0,
               fogm_tau   = 600.0,
-              date       = 2020+185/366,
+              date       = get_years(2020,185),
               core::Bool = false)
 
     crlb(traj.lat,traj.lon,traj.alt,traj.vn,traj.ve,traj.vd,
