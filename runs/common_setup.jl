@@ -2,10 +2,9 @@
 using Pkg; Pkg.activate("../"); Pkg.instantiate()
 using Revise
 using MagNav
-using BenchmarkTools, DataFrames, Flux, LinearAlgebra, Plots, Zygote
+using BenchmarkTools, CSV, DataFrames, Flux, LinearAlgebra, Plots, Zygote
 using BSON: @load, @save
-using CSV
-using DataFrames: sort
+using DataFrames: outerjoin, sort
 using DelimitedFiles: readdlm, writedlm
 using Plots: plot, plot!
 using Random: rand, randn, randperm, seed!, shuffle
