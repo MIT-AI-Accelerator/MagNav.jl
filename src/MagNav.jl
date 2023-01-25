@@ -8,16 +8,17 @@ module MagNav
     using DataFrames: combine, groupby, order, sort, DataFrame
     using DelimitedFiles: readdlm, writedlm
     using Distributions: MvNormal, Normal
-    using DSP: digitalfilter, fft, fftfreq, filtfilt, hamming, ifft, pow2db
-    using DSP: spectrogram, welch_pgram, Bandpass, Butterworth, Highpass, Lowpass
+    using DSP: digitalfilter, fft, fftfreq, filtfilt, hamming, ifft
+    using DSP: pow2db, rms, spectrogram, welch_pgram
+    using DSP: Bandpass, Butterworth, Highpass, Lowpass
     using ExponentialUtilities: exponential!
     using Flux: destructure, Chain, Dense
     using FluxOptTools: optfuns
     using Geodesy: LLA, LLAfromUTMZ, UTMZ, UTMZfromLLA, WGS84
     using GLMNet: glmnetcv
     using GlobalSensitivity: gsa, Morris
-    using Interpolations: interpolate, scale, BSpline, Cubic, Line
-    using Interpolations: Linear, LinearInterpolation, OnGrid, Quadratic
+    using Interpolations: interpolate, linear_interpolation, scale
+    using Interpolations: BSpline, Cubic, Line, Linear, OnGrid, Quadratic
     using IterTools: ncycle
     using KernelFunctions: kernelmatrix, PolynomialKernel
     using MAT: matopen
@@ -1061,6 +1062,8 @@ module MagNav
     get_x,get_y,get_Axy,get_nn_m,sparse_group_lasso,err_segs,
     norm_sets,denorm_sets,get_ind,chunk_data,predict_rnn_full,
     predict_rnn_windowed,krr,eval_shapley,plot_shapley,eval_gsa,
+    get_igrf,project_body_field_to_2d_igrf,get_optimal_rotation_matrix,
+    get_days_per_year,get_years,
     plot_basic,plot_activation,plot_mag,plot_vec,plot_mag_c,
     plot_PSD,plot_spectrogram,plot_frequency,plot_correlation,
     create_XYZ0,create_traj,create_ins,create_mag_c,corrupt_mag,create_flux,
@@ -1078,7 +1081,8 @@ module MagNav
     map_correct_igrf!,map_fill!,map_chessboard!,map_chessboard,map_utm2lla!,
     plot_map!,plot_map,plot_path!,plot_path,plot_events!,map_check,
     map2kmz,path2kml,
-    create_model,get_pinson,get_Phi,get_g,get_H,get_h,map_grad,igrf_grad,fogm,chol,
+    create_model,get_pinson,get_Phi,get_g,get_H,get_h,
+    map_grad,igrf_grad,fogm,chol,
     mpf,
     nekf,nekf_train,
     plsr_fit,elasticnet_fit,linear_test,

@@ -5,7 +5,7 @@
                acc_tau    = 3600.0,
                gyro_tau   = 3600.0,
                fogm_tau   = 600.0,
-               date       = 2020+185/366,
+               date       = get_years(2020,185),
                core::Bool = false,
                terms      = [:permanent,:induced,:eddy,:bias],
                Bt_scale   = 50000)
@@ -49,7 +49,7 @@ function ekf_online(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
                     acc_tau    = 3600.0,
                     gyro_tau   = 3600.0,
                     fogm_tau   = 600.0,
-                    date       = 2020+185/366,
+                    date       = get_years(2020,185),
                     core::Bool = false,
                     terms      = [:permanent,:induced,:eddy,:bias],
                     Bt_scale   = 50000)
@@ -151,7 +151,7 @@ end # function ekf_online
                acc_tau    = 3600.0,
                gyro_tau   = 3600.0,
                fogm_tau   = 600.0,
-               date       = 2020+185/366,
+               date       = get_years(2020,185),
                core::Bool = false,
                terms      = [:permanent,:induced,:eddy,:bias],
                Bt_scale   = 50000)
@@ -184,7 +184,7 @@ function ekf_online(ins::INS, meas, flux::MagV, itp_mapS, x0_TL, P0, Qd, R;
                     acc_tau    = 3600.0,
                     gyro_tau   = 3600.0,
                     fogm_tau   = 600.0,
-                    date       = 2020+185/366,
+                    date       = get_years(2020,185),
                     core::Bool = false,
                     terms      = [:permanent,:induced,:eddy,:bias],
                     Bt_scale   = 50000)
@@ -260,7 +260,7 @@ function ekf_online_setup(flux::MagV, meas, ind=trues(length(meas));
     inds  = sortperm(ind.==1,rev=true)[1:N_ind]
 
     N_min = 10
-    N < N_min && error("increase N_sigma to $N_min or use more data")
+    @assert N >= N_min "increase N_sigma to $N_min or use more data"
 
     coef_set = zeros(size(A,2),N)
     for i = 1:N

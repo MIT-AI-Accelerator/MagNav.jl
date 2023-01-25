@@ -110,7 +110,7 @@ df_map = DataFrame(map_name = map_name,
     @test_nowarn get_x(line2,df_line,df_flight)
     @test typeof(get_x(lines,df_line,df_flight)[1]) <: Matrix
     @test typeof(get_x([line2,line3],df_line,df_flight)[1]) <: Matrix
-    @test_throws ErrorException get_x([line2,line2],df_line,df_flight)
+    @test_throws AssertionError get_x([line2,line2],df_line,df_flight)
 end
 
 map_val = randn(sum(ind))
@@ -125,14 +125,14 @@ map_val = randn(sum(ind))
     @test typeof(get_y(line2,df_line,df_flight,df_map;y_type=:a)) <: Vector
     @test typeof(get_y(lines,df_line,df_flight,df_map;y_type=:c)) <: Vector
     @test typeof(get_y([line2,line3],df_line,df_flight,df_map;y_type=:d)) <: Vector
-    @test_throws ErrorException get_y([line2,line2],df_line,df_flight,df_map)
+    @test_throws AssertionError get_y([line2,line2],df_line,df_flight,df_map)
 end
 
 @testset "get_Axy tests" begin
     @test_nowarn get_Axy(line2,df_line,df_flight,df_map;y_type=:a,mod_TL=true)
     @test typeof(get_Axy(lines,df_line,df_flight,df_map;y_type=:b,map_TL=true)[1]) <: Matrix
     @test typeof(get_Axy([line2,line3],df_line,df_flight,df_map)[1]) <: Matrix
-    @test_throws ErrorException get_Axy([line2,line2],df_line,df_flight,df_map)
+    @test_throws AssertionError get_Axy([line2,line2],df_line,df_flight,df_map)
 end
 
 @testset "get_nn_m tests" begin
@@ -219,17 +219,17 @@ end
     @test sum(get_ind(tt[ind],line[ind];tt_lim=(tt[ind][5],tt[ind][9]))) ≈ 5
     @test sum.(get_ind(tt,line;ind=ind,splits=(0.5,0.5))) == (25,25)
     @test sum.(get_ind(tt,line;ind=ind,splits=(0.7,0.2,0.1))) == (35,10,5)
-    @test_throws ErrorException get_ind(tt[ind],line[ind];tt_lim=(1,1,1))
-    @test_throws ErrorException get_ind(tt[ind],line[ind];splits=(1,1,1))
-    @test_throws ErrorException get_ind(tt[ind],line[ind];splits=(1,0,0,0))
+    @test_throws AssertionError get_ind(tt[ind],line[ind];tt_lim=(1,1,1))
+    @test_throws AssertionError get_ind(tt[ind],line[ind];splits=(1,1,1))
+    @test_throws AssertionError get_ind(tt[ind],line[ind];splits=(1,0,0,0))
     @test sum(get_ind(xyz;lines=lines,tt_lim=(tt[ind][5]))) ≈ 5
     @test sum(get_ind(xyz,lines[2],df_line;l_seq=15)) ≈ 45
     @test sum.(get_ind(xyz,lines[2],df_line;splits=(0.5,0.5),l_seq=15)) == (15,15)
     @test sum(get_ind(xyz,lines,df_line)) ≈ 50
     @test sum.(get_ind(xyz,lines,df_line;splits=(0.5,0.5))) == (25,25)
     @test sum.(get_ind(xyz,lines,df_line;splits=(0.7,0.2,0.1))) == (35,10,5)
-    @test_throws ErrorException get_ind(xyz,lines,df_line;splits=(1,1,1))
-    @test_throws ErrorException get_ind(xyz,lines,df_line;splits=(1,0,0,0))
+    @test_throws AssertionError get_ind(xyz,lines,df_line;splits=(1,1,1))
+    @test_throws AssertionError get_ind(xyz,lines,df_line;splits=(1,0,0,0))
 end
 
 @testset "chunk_data tests" begin

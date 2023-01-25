@@ -9,7 +9,7 @@
         acc_tau    = 3600.0,
         gyro_tau   = 3600.0,
         fogm_tau   = 600.0,
-        date       = 2020+185/366,
+        date       = get_years(2020,185),
         core::Bool = false)
 
 Rao-Blackwellized (marginalized) particle filter (MPF) for airborne magnetic 
@@ -59,7 +59,7 @@ function mpf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS;
              acc_tau    = 3600.0,
              gyro_tau   = 3600.0,
              fogm_tau   = 600.0,
-             date       = 2020+185/366,
+             date       = get_years(2020,185),
              core::Bool = false)
 
     N      = length(lat)  # number of samples (instances)
@@ -184,7 +184,7 @@ end # function mpf
         acc_tau    = 3600.0,
         gyro_tau   = 3600.0,
         fogm_tau   = 600.0,
-        date       = 2020+185/366,
+        date       = get_years(2020,185),
         core::Bool = false)
 
 Rao-Blackwellized (marginalized) particle filter (MPF) for airborne magnetic 
@@ -224,7 +224,7 @@ function mpf(ins::INS, meas, itp_mapS;
              acc_tau    = 3600.0,
              gyro_tau   = 3600.0,
              fogm_tau   = 600.0,
-             date       = 2020+185/366,
+             date       = get_years(2020,185),
              core::Bool = false)
 
     mpf(ins.lat,ins.lon,ins.alt,ins.vn,ins.ve,ins.vd,ins.fn,ins.fe,ins.fd,

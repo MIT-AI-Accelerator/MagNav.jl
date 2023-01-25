@@ -58,8 +58,8 @@ end
 end
 
 @testset "map_correct_igrf! tests" begin
-    @test_logs (:info,) map_correct_igrf!(deepcopy(mapS );add_igrf_date=2013+293/365)
-    @test_logs (:info,) map_correct_igrf!(deepcopy(mapSd);add_igrf_date=2013+293/365)
+    @test_logs (:info,) map_correct_igrf!(deepcopy(mapS );add_igrf_date=get_years(2013,293))
+    @test_logs (:info,) map_correct_igrf!(deepcopy(mapSd);add_igrf_date=get_years(2013,293))
 end
 
 @testset "map_chessboard tests" begin

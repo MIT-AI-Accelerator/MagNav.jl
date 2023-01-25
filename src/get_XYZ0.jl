@@ -82,7 +82,7 @@ function get_XYZ0(xyz_file::String,
                   dt                 = 0.1,
                   silent::Bool       = false)
 
-    any(occursin.([".h5",".mat"],xyz_file)) || error("$xyz_file flight data file is invalid")
+    @assert any(occursin.([".h5",".mat"],xyz_file)) "$xyz_file flight data file is invalid"
 
     traj = get_traj(xyz_file,traj_field;dt=dt,silent=silent)
 
@@ -90,9 +90,9 @@ function get_XYZ0(xyz_file::String,
 
         xyz_data = h5open(xyz_file,"r") # read-only
 
-        if any(isnan.(MagNav.read_check(xyz_data,:ins_lat,1,true))) | 
-           any(isnan.(MagNav.read_check(xyz_data,:ins_lon,1,true))) |
-           any(isnan.(MagNav.read_check(xyz_data,:ins_alt,1,true)))
+        if any(isnan.(read_check(xyz_data,:ins_lat,1,true))) | 
+           any(isnan.(read_check(xyz_data,:ins_lon,1,true))) |
+           any(isnan.(read_check(xyz_data,:ins_alt,1,true)))
             ins = create_ins(traj)
         else
             ins = get_ins(xyz_file,ins_field;dt=traj.dt,silent=silent)
@@ -192,6 +192,8 @@ Get trajectory data from saved HDF5 or MAT file.
 """
 function get_traj(traj_file::String, field::Symbol=:traj; dt=0.1, silent::Bool=false)
 
+    @assert any(occursin.([".h5",".mat"],traj_file)) "$traj_file trajectory file is invalid"
+
     silent || @info("reading in data: $traj_file")
 
     if occursin(".h5",traj_file) # get data from HDF5 file
@@ -246,8 +248,6 @@ function get_traj(traj_file::String, field::Symbol=:traj; dt=0.1, silent::Bool=f
         pitch = haskey(traj_data,"pitch") ? traj_data["pitch"] : NaN
         yaw   = haskey(traj_data,"yaw"  ) ? traj_data["yaw"  ] : NaN
 
-    else
-        error("$traj_file trajectory file is invalid")
     end
 
     # ensure vectors
@@ -329,6 +329,8 @@ Get inertial navigation system data from saved HDF5 or MAT file.
 """
 function get_ins(ins_file::String, field::Symbol=:ins_data; dt=0.1, silent::Bool=false)
 
+    @assert any(occursin.([".h5",".mat"],ins_file)) "$ins_file INS file is invalid"
+
     silent || @info("reading in data: $ins_file")
 
     if occursin(".h5",ins_file) # get data from HDF5 file
@@ -385,8 +387,6 @@ function get_ins(ins_file::String, field::Symbol=:ins_data; dt=0.1, silent::Bool
         yaw   = haskey(ins_data,"yaw"  ) ? ins_data["yaw"  ] : NaN
         P     = haskey(ins_data,"P"    ) ? ins_data["P"    ] : NaN
 
-    else
-        error("$ins_file INS file is invalid")
     end
 
     # ensure vectors

@@ -5,7 +5,7 @@
                   acc_tau    = 3600.0,
                   gyro_tau   = 3600.0,
                   fogm_tau   = 600.0,
-                  date       = 2020+185/366,
+                  date       = get_years(2020,185),
                   core::Bool = false,
                   terms      = [:permanent,:induced,:eddy])
 
@@ -48,7 +48,7 @@ function ekf_online_nn(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
                        acc_tau    = 3600.0,
                        gyro_tau   = 3600.0,
                        fogm_tau   = 600.0,
-                       date       = 2020+185/366,
+                       date       = get_years(2020,185),
                        core::Bool = false)
 
     (y_bias,y_scale) = y_norms
@@ -147,7 +147,7 @@ end # function get_Hnn
                   acc_tau    = 3600.0,
                   gyro_tau   = 3600.0,
                   fogm_tau   = 600.0,
-                  date       = 2020+185/366,
+                  date       = get_years(2020,185),
                   core::Bool = false)
 
 Extended Kalman filter (EKF) with online learning of neural network weights.
@@ -177,7 +177,7 @@ function ekf_online_nn(ins::INS, meas, itp_mapS, nn_x, m, y_norms, P0, Qd, R;
                        acc_tau    = 3600.0,
                        gyro_tau   = 3600.0,
                        fogm_tau   = 600.0,
-                       date       = 2020+185/366,
+                       date       = get_years(2020,185),
                        core::Bool = false)
 
     ekf_online_nn(ins.lat,ins.lon,ins.alt,ins.vn,ins.ve,ins.vd,
@@ -208,7 +208,7 @@ end # function ekf_online_nn
 #     for i = 1:N_sigma
 #         ind = ((i-1)*floor(Int,(N-1)/N_sigma)).+(1:1)
 #         # ind = (i-1)*bS+1:i*bS
-#         d = Flux.Data.DataLoader((x[ind,:]',y[ind]'),shuffle=true,batchsize=1) # bs
+#         d = Flux.DataLoader((x[ind,:]',y[ind]'),shuffle=true,batchsize=1) # bs
 #         Flux.train!(loss,Flux.params(m),d,opt)
 #         coef_set[:,i] = deepcopy(destructure(m)[1])
 #     end
@@ -239,7 +239,7 @@ Setup for extended Kalman filter (EKF) with online learning of neural network we
 """
 function ekf_online_nn_setup(x, y, m, y_norms; N_sigma::Int=1000)
     N_sigma_min = 10
-    N_sigma < N_sigma_min && error("increase N_sigma to $N_sigma_min")
+    @assert N_sigma >= N_sigma_min "increase N_sigma to $N_sigma_min"
     (y_bias,y_scale) = y_norms # unpack normalizations
     m = deepcopy(m) # don't modify original NN model
     (w_nn,re) = destructure(m) # weights, restucture

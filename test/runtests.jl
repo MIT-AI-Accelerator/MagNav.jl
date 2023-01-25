@@ -1,4 +1,6 @@
 ##* top-level file for running unit tests
+#*  note that all non-hardcoded test data was generated using the MagNav 
+#*  MATLAB-companion (run test_baseline.m & copy the test_data folder over)
 using TestItemRunner
 
 @testitem "analysis_util   " begin include("test_analysis_util.jl") end
@@ -18,7 +20,7 @@ using TestItemRunner
 @testitem "map_functions   " begin include("test_map_functions.jl") end
 @testitem "model_functions " begin include("test_model_functions.jl") end
 @testitem "mpf             " begin include("test_mpf.jl") end
-@testitem "nekf            " begin include("test_nekf.jl") end # 40
+@testitem "nekf            " begin include("test_nekf.jl") end
 @testitem "tolles_lawson   " begin include("test_tolles_lawson.jl") end
 @testitem "xyz2h5          " begin include("test_xyz2h5.jl") end
 
