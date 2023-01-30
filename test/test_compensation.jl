@@ -58,7 +58,7 @@ comp_params_nn_bad_drop = MagNav.NNCompParams(model_type=:test,drop_fi=true,
                                               drop_fi_bson=drop_fi_bson,
                                               drop_fi_csv=drop_fi_csv)
 
-x = [1:5;;]
+x = [1:5;][:,:]
 y = [1:5;]
 
 @testset "comp_train tests" begin
