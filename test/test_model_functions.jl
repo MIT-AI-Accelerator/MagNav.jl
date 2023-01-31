@@ -73,14 +73,14 @@ Cnb = traj_data["Cnb"][:,:,1]
 fogm_data_MT = [0.7396206598864331
                 0.6954048478836197
                 0.6591146045997668
-                0.558513187142897
+                0.5585131871428970
                 0.5185764218327329] # MersenneTwister
 
-fogm_data_XO = [1.2482298080972933
-                1.3136499256990584
-                1.3060919428589446
-                1.2292999991146911
-                1.2265673694287618] # Xoshiro
+fogm_data_XO = [-0.00573724460026025
+                 0.09446430193246710
+                 0.03368954850407684
+                 0.06685250250778804
+                 0.04552990438603038] # Xoshiro
 
 mapS = MagNav.MapS(map_map,map_xx,map_yy,map_alt)
 (itp_mapS,der_mapS) = map_interpolate(mapS,:linear;vert=true) # linear to match MATLAB
