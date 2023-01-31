@@ -109,10 +109,10 @@ combine with 10 Hz `XYZ20` flight data from another saved HDF5 file.
 Data is time sorted to ensure data is aligned.
 
 **Arguments:**
-- `flight`: name of flight data
+- `flight`:     name of flight data
 - `xyz_160_h5`: path/name of HDF5 file containing flight data at 160 Hz
-- `xyz_h5`: path/name of HDF5 file containing flight data at 10 Hz
-- `silent`: (optional) if true, no print outs
+- `xyz_h5`:     path/name of HDF5 file containing flight data at 10 Hz
+- `silent`:     (optional) if true, no print outs
 
 **Returns:**
 - `xyz`: `XYZ20` flight data struct

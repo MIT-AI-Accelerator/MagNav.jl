@@ -129,7 +129,7 @@ map_val = randn(sum(ind))
 end
 
 @testset "get_Axy tests" begin
-    @test_nowarn get_Axy(line2,df_line,df_flight,df_map;y_type=:a,mod_TL=true)
+    @test_nowarn get_Axy(line2,df_line,df_flight,df_map;y_type=:a,mod_TL=true,return_B=true)
     @test typeof(get_Axy(lines,df_line,df_flight,df_map;y_type=:b,map_TL=true)[1]) <: Matrix
     @test typeof(get_Axy([line2,line3],df_line,df_flight,df_map)[1]) <: Matrix
     @test_throws AssertionError get_Axy([line2,line2],df_line,df_flight,df_map)
@@ -255,4 +255,27 @@ features = [:f1,:f2,:f3]
     @test_nowarn eval_shapley(m,x,features)
     @test_nowarn plot_shapley(df_shap,baseline_shap)
     @test_nowarn eval_gsa(m,x)
+end
+
+vec_in   = randn(3)
+vec_body = randn(3)
+igrf_in  = vec_in ./ norm(vec_in)
+dcm      = xyz.ins.Cnb[:,:,1]
+
+@testset "project_vector_to_2d tests" begin
+    @test_throws AssertionError MagNav.project_vector_to_2d(vec_in,[1,0,0],[1,0,0])
+    @test_throws AssertionError MagNav.project_vector_to_2d(vec_in,[1,1,0],[0,1,0])
+    @test_throws AssertionError MagNav.project_vector_to_2d(vec_in,[1,0,0],[1,1,0])
+    @test_nowarn MagNav.project_vector_to_2d(vec_in,[1,0,0],[0,1,0])
+end
+
+@testset "project_body_field_to_2d_igrf tests" begin
+    @test_nowarn project_body_field_to_2d_igrf(vec_body,igrf_in,dcm)
+end
+
+@testset "get_optimal_rotation_matrix tests" begin
+    @test_throws AssertionError get_optimal_rotation_matrix([1 0],vec_body')
+    @test_throws AssertionError get_optimal_rotation_matrix([1 0],[1 0 0])
+    @test_throws AssertionError get_optimal_rotation_matrix([1 0 0],[1 0])
+    @test_nowarn get_optimal_rotation_matrix(vec_in',vec_body')
 end

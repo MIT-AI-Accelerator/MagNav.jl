@@ -1,6 +1,6 @@
 """
     nekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS,
-         nn_x::Matrix = [meas;;],
+         nn_x::Matrix = meas[:,:],
          m            = Dense(1,1);
          P0           = create_P0(),
          Qd           = create_Qd(),
@@ -45,7 +45,7 @@ for airborne magnetic anomaly navigation.
 - `filt_res`: `FILTres` filter results struct
 """
 function nekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS,
-              nn_x::Matrix = [meas;;],
+              nn_x::Matrix = meas[:,:],
               m            = Dense(1,1);
               P0           = create_P0(),
               Qd           = create_Qd(),
@@ -110,7 +110,7 @@ end # function nekf
 
 """
     nekf(ins::INS, meas, itp_mapS,
-         nn_x::Matrix = [meas;;],
+         nn_x::Matrix = meas[:,:],
          m            = Dense(1,1);
          P0           = create_P0(),
          Qd           = create_Qd(),
@@ -145,7 +145,7 @@ for airborne magnetic anomaly navigation.
 - `filt_res`: `FILTres` filter results struct
 """
 function nekf(ins::INS, meas, itp_mapS,
-              nn_x::Matrix = [meas;;],
+              nn_x::Matrix = meas[:,:],
               m            = Dense(1,1);
               P0           = create_P0(),
               Qd           = create_Qd(),

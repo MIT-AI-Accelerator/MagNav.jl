@@ -108,6 +108,6 @@ end
     @test MagNav.sys_resample([0.3,0.3,0.3])[end] ≈ 3
     @test MagNav.part_cov([0,1,0],zeros(3,3),ones(3))           ≈ ones(3,3)
     @test MagNav.part_cov([0,1,0],zeros(3,3),ones(3),ones(3,3)) ≈ 2*ones(3,3)
-    @test MagNav.filter_exit([0;;],[0;;],0,true)                ≈ zeros(2,2,1)
-    @test MagNav.filter_exit([1;;],[1;;],1,false)[:, :, 1]      ≈ [1 0; 0 1]
+    @test MagNav.filter_exit([0][:,:],[0][:,:],0,true)                ≈ zeros(2,2,1)
+    @test MagNav.filter_exit([1][:,:],[1][:,:],1,false)[:, :, 1]      ≈ [1 0; 0 1]
 end

@@ -35,48 +35,74 @@ df_flight = DataFrame(flight   = flight,
 df_map = DataFrame(map_name = map_name,
                    map_h5   = map_h5)
 
-terms     = [:p]
-terms_A   = [:p,:i,:e]
+terms_p   = [:p]
+terms_pi  = [:p,:i]
+terms_pie = [:p,:i,:e]
 batchsize = 5
 
-comp_params_1  = MagNav.NNCompParams(model_type=:m1 ,terms=terms,
-                                     terms_A=terms_A,batchsize=batchsize)
-comp_params_2a = MagNav.NNCompParams(model_type=:m2a,terms=terms,
-                                     terms_A=terms_A,batchsize=batchsize)
-comp_params_2b = MagNav.NNCompParams(model_type=:m2b,terms=terms,
-                                     terms_A=terms_A,batchsize=batchsize)
-comp_params_2c = MagNav.NNCompParams(model_type=:m2c,terms=terms,
-                                     terms_A=terms_A,batchsize=batchsize)
-comp_params_2d = MagNav.NNCompParams(model_type=:m2d,terms=terms,
-                                     terms_A=terms_A,batchsize=batchsize)
+comp_params_1   = MagNav.NNCompParams(model_type=:m1  ,terms=terms_p,
+                                      terms_A=terms_pie,batchsize=batchsize)
+comp_params_2a  = MagNav.NNCompParams(model_type=:m2a ,terms=terms_p,
+                                      terms_A=terms_pie,batchsize=batchsize)
+comp_params_2b  = MagNav.NNCompParams(model_type=:m2b ,terms=terms_p,
+                                      terms_A=terms_pie,batchsize=batchsize)
+comp_params_2c  = MagNav.NNCompParams(model_type=:m2c ,terms=terms_p,
+                                      terms_A=terms_pie,batchsize=batchsize)
+comp_params_2d  = MagNav.NNCompParams(model_type=:m2d ,terms=terms_p,
+                                      terms_A=terms_pie,batchsize=batchsize)
+comp_params_3s  = MagNav.NNCompParams(model_type=:m3s ,terms=terms_pi,
+                                      terms_A=terms_pie,batchsize=batchsize)
+comp_params_3tl = MagNav.NNCompParams(model_type=:m3tl,terms=terms_pi,
+                                      terms_A=terms_pie,batchsize=batchsize)
+comp_params_3v  = MagNav.NNCompParams(model_type=:m3v ,terms=terms_pi,
+                                      terms_A=terms_pie,batchsize=batchsize)
+comp_params_3vc = MagNav.NNCompParams(model_type=:m3vc,terms=terms_pi,
+                                      terms_A=terms_pie,batchsize=batchsize)
+comp_params_3sc = MagNav.NNCompParams(model_type=:m3sc,terms=terms_pi,
+                                      terms_A=terms_pie,batchsize=batchsize)
 
 comp_params_nn_bad      = MagNav.NNCompParams( model_type=:test)
 comp_params_lin_bad     = MagNav.LinCompParams(model_type=:test)
-drop_fi_bson = joinpath(@__DIR__,"drop_fi")
-drop_fi_csv  = joinpath(@__DIR__,"drop_fi.csv")
+drop_fi_bson            = joinpath(@__DIR__,"drop_fi")
+drop_fi_csv             = joinpath(@__DIR__,"drop_fi.csv")
 comp_params_nn_bad_drop = MagNav.NNCompParams(model_type=:test,drop_fi=true, 
                                               drop_fi_bson=drop_fi_bson,
                                               drop_fi_csv=drop_fi_csv)
 
-x = [1:5;;]
+x = [1:5;][:,:]
 y = [1:5;]
 
 @testset "comp_train tests" begin
-    @test std(comp_train(xyz,ind_train;comp_params=comp_params_1 )[end-1]) < 1
-    @test std(comp_train(xyz,ind_train;comp_params=comp_params_2a)[end-1]) < 1
-    @test std(comp_train(xyz,ind_train;comp_params=comp_params_2b)[end-1]) < 1
-    @test std(comp_train(xyz,ind_train;comp_params=comp_params_2c)[end-1]) < 1
-    @test std(comp_train(xyz,ind_train;comp_params=comp_params_2d)[end-1]) < 1
+    @test std(comp_train(xyz,ind_train;comp_params=comp_params_1  )[end-1]) < 1
+    @test std(comp_train(xyz,ind_train;comp_params=comp_params_2a )[end-1]) < 1
+    @test std(comp_train(xyz,ind_train;comp_params=comp_params_2b )[end-1]) < 1
+    @test std(comp_train(xyz,ind_train;comp_params=comp_params_2c )[end-1]) < 1
+    @test std(comp_train(xyz,ind_train;comp_params=comp_params_2d )[end-1]) < 1
+    @test std(comp_train(xyz,ind_train;comp_params=comp_params_3s )[end-1]) < 5
+    @test std(comp_train(xyz,ind_train;comp_params=comp_params_3tl)[end-1]) < 5
+    @test std(comp_train(xyz,ind_train;comp_params=comp_params_3v )[end-1]) < 5
+    @test std(comp_train(xyz,ind_train;comp_params=comp_params_3vc)[end-1]) < 5
+    @test std(comp_train(xyz,ind_train;comp_params=comp_params_3sc)[end-1]) < 5
     @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
-                         comp_params_1 )[end-1]) < 1
+                         comp_params_1  )[end-1]) < 1
     @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
-                         comp_params_2a)[end-1]) < 1
+                         comp_params_2a )[end-1]) < 1
     @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
-                         comp_params_2b)[end-1]) < 1
+                         comp_params_2b )[end-1]) < 1
     @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
-                         comp_params_2c)[end-1]) < 1
+                         comp_params_2c )[end-1]) < 1
     @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
-                         comp_params_2d)[end-1]) < 1
+                         comp_params_2d )[end-1]) < 1
+    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
+                         comp_params_3s )[end-1]) < 5
+    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
+                         comp_params_3tl)[end-1]) < 5
+    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
+                         comp_params_3v )[end-1]) < 5
+    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
+                         comp_params_3vc)[end-1]) < 5
+    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
+                         comp_params_3sc)[end-1]) < 5
     @test isone(plsr_fit(x,y;return_set=true)[:,:,1])
     @test std(elasticnet_fit(x,y;λ=0.01)[end]) < 1
     @test_throws ErrorException comp_train(xyz,ind_train;
@@ -93,11 +119,16 @@ y = [1:5;]
                                            comp_params_nn_bad_drop)
 end
 
-comp_params_1  = comp_train(xyz,ind_train;comp_params=comp_params_1 )[1]
-comp_params_2a = comp_train(xyz,ind_train;comp_params=comp_params_2a)[1]
-comp_params_2b = comp_train(xyz,ind_train;comp_params=comp_params_2b)[1]
-comp_params_2c = comp_train(xyz,ind_train;comp_params=comp_params_2c)[1]
-comp_params_2d = comp_train(xyz,ind_train;comp_params=comp_params_2d)[1]
+comp_params_1   = comp_train(xyz,ind_train;comp_params=comp_params_1  )[1]
+comp_params_2a  = comp_train(xyz,ind_train;comp_params=comp_params_2a )[1]
+comp_params_2b  = comp_train(xyz,ind_train;comp_params=comp_params_2b )[1]
+comp_params_2c  = comp_train(xyz,ind_train;comp_params=comp_params_2c )[1]
+comp_params_2d  = comp_train(xyz,ind_train;comp_params=comp_params_2d )[1]
+comp_params_3s  = comp_train(xyz,ind_train;comp_params=comp_params_3s )[1]
+comp_params_3tl = comp_train(xyz,ind_train;comp_params=comp_params_3tl)[1]
+comp_params_3v  = comp_train(xyz,ind_train;comp_params=comp_params_3v )[1]
+comp_params_3vc = comp_train(xyz,ind_train;comp_params=comp_params_3vc)[1]
+comp_params_3sc = comp_train(xyz,ind_train;comp_params=comp_params_3sc)[1]
 
 drop_fi_bson = joinpath(@__DIR__,"drop_fi")
 comp_train(xyz,ind_train;comp_params=MagNav.NNCompParams(comp_params_1,
@@ -110,15 +141,25 @@ comp_train(xyz,ind_train;comp_params=MagNav.NNCompParams(comp_params_1,
     @test std(comp_train(xyz,ind_train;comp_params=comp_params_2c)[end-1]) < 1
     @test std(comp_train(xyz,ind_train;comp_params=comp_params_2d)[end-1]) < 1
     @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
-                         comp_params_1 )[end-1]) < 1
+                         comp_params_1  )[end-1]) < 1
     @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
-                         comp_params_2a)[end-1]) < 1
+                         comp_params_2a )[end-1]) < 1
     @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
-                         comp_params_2b)[end-1]) < 1
+                         comp_params_2b )[end-1]) < 1
     @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
-                         comp_params_2c)[end-1]) < 1
+                         comp_params_2c )[end-1]) < 1
     @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
-                         comp_params_2d)[end-1]) < 1
+                         comp_params_2d )[end-1]) < 1
+    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
+                         comp_params_3s )[end-1]) < 5
+    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
+                         comp_params_3tl)[end-1]) < 5
+    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
+                         comp_params_3v )[end-1]) < 5
+    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
+                         comp_params_3vc)[end-1]) < 5
+    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
+                         comp_params_3sc)[end-1]) < 5
 end
 
 @testset "comp_test tests" begin
@@ -132,16 +173,36 @@ end
                         silent=true)[end-1]) < 1
     @test std(comp_test(xyz,ind_test;comp_params=comp_params_2d,
                         silent=true)[end-1]) < 1
+    @test std(comp_test(xyz,ind_test;comp_params=comp_params_3s,
+                        silent=true)[end-1]) < 5
+    @test std(comp_test(xyz,ind_test;comp_params=comp_params_3tl,
+                        silent=true)[end-1]) < 5
+    @test std(comp_test(xyz,ind_test;comp_params=comp_params_3v,
+                        silent=true)[end-1]) < 5
+    @test std(comp_test(xyz,ind_test;comp_params=comp_params_3vc,
+                        silent=true)[end-1]) < 5
+    @test std(comp_test(xyz,ind_test;comp_params=comp_params_3sc,
+                        silent=true)[end-1]) < 5
     @test std(comp_test(line_test,df_line,df_flight,DataFrame(),
-                        comp_params_1 ,silent=true)[end-1]) < 1
+                        comp_params_1  ,silent=true)[end-1]) < 1
     @test std(comp_test(line_test,df_line,df_flight,DataFrame(),
-                        comp_params_2a,silent=true)[end-1]) < 1
+                        comp_params_2a ,silent=true)[end-1]) < 1
     @test std(comp_test(line_test,df_line,df_flight,DataFrame(),
-                        comp_params_2b,silent=true)[end-1]) < 1
+                        comp_params_2b ,silent=true)[end-1]) < 1
     @test std(comp_test(line_test,df_line,df_flight,DataFrame(),
-                        comp_params_2c,silent=true)[end-1]) < 1
+                        comp_params_2c ,silent=true)[end-1]) < 1
     @test std(comp_test(line_test,df_line,df_flight,DataFrame(),
-                        comp_params_2d,silent=true)[end-1]) < 1
+                        comp_params_2d ,silent=true)[end-1]) < 1
+    @test std(comp_test(line_test,df_line,df_flight,DataFrame(),
+                        comp_params_3s ,silent=true)[end-1]) < 5
+    @test std(comp_test(line_test,df_line,df_flight,DataFrame(),
+                        comp_params_3tl,silent=true)[end-1]) < 5
+    @test std(comp_test(line_test,df_line,df_flight,DataFrame(),
+                        comp_params_3v ,silent=true)[end-1]) < 5
+    @test std(comp_test(line_test,df_line,df_flight,DataFrame(),
+                        comp_params_3vc,silent=true)[end-1]) < 5
+    @test std(comp_test(line_test,df_line,df_flight,DataFrame(),
+                        comp_params_3sc,silent=true)[end-1]) < 5
     @test_throws ErrorException comp_test(xyz,ind_test;
                                           comp_params=comp_params_nn_bad)
     @test_throws ErrorException comp_test(xyz,ind_test;
@@ -168,8 +229,6 @@ rm(drop_fi_bson*"_4.bson")
                              comp_params_2c,silent=true)[end-1]) < 1
 end
 
-terms       = [:p]
-terms_A     = [:p,:i,:e]
 batchsize   = 5
 epoch_lbfgs = 1
 k_pca       = 5
@@ -177,8 +236,8 @@ frac_train  = 1
 
 comp_params_1  = MagNav.NNCompParams(model_type  = :m1,
                                      y_type      = :a,
-                                     terms       = terms,
-                                     terms_A     = terms_A,
+                                     terms       = terms_p,
+                                     terms_A     = terms_pie,
                                      sub_igrf    = true,
                                      epoch_lbfgs = epoch_lbfgs,
                                      batchsize   = batchsize,
@@ -186,8 +245,8 @@ comp_params_1  = MagNav.NNCompParams(model_type  = :m1,
                                      frac_train  = frac_train)
 comp_params_2a = MagNav.NNCompParams(model_type=:m2a,
                                      y_type      = :a,
-                                     terms       = terms,
-                                     terms_A     = terms_A,
+                                     terms       = terms_p,
+                                     terms_A     = terms_pie,
                                      sub_igrf    = true,
                                      epoch_lbfgs = epoch_lbfgs,
                                      batchsize   = batchsize,
@@ -195,8 +254,8 @@ comp_params_2a = MagNav.NNCompParams(model_type=:m2a,
                                      frac_train  = frac_train)
 comp_params_2b = MagNav.NNCompParams(model_type=:m2b,
                                      y_type      = :a,
-                                     terms       = terms,
-                                     terms_A     = terms_A,
+                                     terms       = terms_p,
+                                     terms_A     = terms_pie,
                                      sub_igrf    = true,
                                      epoch_lbfgs = epoch_lbfgs,
                                      batchsize   = batchsize,
@@ -204,16 +263,16 @@ comp_params_2b = MagNav.NNCompParams(model_type=:m2b,
                                      frac_train  = frac_train)
 comp_params_2c = MagNav.NNCompParams(model_type=:m2c,
                                      y_type      = :e,
-                                     terms       = terms,
-                                     terms_A     = terms_A,
+                                     terms       = terms_p,
+                                     terms_A     = terms_pie,
                                      epoch_lbfgs = epoch_lbfgs,
                                      batchsize   = batchsize,
                                      k_pca       = k_pca,
                                      frac_train  = frac_train)
 comp_params_2d = MagNav.NNCompParams(model_type=:m2d,
                                      y_type      = :e,
-                                     terms       = terms,
-                                     terms_A     = terms_A,
+                                     terms       = terms_p,
+                                     terms_A     = terms_pie,
                                      epoch_lbfgs = epoch_lbfgs,
                                      batchsize   = batchsize,
                                      k_pca       = k_pca,
