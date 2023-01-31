@@ -1832,7 +1832,7 @@ end # function get_igrf
 """
     project_vector_to_2d(vec_in, uvec_x, uvec_y)
 
-Projects a 3D vector into 2D given two orthogonal 3D unit vectors.
+Internal helper function that projects a 3D vector into 2D given two orthogonal 3D unit vectors.
 
 **Arguments:**
 - `vec_in`: 3D vector desired to be projected onto a 2D plane
@@ -1857,7 +1857,7 @@ of the IGRF field and a tangent vector to the Earth ellipsoid, which is
 computed by taking the cross product of the IGRF field with the upward 
 direction. Returns a 2D vector whose components describe the amount of 
 the body field that is in alignment with the Earth field and an orthogonal 
-direction to the Earth field (roughly to the East).
+direction to the Earth field (roughly to the east).
 
 **Arguments:**
 - `vec_body`: vector in the body reference frame (e.g., the aircraft induced field)
@@ -1868,7 +1868,7 @@ direction to the Earth field (roughly to the East).
 - `v_out`: 2D vector whose components illustrate projection onto the Earth field and an orthogonal component
 """
 function project_body_field_to_2d_igrf(vec_body, igrf_in, dcm)
-    # assume igrf_in is "north" in navigation frame and rotate about Z axis to get "East"
+    # assume igrf_in is "north" in navigation frame and rotate about Z axis to get "east"
     igrf_north     = igrf_in  # components are actually [north, east, down]
     igrf_tan_earth = cross(igrf_north, [0.0, 0.0, -1.0]) # cross product with "up" direction
     igrf_east      = normalize(igrf_tan_earth)
@@ -1897,8 +1897,8 @@ Reference: https://en.wikipedia.org/wiki/Kabsch_algorithm
 """
 function get_optimal_rotation_matrix(v1s, v2s)
     @assert size(v1s)[1] == size(v2s)[1] "size(`v1s`)[1] ≂̸ size(`v2s`)[1]"
-    @assert size(v1s)[2] == 3 "size(`v1s`)[1] ≂̸ 3"
-    @assert size(v2s)[2] == 3 "size(`v2s`)[1] ≂̸ 3"
+    @assert size(v1s)[2] == 3 "size(`v1s`)[2] ≂̸ 3"
+    @assert size(v2s)[2] == 3 "size(`v2s`)[2] ≂̸ 3"
 
     # compute centroids and recenter point clouds
     v1_centroid   = mean(v1s,dims=1)
