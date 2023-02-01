@@ -1,5 +1,7 @@
 using MagNav, Test, MAT, DataFrames, Flux, Statistics, Zygote
 
+df = DataFrame() # empty dataframe
+
 flight   = :Flt1003
 xyz_type = :XYZ20
 map_name = :Eastern_395
@@ -35,31 +37,42 @@ df_flight = DataFrame(flight   = flight,
 df_map = DataFrame(map_name = map_name,
                    map_h5   = map_h5)
 
-terms_p   = [:p]
-terms_pi  = [:p,:i]
-terms_pie = [:p,:i,:e]
-batchsize = 5
+terms_p    = [:p]
+terms_pi   = [:p,:i]
+terms_pie  = [:p,:i,:e]
+batchsize  = 5
+epoch_adam = 10
 
 comp_params_1   = MagNav.NNCompParams(model_type=:m1  ,terms=terms_p,
-                                      terms_A=terms_pie,batchsize=batchsize)
+                                      terms_A=terms_pie,batchsize=batchsize,
+                                      epoch_adam=epoch_adam)
 comp_params_2a  = MagNav.NNCompParams(model_type=:m2a ,terms=terms_p,
-                                      terms_A=terms_pie,batchsize=batchsize)
+                                      terms_A=terms_pie,batchsize=batchsize,
+                                      epoch_adam=epoch_adam)
 comp_params_2b  = MagNav.NNCompParams(model_type=:m2b ,terms=terms_p,
-                                      terms_A=terms_pie,batchsize=batchsize)
+                                      terms_A=terms_pie,batchsize=batchsize,
+                                      epoch_adam=epoch_adam)
 comp_params_2c  = MagNav.NNCompParams(model_type=:m2c ,terms=terms_p,
-                                      terms_A=terms_pie,batchsize=batchsize)
+                                      terms_A=terms_pie,batchsize=batchsize,
+                                      epoch_adam=epoch_adam)
 comp_params_2d  = MagNav.NNCompParams(model_type=:m2d ,terms=terms_p,
-                                      terms_A=terms_pie,batchsize=batchsize)
+                                      terms_A=terms_pie,batchsize=batchsize,
+                                      epoch_adam=epoch_adam)
 comp_params_3s  = MagNav.NNCompParams(model_type=:m3s ,terms=terms_pi,
-                                      terms_A=terms_pie,batchsize=batchsize)
+                                      terms_A=terms_pie,batchsize=batchsize,
+                                      epoch_adam=epoch_adam)
 comp_params_3tl = MagNav.NNCompParams(model_type=:m3tl,terms=terms_pi,
-                                      terms_A=terms_pie,batchsize=batchsize)
+                                      terms_A=terms_pie,batchsize=batchsize,
+                                      epoch_adam=epoch_adam)
 comp_params_3v  = MagNav.NNCompParams(model_type=:m3v ,terms=terms_pi,
-                                      terms_A=terms_pie,batchsize=batchsize)
+                                      terms_A=terms_pie,batchsize=batchsize,
+                                      epoch_adam=epoch_adam)
 comp_params_3vc = MagNav.NNCompParams(model_type=:m3vc,terms=terms_pi,
-                                      terms_A=terms_pie,batchsize=batchsize)
+                                      terms_A=terms_pie,batchsize=batchsize,
+                                      epoch_adam=epoch_adam)
 comp_params_3sc = MagNav.NNCompParams(model_type=:m3sc,terms=terms_pi,
-                                      terms_A=terms_pie,batchsize=batchsize)
+                                      terms_A=terms_pie,batchsize=batchsize,
+                                      epoch_adam=epoch_adam)
 
 comp_params_nn_bad      = MagNav.NNCompParams( model_type=:test)
 comp_params_lin_bad     = MagNav.LinCompParams(model_type=:test)
@@ -83,26 +96,21 @@ y = [1:5;]
     @test std(comp_train(xyz,ind_train;comp_params=comp_params_3v )[end-1]) < 5
     @test std(comp_train(xyz,ind_train;comp_params=comp_params_3vc)[end-1]) < 5
     @test std(comp_train(xyz,ind_train;comp_params=comp_params_3sc)[end-1]) < 5
-    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
-                         comp_params_1  )[end-1]) < 1
-    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
-                         comp_params_2a )[end-1]) < 1
-    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
-                         comp_params_2b )[end-1]) < 1
-    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
-                         comp_params_2c )[end-1]) < 1
-    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
-                         comp_params_2d )[end-1]) < 1
-    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
-                         comp_params_3s )[end-1]) < 5
-    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
-                         comp_params_3tl)[end-1]) < 5
-    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
-                         comp_params_3v )[end-1]) < 5
-    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
-                         comp_params_3vc)[end-1]) < 5
-    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
-                         comp_params_3sc)[end-1]) < 5
+    @test std(comp_train([xyz,xyz],ind_train;comp_params=comp_params_1  )[end-1]) < 1
+    @test std(comp_train([xyz,xyz],ind_train;comp_params=comp_params_2a )[end-1]) < 1
+    @test std(comp_train([xyz,xyz],ind_train;comp_params=comp_params_2b )[end-1]) < 1
+    @test std(comp_train([xyz,xyz],ind_train;comp_params=comp_params_2c )[end-1]) < 1
+    @test std(comp_train([xyz,xyz],ind_train;comp_params=comp_params_2d )[end-1]) < 1
+    @test std(comp_train(line_train,df_line,df_flight,df,comp_params_1  )[end-1]) < 1
+    @test std(comp_train(line_train,df_line,df_flight,df,comp_params_2a )[end-1]) < 1
+    @test std(comp_train(line_train,df_line,df_flight,df,comp_params_2b )[end-1]) < 1
+    @test std(comp_train(line_train,df_line,df_flight,df,comp_params_2c )[end-1]) < 1
+    @test std(comp_train(line_train,df_line,df_flight,df,comp_params_2d )[end-1]) < 1
+    @test std(comp_train(line_train,df_line,df_flight,df,comp_params_3s )[end-1]) < 5
+    @test std(comp_train(line_train,df_line,df_flight,df,comp_params_3tl)[end-1]) < 5
+    @test std(comp_train(line_train,df_line,df_flight,df,comp_params_3v )[end-1]) < 5
+    @test std(comp_train(line_train,df_line,df_flight,df,comp_params_3vc)[end-1]) < 5
+    @test std(comp_train(line_train,df_line,df_flight,df,comp_params_3sc)[end-1]) < 5
     @test isone(plsr_fit(x,y;return_set=true)[:,:,1])
     @test std(elasticnet_fit(x,y;λ=0.01)[end]) < 1
     @test_throws ErrorException comp_train(xyz,ind_train;
@@ -111,11 +119,11 @@ y = [1:5;]
                                            comp_params=comp_params_lin_bad)
     @test_throws ErrorException comp_train(xyz,ind_train;
                                            comp_params=comp_params_nn_bad_drop)
-    @test_throws ErrorException comp_train(line_train,df_line,df_flight,DataFrame(),
+    @test_throws ErrorException comp_train(line_train,df_line,df_flight,df,
                                            comp_params_nn_bad)
-    @test_throws ErrorException comp_train(line_train,df_line,df_flight,DataFrame(),
+    @test_throws ErrorException comp_train(line_train,df_line,df_flight,df,
                                            comp_params_lin_bad)
-    @test_throws ErrorException comp_train(line_train,df_line,df_flight,DataFrame(),
+    @test_throws ErrorException comp_train(line_train,df_line,df_flight,df,
                                            comp_params_nn_bad_drop)
 end
 
@@ -140,25 +148,25 @@ comp_train(xyz,ind_train;comp_params=MagNav.NNCompParams(comp_params_1,
     @test std(comp_train(xyz,ind_train;comp_params=comp_params_2b)[end-1]) < 1
     @test std(comp_train(xyz,ind_train;comp_params=comp_params_2c)[end-1]) < 1
     @test std(comp_train(xyz,ind_train;comp_params=comp_params_2d)[end-1]) < 1
-    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
+    @test std(comp_train(line_train,df_line,df_flight,df,
                          comp_params_1  )[end-1]) < 1
-    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
+    @test std(comp_train(line_train,df_line,df_flight,df,
                          comp_params_2a )[end-1]) < 1
-    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
+    @test std(comp_train(line_train,df_line,df_flight,df,
                          comp_params_2b )[end-1]) < 1
-    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
+    @test std(comp_train(line_train,df_line,df_flight,df,
                          comp_params_2c )[end-1]) < 1
-    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
+    @test std(comp_train(line_train,df_line,df_flight,df,
                          comp_params_2d )[end-1]) < 1
-    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
+    @test std(comp_train(line_train,df_line,df_flight,df,
                          comp_params_3s )[end-1]) < 5
-    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
+    @test std(comp_train(line_train,df_line,df_flight,df,
                          comp_params_3tl)[end-1]) < 5
-    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
+    @test std(comp_train(line_train,df_line,df_flight,df,
                          comp_params_3v )[end-1]) < 5
-    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
+    @test std(comp_train(line_train,df_line,df_flight,df,
                          comp_params_3vc)[end-1]) < 5
-    @test std(comp_train(line_train,df_line,df_flight,DataFrame(),
+    @test std(comp_train(line_train,df_line,df_flight,df,
                          comp_params_3sc)[end-1]) < 5
 end
 
@@ -183,25 +191,25 @@ end
                         silent=true)[end-1]) < 5
     @test std(comp_test(xyz,ind_test;comp_params=comp_params_3sc,
                         silent=true)[end-1]) < 5
-    @test std(comp_test(line_test,df_line,df_flight,DataFrame(),
+    @test std(comp_test(line_test,df_line,df_flight,df,
                         comp_params_1  ,silent=true)[end-1]) < 1
-    @test std(comp_test(line_test,df_line,df_flight,DataFrame(),
+    @test std(comp_test(line_test,df_line,df_flight,df,
                         comp_params_2a ,silent=true)[end-1]) < 1
-    @test std(comp_test(line_test,df_line,df_flight,DataFrame(),
+    @test std(comp_test(line_test,df_line,df_flight,df,
                         comp_params_2b ,silent=true)[end-1]) < 1
-    @test std(comp_test(line_test,df_line,df_flight,DataFrame(),
+    @test std(comp_test(line_test,df_line,df_flight,df,
                         comp_params_2c ,silent=true)[end-1]) < 1
-    @test std(comp_test(line_test,df_line,df_flight,DataFrame(),
+    @test std(comp_test(line_test,df_line,df_flight,df,
                         comp_params_2d ,silent=true)[end-1]) < 1
-    @test std(comp_test(line_test,df_line,df_flight,DataFrame(),
+    @test std(comp_test(line_test,df_line,df_flight,df,
                         comp_params_3s ,silent=true)[end-1]) < 5
-    @test std(comp_test(line_test,df_line,df_flight,DataFrame(),
+    @test std(comp_test(line_test,df_line,df_flight,df,
                         comp_params_3tl,silent=true)[end-1]) < 5
-    @test std(comp_test(line_test,df_line,df_flight,DataFrame(),
+    @test std(comp_test(line_test,df_line,df_flight,df,
                         comp_params_3v ,silent=true)[end-1]) < 5
-    @test std(comp_test(line_test,df_line,df_flight,DataFrame(),
+    @test std(comp_test(line_test,df_line,df_flight,df,
                         comp_params_3vc,silent=true)[end-1]) < 5
-    @test std(comp_test(line_test,df_line,df_flight,DataFrame(),
+    @test std(comp_test(line_test,df_line,df_flight,df,
                         comp_params_3sc,silent=true)[end-1]) < 5
     @test_throws ErrorException comp_test(xyz,ind_test;
                                           comp_params=comp_params_nn_bad)
@@ -209,11 +217,11 @@ end
                                           comp_params=comp_params_lin_bad)
     @test_throws ErrorException comp_test(xyz,ind_test;
                                           comp_params=comp_params_nn_bad_drop)
-    @test_throws ErrorException comp_test(line_test,df_line,df_flight,DataFrame(),
+    @test_throws ErrorException comp_test(line_test,df_line,df_flight,df,
                                           comp_params_nn_bad)
-    @test_throws ErrorException comp_test(line_test,df_line,df_flight,DataFrame(),
+    @test_throws ErrorException comp_test(line_test,df_line,df_flight,df,
                                           comp_params_lin_bad)
-    @test_throws ErrorException comp_test(line_test,df_line,df_flight,DataFrame(),
+    @test_throws ErrorException comp_test(line_test,df_line,df_flight,df,
                                           comp_params_nn_bad_drop)
 end
 
@@ -223,10 +231,23 @@ rm(drop_fi_bson*"_3.bson")
 rm(drop_fi_bson*"_4.bson")
 
 @testset "comp_m2bc_test tests" begin
-    @test std(comp_m2bc_test(line_test,df_line,df_flight,DataFrame(),
+    @test std(comp_m2bc_test(line_test,df_line,df_flight,df,
                              comp_params_2b,silent=true)[end-1]) < 1
-    @test std(comp_m2bc_test(line_test,df_line,df_flight,DataFrame(),
+    @test std(comp_m2bc_test(line_test,df_line,df_flight,df,
                              comp_params_2c,silent=true)[end-1]) < 1
+end
+
+@testset "comp_m3_test tests" begin
+    @test std(MagNav.comp_m3_test(line_test,df_line,df_flight,df,comp_params_3s;
+                                  silent=true,reorient_vec=false)[end-1]) < 5
+    @test_throws ErrorException MagNav.comp_m3_test(line_test,df_line,df_flight,df,comp_params_3tl;
+                                  silent=true,reorient_vec=false)[end-1]
+    @test std(MagNav.comp_m3_test(line_test,df_line,df_flight,df,comp_params_3v;
+                                  silent=true,reorient_vec=false)[end-1]) < 5
+    @test std(MagNav.comp_m3_test(line_test,df_line,df_flight,df,comp_params_3vc;
+                                  silent=true,reorient_vec=false)[end-1]) < 5
+    @test std(MagNav.comp_m3_test(line_test,df_line,df_flight,df,comp_params_3sc;
+                                  silent=true,reorient_vec=false)[end-1]) < 5
 end
 
 batchsize   = 5

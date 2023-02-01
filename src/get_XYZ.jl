@@ -254,9 +254,8 @@ function get_XYZ21(xyz_h5::String; tt_sort::Bool=true, silent::Bool=false)
 end # function get_XYZ21
 
 """
-    get_XYZ(flight::Symbol, df_flight::DataFrame;
-            tt_sort::Bool=true, silent::Bool=false,
-            reorient_vec=false)
+    get_XYZ(flight::Symbol, df_flight::DataFrame; tt_sort::Bool=true,
+            reorient_vec=false, silent::Bool=false)
 
 Get `XYZ` flight data from saved HDF5 file via DataFrame lookup.
 
@@ -264,15 +263,14 @@ Get `XYZ` flight data from saved HDF5 file via DataFrame lookup.
 - `flight`:       name of flight data
 - `df_flight`:    lookup table (DataFrame) of flight files
 - `tt_sort`:      (optional) if true, sort data by time (instead of line)
-- `silent`:       (optional) if true, no print outs
 - `reorient_vec`: (optional) if true, align vector magnetometer with body frame
+- `silent`:       (optional) if true, no print outs
 
 **Returns:**
 - `xyz`: `XYZ` flight data struct
 """
-function get_XYZ(flight::Symbol, df_flight::DataFrame;
-                 tt_sort::Bool=true, silent::Bool=false,
-                 reorient_vec::Bool=false)
+function get_XYZ(flight::Symbol, df_flight::DataFrame; tt_sort::Bool=true,
+                 reorient_vec::Bool=false, silent::Bool=false)
     ind = findfirst(df_flight.flight .== flight)
     if df_flight.xyz_type[ind] == :XYZ20
         xyz = get_XYZ20(df_flight.xyz_h5[ind];tt_sort=tt_sort,silent=silent)

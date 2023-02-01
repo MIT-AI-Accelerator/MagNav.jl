@@ -735,9 +735,9 @@ end # function get_y
             l_seq::Int         = -1,
             mod_TL::Bool       = false,
             map_TL::Bool       = false,
-            silent::Bool       = true,
             reorient_vec::Bool = false,
-            return_B::Bool     = false)
+            return_B::Bool     = false,
+            silent::Bool       = true)
 
 Get Tolles-Lawson `A` matrix, `x` matrix, and `y` target vector for multiple 
 lines, possibly multiple flights. Optionally get vector magnetometer `B` and `B'`.
@@ -766,9 +766,9 @@ lines, possibly multiple flights. Optionally get vector magnetometer `B` and `B'
 - `l_seq`:        (optional) trim data by `mod(N,l_seq)`, `-1` to ignore
 - `mod_TL`:       (optional) if true, create modified  Tolles-Lawson `A` matrix with `use_mag` 
 - `map_TL`:       (optional) if true, create map-based Tolles-Lawson `A` matrix 
-- `silent`:       (optional) if true, no print outs
 - `reorient_vec`: (optional) if true, align vector magnetometer with body frame
 - `return_B`:     (optional) if true, return vector magnetometer `B` and `B'`
+- `silent`:       (optional) if true, no print outs
 
 **Returns:**
 - `nn_A`:     Tolles-Lawson `A` matrix
@@ -796,9 +796,9 @@ function get_Axy(lines, df_line::DataFrame,
                  l_seq::Int         = -1,
                  mod_TL::Bool       = false,
                  map_TL::Bool       = false,
-                 silent::Bool       = true,
                  reorient_vec::Bool = false,
-                 return_B::Bool     = false)
+                 return_B::Bool     = false,
+                 silent::Bool       = true)
 
     # check if lines are in df_line, remove if not
     for l in lines
@@ -832,7 +832,7 @@ function get_Axy(lines, df_line::DataFrame,
     for line in lines
         flt = df_line.flight[df_line.line .== line][1]
         if flt != flt_old
-            xyz = get_XYZ(flt,df_flight;silent=silent,reorient_vec=reorient_vec)
+            xyz = get_XYZ(flt,df_flight;reorient_vec=reorient_vec,silent=silent)
         end
         flt_old = flt
 
@@ -1804,24 +1804,21 @@ function get_igrf(xyz, ind;
     alt = xyz.traj.alt[ind]
     lat = xyz.traj.lat[ind]
     lon = xyz.traj.lon[ind]
-    #date1 = get_years(2020,187.5) # (Flt1006)
-    #date1 = get_years(2020,188) # 6-Jul-2020 (Flt1007) - midnight day before
-    date1 = date_start
-    igrf_time = date1 .+ tt
+    igrf_time = date_start .+ tt
 
     # get the IGRF field, igrf() outputs length N vector of [Bx, By, Bz] with
     # Bx: north component [nT]
     # By: east  component [nT]
     # Bz: down  component [nT]
-    igrf_vec = [igrf(igrf_time[i], alt[i], lat[i], lon[i], Val(:geodetic)) for i = 1:N]
+    igrf_vec   = [igrf(igrf_time[i], alt[i], lat[i], lon[i], Val(:geodetic)) for i = 1:N]
     igrf_error = rms(norm.(igrf_vec) - xyz.igrf[ind])
-    # println("Error is ", igrf_error)
     @assert igrf_error < 1 "Large IGRF discrepancy, check `date_start`"
+
     # normalize (or not) and rotate (or not)
     norm_igrf && (igrf_vec = normalize.(igrf_vec))
     if (frame == :nav)
         return (igrf_vec)
-    else  # convert to body frame
+    else # convert to body frame
         Cnb = xyz.ins.Cnb[:,:,ind] # body to navigation
         # transpose is navigation to body
         igrf_vec_body = [Cnb[:,:,i]'*igrf_vec[i] for i=1:N]
