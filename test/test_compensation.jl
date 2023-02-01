@@ -74,6 +74,12 @@ comp_params_3sc = MagNav.NNCompParams(model_type=:m3sc,terms=terms_pi,
                                       terms_A=terms_pie,batchsize=batchsize,
                                       epoch_adam=epoch_adam)
 
+comp_params_TL         = MagNav.LinCompParams(model_type=:TL,y_type=:a)
+comp_params_mod_TL     = MagNav.LinCompParams(model_type=:mod_TL,y_type=:a)
+comp_params_map_TL     = MagNav.LinCompParams(model_type=:map_TL,y_type=:a,sub_igrf=true)
+comp_params_elasticnet = MagNav.LinCompParams(model_type=:elasticnet,y_type=:a)
+comp_params_plsr       = MagNav.LinCompParams(model_type=:plsr,y_type=:a,k_plsr=1)
+
 comp_params_nn_bad      = MagNav.NNCompParams( model_type=:test)
 comp_params_lin_bad     = MagNav.LinCompParams(model_type=:test)
 drop_fi_bson            = joinpath(@__DIR__,"drop_fi")
@@ -101,6 +107,11 @@ y = [1:5;]
     @test std(comp_train([xyz,xyz],ind_train;comp_params=comp_params_2b )[end-1]) < 1
     @test std(comp_train([xyz,xyz],ind_train;comp_params=comp_params_2c )[end-1]) < 1
     @test std(comp_train([xyz,xyz],ind_train;comp_params=comp_params_2d )[end-1]) < 1
+    @test std(comp_train([xyz,xyz],ind_train;comp_params=comp_params_TL         )[end-1]) < 10
+    @test std(comp_train([xyz,xyz],ind_train;comp_params=comp_params_mod_TL     )[end-1]) < 10
+    @test std(comp_train([xyz,xyz],ind_train,mapS;comp_params=comp_params_map_TL)[end-1]) < 10
+    @test std(comp_train([xyz,xyz],ind_train;comp_params=comp_params_elasticnet )[end-1]) < 10
+    @test std(comp_train([xyz,xyz],ind_train;comp_params=comp_params_plsr       )[end-1]) < 10
     @test std(comp_train(line_train,df_line,df_flight,df,comp_params_1  )[end-1]) < 1
     @test std(comp_train(line_train,df_line,df_flight,df,comp_params_2a )[end-1]) < 1
     @test std(comp_train(line_train,df_line,df_flight,df,comp_params_2b )[end-1]) < 1
@@ -298,12 +309,6 @@ comp_params_2d = MagNav.NNCompParams(model_type=:m2d,
                                      batchsize   = batchsize,
                                      k_pca       = k_pca,
                                      frac_train  = frac_train)
-
-comp_params_TL         = MagNav.LinCompParams(model_type=:TL,y_type=:a)
-comp_params_mod_TL     = MagNav.LinCompParams(model_type=:mod_TL,y_type=:a)
-comp_params_map_TL     = MagNav.LinCompParams(model_type=:map_TL,y_type=:a,sub_igrf=true)
-comp_params_elasticnet = MagNav.LinCompParams(model_type=:elasticnet,y_type=:a)
-comp_params_plsr       = MagNav.LinCompParams(model_type=:plsr,y_type=:a,k_plsr=1)
 
 perm_fi_csv = joinpath(@__DIR__,"perm_fi.csv")
 comp_params_1_drop  = MagNav.NNCompParams(comp_params_1,drop_fi=true,
