@@ -20,7 +20,7 @@ df_flight = DataFrame(flight   = flights,
         @test xyz.traj.N ≈ length(xyz.traj.lat) ≈ length(xyz.traj.lon)
     end
     for flight in flights
-        xyz = get_XYZ(flight,df_flight;tt_sort=true,silent=true)
+        xyz = get_XYZ(flight,df_flight;tt_sort=true,reorient_vec=true,silent=true)
         @test xyz.traj.N ≈ length(xyz.traj.lat) ≈ length(xyz.traj.lon)
     end
 end

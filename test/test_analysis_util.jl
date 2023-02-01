@@ -1,4 +1,5 @@
-using MagNav, Test, MAT, DataFrames, Flux, LinearAlgebra, Statistics
+using MagNav, Test, MAT
+using DataFrames, Flux, LinearAlgebra, SatelliteToolbox, Statistics
 
 test_file = joinpath(@__DIR__,"test_data/test_data_params.mat")
 params    = matopen(test_file,"r") do file
@@ -255,6 +256,22 @@ features = [:f1,:f2,:f3]
     @test_nowarn eval_shapley(m,x,features)
     @test_nowarn plot_shapley(df_shap,baseline_shap)
     @test_nowarn eval_gsa(m,x)
+end
+
+date_start = get_years(2020,185)
+N          = length(xyz.traj.lat[ind])
+tt         = xyz.traj.tt[ind] / (60 * 60 * 24 * get_days_per_year(date_start)) # [yr]
+alt        = xyz.traj.alt[ind]
+lat        = xyz.traj.lat[ind]
+lon        = xyz.traj.lon[ind]
+igrf_time  = date_start .+ tt
+xyz.igrf[ind] = norm.([igrf(igrf_time[i],alt[i],lat[i],lon[i],
+                       Val(:geodetic)) for i = 1:N])
+
+@testset "get_igrf tests" begin
+    @test_nowarn get_igrf(xyz,ind;date_start=date_start)
+    @test_nowarn get_igrf(xyz,ind;date_start=date_start,
+                          frame=:nav,norm_igrf=true)
 end
 
 vec_in   = randn(3)
