@@ -659,7 +659,7 @@ function nn_comp_3_train(A, B, B_dot, x, y, no_norm;
     elseif y_type in [:a,:b]
         y_type_aircraft = false
     else
-        @error("Unsupported y_type in nn_comp_3_train, $y_type")
+        error("Unsupported y_type in nn_comp_3_train, $y_type")
     end
     
     if sum(data_norms[end]) == 0 # normalize data
@@ -948,7 +948,7 @@ function nn_comp_3_test(A, B, B_dot, x, y, data_norms::Tuple, weights::Params;
     elseif y_type in [:a,:b]
         y_type_aircraft = false
     else
-        @error("Unsupported y_type in nn_comp_3_train, $y_type")
+        error("Unsupported y_type in nn_comp_3_train, $y_type")
     end
 
     # set to test mode in case model uses batchnorm or dropout
@@ -1290,6 +1290,7 @@ Train an aeromagnetic compensation model.
 - `y`:           observed data
 - `y_hat`:       predicted data
 - `err`:         compensation error
+- `features`:    full list of features (including components of TL `A`, etc.)
 """
 function comp_train(xyz::XYZ, ind, mapS::MapS=MapS(zeros(1,1),[0.0],[0.0],0.0);
                     comp_params::CompParams=NNCompParams(), silent::Bool=true)
@@ -1558,6 +1559,7 @@ Train an aeromagnetic compensation model.
 - `y`:           observed data
 - `y_hat`:       predicted data
 - `err`:         compensation error
+- `features`:    full list of features (including components of TL `A`, etc.)
 """
 function comp_train(xyz_array::Vector{XYZ20{Int64,Float64}}, ind, mapS::MapS=MapS(zeros(1,1),[0.0],[0.0],0.0);
                     comp_params::CompParams=NNCompParams(), silent::Bool=true)
@@ -1818,6 +1820,7 @@ Train an aeromagnetic compensation model.
 - `y`:           observed data
 - `y_hat`:       predicted data
 - `err`:         mean-corrected (per line) compensation error
+- `features`:    full list of features (including components of TL `A`, etc.)
 """
 function comp_train(lines, df_line::DataFrame, df_flight::DataFrame,
                     df_map::DataFrame, comp_params::CompParams=NNCompParams();
@@ -1870,9 +1873,9 @@ function comp_train(lines, df_line::DataFrame, df_flight::DataFrame,
                                                             bpf_mag          = bpf_mag,
                                                             mod_TL           = mod_TL,
                                                             map_TL           = map_TL,
-                                                            silent           = true,
+                                                            reorient_vec     = reorient_vec,
                                                             return_B         = true,
-                                                            reorient_vec     = reorient_vec)
+                                                            silent           = true)
     else
         (A,x,y,no_norm,features,l_segs) = get_Axy(lines,df_line,df_flight,df_map,
                                                   features_setup;
@@ -1887,8 +1890,9 @@ function comp_train(lines, df_line::DataFrame, df_flight::DataFrame,
                                                   bpf_mag          = bpf_mag,
                                                   mod_TL           = mod_TL,
                                                   map_TL           = map_TL,
-                                                  silent           = true,
-                                                  reorient_vec     = reorient_vec)
+                                                  reorient_vec     = reorient_vec,
+                                                  return_B         = false,
+                                                  silent           = true)
     end
 
     y_hat = zero(y)
@@ -2098,9 +2102,10 @@ Evaluate aeromagnetic compensation model performance.
 - `silent`       (optional) if true, no print outs
 
 **Returns:**
-- `y`:     observed data
-- `y_hat`: predicted data
-- `err`:   compensation error
+- `y`:        observed data
+- `y_hat`:    predicted data
+- `err`:      compensation error
+- `features`: full list of features (including components of TL `A`, etc.)
 """
 function comp_test(xyz::XYZ, ind, mapS::MapS=MapS(zeros(1,1),[0.0],[0.0],0.0);
                    comp_params::CompParams=NNCompParams(), silent::Bool=false)
@@ -2284,9 +2289,10 @@ Evaluate aeromagnetic compensation model performance.
 - `reorient_vec`: (optional) if true, align vector magnetometer with body frame
 
 **Returns:**
-- `y`:     observed data
-- `y_hat`: predicted data
-- `err`:   mean-corrected (per line) compensation error
+- `y`:        observed data
+- `y_hat`:    predicted data
+- `err`:      mean-corrected (per line) compensation error
+- `features`: full list of features (including components of TL `A`, etc.)
 """
 function comp_test(lines, df_line::DataFrame, df_flight::DataFrame,
                    df_map::DataFrame, comp_params::CompParams=NNCompParams();
@@ -2343,9 +2349,9 @@ function comp_test(lines, df_line::DataFrame, df_flight::DataFrame,
                                                           bpf_mag          = bpf_mag,
                                                           mod_TL           = mod_TL,
                                                           map_TL           = map_TL,
-                                                          silent           = true,
                                                           reorient_vec     = reorient_vec,
-                                                          return_B         = true)
+                                                          return_B         = true,
+                                                          silent           = true)
     else
         (A,x,y,_,features,l_segs) = get_Axy(lines,df_line,df_flight,df_map,
                                             features_setup;
@@ -2361,6 +2367,7 @@ function comp_test(lines, df_line::DataFrame, df_flight::DataFrame,
                                             mod_TL           = mod_TL,
                                             map_TL           = map_TL,
                                             reorient_vec     = reorient_vec,
+                                            return_B         = false,
                                             silent           = true)
     end
 
@@ -2481,11 +2488,12 @@ performance with additional outputs.
 - `reorient_vec`: (optional) if true, align vector magnetometer with body frame
 
 **Returns:**
-- `y_nn`:  neural network compensation portion
-- `y_TL`:  Tolles-Lawson  compensation portion
-- `y`:     observed data
-- `y_hat`: predicted data
-- `err`:   mean-corrected (per line) compensation error
+- `y_nn`:     neural network compensation portion
+- `y_TL`:     Tolles-Lawson  compensation portion
+- `y`:        observed data
+- `y_hat`:    predicted data
+- `err`:      mean-corrected (per line) compensation error
+- `features`: full list of features (including components of TL `A`, etc.)
 """
 function comp_m2bc_test(lines, df_line::DataFrame,
                         df_flight::DataFrame, df_map::DataFrame,
@@ -2515,8 +2523,9 @@ function comp_m2bc_test(lines, df_line::DataFrame,
                                         sub_diurnal      = sub_diurnal,
                                         sub_igrf         = sub_igrf,
                                         bpf_mag          = bpf_mag,
-                                        silent           = true,
-                                        reorient_vec     = reorient_vec)
+                                        reorient_vec     = reorient_vec,
+                                        return_B         = false,
+                                        silent           = true,)
 
     # unpack data normalizations
     (A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale) = 
@@ -2577,6 +2586,7 @@ performance with additional outputs for explainability.
 - `y`:           observed scalar magnetometer data
 - `y_hat`:       predicted scalar magnetometer data
 - `err`:         mean-corrected (per line) compensation error
+- `features`:    full list of features (including components of TL `A`, etc.)
 """
 function comp_m3_test(lines, df_line::DataFrame,
                       df_flight::DataFrame, df_map::DataFrame,
@@ -2610,9 +2620,9 @@ function comp_m3_test(lines, df_line::DataFrame,
                                                 bpf_mag          = bpf_mag,
                                                 mod_TL           = mod_TL,
                                                 map_TL           = map_TL,
-                                                silent           = silent,
                                                 reorient_vec     = reorient_vec,
-                                                return_B         = true)
+                                                return_B         = true,
+                                                silent           = silent)
 
     B_unit      = A[:,1:3]
     B_vec       = B_unit.*B
@@ -2638,7 +2648,7 @@ function comp_m3_test(lines, df_line::DataFrame,
     elseif y_type in [:a,:b]
         y_type_aircraft = false
     else
-        @error("Unsupported y_type for Model 3")
+        error("Unsupported y_type for Model 3")
     end
 
     # set to test mode in case model uses batchnorm or dropout
@@ -2660,7 +2670,7 @@ function comp_m3_test(lines, df_line::DataFrame,
     elseif model_type in [:m3v, :m3vc]
        y_NN = y_scale.*m(x_norm)  # vector-corrected 3xN, just rescale
     else
-        @error("Unsupported model designation for Model 3 explainability")
+        error("Unsupported model designation for Model 3 explainability")
     end
 
     # Compute the target field (aircraft or Earth)
@@ -2678,7 +2688,7 @@ function comp_m3_test(lines, df_line::DataFrame,
     print_time(time()-t0,1)
 
     return (TL_perm, TL_induced, TL_eddy, TL_aircraft_field, 
-            B_vec, B_unit, y_NN, vec_aircraft, y, y_hat, err)
+            B_vec, B_unit, y_NN, vec_aircraft, y, y_hat, err, features)
 end # function comp_m3_test
 
 """
@@ -2710,6 +2720,7 @@ Train and evaluate aeromagnetic compensation model performance.
 - `y_test`:      testing observed data
 - `y_test_hat`:  testing predicted data
 - `err_test`:    testing compensation error
+- `features`:    full list of features (including components of TL `A`, etc.)
 """
 function comp_train_test(xyz_train::XYZ, xyz_test::XYZ, ind_train, ind_test,
                          mapS_train::MapS = MapS(zeros(1,1),[0.0],[0.0],0.0),
@@ -2759,6 +2770,7 @@ Train and evaluate aeromagnetic compensation model performance.
 - `y_test`:      testing observed data
 - `y_test_hat`:  testing predicted data
 - `err_test`:    mean-corrected (per line) testing compensation error
+- `features`:    full list of features (including components of TL `A`, etc.)
 """
 function comp_train_test(lines_train, lines_test,
                          df_line::DataFrame, df_flight::DataFrame,
@@ -2767,7 +2779,7 @@ function comp_train_test(lines_train, lines_test,
 
     (comp_params,y_train,y_train_hat,err_train,features) = 
         comp_train(lines_train,df_line,df_flight,df_map,comp_params;
-                   silent=silent, reorient_vec=reorient_vec)
+                   silent=silent,reorient_vec=reorient_vec)
 
     (y_test,y_test_hat,err_test,_) = 
         comp_test(lines_test,df_line,df_flight,df_map,comp_params;
