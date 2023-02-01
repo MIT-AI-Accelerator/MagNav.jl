@@ -1593,6 +1593,8 @@ function comp_train(xyz_array::Vector{XYZ20{Int64,Float64}}, ind, mapS::MapS=Map
         @info("forcing y_type = :c (aircraft field #1, using map)")
     end
 
+    xyz = xyz_array[1]
+
     # map values along trajectory (if needed)
     if y_type in [:b,:c]
         traj_alt = median(xyz.traj.alt[ind])
@@ -1604,28 +1606,28 @@ function comp_train(xyz_array::Vector{XYZ20{Int64,Float64}}, ind, mapS::MapS=Map
     end
 
     # `A` matrix for selected vector magnetometer
-    field_check(xyz_array[1],use_vec,MagV)
+    field_check(xyz,use_vec,MagV)
     if model_type == :mod_TL
-        A = create_TL_A(getfield(xyz_array[1],use_vec),ind;
-                        Bt=getfield(xyz_array[1],use_mag),terms=terms_A)
+        A = create_TL_A(getfield(xyz,use_vec),ind;
+                        Bt=getfield(xyz,use_mag),terms=terms_A)
     elseif model_type == :map_TL
-        A = create_TL_A(getfield(xyz_array[1],use_vec),ind;
+        A = create_TL_A(getfield(xyz,use_vec),ind;
                         Bt=map_val,terms=terms_A)
     else
-        A = create_TL_A(getfield(xyz_array[1],use_vec),ind;terms=terms_A)
+        A = create_TL_A(getfield(xyz,use_vec),ind;terms=terms_A)
     end
-    fs = 1 / xyz_array[1].traj.dt
+    fs = 1 / xyz.traj.dt
     y_type == :e && bpf_data!(A;bpf=get_bpf(;fs=fs))
 
     # load data
-    (x,no_norm,features) = get_x(xyz_array[1],ind,features_setup;
+    (x,no_norm,features) = get_x(xyz,ind,features_setup;
                                  features_no_norm = features_no_norm,
                                  terms            = terms,
                                  sub_diurnal      = sub_diurnal,
                                  sub_igrf         = sub_igrf,
                                  bpf_mag          = bpf_mag)
 
-    y = get_y(xyz_array[1],ind,map_val;
+    y = get_y(xyz,ind,map_val;
               y_type      = y_type,
               use_mag     = use_mag,
               sub_diurnal = sub_diurnal,
@@ -1634,13 +1636,24 @@ function comp_train(xyz_array::Vector{XYZ20{Int64,Float64}}, ind, mapS::MapS=Map
     err   = 10*y
 
     for xyz in xyz_array[2:end]
+
+        # map values along trajectory (if needed)
+        if y_type in [:b,:c]
+            traj_alt = median(xyz.traj.alt[ind])
+            mapS.alt > 0 && (mapS = upward_fft(mapS,traj_alt;α=200))
+            itp_mapS = map_itp(mapS)
+            map_val  = itp_mapS.(xyz.traj.lon[ind],xyz.traj.lat[ind])
+        else
+            map_val  = -1
+        end
+
         (x_i,no_norm_i,_) = get_x(xyz,ind,features_setup;
                                   features_no_norm = features_no_norm,
                                   terms            = terms,
                                   sub_diurnal      = sub_diurnal,
                                   sub_igrf         = sub_igrf,
                                   bpf_mag          = bpf_mag)
-    
+
         y_i = get_y(xyz,ind,map_val;
                     y_type      = y_type,
                     use_mag     = use_mag,
