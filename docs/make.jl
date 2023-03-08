@@ -13,6 +13,7 @@ makedocs(
         "data.md",
         "maps.md",
         "comp.md",
+        "nncomp.md",
         "nav.md"],
 )
 
