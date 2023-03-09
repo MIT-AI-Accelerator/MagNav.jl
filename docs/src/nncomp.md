@@ -46,16 +46,20 @@ An immediate extension of model 2b is model 2c, which is shown above. These mode
 
 ### Model 2d
 
-![m2d](assets/m2d.png)
-
 - `:m2d` = NN determines additive correction to each Tolles-Lawson coefficient
+
+![m2d](assets/m2d.png)
 
 Model 2d combines the general idea behind models 2a and 2b. An additive correction is now made to each individual (static) Tolles-Lawson coefficient. This model was developed as it was thought that making the additive correction in a higher dimensional space may improve performance further.
 
 ## Model 3
 
-- `:m3` = NN determines additive correction to the expanded vector form of Tolles-Lawson
+- `:m3tl` = only fine-tuned Tolles-Lawson terms via SGD, without the Taylor expansion for Earth field targets
+- `:m3s`  = scalar-corrected Tolles-Lawson with expanded vector terms for explainability
+- `:m3v`  = vector-corrected Tolles-Lawson with expanded vector terms for explainability
+- `:m3sc` = scalar-corrected Tolles-Lawson with curriculum learning
+- `:m3vc` = vector-corrected Tolles-Lawson with curriculum learning
 
 ![m3](assets/m3.png)
 
-This is the newest model under development. More information forthcoming.
+The various forms of model 3 use a NN to determine an additive correction to the expanded vector form of Tolles-Lawson. This is the newest model under development. More information forthcoming.
