@@ -54,12 +54,15 @@ Model 2d combines the general idea behind models 2a and 2b. An additive correcti
 
 ## Model 3
 
-- `:m3tl` = only fine-tuned Tolles-Lawson terms via SGD, without the Taylor expansion for Earth field targets
-- `:m3s`  = scalar-corrected Tolles-Lawson with expanded vector terms for explainability
-- `:m3v`  = vector-corrected Tolles-Lawson with expanded vector terms for explainability
-- `:m3sc` = scalar-corrected Tolles-Lawson with curriculum learning
-- `:m3vc` = vector-corrected Tolles-Lawson with curriculum learning
+- `:m3tl`= no NN, TL coefficients fine-tuned via SGD, without Taylor expansion for training target
+- `:m3s` = NN determines scalar correction to TL, using expanded TL vector terms for explainability
+- `:m3v` = NN determines vector correction to TL, using expanded TL vector terms for explainability
+- `:m3sc`= `:m3s` with curriculum learning based on TL error
+- `:m3vc`= `:m3v` with curriculum learning based on TL error
 
-![m3](assets/m3.png)
+![m3s](assets/m3s.png)
 
-The various forms of model 3 use a NN to determine an additive correction to the expanded vector form of Tolles-Lawson. This is the newest model under development. More information forthcoming.
+The various forms of model 3 use a NN to determine an additive correction to the expanded vector form of Tolles-Lawson. This is the newest model under development. Shown above is the scalar correction version, and shown below is the vector correction version.
+
+![m3v](assets/m3v.png)
+
