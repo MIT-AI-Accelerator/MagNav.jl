@@ -4,7 +4,7 @@ lazy = true
 
     [[EMAG2.download]]
     sha256 = "53d3e88727b60e0303a0a0cea4e3275dc2f90d9312451b5d845992015efec8ec"
-    url = "https://www.dropbox.com/s/ljn7w8kyibvougf/EMAG2.tar.gz"
+    url = "https://www.dropbox.com/s/ljn7w8kyibvougf/EMAG2_v1.tar.gz"
 
 [EMM720_World]
 git-tree-sha1 = "a6974631e103f52b9c73cb303c480fe0a3f679c5"
@@ -12,7 +12,7 @@ lazy = true
 
     [[EMM720_World.download]]
     sha256 = "38d7ae8d1ab08e7a7366db73a5981690cfb99b00054da616b65c773545a713e7"
-    url = "https://www.dropbox.com/s/l7w1ro00jfo8ojm/EMM720_World.tar.gz"
+    url = "https://www.dropbox.com/s/l7w1ro00jfo8ojm/EMM720_World_v1.tar.gz"
 
 [NAMAD_305]
 git-tree-sha1 = "814e1f622f6b6d80b8e098931b309759ce00543c"
@@ -20,7 +20,7 @@ lazy = true
 
     [[NAMAD_305.download]]
     sha256 = "8abe7156b3873dd191faa1898364f4604778ea89cbbc1ca9ced36795fbc4cf8b"
-    url = "https://www.dropbox.com/s/8j34yrncscdx267/NAMAD_305.tar.gz"
+    url = "https://www.dropbox.com/s/8j34yrncscdx267/NAMAD_305_v1.tar.gz"
 
 [color_scale_usgs]
 git-tree-sha1 = "c5c40cc4466c735d56fae919f25b8afd041d9507"
@@ -28,7 +28,7 @@ lazy = true
 
     [[color_scale_usgs.download]]
     sha256 = "fd2c45d2d1f1f30b8e5e22326aa5ad8b3130dd10fe3014161336e65a6e5a2f10"
-    url = "https://www.dropbox.com/s/qut264xs2vq9jfu/color_scale_usgs.tar.gz"
+    url = "https://www.dropbox.com/s/qut264xs2vq9jfu/color_scale_usgs_v1.tar.gz"
 
 [icon_circle]
 git-tree-sha1 = "85f92c044d691e15289f71883e1c2990cfe25fca"
@@ -36,7 +36,7 @@ lazy = true
 
     [[icon_circle.download]]
     sha256 = "cc239976b26f08b220384b6ba90e23322c5ef45e95be04895fc64e0c1d1f9454"
-    url = "https://www.dropbox.com/s/2oy55okzl4awfyx/icon_circle.tar.gz"
+    url = "https://www.dropbox.com/s/2oy55okzl4awfyx/icon_circle_v1.tar.gz"
 
 [ottawa_area_maps]
 git-tree-sha1 = "c6359e53cc368d06e387d81b9726dba26dd1a4be"
@@ -44,7 +44,7 @@ lazy = true
 
     [[ottawa_area_maps.download]]
     sha256 = "50816ba0f6feacc5ec784ad4eaf1e568d75b0c5dd51b940e08ca7f58a93aaa19"
-    url = "https://www.dropbox.com/s/ql3m59eajuhugbi/ottawa_area_maps.tar.gz"
+    url = "https://www.dropbox.com/s/ql3m59eajuhugbi/ottawa_area_maps_v1.tar.gz"
 
 [sgl_2020_train]
 git-tree-sha1 = "7cc3c16f93d0edb572a106e2b8ac7010066b8cb0"
@@ -52,7 +52,7 @@ lazy = true
 
     [[sgl_2020_train.download]]
     sha256 = "033a5a8a86251f0e1ae0e670a918ca3ee3403efb9eb875166960a1055abb8603"
-    url = "https://www.dropbox.com/s/ge5np08npvidi3r/sgl_2020_train.tar.gz"
+    url = "https://www.dropbox.com/s/ge5np08npvidi3r/sgl_2020_train_v1.tar.gz"
 
 [sgl_fields]
 git-tree-sha1 = "ebf723ceedc20ca151b9e9dd7980f8b5b56c14af"
@@ -60,4 +60,4 @@ lazy = true
 
     [[sgl_fields.download]]
     sha256 = "ec017d36432bdea8474d7e9dba6249d89373f37f6e9c3b933495f0bcc5a254dd"
-    url = "https://www.dropbox.com/s/9b0o172ywz50xhi/sgl_fields.tar.gz"
+    url = "https://www.dropbox.com/s/9b0o172ywz50xhi/sgl_fields_v1.tar.gz"
