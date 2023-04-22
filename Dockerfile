@@ -45,7 +45,7 @@ FROM "jupyter/minimal-notebook"
 
 USER root
 
-ENV JULIA_VERSION=1.7.3
+ENV JULIA_VERSION=1.8.5
 
 # Install Julia
 RUN mkdir /opt/julia-${JULIA_VERSION} && \
