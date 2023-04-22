@@ -1,0 +1,10 @@
+map_name,map_h5,map_type,map_alt
+Eastern_395,../maps/Eastern_395.h5,HAE,395
+Eastern_drape,../maps/Eastern_drape.h5,drape,-1
+Eastern_plot,../maps/Eastern_plot.h5,drape,-1
+HighAlt_5181,../maps/HighAlt_5181.h5,HAE,5181
+Perth_800,../maps/Perth_800.h5,HAE,800
+Renfrew_395,../maps/Renfrew_395.h5,HAE,395
+Renfrew_555,../maps/Renfrew_555.h5,HAE,555
+Renfrew_drape,../maps/Renfrew_drape.h5,drape,-1
+Renfrew_plot,../maps/Renfrew_plot.h5,drape,-1

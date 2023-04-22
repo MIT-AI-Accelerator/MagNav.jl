@@ -1,0 +1,7 @@
+flight,xyz_type,xyz_set,xyz_h5
+Flt1002,XYZ20,1,../data/Flt1002_train.h5
+Flt1003,XYZ20,1,../data/Flt1003_train.h5
+Flt1004,XYZ20,1,../data/Flt1004_train.h5
+Flt1005,XYZ20,1,../data/Flt1005_train.h5
+Flt1006,XYZ20,1,../data/Flt1006_train.h5
+Flt1007,XYZ20,1,../data/Flt1007_train.h5
