@@ -1,4 +1,4 @@
-## full example using the MagNav package with real SGL data
+## full example using the MagNav package with real SGL flight data
 cd(@__DIR__)
 include("common_setup.jl"); # load common-use packages, DataFrames, and Dicts
 
