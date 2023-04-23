@@ -4,7 +4,7 @@ The goal of neural network-based aeromagnetic compensation is to use machine lea
 
 ## Model 1
 
-- `:m1` = standard NN
+- `:m1`   = standard feedforward neural network (NN)
 
 ![m1](assets/m1.png)
 
@@ -16,7 +16,7 @@ Here, the input data $\boldsymbol{data}_\mathrm{aux}$, also known as features, c
 
 ### Model 2a
 
-- `:m2a` = NN determines Tolles-Lawson coefficients
+- `:m2a`  = NN determines Tolles-Lawson (TL) coefficients
 
 ![m2a](assets/m2a.png)
 
@@ -30,7 +30,7 @@ Rather than directly determining some magnetic value, the output of the neural n
 
 ### Model 2b
 
-- `:m2b` = NN determines additive correction to classical Tolles-Lawson
+- `:m2b`  = NN determines additive correction to classical TL
 
 ![m2b](assets/m2b.png)
 
@@ -38,7 +38,7 @@ Another SciML approach that uses the physics of aeromagnetic compensation is mod
 
 ### Model 2c
 
-- `:m2c` = NN determines additive correction to classical Tolles-Lawson, Tolles-Lawson coefficients tuned as well
+- `:m2c`  = NN determines additive correction to classical TL, TL coefficients tuned as well
 
 ![m2c](assets/m2c.png)
 
@@ -46,7 +46,7 @@ An immediate extension of model 2b is model 2c, which is shown above. These mode
 
 ### Model 2d
 
-- `:m2d` = NN determines additive correction to each Tolles-Lawson coefficient
+- `:m2d`  = NN determines additive correction to each TL coefficient
 
 ![m2d](assets/m2d.png)
 
@@ -54,15 +54,14 @@ Model 2d combines the general idea behind models 2a and 2b. An additive correcti
 
 ## Model 3
 
-- `:m3tl`= no NN, TL coefficients fine-tuned via SGD, without Taylor expansion for training target
-- `:m3s` = NN determines scalar correction to TL, using expanded TL vector terms for explainability
-- `:m3v` = NN determines vector correction to TL, using expanded TL vector terms for explainability
-- `:m3sc`= `:m3s` with curriculum learning based on TL error
-- `:m3vc`= `:m3v` with curriculum learning based on TL error
+- `:m3tl` = no NN, TL coefficients fine-tuned via SGD, without Taylor expansion for training target
+- `:m3s`  = NN determines scalar correction to TL, using expanded TL vector terms for explainability
+- `:m3v`  = NN determines vector correction to TL, using expanded TL vector terms for explainability
+- `:m3sc` = `:m3s` with curriculum learning based on TL error
+- `:m3vc` = `:m3v` with curriculum learning based on TL error
 
 ![m3s](assets/m3s.png)
 
 The various forms of model 3 use a NN to determine an additive correction to the expanded vector form of Tolles-Lawson. This is the newest model under development. Shown above is the scalar correction version, and shown below is the vector correction version.
 
 ![m3v](assets/m3v.png)
-
