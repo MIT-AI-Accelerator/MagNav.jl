@@ -23,7 +23,7 @@ y = xyz.mag_1_c
 (y_bias,y_scale,y_norm) = norm_sets(y)
 y_norms = (y_bias,y_scale)
 
-m = get_nn_m(comp_params.weights)
+m = comp_params.model
 (P0_nn,nn_sigma) = ekf_online_nn_setup(x_norm,y_norm,m,y_norms;N_sigma=10)
 
 (P0,Qd,R) = create_model(traj.dt,traj.lat[1];

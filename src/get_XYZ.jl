@@ -19,7 +19,7 @@ function get_XYZ20(xyz_h5::String; tt_sort::Bool=true, silent::Bool=false)
 
     xyz = h5open(xyz_h5,"r") # read-only
     N   = maximum([length(read(xyz,k)) for k in keys(xyz)])
-    d   = Dict()
+    d   = Dict{Symbol,Any}()
     ind = tt_sort ? sortperm(read_check(xyz,:tt,N,silent)) : trues(N)
 
     for field in xyz_fields(fields)
@@ -74,30 +74,31 @@ function get_XYZ20(xyz_h5::String; tt_sort::Bool=true, silent::Bool=false)
 
     return XYZ20(Traj(N,  dt, d[:tt], d[:lat], d[:lon], d[:utm_z], d[:vn],
                       d[:ve], d[:vd], d[:fn] , d[:fe] , d[:fd]   , d[:Cnb]),
-                INS( N, dt, d[:tt], d[:ins_lat], d[:ins_lon], d[:ins_alt],
-                     d[:ins_vn]   , d[:ins_ve] , d[:ins_vd] , d[:ins_fn] ,
-                     d[:ins_fe]   , d[:ins_fd] , d[:ins_Cnb], d[:ins_P]),
-                MagV(d[:flux_a_x], d[:flux_a_y], d[:flux_a_z], d[:flux_a_t]),
-                MagV(d[:flux_b_x], d[:flux_b_y], d[:flux_b_z], d[:flux_b_t]),
-                MagV(d[:flux_c_x], d[:flux_c_y], d[:flux_c_z], d[:flux_c_t]),
-                MagV(d[:flux_d_x], d[:flux_d_y], d[:flux_d_z], d[:flux_d_t]),
-                d[:flight]    , d[:line]      , d[:utm_x]     , d[:utm_y]     ,
-                d[:utm_z]     , d[:msl]       , d[:baro]      , d[:diurnal]   ,
-                d[:igrf]      , d[:mag_1_c]   , d[:mag_1_lag] , d[:mag_1_dc]  ,
-                d[:mag_1_igrf], d[:mag_1_uc]  , d[:mag_2_uc]  , d[:mag_3_uc]  ,
-                d[:mag_4_uc]  , d[:mag_5_uc]  , d[:mag_6_uc]  , d[:ogs_mag]   ,
-                d[:ogs_alt]   , d[:ins_wander], d[:ins_roll]  , d[:ins_pitch] ,
-                d[:ins_yaw]   , d[:roll_rate] , d[:pitch_rate], d[:yaw_rate]  ,
-                d[:ins_acc_x] , d[:ins_acc_y] , d[:ins_acc_z] , d[:lgtl_acc]  ,
-                d[:ltrl_acc]  , d[:nrml_acc]  , d[:pitot_p]   , d[:static_p]  ,
-                d[:total_p]   , d[:cur_com_1] , d[:cur_ac_hi] , d[:cur_ac_lo] ,
-                d[:cur_tank]  , d[:cur_flap]  , d[:cur_strb]  , d[:cur_srvo_o],
-                d[:cur_srvo_m], d[:cur_srvo_i], d[:cur_heat]  , d[:cur_acpwr] ,
-                d[:cur_outpwr], d[:cur_bat_1] , d[:cur_bat_2] , d[:vol_acpwr] ,
-                d[:vol_outpwr], d[:vol_bat_1] , d[:vol_bat_2] , d[:vol_res_p] ,
-                d[:vol_res_n] , d[:vol_back_p], d[:vol_back_n], d[:vol_gyro_1],
-                d[:vol_gyro_2], d[:vol_acc_p] , d[:vol_acc_n] , d[:vol_block] ,
-                d[:vol_back]  , d[:vol_srvo]  , d[:vol_cabt]  , d[:vol_fan]   )
+                 INS( N, dt, d[:tt], d[:ins_lat], d[:ins_lon], d[:ins_alt],
+                      d[:ins_vn]   , d[:ins_ve] , d[:ins_vd] , d[:ins_fn] ,
+                      d[:ins_fe]   , d[:ins_fd] , d[:ins_Cnb], d[:ins_P]),
+                 MagV(d[:flux_a_x], d[:flux_a_y], d[:flux_a_z], d[:flux_a_t]),
+                 MagV(d[:flux_b_x], d[:flux_b_y], d[:flux_b_z], d[:flux_b_t]),
+                 MagV(d[:flux_c_x], d[:flux_c_y], d[:flux_c_z], d[:flux_c_t]),
+                 MagV(d[:flux_d_x], d[:flux_d_y], d[:flux_d_z], d[:flux_d_t]),
+                 d[:flight]    , d[:line]      , d[:year]      , d[:doy]       ,
+                 d[:utm_x]     , d[:utm_y]     , d[:utm_z]     , d[:msl]       ,
+                 d[:baro]      , d[:diurnal]   , d[:igrf]      , d[:mag_1_c]   ,
+                 d[:mag_1_lag] , d[:mag_1_dc]  , d[:mag_1_igrf], d[:mag_1_uc]  ,
+                 d[:mag_2_uc]  , d[:mag_3_uc]  , d[:mag_4_uc]  , d[:mag_5_uc]  ,
+                 d[:mag_6_uc]  , d[:ogs_mag]   , d[:ogs_alt]   , d[:ins_wander],
+                 d[:ins_roll]  , d[:ins_pitch] , d[:ins_yaw]   , d[:roll_rate] ,
+                 d[:pitch_rate], d[:yaw_rate]  , d[:ins_acc_x] , d[:ins_acc_y] ,
+                 d[:ins_acc_z] , d[:lgtl_acc]  , d[:ltrl_acc]  , d[:nrml_acc]  ,
+                 d[:pitot_p]   , d[:static_p]  , d[:total_p]   , d[:cur_com_1] ,
+                 d[:cur_ac_hi] , d[:cur_ac_lo] , d[:cur_tank]  , d[:cur_flap]  ,
+                 d[:cur_strb]  , d[:cur_srvo_o], d[:cur_srvo_m], d[:cur_srvo_i],
+                 d[:cur_heat]  , d[:cur_acpwr] , d[:cur_outpwr], d[:cur_bat_1] ,
+                 d[:cur_bat_2] , d[:vol_acpwr] , d[:vol_outpwr], d[:vol_bat_1] ,
+                 d[:vol_bat_2] , d[:vol_res_p] , d[:vol_res_n] , d[:vol_back_p],
+                 d[:vol_back_n], d[:vol_gyro_1], d[:vol_gyro_2], d[:vol_acc_p] ,
+                 d[:vol_acc_n] , d[:vol_block] , d[:vol_back]  , d[:vol_srvo]  ,
+                 d[:vol_cabt]  , d[:vol_fan]   )
 end # function get_XYZ20
 
 """
@@ -125,7 +126,7 @@ function get_XYZ20(xyz_160_h5::String, xyz_h5::String; silent::Bool=false)
 
     xyz = h5open(xyz_160_h5,"r") # read-only
     N   = maximum([length(read(xyz,k)) for k in keys(xyz)])
-    d   = Dict()
+    d   = Dict{Symbol,Any}()
     ind = sortperm(read_check(xyz,:tt,N,silent))
 
     for field in xyz_fields(fields)
@@ -183,7 +184,7 @@ function get_XYZ21(xyz_h5::String; tt_sort::Bool=true, silent::Bool=false)
 
     xyz = h5open(xyz_h5,"r") # read-only
     N   = maximum([length(read(xyz,k)) for k in keys(xyz)])
-    d   = Dict()
+    d   = Dict{Symbol,Any}()
     ind = tt_sort ? sortperm(read_check(xyz,:tt,N,silent)) : trues(N)
 
     for field in xyz_fields(fields)
@@ -237,25 +238,25 @@ function get_XYZ21(xyz_h5::String; tt_sort::Bool=true, silent::Bool=false)
 
     return XYZ21(Traj(N,  dt, d[:tt], d[:lat], d[:lon], d[:utm_z], d[:vn],
                       d[:ve], d[:vd], d[:fn] , d[:fe] , d[:fd]   , d[:Cnb]),
-                INS( N, dt, d[:tt], d[:ins_lat], d[:ins_lon], d[:ins_alt],
-                     d[:ins_vn]   , d[:ins_ve] , d[:ins_vd] , d[:ins_fn] ,
-                     d[:ins_fe]   , d[:ins_fd] , d[:ins_Cnb], d[:ins_P]),
-                MagV(d[:flux_a_x], d[:flux_a_y], d[:flux_a_z], d[:flux_a_t]),
-                MagV(d[:flux_b_x], d[:flux_b_y], d[:flux_b_z], d[:flux_b_t]),
-                MagV(d[:flux_c_x], d[:flux_c_y], d[:flux_c_z], d[:flux_c_t]),
-                MagV(d[:flux_d_x], d[:flux_d_y], d[:flux_d_z], d[:flux_d_t]),
-                d[:flight]    , d[:line]      , d[:year]      , d[:doy]       ,
-                d[:utm_x]     , d[:utm_y]     , d[:utm_z]     , d[:msl]       ,
-                d[:baro]      , d[:diurnal]   , d[:igrf]      , d[:mag_1_c]   ,
-                d[:mag_1_uc]  , d[:mag_2_uc]  , d[:mag_3_uc]  , d[:mag_4_uc]  ,
-                d[:mag_5_uc]  , d[:cur_com_1] , d[:cur_ac_hi] , d[:cur_ac_lo] ,
-                d[:cur_tank]  , d[:cur_flap]  , d[:cur_strb]  , d[:vol_block] ,
-                d[:vol_back]  , d[:vol_cabt]  , d[:vol_fan]   )
+                 INS( N, dt, d[:tt], d[:ins_lat], d[:ins_lon], d[:ins_alt],
+                      d[:ins_vn]   , d[:ins_ve] , d[:ins_vd] , d[:ins_fn] ,
+                      d[:ins_fe]   , d[:ins_fd] , d[:ins_Cnb], d[:ins_P]),
+                 MagV(d[:flux_a_x], d[:flux_a_y], d[:flux_a_z], d[:flux_a_t]),
+                 MagV(d[:flux_b_x], d[:flux_b_y], d[:flux_b_z], d[:flux_b_t]),
+                 MagV(d[:flux_c_x], d[:flux_c_y], d[:flux_c_z], d[:flux_c_t]),
+                 MagV(d[:flux_d_x], d[:flux_d_y], d[:flux_d_z], d[:flux_d_t]),
+                 d[:flight]    , d[:line]      , d[:year]      , d[:doy]       ,
+                 d[:utm_x]     , d[:utm_y]     , d[:utm_z]     , d[:msl]       ,
+                 d[:baro]      , d[:diurnal]   , d[:igrf]      , d[:mag_1_c]   ,
+                 d[:mag_1_uc]  , d[:mag_2_uc]  , d[:mag_3_uc]  , d[:mag_4_uc]  ,
+                 d[:mag_5_uc]  , d[:cur_com_1] , d[:cur_ac_hi] , d[:cur_ac_lo] ,
+                 d[:cur_tank]  , d[:cur_flap]  , d[:cur_strb]  , d[:vol_block] ,
+                 d[:vol_back]  , d[:vol_cabt]  , d[:vol_fan]   )
 end # function get_XYZ21
 
 """
     get_XYZ(flight::Symbol, df_flight::DataFrame; tt_sort::Bool=true,
-            reorient_vec=false, silent::Bool=false)
+            reorient_vec::Bool=false, silent::Bool=false)
 
 Get `XYZ` flight data from saved HDF5 file via DataFrame lookup.
 
@@ -271,15 +272,18 @@ Get `XYZ` flight data from saved HDF5 file via DataFrame lookup.
 """
 function get_XYZ(flight::Symbol, df_flight::DataFrame; tt_sort::Bool=true,
                  reorient_vec::Bool=false, silent::Bool=false)
+
     ind = findfirst(df_flight.flight .== flight)
+
     if df_flight.xyz_type[ind] == :XYZ20
         xyz = get_XYZ20(df_flight.xyz_h5[ind];tt_sort=tt_sort,silent=silent)
     elseif df_flight.xyz_type[ind] == :XYZ21
         xyz = get_XYZ21(df_flight.xyz_h5[ind];tt_sort=false,silent=silent)
     end
 
-    reorient_vec && xyz_reorient_vec!(flight,xyz)
-    return xyz
+    reorient_vec && xyz_reorient_vec!(xyz)
+
+    return (xyz)
 end # function get_XYZ
 
 """
@@ -310,40 +314,26 @@ function read_check(xyz::HDF5.File, field::Symbol, N::Int=1, silent::Bool=false)
 end # function read_check
 
 """
-    xyz_reorient_vec!(flight::Symbol, xyz::XYZ)
+    xyz_reorient_vec!(xyz::Union{XYZ1,XYZ20,XYZ21})
 
-For a given flight, reorient all the vector magnetometer data to best align with
-the IGRF direction in the body frame. Operates in place on passed-in XYZ data.
+Reorient all vector magnetometer data to best align with the IGRF direction in
+the body frame. Operates in place on passed-in `XYZ` flight data.
 
 **Arguments:**
-- `flight`: SGL flight (e.g. `:Flt1001`)
-- `xyz`:    `XYZ` flight data struct
+- `xyz`: `XYZ` flight data struct
 
 **Returns:**
 - `xyz`: `XYZ` flight data struct with reoriented vector magnetometer data (mutated)
 """
-function xyz_reorient_vec!(flight::Symbol, xyz::XYZ)
-    flt_day_dict = Dict([(:Flt1001, get_years(2020,167)), # from readmes
-                         (:Flt1002, get_years(2020,171)),
-                         (:Flt1003, get_years(2020,180)),
-                         (:Flt1004, get_years(2020,181)),
-                         (:Flt1005, get_years(2020,183)),
-                         (:Flt1006, get_years(2020,187)),
-                         (:Flt1007, get_years(2020,188)),
-                         (:Flt1008, get_years(2020,190)),
-                         (:Flt1009, get_years(2020,191))])
-
+function xyz_reorient_vec!(xyz::Union{XYZ1,XYZ20,XYZ21})
     for use_vec in field_check(xyz,MagV)
         flux = getfield(xyz,use_vec) # grab the vector magnetometer info
         if any(isnan,flux.t)
             @info("Found NaNs, not reorienting $use_vec")
         else
             # get start time of flight (seconds past midnight) and compute the IGRF directions
-            days_per_year  = get_days_per_year(flt_day_dict[flight])
-            t_start        = minimum(xyz.traj.tt) / (60 * 60 * 24 * days_per_year)
-            date_start     = flt_day_dict[flight] + t_start
             ind            = trues(length(flux.x)) # do for whole flight
-            norm_igrf_vecs = get_igrf(xyz,ind;date_start=date_start,frame=:body,norm_igrf=true)
+            norm_igrf_vecs = get_igrf(xyz,ind;frame=:body,norm_igrf=true)
 
             # compute optimal rotation matrix for this flight line
             igrf_matrix = permutedims(reduce(hcat,norm_igrf_vecs))

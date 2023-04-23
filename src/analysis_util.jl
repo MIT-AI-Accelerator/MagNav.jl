@@ -4,7 +4,7 @@
 Convert north-south position (northing) difference to latitude difference.
 
 **Arguments:**
-- `dn`: north-south position (northing) difference [m]
+- `dn`:  north-south position (northing) difference [m]
 - `lat`: nominal latitude [rad]
 
 **Returns:**
@@ -21,7 +21,7 @@ end # function dn2dlat
 Convert east-west position (easting) difference to longitude difference.
 
 **Arguments:**
-- `de`: east-west position (easting) difference [m]
+- `de`:  east-west position (easting) difference [m]
 - `lat`: nominal latitude [rad]
 
 **Returns:**
@@ -39,7 +39,7 @@ Convert latitude difference to north-south position (northing) difference.
 
 **Arguments:**
 - `dlat`: latitude difference [rad]
-- `lat`: nominal latitude [rad]
+- `lat`:  nominal latitude [rad]
 
 **Returns:**
 - `dn`: north-south position (northing) difference [m]
@@ -56,7 +56,7 @@ Convert longitude difference to east-west position (easting) difference.
 
 **Arguments:**
 - `dlon`: longitude difference [rad]
-- `lat`: nominal latitude [rad]
+- `lat`:  nominal latitude [rad]
 
 **Returns:**
 - `de`: east-west position (easting) difference [m]
@@ -109,8 +109,8 @@ end # function linreg
 Detrend signal (remove mean and optionally slope).
 
 **Arguments:**
-- `y`: observed data
-- `x`: (optional) input data
+- `y`:         observed data
+- `x`:         (optional) input data
 - `mean_only`: (optional) if true, only remove mean (not slope)
 
 **Returns:**
@@ -130,7 +130,7 @@ end # function detrend
 """
     get_bpf(; pass1=0.1, pass2=0.9, fs=10.0, pole::Int=4)
 
-Create a Butterworth bandpass (or low-pass or high-pass) filter object. Set 
+Create a Butterworth bandpass (or low-pass or high-pass) filter object. Set
 `pass1 = -1` for low-pass filter or `pass2 = -1` for high-pass filter.
 
 **Arguments:**
@@ -161,7 +161,7 @@ end # function get_bpf
 Bandpass (or low-pass or high-pass) filter columns of matrix.
 
 **Arguments:**
-- `x`: matrix of input data (e.g. Tolles-Lawson `A` matrix)
+- `x`:   matrix of input data (e.g. Tolles-Lawson `A` matrix)
 - `bpf`: (optional) filter object
 
 **Returns:**
@@ -181,7 +181,7 @@ end # function bpf_data
 Bandpass (or low-pass or high-pass) filter vector.
 
 **Arguments:**
-- `x`: input data (e.g. magnetometer measurements)
+- `x`:   input data (e.g. magnetometer measurements)
 - `bpf`: (optional) filter object
 
 **Returns:**
@@ -197,7 +197,7 @@ end # function bpf_data
 Bandpass (or low-pass or high-pass) filter vector or columns of matrix.
 
 **Arguments:**
-- `x`: vector or matrix of input data
+- `x`:   vector or matrix of input data
 - `bpf`: (optional) filter object
 
 **Returns:**
@@ -205,7 +205,7 @@ Bandpass (or low-pass or high-pass) filter vector or columns of matrix.
 """
 function bpf_data!(x; bpf=get_bpf())
     x .= bpf_data(x;bpf=bpf)
-end # bpf_data!
+end # function bpf_data!
 
 """
     get_x(xyz::XYZ, ind = trues(xyz.traj.N),
@@ -229,7 +229,7 @@ Get `x` matrix.
 - `bpf_mag`:          (optional) if true, bpf scalar magnetometer measurements
 
 **Returns:**
-- `nn_x`:     `x` matrix
+- `x`:        `x` matrix
 - `no_norm`:  indices of features to not be normalized
 - `features`: full list of features (including components of TL `A`, etc.)
 """
@@ -241,9 +241,9 @@ function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
                sub_igrf::Bool    = false,
                bpf_mag::Bool     = false)
 
-    d = Dict()
+    d = Dict{Symbol,Any}()
     N = length(xyz.traj.lat[ind])
-    nn_x     = Array{eltype(xyz.traj.lat)}(undef,N,0)
+    x        = Array{eltype(xyz.traj.lat)}(undef,N,0)
     no_norm  = Array{eltype(ind)}(undef,0,1)
     features = Array{Symbol}(undef,0,1)
 
@@ -277,12 +277,12 @@ function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
         push!(d,lab=>val)
     end
 
-    # 4th-order central difference
+    # 4th derivative central difference
     # Reference: Loughlin Tuck, Characterization and compensation of magnetic 
     # interference resulting from unmanned aircraft systems, 2019. (pg. 28)
     for mag in mags_all
         lab = Symbol(mag,"_dot4")
-        val = fdm(getfield(xyz,mag)[ind] - sub;fourth=true)
+        val = fdm(getfield(xyz,mag)[ind] - sub;scheme=:fourth)
         push!(d,lab=>val)
     end
 
@@ -344,14 +344,14 @@ function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
     push!(d,:srsp  =>sin.(roll ).*sin.(pitch))
 
     for rpy in [:roll,:pitch,:yaw]
-        rpy == :roll  && (x = roll)
-        rpy == :pitch && (x = pitch)
-        rpy == :yaw   && (x = yaw)
-        push!(d,Symbol(rpy,"_fdm")=>fdm(x))
-        push!(d,Symbol(rpy,"_sin")=>sin.(x))
-        push!(d,Symbol(rpy,"_cos")=>cos.(x))
-        push!(d,Symbol(rpy,"_sin_fdm")=>fdm(sin.(x)))
-        push!(d,Symbol(rpy,"_cos_fdm")=>fdm(cos.(x)))
+        rpy == :roll  && (rpy_ = roll)
+        rpy == :pitch && (rpy_ = pitch)
+        rpy == :yaw   && (rpy_ = yaw)
+        push!(d,Symbol(rpy,"_fdm")=>fdm(rpy_))
+        push!(d,Symbol(rpy,"_sin")=>sin.(rpy_))
+        push!(d,Symbol(rpy,"_cos")=>cos.(rpy_))
+        push!(d,Symbol(rpy,"_sin_fdm")=>fdm(sin.(rpy_)))
+        push!(d,Symbol(rpy,"_cos_fdm")=>fdm(cos.(rpy_)))
     end
 
     # low-pass filter current sensors
@@ -384,13 +384,13 @@ function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
         if isnan(sum(u))
             error("$f contains NaNs, remove from features_setup")
         else
-            nn_x     = [nn_x      u]
+            x        = [x         u]
             no_norm  = [no_norm;  v]
             features = [features; w]
         end
     end
 
-    return (nn_x, vec(no_norm), vec(features))
+    return (x, vec(no_norm), vec(features))
 end # function get_x
 
 """
@@ -415,7 +415,7 @@ Get `x` matrix from multiple `XYZ` flight data structs.
 - `bpf_mag`:          (optional) if true, bpf scalar magnetometer measurements
 
 **Returns:**
-- `nn_x`:     `x` matrix
+- `x`:        `x` matrix
 - `no_norm`:  indices of features to not be normalized
 - `features`: full list of features (including components of TL `A`, etc.)
 """
@@ -427,29 +427,29 @@ function get_x(xyz::Vector, ind::Vector,
                sub_igrf::Bool    = false,
                bpf_mag::Bool     = false)
 
-    nn_x     = nothing
+    x        = nothing
     no_norm  = nothing
     features = nothing
 
     for i in eachindex(xyz)
         if i == 1
-            (nn_x,no_norm,features) = get_x(xyz[i],ind[i],features_setup;
-                                            features_no_norm = features_no_norm,
-                                            terms            = terms,
-                                            sub_diurnal      = sub_diurnal,
-                                            sub_igrf         = sub_igrf,
-                                            bpf_mag          = bpf_mag)
+            (x,no_norm,features) = get_x(xyz[i],ind[i],features_setup;
+                                         features_no_norm = features_no_norm,
+                                         terms            = terms,
+                                         sub_diurnal      = sub_diurnal,
+                                         sub_igrf         = sub_igrf,
+                                         bpf_mag          = bpf_mag)
         else
-            nn_x = vcat(nn_x,get_x(xyz[i],ind[i],features_setup;
-                                   features_no_norm = features_no_norm,
-                                   terms            = terms,
-                                   sub_diurnal      = sub_diurnal,
-                                   sub_igrf         = sub_igrf,
-                                   bpf_mag          = bpf_mag)[1])
+            x = vcat(x,get_x(xyz[i],ind[i],features_setup;
+                             features_no_norm = features_no_norm,
+                             terms            = terms,
+                             sub_diurnal      = sub_diurnal,
+                             sub_igrf         = sub_igrf,
+                             bpf_mag          = bpf_mag)[1])
         end
     end
 
-    return (nn_x, no_norm, features)
+    return (x, no_norm, features)
 end # function get_x
 
 """
@@ -479,7 +479,7 @@ Get `x` matrix for multiple lines, possibly multiple flights.
 - `silent`:           (optional) if true, no print outs
 
 **Returns:**
-- `nn_x`:     `x` matrix
+- `x`:        `x` matrix
 - `no_norm`:  indices of features to not be normalized
 - `features`: full list of features (including components of TL `A`, etc.)
 """
@@ -511,7 +511,7 @@ function get_x(lines, df_line::DataFrame, df_flight::DataFrame,
 
     # initial values
     flt_old  = :FltInitial
-    nn_x     = nothing
+    x        = nothing
     no_norm  = nothing
     xyz      = nothing
     features = nothing
@@ -525,24 +525,24 @@ function get_x(lines, df_line::DataFrame, df_flight::DataFrame,
 
         ind = get_ind(xyz,line,df_line;l_seq=l_seq)
 
-        if nn_x === nothing
-            (nn_x,no_norm,features) = get_x(xyz,ind,features_setup;
-                                            features_no_norm = features_no_norm,
-                                            terms            = terms,
-                                            sub_diurnal      = sub_diurnal,
-                                            sub_igrf         = sub_igrf,
-                                            bpf_mag          = bpf_mag)
+        if x === nothing
+            (x,no_norm,features) = get_x(xyz,ind,features_setup;
+                                         features_no_norm = features_no_norm,
+                                         terms            = terms,
+                                         sub_diurnal      = sub_diurnal,
+                                         sub_igrf         = sub_igrf,
+                                         bpf_mag          = bpf_mag)
         else
-            nn_x = vcat(nn_x,get_x(xyz,ind,features_setup;
-                                   features_no_norm = features_no_norm,
-                                   terms            = terms,
-                                   sub_diurnal      = sub_diurnal,
-                                   sub_igrf         = sub_igrf,
-                                   bpf_mag          = bpf_mag)[1])
+            x = vcat(x,get_x(xyz,ind,features_setup;
+                             features_no_norm = features_no_norm,
+                             terms            = terms,
+                             sub_diurnal      = sub_diurnal,
+                             sub_igrf         = sub_igrf,
+                             bpf_mag          = bpf_mag)[1])
         end
     end
 
-    return (nn_x, no_norm, features)
+    return (x, no_norm, features)
 end # function get_x
 
 """
@@ -572,7 +572,7 @@ Get `y` target vector.
 - `sub_igrf`:    (optional) if true, subtract IGRF from scalar magnetometer measurements
 
 **Returns:**
-- `nn_y`: `y` target vector
+- `y`: `y` target vector
 """
 function get_y(xyz::XYZ, ind = trues(xyz.traj.N),
                map_val           = -1;
@@ -600,21 +600,21 @@ function get_y(xyz::XYZ, ind = trues(xyz.traj.N),
 
     # get y for specified y_type
     if y_type == :a # option A
-        nn_y = mag_c - sub
+        y = mag_c - sub
     elseif y_type == :b # option B
-        nn_y = map_val
+        y = map_val
     elseif y_type == :c # option C
-        nn_y = mag_uc - sub - map_val
+        y = mag_uc - sub - map_val
     elseif y_type == :d # option D
-        nn_y = mag_uc - mag_c
+        y = mag_uc - mag_c
     elseif y_type == :e # option E
         fs   = 1 / xyz.traj.dt
-        nn_y = bpf_data(mag_uc - sub; bpf=get_bpf(;fs=fs))
+        y = bpf_data(mag_uc - sub; bpf=get_bpf(;fs=fs))
     else
         error("$y_type target type is not valid")
     end
 
-    return (nn_y)
+    return (y)
 end # function get_y
 
 """
@@ -649,7 +649,7 @@ Get `y` target vector for multiple lines, possibly multiple flights.
 - `silent`:      (optional) if true, no print outs
 
 **Returns:**
-- `nn_y`: `y` target vector
+- `y`: `y` target vector
 """
 function get_y(lines, df_line::DataFrame, df_flight::DataFrame,
                df_map::DataFrame;
@@ -674,7 +674,7 @@ function get_y(lines, df_line::DataFrame, df_flight::DataFrame,
 
     # initial values
     flt_old = :FltInitial
-    nn_y    = nothing
+    y       = nothing
     xyz     = nothing
 
     for line in lines
@@ -698,24 +698,24 @@ function get_y(lines, df_line::DataFrame, df_flight::DataFrame,
             map_val  = -1
         end
 
-        if nn_y === nothing
-            nn_y = get_y(xyz,ind,map_val;
-                         y_type      = y_type,
-                         use_mag     = use_mag,
-                         use_mag_c   = use_mag_c,
-                         sub_diurnal = sub_diurnal,
-                         sub_igrf    = sub_igrf)
+        if y === nothing
+            y = get_y(xyz,ind,map_val;
+                      y_type      = y_type,
+                      use_mag     = use_mag,
+                      use_mag_c   = use_mag_c,
+                      sub_diurnal = sub_diurnal,
+                      sub_igrf    = sub_igrf)
         else
-            nn_y = vcat(nn_y,get_y(xyz,ind,map_val;
-                                   y_type      = y_type,
-                                   use_mag     = use_mag,
-                                   use_mag_c   = use_mag_c,
-                                   sub_diurnal = sub_diurnal,
-                                   sub_igrf    = sub_igrf))
+            y = vcat(y,get_y(xyz,ind,map_val;
+                             y_type      = y_type,
+                             use_mag     = use_mag,
+                             use_mag_c   = use_mag_c,
+                             sub_diurnal = sub_diurnal,
+                             sub_igrf    = sub_igrf))
         end
     end
 
-    return (nn_y)
+    return (y)
 end # function get_y
 
 """
@@ -732,15 +732,16 @@ end # function get_y
             sub_diurnal::Bool  = false,
             sub_igrf::Bool     = false,
             bpf_mag::Bool      = false,
+            reorient_vec::Bool = false,
             l_seq::Int         = -1,
             mod_TL::Bool       = false,
             map_TL::Bool       = false,
-            reorient_vec::Bool = false,
             return_B::Bool     = false,
             silent::Bool       = true)
 
-Get Tolles-Lawson `A` matrix, `x` matrix, and `y` target vector for multiple 
-lines, possibly multiple flights. Optionally get vector magnetometer `B` and `B'`.
+Get "external" Tolles-Lawson `A` matrix, `x` matrix, and `y` target vector for
+multiple lines, possibly multiple flights. Optionally return `Bt` and `B_dot`
+used to create the "external" Tolles-Lawson `A` matrix.
 
 **Arguments:**
 - `lines`:            selected line number(s)
@@ -757,28 +758,28 @@ lines, possibly multiple flights. Optionally get vector magnetometer `B` and `B'
     - `:e` = BPF'd total field, bandpass filtered uncompensated cabin total field scalar magnetometer measurements
 - `use_mag`:      (optional) scalar magnetometer to use {`:mag_1_uc`, etc.}, only used for `y_type = :c, :d, :e`
 - `use_mag_c`:    (optional) compensated scalar magnetometer to use {`:mag_1_c`, etc.}, only used for `y_type = :a, :d`
-- `use_vec`:      (optional) vector magnetometer (fluxgate) to use for Tolles-Lawson `A` matrix {`:flux_a`, etc.}
+- `use_vec`:      (optional) vector magnetometer (fluxgate) to use for "external" Tolles-Lawson `A` matrix {`:flux_a`, etc.}
 - `terms`:        (optional) Tolles-Lawson terms to use for `A` within `x` matrix {`:permanent`,`:induced`,`:eddy`,`:bias`}
-- `terms_A`:      (optional) Tolles-Lawson terms to use for "external" `A` matrix {`:permanent`,`:induced`,`:eddy`,`:bias`}
+- `terms_A`:      (optional) Tolles-Lawson terms to use for "external" Tolles-Lawson `A` matrix {`:permanent`,`:induced`,`:eddy`,`:bias`}
 - `sub_diurnal`:  (optional) if true, subtract diurnal from scalar magnetometer measurements
 - `sub_igrf`:     (optional) if true, subtract IGRF from scalar magnetometer measurements
 - `bpf_mag`:      (optional) if true, bpf scalar magnetometer measurements in `x` matrix
-- `l_seq`:        (optional) trim data by `mod(N,l_seq)`, `-1` to ignore
-- `mod_TL`:       (optional) if true, create modified  Tolles-Lawson `A` matrix with `use_mag` 
-- `map_TL`:       (optional) if true, create map-based Tolles-Lawson `A` matrix 
 - `reorient_vec`: (optional) if true, align vector magnetometer with body frame
-- `return_B`:     (optional) if true, return vector magnetometer `B` and `B'`
+- `l_seq`:        (optional) trim data by `mod(N,l_seq)`, `-1` to ignore
+- `mod_TL`:       (optional) if true, create modified  "external" Tolles-Lawson `A` matrix with `use_mag` 
+- `map_TL`:       (optional) if true, create map-based "external" Tolles-Lawson `A` matrix 
+- `return_B`:     (optional) if true, also return `Bt` and `B_dot`
 - `silent`:       (optional) if true, no print outs
 
 **Returns:**
-- `nn_A`:     Tolles-Lawson `A` matrix
-- `nn_x`:     `x` matrix
-- `nn_y`:     `y` target vector
+- `A`:        "external" Tolles-Lawson `A` matrix
+- `x`:        `x` matrix
+- `y`:        `y` target vector
 - `no_norm`:  indices of features to not be normalized
 - `features`: full list of features (including components of TL `A`, etc.)
 - `l_segs`:   vector of lengths of `lines`, sum(l_segs) == length(y)
-- `nn_B`:     if `return_B = true`, magnitude of total field measurements
-- `nn_B_dot`: if `return_B = true`, derivative of total field unit vector
+- `Bt`:       if `return_B = true`, magnitude of total field measurements used to create `A` [nT]
+- `B_dot`:    if `return_B = true`, finite differences of total field vector used to create `A` [nT]
 """
 function get_Axy(lines, df_line::DataFrame,
                  df_flight::DataFrame, df_map::DataFrame,
@@ -793,10 +794,10 @@ function get_Axy(lines, df_line::DataFrame,
                  sub_diurnal::Bool  = false,
                  sub_igrf::Bool     = false,
                  bpf_mag::Bool      = false,
+                 reorient_vec::Bool = false,
                  l_seq::Int         = -1,
                  mod_TL::Bool       = false,
                  map_TL::Bool       = false,
-                 reorient_vec::Bool = false,
                  return_B::Bool     = false,
                  silent::Bool       = true)
 
@@ -819,13 +820,13 @@ function get_Axy(lines, df_line::DataFrame,
     # initial values
     flt_old  = :FltInitial
     A_test   = create_TL_A([1.0],[1.0],[1.0];terms=terms_A)
-    nn_A     = Array{eltype(A_test)}(undef,0,length(A_test))
-    nn_B     = Array{eltype(A_test)}(undef,0,1)
-    nn_B_dot = Array{eltype(A_test)}(undef,0,3)
-    nn_x     = nothing
+    A        = Array{eltype(A_test)}(undef,0,length(A_test))
+    Bt       = Array{eltype(A_test)}(undef,0,1)
+    B_dot    = Array{eltype(A_test)}(undef,0,3)
+    x        = nothing
+    y        = nothing
     no_norm  = nothing
     features = nothing
-    nn_y     = nothing
     xyz      = nothing
     l_segs   = zeros(Int,length(lines))
 
@@ -840,20 +841,20 @@ function get_Axy(lines, df_line::DataFrame,
         l_segs[findfirst(l_segs .== 0)] = length(xyz.traj.lat[ind])
 
         # x matrix
-        if nn_x === nothing
-            (nn_x,no_norm,features) = get_x(xyz,ind,features_setup;
-                                            features_no_norm = features_no_norm,
-                                            terms            = terms,
-                                            sub_diurnal      = sub_diurnal,
-                                            sub_igrf         = sub_igrf,
-                                            bpf_mag          = bpf_mag)
+        if x === nothing
+            (x,no_norm,features) = get_x(xyz,ind,features_setup;
+                                         features_no_norm = features_no_norm,
+                                         terms            = terms,
+                                         sub_diurnal      = sub_diurnal,
+                                         sub_igrf         = sub_igrf,
+                                         bpf_mag          = bpf_mag)
         else
-            nn_x = vcat(nn_x,get_x(xyz,ind,features_setup;
-                                   features_no_norm = features_no_norm,
-                                   terms            = terms,
-                                   sub_diurnal      = sub_diurnal,
-                                   sub_igrf         = sub_igrf,
-                                   bpf_mag          = bpf_mag)[1])
+            x = vcat(x,get_x(xyz,ind,features_setup;
+                             features_no_norm = features_no_norm,
+                             terms            = terms,
+                             sub_diurnal      = sub_diurnal,
+                             sub_igrf         = sub_igrf,
+                             bpf_mag          = bpf_mag)[1])
         end
 
         # map values along trajectory (if needed)
@@ -871,49 +872,49 @@ function get_Axy(lines, df_line::DataFrame,
         # `A` matrix for selected vector magnetometer and `B` measurements
         field_check(xyz,use_vec,MagV)
         if mod_TL
-            (A,B_t,B_dot) = create_TL_A(getfield(xyz,use_vec),ind;
-                                        Bt       = getfield(xyz,use_mag),
-                                        terms    = terms_A,
-                                        return_B = true)
+            (A_,Bt_,B_dot_) = create_TL_A(getfield(xyz,use_vec),ind;
+                                          Bt       = getfield(xyz,use_mag),
+                                          terms    = terms_A,
+                                          return_B = true)
         elseif map_TL
-            (A,B_t,B_dot) = create_TL_A(getfield(xyz,use_vec),ind;
-                                        Bt       = map_val,
-                                        terms    = terms_A,
-                                        return_B = true)
+            (A_,Bt_,B_dot_) = create_TL_A(getfield(xyz,use_vec),ind;
+                                          Bt       = map_val,
+                                          terms    = terms_A,
+                                          return_B = true)
         else
-            (A,B_t,B_dot) = create_TL_A(getfield(xyz,use_vec),ind;
-                                        terms    = terms_A,
-                                        return_B = true)
+            (A_,Bt_,B_dot_) = create_TL_A(getfield(xyz,use_vec),ind;
+                                          terms    = terms_A,
+                                          return_B = true)
         end
         fs = 1 / xyz.traj.dt
-        y_type == :e && bpf_data!(A;bpf=get_bpf(;fs=fs))
+        y_type == :e && bpf_data!(A_;bpf=get_bpf(;fs=fs))
 
-        nn_A = vcat(nn_A,A)
-        nn_B = vcat(nn_B,B_t)
-        nn_B_dot = vcat(nn_B_dot,B_dot)
+        A     = vcat(A,A_)
+        Bt    = vcat(Bt,Bt_)
+        B_dot = vcat(B_dot,B_dot_)
 
         # y vector
-        if nn_y === nothing
-            nn_y = get_y(xyz,ind,map_val;
-                         y_type      = y_type,
-                         use_mag     = use_mag,
-                         use_mag_c   = use_mag_c,
-                         sub_diurnal = sub_diurnal,
-                         sub_igrf    = sub_igrf)
+        if y === nothing
+            y = get_y(xyz,ind,map_val;
+                      y_type      = y_type,
+                      use_mag     = use_mag,
+                      use_mag_c   = use_mag_c,
+                      sub_diurnal = sub_diurnal,
+                      sub_igrf    = sub_igrf)
         else
-            nn_y = vcat(nn_y,get_y(xyz,ind,map_val;
-                                   y_type      = y_type,
-                                   use_mag     = use_mag,
-                                   use_mag_c   = use_mag_c,
-                                   sub_diurnal = sub_diurnal,
-                                   sub_igrf    = sub_igrf))
+            y = vcat(y,get_y(xyz,ind,map_val;
+                             y_type      = y_type,
+                             use_mag     = use_mag,
+                             use_mag_c   = use_mag_c,
+                             sub_diurnal = sub_diurnal,
+                             sub_igrf    = sub_igrf))
         end
     end
 
-    if return_B == true
-        return (nn_A, nn_B, nn_B_dot, nn_x, nn_y, no_norm, features, l_segs)
+    if return_B
+        return (A, Bt, B_dot, x, y, no_norm, features, l_segs)
     else
-        return (nn_A, nn_x, nn_y, no_norm, features, l_segs)
+        return (A, x, y, no_norm, features, l_segs)
     end
 end # function get_Axy
 
@@ -980,50 +981,6 @@ function get_nn_m(xS::Int=10, yS::Int=1;
 end # function get_nn_m
 
 """
-    get_nn_m(weights::Params, activation::Function=swish; load::Bool=true)
-
-Get neural network model.
-
-**Arguments:**
-- `weights`: neural network model weights
-- `activation`: (optional) activation function
-    - `relu`  = rectified linear unit
-    - `σ`     = sigmoid (logistic function)
-    - `swish` = self-gated
-    - `tanh`  = hyperbolic tan
-    - run `plot_activation()` for a visual
-- `load`: if true, load `weights` into `m`
-**Returns:**
-- `m`: neural network model
-"""
-function get_nn_m(weights::Params, activation::Function=swish; load::Bool=true)
-
-    n  = length(weights)
-    xS = size(weights[1],2)
-    yS = size(weights[n],1)
-
-    final_bias = isodd(n) ? false : true
-
-    hidden = [size(weights[i],1) for i = 2:2:n-1]
-
-    if final_bias
-        skip_con = size(weights[n-1],2) == size(weights[n-2],1) ? false : true
-    else
-        skip_con = size(weights[n  ],2) == size(weights[n-1],1) ? false : true
-    end
-
-    m = get_nn_m(xS, yS;
-                 hidden     = hidden,
-                 activation = activation,
-                 final_bias = final_bias,
-                 skip_con   = skip_con)
-
-    load && Flux.loadparams!(m,weights)
-
-    return (m)
-end # function get_nn_m
-
-"""
     sparse_group_lasso(m, α=1)
 
 **Arguments:**
@@ -1040,11 +997,11 @@ end # function sparse_group_lasso
 """
     sparse_group_lasso(weights::Params, α=1)
 
-Internal helper function to get the sparse group Lasso term for sparse-input 
-regularization, which is the combined L1 & L2 norm of the first-layer neural 
+Internal helper function to get the sparse group Lasso term for sparse-input
+regularization, which is the combined L1 & L2 norm of the first-layer neural
 network weights corresponding to each input feature.
 
-Reference: Feng & Simon, Sparse-Input Neural Networks for High-dimensional 
+Reference: Feng & Simon, Sparse-Input Neural Networks for High-dimensional
 Nonparametric Regression and Classification, 2017. (pg. 4)
 
 **Arguments:**
@@ -1055,14 +1012,14 @@ Nonparametric Regression and Classification, 2017. (pg. 4)
 - `w_norm`: sparse group Lasso term
 """
 function sparse_group_lasso(weights::Params, α=1)
-    return ([(1-α)*norm(weights[1][:,i],1) + 
+    return ([(1-α)*norm(weights[1][:,i],1) +
                 α *norm(weights[1][:,i],2) for i in axes(weights[1],2)])
 end # function sparse_group_lasso
 
 """
     err_segs(y_hat, y, l_segs; silent::Bool=true)
 
-Internal helper function to remove mean error from multiple individual flight 
+Internal helper function to remove mean error from multiple individual flight
 lines within a larger dataset.
 
 **Arguments:**
@@ -1130,8 +1087,8 @@ function norm_sets(train;
     end
 
     for i in axes(train,2)
-        no_norm[i] && (train_bias[i]  = 0.0)
-        no_norm[i] && (train_scale[i] = 1.0)
+        no_norm[i] && (train_bias[i]  = zero(eltype(train)))
+        no_norm[i] && (train_scale[i] = one( eltype(train)))
     end
 
     train = (train .- train_bias) ./ train_scale
@@ -1184,7 +1141,7 @@ end # function norm_sets
               norm_type::Symbol = :standardize,
               no_norm           = falses(size(train,2)))
 
-Normalize (or standardize) features (columns) of training, validation, and 
+Normalize (or standardize) features (columns) of training, validation, and
 testing data.
 
 **Arguments:**
@@ -1265,7 +1222,7 @@ end # function denorm_sets
 """
     denorm_sets(train_bias, train_scale, train, val, test)
 
-Denormalize (or destandardize) features (columns) of training, validation, 
+Denormalize (or destandardize) features (columns) of training, validation,
 and testing data.
 
 **Arguments:**
@@ -1290,7 +1247,7 @@ end # function denorm_sets
 """
     unpack_data_norms(data_norms)
 
-Internal helper function that unpacks data normalizations, some of which may 
+Internal helper function to unpack data normalizations, some of which may
 not be present due to earlier package versions being used.
 
 **Arguments:**
@@ -1327,7 +1284,7 @@ end # function unpack_data_norms
             tt_lim = (),
             splits = (1))
 
-Get BitArray of indices for further analysis from specified indices (subset), 
+Get BitArray of indices for further analysis from specified indices (subset),
 line number(s), and/or time range. Any or all of these may be used.
 
 **Arguments:**
@@ -1400,7 +1357,7 @@ end # function get_ind
             tt_lim = extrema(xyz.traj.tt),
             splits = (1))
 
-Get BitArray of indices for further analysis from specified indices (subset), 
+Get BitArray of indices for further analysis from specified indices (subset),
 line number(s), and/or time range. Any or all of these may be used.
 
 **Arguments:**
@@ -1591,7 +1548,7 @@ function predict_rnn_windowed(m, x, l_seq)
     #     i     j
 
     for j = 1:nx
-        
+
         # create window
         i = j < l_seq ? 1 : j - l_seq + 1
 
@@ -1644,8 +1601,8 @@ end # function krr
 """
     predict_shapley(m, x::DataFrame)
 
-Internal helper function that wraps a neural network model to create a 
-DataFrame of predictions.
+Internal helper function to wrap a neural network model to create a DataFrame
+of predictions.
 
 **Arguments:**
 - `m`: neural network model
@@ -1749,7 +1706,7 @@ end # function plot_shapley
 """
     eval_gsa(m, x, N::Int=min(10000,size(x,1)))
 
-Global sensitivity analysis (GSA) with the Morris Method. 
+Global sensitivity analysis (GSA) with the Morris Method.
 Reference: https://mitmath.github.io/18337/lecture17/global_sensitivity
 
 Reference: https://gsa.sciml.ai/stable/methods/morris/
@@ -1766,53 +1723,60 @@ function eval_gsa(m, x, N::Int=min(10000,size(x,1)))
 
     seed!(2) # for reproducibility
 
-    method = Morris(num_trajectory=N,relative_scale=true)
-    means  = vec(gsa(m,method,vec(extrema(x,dims=1));N=N).means)
-    
+    method      = Morris(num_trajectory=N,relative_scale=true)
+    param_range = vec(extrema(x,dims=1))
+    means       = vec(gsa(m,method,param_range;N=N).means)
+    # produces Float32 warning even if param_range is Float32
+
     return (means)
 end # function eval_gsa
 
 """
-    get_igrf(xyz, ind;
-             date_start      = get_years(2020,185),
+    get_igrf(xyz::Union{XYZ1,XYZ20,XYZ21}, ind=trues(xyz.traj.N);
              frame           = :body,
-             norm_igrf::Bool = false)
+             norm_igrf::Bool = false,
+             check_xyz::Bool = true)
 
-Returns the IGRF Earth vector in the body or navigation frame given 
-an `XYZ` struct containing trajectory information, valid indices, a 
-start date in IGRF time (years since 0 CE), and reference frame.
+Returns the IGRF Earth vector in the body or navigation frame given an `XYZ`
+flight data struct containing trajectory information, valid indices, a start
+date in IGRF time (years since 0 CE), and reference frame.
 
 **Arguments:**
-- `xyz`:        `XYZ` flight data struct
-- `ind`:        (optional) selected data indices
-- `date_start`: (optional) midnight of date on which flight occurred [yr]
-- `frame`:      (optional) desired reference frame {`:body`,`:nav`}
-- `norm_igrf`:  (optional) if true, return normalized IGRF
+- `xyz`:       `XYZ` flight data struct
+- `ind`:       (optional) selected data indices
+- `frame`:     (optional) desired reference frame {`:body`,`:nav`}
+- `norm_igrf`: (optional) if true, normalize `igrf_vec`
+- `check_xyz`: (optional) if true, cross-check with `igrf` field in `xyz`
 
 **Returns:**
 - `igrf_vec`: `N`x`3` stacked vector for N indices and 3 coordinates of IGRF in desired frame
 """
-function get_igrf(xyz, ind;
-                  date_start      = get_years(2020,185),
+function get_igrf(xyz::Union{XYZ1,XYZ20,XYZ21}, ind=trues(xyz.traj.N);
                   frame           = :body,
-                  norm_igrf::Bool = false)
+                  norm_igrf::Bool = false,
+                  check_xyz::Bool = true)
+
+    date_start = get_years.(xyz.year[ind],xyz.doy[ind].-1)
+    seconds_per_year = 60 * 60 * 24 * get_days_per_year.(date_start)
+
     @assert frame in [:body,:nav] "Must choose `:body` or `:nav` reference frame"
-    @assert 1900 <= date_start <= 2030  "Start date must be in valid IGRF date range"
+    @assert all(1900 .<= date_start .<= 2030)  "Start date must be in valid IGRF date range"
 
     N   = length(xyz.traj.lat[ind])
-    tt  = xyz.traj.tt[ind] / (60 * 60 * 24 * get_days_per_year(date_start)) # [yr]
+    tt  = date_start + xyz.traj.tt[ind] ./ seconds_per_year # [yr]
     alt = xyz.traj.alt[ind]
     lat = xyz.traj.lat[ind]
     lon = xyz.traj.lon[ind]
-    igrf_time = date_start .+ tt
 
     # get the IGRF field, igrf() outputs length N vector of [Bx, By, Bz] with
     # Bx: north component [nT]
     # By: east  component [nT]
     # Bz: down  component [nT]
-    igrf_vec   = [igrf(igrf_time[i], alt[i], lat[i], lon[i], Val(:geodetic)) for i = 1:N]
-    igrf_error = rms(norm.(igrf_vec) - xyz.igrf[ind])
-    @assert igrf_error < 1 "Large IGRF discrepancy, check `date_start`"
+    igrf_vec = [igrf(tt[i], alt[i], lat[i], lon[i], Val(:geodetic)) for i = 1:N]
+    if check_xyz
+        igrf_error = round(rms(norm.(igrf_vec) - xyz.igrf[ind]),digits=2)
+        @assert igrf_error < 1 "Large IGRF discrepancy of $igrf_error nT, check `igrf`, `year`, and `doy` fields in `xyz`"
+    end
 
     # normalize (or not) and rotate (or not)
     norm_igrf && (igrf_vec = normalize.(igrf_vec))
@@ -1829,7 +1793,7 @@ end # function get_igrf
 """
     project_vector_to_2d(vec_in, uvec_x, uvec_y)
 
-Internal helper function that projects a 3D vector into 2D given two orthogonal 3D unit vectors.
+Internal helper function to project a 3D vector into 2D given two orthogonal 3D unit vectors.
 
 **Arguments:**
 - `vec_in`: 3D vector desired to be projected onto a 2D plane
@@ -1837,7 +1801,7 @@ Internal helper function that projects a 3D vector into 2D given two orthogonal 
 - `uvec_y`: 3D unit vector orthogonal to `uvec_x`
 
 **Returns:**
-- `v_out`: 2D vector representing the 3D projection onto the plane 
+- `v_out`: 2D vector representing the 3D projection onto the plane
 """
 function project_vector_to_2d(vec_in, uvec_x, uvec_y)
     @assert abs(dot(uvec_x, uvec_y)) <= 1e-7 "Projected vectors must be orthogonal: ", dot(uvec_x, uvec_y)
@@ -1849,11 +1813,11 @@ end # function project_vector_to_2d
 """
     project_body_field_to_2d_igrf(vec_body, igrf_in, dcm)
 
-Projects a body frame vector onto a 2D plane defined by the direction 
-of the IGRF field and a tangent vector to the Earth ellipsoid, which is 
-computed by taking the cross product of the IGRF field with the upward 
-direction. Returns a 2D vector whose components describe the amount of 
-the body field that is in alignment with the Earth field and an orthogonal 
+Projects a body frame vector onto a 2D plane defined by the direction
+of the IGRF field and a tangent vector to the Earth ellipsoid, which is
+computed by taking the cross product of the IGRF field with the upward
+direction. Returns a 2D vector whose components describe the amount of
+the body field that is in alignment with the Earth field and an orthogonal
 direction to the Earth field (roughly to the east).
 
 **Arguments:**
@@ -1873,14 +1837,14 @@ function project_body_field_to_2d_igrf(vec_body, igrf_in, dcm)
     # transform aircraft vector from body to navigation frame
     vec_nav = dcm*vec_body
 
-    v_out = project_vector_to_2d(vec_nav, igrf_east, igrf_north) 
+    v_out = project_vector_to_2d(vec_nav, igrf_east, igrf_north)
     return (v_out)
 end # function project_body_field_to_2d_igrf
 
 """
     get_optimal_rotation_matrix(v1s, v2s)
 
-Returns the `3`x`3` rotation matrix rotating the directions of v1s into v2s. 
+Returns the `3`x`3` rotation matrix rotating the directions of v1s into v2s.
 Uses the Kabsch algorithm.
 
 Reference: https://en.wikipedia.org/wiki/Kabsch_algorithm
@@ -1949,3 +1913,20 @@ Internal helper function to get years from year and day of year.
 function get_years(year, doy)
     round(Int,year) + doy/get_days_per_year(year)
 end # function get_years
+
+"""
+    get_lim(x, frac_trim=0)
+
+Internal helper function to get trimmed limits (extrema) of data.
+
+**Arguments:**
+- `x`:         data
+- `frac_trim`: fraction of `x` limits (extrema) to exclude
+
+**Returns:**
+- `lim`: trimmed limits (extrema) of`x`
+"""
+function get_lim(x, frac_trim=0)
+    @assert frac_trim < 0.5 "frac_trim must be < 0.5"
+    extrema(x) .+ (-frac_trim,frac_trim) .* (extrema(x)[2] - extrema(x)[1])
+end # function get_lim

@@ -295,8 +295,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
 - `core`:       (optional) if true, include core magnetic field in measurement
 
 **Returns:**
-- `m`:       neural network model
-- `weights`: neural network model weights
+- `m`: neural network model
 """
 function nekf_train(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt,
                     itp_mapS, nn_x::Matrix, nn_y::Matrix;
@@ -367,9 +366,7 @@ function nekf_train(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt,
         end
     end
 
-    weights = Flux.params(m)
-
-    return (m, weights)
+    return (m)
 end # function nekf_train
 
 """
@@ -417,8 +414,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
 - `core`:       (optional) if true, include core magnetic field in measurement
 
 **Returns:**
-- `m`:       neural network model
-- `weights`: neural network model weights
+- `m`: neural network model
 """
 function nekf_train(ins::INS, meas, itp_mapS, nn_x::Matrix, nn_y::Matrix;
                     P0                   = create_P0(),
@@ -497,7 +493,6 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
 
 **Returns:**
 - `m`:          neural network model
-- `weights`:    neural network model weights
 - `data_norms`: Tuple of data normalizations, e.g. `(v_scale,x_bias,x_scale)`
 """
 function nekf_train(xyz::XYZ, ind, meas, itp_mapS, x::Matrix;
@@ -526,21 +521,21 @@ function nekf_train(xyz::XYZ, ind, meas, itp_mapS, x::Matrix;
     v_scale = V[:,1:1]*inv(Diagonal(sqrt.(S[1:1])))
     nn_x = x_norm * v_scale
 
-    (m,weights) = nekf_train(ins,meas,itp_mapS,nn_x,nn_y;
-                             P0=P0,Qd=Qd,R=R,
-                             baro_tau   = baro_tau,
-                             acc_tau    = acc_tau,
-                             gyro_tau   = gyro_tau,
-                             fogm_tau   = fogm_tau,
-                             epoch_adam = epoch_adam,
-                             hidden     = hidden,
-                             activation = activation,
-                             l_seq      = l_seq,
-                             date       = date,
-                             core       = core);
+    m = nekf_train(ins,meas,itp_mapS,nn_x,nn_y;
+                   P0=P0,Qd=Qd,R=R,
+                   baro_tau   = baro_tau,
+                   acc_tau    = acc_tau,
+                   gyro_tau   = gyro_tau,
+                   fogm_tau   = fogm_tau,
+                   epoch_adam = epoch_adam,
+                   hidden     = hidden,
+                   activation = activation,
+                   l_seq      = l_seq,
+                   date       = date,
+                   core       = core)
 
     # pack normalizations
     data_norms = (v_scale,x_bias,x_scale)
 
-    return (m, weights, data_norms)
+    return (m, data_norms)
 end # function nekf_train

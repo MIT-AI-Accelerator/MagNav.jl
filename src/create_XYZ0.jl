@@ -37,8 +37,8 @@
                 save_h5::Bool  = false,
                 xyz_h5::String = "xyz_data.h5")
 
-Create basic flight data. Assumes constant altitude (2D flight). 
-May create a trajectory that passes over map regions without magnetic data. 
+Create basic flight data. Assumes constant altitude (2D flight).
+May create a trajectory that passes over map regions without magnetic data.
 No required arguments, though many are available to create custom data.
 
 **Trajectory Arguments:**
@@ -215,8 +215,8 @@ end # function create_XYZ0
                 save_h5::Bool   = false,
                 traj_h5::String = "traj_data.h5")
 
-Create `Traj` trajectory struct with a straight or sinusoidal flight path at 
-constant altitude (2D flight). May create a trajectory that passes over 
+Create `Traj` trajectory struct with a straight or sinusoidal flight path at
+constant altitude (2D flight). May create a trajectory that passes over
 map regions without data if the map has data gaps (not completely filled).
 
 **Arguments:**
@@ -257,7 +257,7 @@ function create_traj(mapS::MapS=get_map(namad);
     while (!map_check(mapS,lat,lon) & (i <= attempts)) | (i == 0)
         i += 1
 
-        if ll1 == () # put initial point in middle 50% of map
+        if isempty(ll1) # put initial point in middle 50% of map
             (map_yy_1,map_yy_2) = extrema(mapS.yy)
             (map_xx_1,map_xx_2) = extrema(mapS.xx)
             lat1 = map_yy_1 + (map_yy_2-map_yy_1)*(0.25+0.50*rand())
@@ -266,7 +266,7 @@ function create_traj(mapS::MapS=get_map(namad);
             (lat1,lon1) = deg2rad.(ll1)
         end
 
-        if ll2 == () # use given velocity & time to set distance
+        if isempty(ll2) # use given velocity & time to set distance
             N     = round(Int,t/dt+1)
             d     = v*t # distance
             θ_utm = 2*pi*rand() # random heading in utm coordinates
@@ -306,7 +306,7 @@ function create_traj(mapS::MapS=get_map(namad);
             de = dlon2de.(fdm(lon),lat) # easting  distance per time step
             d_now = sum(sqrt.(dn[2:N].^2+de[2:N].^2)) # current distance
 
-            if ll2 == () # scale to target distance
+            if isempty(ll2) # scale to target distance
                 frac1 = d / d_now # scaling factor
                 frac2 = frac1
             else  # scale to target end point
@@ -333,7 +333,7 @@ function create_traj(mapS::MapS=get_map(namad);
             lon       = itp_lon.(range_new) # get interpolated lat
         end
 
-        # plot!(p1,lon,lat)        
+        # plot!(p1,lon,lat)
 
     end
 
@@ -402,7 +402,7 @@ end # function create_traj
                save_h5::Bool  = false,
                ins_h5::String = "ins_data.h5")
 
-Creates an INS trajectory about a true trajectory. Propagates a 17-state 
+Creates an INS trajectory about a true trajectory. Propagates a 17-state
 Pinson error model to create INS errors.
 
 **Arguments:**
@@ -533,7 +533,7 @@ end # function create_ins
                  fogm_sigma = 1.0,
                  fogm_tau   = 600.0)
 
-Create compensated (clean) scalar magnetometer measurements from a scalar 
+Create compensated (clean) scalar magnetometer measurements from a scalar
 magnetic anomaly map.
 
 **Arguments:**
@@ -570,7 +570,7 @@ function create_mag_c(lat, lon, mapS::MapS=get_map(namad);
 
     # add FOGM & white noise to perfect measurements
     itp_mapS = map_itp(mapS) # get map interpolation
-    mag_c    = itp_mapS.(lon,lat) + 
+    mag_c    = itp_mapS.(lon,lat) +
                fogm(fogm_sigma,fogm_tau,dt,N) + sqrt(meas_var)*randn(N)
 
     return (mag_c)
@@ -582,7 +582,7 @@ end # function create_mag_c
                  fogm_sigma = 1.0,
                  fogm_tau   = 600.0)
 
-Create compensated (clean) scalar magnetometer measurements from a scalar 
+Create compensated (clean) scalar magnetometer measurements from a scalar
 magnetic anomaly map.
 
 **Arguments:**
@@ -618,8 +618,8 @@ end # function create_mag_c
                 cor_ind_mag  = 5.0,
                 cor_eddy_mag = 0.5)
 
-Corrupt compensated (clean) magnetometer measurements with random, FOGM, drift, 
-and Tolles-Lawson noise to create uncompensated (corrupted) scalar magnetometer 
+Corrupt compensated (clean) magnetometer measurements with random, FOGM, drift,
+and Tolles-Lawson noise to create uncompensated (corrupted) scalar magnetometer
 measurements. FOGM is a First-order Gauss-Markov stochastic process.
 
 **Arguments:**
@@ -657,8 +657,8 @@ function corrupt_mag(mag_c, Bx, By, Bz;
 
     N = length(mag_c)
 
-    mag_uc = mag_c + sqrt(cor_var)*randn(N) + 
-                     fogm(cor_sigma,cor_tau,dt,N) + 
+    mag_uc = mag_c + sqrt(cor_var)*randn(N) +
+                     fogm(cor_sigma,cor_tau,dt,N) +
                      cor_drift*rand()*(0:dt:dt*(N-1))
 
     # corrupt with TL if vector magnetometer measurements are non-zero
@@ -678,8 +678,8 @@ end # function corrupt_mag
                 cor_ind_mag  = 5.0,
                 cor_eddy_mag = 0.5)
 
-Corrupt compensated (clean) magnetometer measurements with random, FOGM, drift, 
-and Tolles-Lawson noise to create uncompensated (corrupted) scalar magnetometer 
+Corrupt compensated (clean) magnetometer measurements with random, FOGM, drift,
+and Tolles-Lawson noise to create uncompensated (corrupted) scalar magnetometer
 measurements. FOGM is a First-order Gauss-Markov stochastic process.
 
 **Arguments:**
@@ -727,7 +727,7 @@ end # function corrupt_mag
                 fogm_sigma = 1.0,
                 fogm_tau   = 600.0)
 
-Create compensated (clean) vector magnetometer measurements from a vector  
+Create compensated (clean) vector magnetometer measurements from a vector
 magnetic anomaly map.
 
 **Arguments:**
@@ -766,11 +766,11 @@ function create_flux(lat, lon, mapV::MapV=get_map(emm720);
     itp_mapZ = map_itp(mapV,:Z)
 
     # add FOGM & white noise to perfect measurements
-    Bx = itp_mapX.(lon,lat) + 
+    Bx = itp_mapX.(lon,lat) +
          fogm(fogm_sigma,fogm_tau,dt,N) + sqrt(meas_var)*randn(N)
-    By = itp_mapY.(lon,lat) + 
+    By = itp_mapY.(lon,lat) +
          fogm(fogm_sigma,fogm_tau,dt,N) + sqrt(meas_var)*randn(N)
-    Bz = itp_mapZ.(lon,lat) + 
+    Bz = itp_mapZ.(lon,lat) +
          fogm(fogm_sigma,fogm_tau,dt,N) + sqrt(meas_var)*randn(N)
     Bt = sqrt.(Bx.^2+By.^2+Bz.^2)
 
@@ -788,7 +788,7 @@ end # function create_flux
                 fogm_sigma = 1.0,
                 fogm_tau   = 600.0)
 
-Create compensated (clean) vector magnetometer measurements from a vector  
+Create compensated (clean) vector magnetometer measurements from a vector
 magnetic anomaly map.
 
 **Arguments:**
@@ -817,7 +817,7 @@ end # function create_flux
 """
     create_dcm(vn, ve, dt=0.1, order::Symbol=:body2na)
 
-Internal helper function to estimate a direction cosine matrix using known 
+Internal helper function to estimate a direction cosine matrix using known
 heading with FOGM noise.
 
 **Arguments:**
@@ -844,3 +844,190 @@ function create_dcm(vn, ve, dt=0.1, order::Symbol=:body2nav)
 
     return (dcm)
 end # function create_dcm
+
+"""
+    calculate_imputed_TL_earth(xyz::Union{XYZ1,XYZ20,XYZ21}, ind,
+                               itp_mapS, set_igrf, TL_coef;
+                               terms    = [:permanent,:induced,:eddy],
+                               Bt_scale = 50000)
+
+Internal helper function to get the imputed Earth vector between two locations.
+
+**Arguments:**
+- `xyz`:        `XYZ` flight data struct
+- `ind`:        selected data indices
+- `itp_mapS`:   scalar map grid interpolation
+- `set_igrf`:   if true, set the `igrf` field in `xyz`
+- `TL_coef`:    Tolles-Lawson coefficients
+- `terms`:      (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`}
+- `Bt_scale`:   (optional) scaling factor for induced and eddy current terms [nT]
+
+**Returns:**
+- `TL_aircraft`: `3`x`N` matrix of TL aircraft vector field
+- `B_earth`:     `3`x`N` matrix of Earth vector field
+- `map_val`:     vector of magnetic anomaly map values
+"""
+function calculate_imputed_TL_earth(xyz::Union{XYZ1,XYZ20,XYZ21}, ind, 
+                                    itp_mapS, set_igrf, TL_coef;
+                                    terms    = [:permanent,:induced,:eddy],
+                                    Bt_scale = 50000)
+
+    # get IGRF field from model
+    check_xyz = set_igrf ? false : true
+    igrf_vec  = get_igrf(xyz,ind;frame=:body,norm_igrf=false,check_xyz=check_xyz)
+    set_igrf && (xyz.igrf[ind] .= norm.(igrf_vec))
+
+    # obtain scalar map values for this trajectory
+    map_val = itp_mapS.(xyz.traj.lon[ind],xyz.traj.lat[ind])
+    B_earth = map_val + norm.(igrf_vec) # no diurnal
+
+    # impute vector quantity using scaled IGRF vector field
+    B_earth = reduce(hcat, B_earth .* normalize.(igrf_vec))
+
+    # time-derivative of vector field
+    B_earth_dot = [fdm(B_earth[1,:]) fdm(B_earth[2,:]) fdm(B_earth[3,:])]'
+
+    # Earth-only contribution to aircraft field
+    (TL_coef_p,TL_coef_i,TL_coef_e) = extract_TL_matrices(TL_coef,terms;Bt_scale=Bt_scale)
+    TL_aircraft = get_TL_aircraft_vector(B_earth,B_earth_dot,TL_coef_p,TL_coef_i,TL_coef_e)
+
+    return (TL_aircraft, B_earth, map_val)
+end # function calculate_imputed_TL_earth
+
+"""
+    create_informed_xyz(xyz::Union{XYZ1,XYZ20,XYZ21}, ind, mapS::MapS,
+                        use_mag::Symbol, use_vec::Symbol, TL_coef::Vector;
+                        terms    = [:permanent,:induced,:eddy],
+                        disp_min = 100,
+                        disp_max = 500,
+                        Bt_disp  = 50,
+                        Bt_scale = 50000)
+
+Create knowledge-informed data from existing data. Given map information, an
+`XYZ` structure with magnetometer readings, and a fitted Tolles-Lawson model,
+this function creates a consistent, displaced `XYZ` structure representing what
+the `use_mag` and `mag_1_c` would have collected had the entire flight been
+laterally shifted by (`disp_min`,`disp_max`), assuming that the linear aircraft
+model is reasonably accurate. It makes use of a Taylor expansion of the map
+information to update the expected changes due to the alternative map location
+*and* due to the imputed aircraft field. The aircraft "noise" is then carried
+over into `use_mag` in the new `XYZ` data.
+
+**Arguments:**
+- `xyz`:      (original) `XYZ` flight data struct
+- `ind`:      selected data indices
+- `mapS`:     `MapS` scalar magnetic anomaly map struct, must contain entire trajectory corresponding to `ind`
+- `use_mag`:  scalar magnetometer to use {`:mag_1_uc`, etc.}
+- `use_vec`:  vector magnetometer (fluxgate) to use for Tolles-Lawson `A` matrix {`:flux_a`, etc.}
+- `TL_coef`:  Tolles-Lawson coefficients
+- `terms`:    (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`}
+- `disp_min`: (optional) minimum trajectory displacement [m]
+- `disp_max`: (optional) maximum trajectory displacement [m]
+- `Bt_disp`:  (optional) target total magnetic field magnitude displacement offset [nT]
+- `Bt_scale`: (optional) scaling factor for induced and eddy current terms [nT]
+
+**Returns:**
+- `xyz_disp`: `XYZ` flight data struct with displaced trajectory and modified magnetometer readings
+"""
+function create_informed_xyz(xyz::Union{XYZ1,XYZ20,XYZ21}, ind, mapS::MapS,
+                             use_mag::Symbol, use_vec::Symbol, TL_coef::Vector;
+                             terms    = [:permanent,:induced,:eddy],
+                             disp_min = 100,
+                             disp_max = 500,
+                             Bt_disp  = 50,
+                             Bt_scale = 50000)
+
+    @assert any([:permanent,:p,:permanent3,:p3] .∈ (terms,)) "permanent terms are required"
+    @assert any([:induced,:i,:induced6,:i6,:induced5,:i5,:induced3,:i3] .∈ (terms,)) "induced terms are required"
+    @assert any([:eddy,:e,:eddy9,:e9,:eddy8,:e8,:eddy3,:e3] .∈ (terms,)) "eddy current terms are required"
+    @assert !any([:fdm,:f,:d,:fdm3,:f3,:d3,:bias,:b] .∈ (terms,)) "derivative and bias terms may not be used"
+
+    N = length(TL_coef)
+    A_test = create_TL_A([1.0],[1.0],[1.0];terms=terms)
+    @assert N == length(A_test) "TL_coef does not agree with specified terms"
+
+    traj = get_traj(xyz,ind)
+
+    @assert map_check(mapS,traj) "trajectory must be inside the provided map"
+
+    # get map interpolation
+    traj_alt = median(traj.alt)
+    mapS.alt > 0 && (mapS = upward_fft(mapS,traj_alt;α=200))
+    itp_mapS = map_itp(mapS)
+
+    # compute vector aircraft component and vector flux along trajectory
+    set_igrf = false
+    (TL_aircraft,B_earth,map_val) =
+        calculate_imputed_TL_earth(xyz,ind,itp_mapS,set_igrf,TL_coef,
+                                   terms    = terms,
+                                   Bt_scale = Bt_scale)
+
+    # sample ~100 points along trajectory
+    spacing = floor(Int, traj.N / 100)
+    pts     = 1:spacing:traj.N
+
+    # figure out direction from trajectory to middle of map
+    mean_traj_lat_lon  = [mean(traj.lon[pts]),mean(traj.lat[pts])]
+    mean_map_lat_lon   = [(mapS.xx[1] + mapS.xx[end]) / 2,
+                          (mapS.yy[1] + mapS.yy[end]) / 2]
+    traj_to_map_middle = mean_map_lat_lon - mean_traj_lat_lon
+
+    # average x/y gradients [nT/rad] of sampled points
+    avg_grad = mean(map((x,y) -> collect(gradient(itp_mapS,x,y)),
+                    traj.lon[pts],traj.lat[pts]))
+    dir_disp = normalize(avg_grad)
+
+    # switch direction to go toward middle of map if necessary
+    (dot(traj_to_map_middle,dir_disp) < 0) && (dir_disp *= -1)
+
+    # convert displacement limits from [m] to [rad]
+    disp_min = min(dn2dlat(disp_min,mean_traj_lat_lon[2]),
+                   de2dlon(disp_min,mean_traj_lat_lon[2]))
+    disp_max = max(dn2dlat(disp_max,mean_traj_lat_lon[2]),
+                   de2dlon(disp_max,mean_traj_lat_lon[2]))
+
+    # shoot for difference of Bt_disp [nT]
+    dir_diriv = abs(dot(avg_grad,dir_disp)) # [nT/rad]
+    disp_rad  = Bt_disp / dir_diriv # [rad]
+    disp_rad  = clamp(disp_rad,disp_min,disp_max) # limit displacement range
+    disp_ll   = disp_rad * dir_disp # set correct direction
+
+    # copy and displace trajectory (uniformally; no acceleration changes!)
+    xyz_disp = deepcopy(xyz)
+    xyz_disp.traj.lon[ind] .+= disp_ll[1]
+    xyz_disp.traj.lat[ind] .+= disp_ll[2]
+
+    @assert map_check(mapS,xyz_disp.traj(ind)) "larger map needed, could not create trajectory"
+
+    # calculate Earth's vector flux and TL component from that on new trajectory
+    set_igrf = true
+    (TL_aircraft_disp,B_earth_disp,map_val_disp) =
+        calculate_imputed_TL_earth(xyz_disp,ind,itp_mapS,set_igrf,TL_coef,
+                                   terms    = terms,
+                                   Bt_scale = Bt_scale)
+
+    # calculate Earth-induced field that would occur along this trajectory
+    ΔB_TL    = TL_aircraft_disp - TL_aircraft # known part from aircraft
+    ΔB_earth = B_earth_disp     - B_earth     # known part from Earth
+    ΔB       = ΔB_TL + ΔB_earth # total difference in vector field from different Earth locale and aircraft
+    Δmap_val = map_val_disp - map_val # differnece in map values
+
+    # update displaced vector magnetometer values used in learning
+    flux = getfield(xyz_disp,use_vec)
+    flux.x[ind] += ΔB[1,:]
+    flux.y[ind] += ΔB[2,:]
+    flux.z[ind] += ΔB[3,:]
+    flux.t[ind]  = sqrt.(flux.x[ind].^2 .+ flux.y[ind].^2 .+ flux.z[ind].^2)
+
+    # update displaced scalar magnetometer values used in learning
+    ΔB_dot = dot.(eachcol(ΔB),[[x,y,z] for (x,y,z) in
+                  zip(flux.x[ind],flux.y[ind],flux.z[ind])]) ./ flux.t[ind]
+
+    val = getfield(xyz_disp,use_mag)
+    val[ind] += ΔB_dot
+
+    val = getfield(xyz_disp,:mag_1_c)
+    val[ind] += Δmap_val
+
+    return (xyz_disp)
+end # function create_informed_xyz

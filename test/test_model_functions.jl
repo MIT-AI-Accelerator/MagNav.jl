@@ -83,7 +83,7 @@ fogm_data_XO = [-0.00573724460026025
                  0.04552990438603038] # Xoshiro
 
 mapS = MagNav.MapS(map_map,map_xx,map_yy,map_alt)
-(itp_mapS,der_mapS) = map_interpolate(mapS,:linear;vert=true) # linear to match MATLAB
+(itp_mapS,der_mapS) = map_interpolate(mapS,:linear;return_vert_deriv=true) # linear to match MATLAB
 
 (P0,Qd,R) = create_model(dt,lat[1];
                          init_pos_sigma = init_pos_sigma,

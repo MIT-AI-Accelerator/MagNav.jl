@@ -1,5 +1,5 @@
 """
-    MagNav: airborne Magnetic anomaly Navigation
+`MagNav`: airborne `Mag`netic anomaly `Nav`igation
 """
 module MagNav
     using Flux, ForwardDiff, LinearAlgebra, Plots, Zygote
@@ -36,7 +36,17 @@ module MagNav
     using SpecialFunctions: gamma, gamma_inc, gamma_inc_inv
     using Statistics: cor, cov, mean, median, std, var
     using StatsBase: autocor, skewness
+    using TOML
     using Zygote: refresh, Params
+
+    project_toml = normpath(joinpath(@__DIR__,"../Project.toml"))
+
+    """
+        magnav_version
+
+    MagNav.jl version as recorded in Project.toml.
+    """
+    const magnav_version = TOML.parse(open(project_toml))["version"]
 
     """
         const num_mag_max = 10
@@ -76,7 +86,7 @@ module MagNav
     """
         const usgs
 
-    RBG file for the standard non-linear, pseudo-log, color scale used by the 
+    RBG file for the standard non-linear, pseudo-log, color scale used by the
     USGS. Same as the color scale for the "Bouguer gravity anomaly map."
 
     Reference: https://mrdata.usgs.gov/magnetic/namag.png
@@ -93,14 +103,25 @@ module MagNav
     """
         sgl_fields()
 
-    Data fields in SGL data collections
+    Data fields in SGL flight data collections, contains:
+    - `fields_sgl_2020.csv`
+    - `fields_sgl_2021.csv`
+    - `fields_sgl_160.csv`
     """
     sgl_fields() = joinpath(artifact"sgl_fields","sgl_fields")
 
     """
         sgl_2020_train()
 
-    Flight data from SGL 2020 data collection - training portion
+    Flight data from SGL 2020 data collection - training portion, contains:
+    - `Flt1002_train.h5`
+    - `Flt1003_train.h5`
+    - `Flt1004_train.h5`
+    - `Flt1005_train.h5`
+    - `Flt1006_train.h5`
+    - `Flt1007_train.h5`
+    - `Flt1008_train.h5`
+    - `Flt1009_train.h5`
     """
     sgl_2020_train() = joinpath(artifact"sgl_2020_train","sgl_2020_train")
 
@@ -128,7 +149,22 @@ module MagNav
     """
         ottawa_area_maps()
 
-    Magnetic anomaly maps near Ottawa, Ontario, Canada
+    Magnetic anomaly maps near Ottawa, Ontario, Canada, contains:
+    - `Eastern_395.h5`:   Eastern Ontario at 395 m HAE (`SEE NOTE`)
+    - `Eastern_drape.h5`: Eastern Ontario on drape (`SEE NOTE`)
+    - `Eastern_plot.h5`:  Eastern Ontario on drape, empty map areas left unfilled, used for plotting true survey area
+    - `Renfrew_395.h5`:   Renfrew at 395 m HAE (`SEE NOTE`)
+    - `Renfrew_555.h5`:   Renfrew at 555 m HAE (`SEE NOTE`)
+    - `Renfrew_drape.h5`: Renfrew on drape (`SEE NOTE`)
+    - `Renfrew_plot.h5`:  Renfrew on drape, empty map areas left unfilled, used for plotting true survey area
+    - `HighAlt_5181.h5`:  High Altitude mini-survey
+    - `Perth_800.h5`:     Perth mini-survey
+
+    `NOTE`: Missing map data within `Eastern_395.h5`, `Eastern_drape.h5`,
+    `Renfrew_395.h5`, `Renfrew_555.h5`, and `Renfrew_drape.h5` has been filled
+    in (using k nearest neighbors) so that the grids are completely filled.
+    Care must be taken to not navigate in the filled-in areas, as this is not
+    real data and only done for more accurate upward continuation of the maps.
     """
     ottawa_area_maps() = joinpath(artifact"ottawa_area_maps","ottawa_area_maps")
 
@@ -161,7 +197,7 @@ module MagNav
     """
         MapSd{T2 <: AbstractFloat} <: Map{T2}
 
-    Scalar magnetic anomaly map struct used to store an additional altitude 
+    Scalar magnetic anomaly map struct used to store an additional altitude
     map for drape maps. Subtype of `Map`.
 
     |**Field**|**Type**|**Description**
@@ -204,7 +240,7 @@ module MagNav
     """
         MapVd{T2 <: AbstractFloat} <: Map{T2}
 
-    Vector magnetic anomaly map struct used to store an additional altitude 
+    Vector magnetic anomaly map struct used to store an additional altitude
     map for drape maps. Subtype of `Map`.
 
     |**Field**|**Type**|**Description**
@@ -226,7 +262,7 @@ module MagNav
     end
 
     """
-        MagV{T2 <: AbstractFloat} <: Map{T2}
+        MagV{T2 <: AbstractFloat}
 
     Vector magnetometer measurement struct.
 
@@ -245,7 +281,7 @@ module MagNav
     end
 
         """
-        Path{T1 <: Signed, T2 <: AbstractFloat} end
+        Path{T1 <: Signed, T2 <: AbstractFloat} <: Path{T1, T2}
 
     Abstract type `Path` for a flight path.
     """
@@ -272,7 +308,7 @@ module MagNav
     |`fd` |Vector{`T2`} | down  specific force [m/s]
     |`Cnb`|Array{`T2,3`}| `3`x`3`x`N` direction cosine matrix (body to navigation) [-]
     """
-    struct Traj{T1 <: Signed, T2 <: AbstractFloat} <: Path{T1,T2}
+    struct Traj{T1 <: Signed, T2 <: AbstractFloat} <: Path{T1, T2}
         N   :: T1
         dt  :: T2
         tt  :: Vector{T2}
@@ -289,7 +325,7 @@ module MagNav
     end
 
     """
-        INS{T1 <: Signed, T2 <: AbstractFloat}
+        INS{T1 <: Signed, T2 <: AbstractFloat} <: Path{T1, T2}
 
     Inertial navigation system (INS) struct. Subtype of `Path`.
 
@@ -310,7 +346,7 @@ module MagNav
     |`Cnb`|Array{`T2,3`}| `3`x`3`x`N` direction cosine matrix (body to navigation) [-]
     |`P`  |Array{`T2,3`}| `17`x`17`x`N` covariance matrix, only relevant for simulated data, otherwise zeros [-]
     """
-    struct INS{T1 <: Signed, T2 <: AbstractFloat} <: Path{T1,T2}
+    struct INS{T1 <: Signed, T2 <: AbstractFloat} <: Path{T1, T2}
         N   :: T1
         dt  :: T2
         tt  :: Vector{T2}
@@ -335,7 +371,7 @@ module MagNav
     abstract type XYZ{T1 <: Signed, T2 <: AbstractFloat} end
 
     """
-        XYZ0{T1 <: Signed, T2 <: AbstractFloat} <: XYZ{T1,T2}
+        XYZ0{T1 <: Signed, T2 <: AbstractFloat} <: XYZ{T1, T2}
 
     Subtype of `XYZ` containing the minimum dataset required for MagNav.
 
@@ -349,7 +385,7 @@ module MagNav
     |`mag_1_c` |Vector{`T2`}   | Mag 1 compensated (clean) scalar magnetometer measurements [nT]
     |`mag_1_uc`|Vector{`T2`}   | Mag 1 uncompensated (corrupted) scalar magnetometer measurements [nT]
     """
-    struct XYZ0{T1 <: Signed, T2 <: AbstractFloat} <: XYZ{T1,T2}
+    struct XYZ0{T1 <: Signed, T2 <: AbstractFloat} <: XYZ{T1, T2}
         traj     :: Traj{T1,T2}
         ins      :: INS{T1,T2}
         flux_a   :: MagV{T2}
@@ -360,9 +396,9 @@ module MagNav
     end
 
     """
-        XYZ1{T1 <: Signed, T2 <: AbstractFloat} <: XYZ{T1,T2}
+        XYZ1{T1 <: Signed, T2 <: AbstractFloat} <: XYZ{T1, T2}
 
-    Subtype of `XYZ` containing a flexible dataset for future use. Feed in 
+    Subtype of `XYZ` containing a flexible dataset for future use. Feed in
     NaNs for any unused fields (e.g. `aux_3`) when creating struct.
 
     |**Field**|**Type**|**Description**
@@ -373,6 +409,8 @@ module MagNav
     |`flux_b`  |MagV{`T2`}     | Flux B vector magnetometer measurement struct
     |`flight`  |Vector{`T2`}   | flight number(s)
     |`line`    |Vector{`T2`}   | line number(s), i.e. segments within `flight`
+    |`year`    |Vector{`T2`}   | year
+    |`doy`     |Vector{`T2`}   | day of year
     |`diurnal` |Vector{`T2`}   | measured diurnal, i.e. temporal variations or space weather effects [nT]
     |`igrf`    |Vector{`T2`}   | International Geomagnetic Reference Field (IGRF), i.e. core field [nT]
     |`mag_1_c` |Vector{`T2`}   | Mag 1 compensated (clean) scalar magnetometer measurements [nT]
@@ -385,13 +423,15 @@ module MagNav
     |`aux_2`   |Vector{`T2`}   | flexible-use auxiliary data 2
     |`aux_3`   |Vector{`T2`}   | flexible-use auxiliary data 3
     """
-    struct XYZ1{T1 <: Signed, T2 <: AbstractFloat} <: XYZ{T1,T2}
+    struct XYZ1{T1 <: Signed, T2 <: AbstractFloat} <: XYZ{T1, T2}
         traj     :: Traj{T1,T2}
         ins      :: INS{T1,T2}
         flux_a   :: MagV{T2}
         flux_b   :: MagV{T2}
         flight   :: Vector{T2}
         line     :: Vector{T2}
+        year     :: Vector{T2}
+        doy      :: Vector{T2}
         diurnal  :: Vector{T2}
         igrf     :: Vector{T2}
         mag_1_uc :: Vector{T2}
@@ -406,7 +446,7 @@ module MagNav
     end
 
     """
-        XYZ20{T1 <: Signed, T2 <: AbstractFloat} <: XYZ{T1,T2}
+        XYZ20{T1 <: Signed, T2 <: AbstractFloat} <: XYZ{T1, T2}
 
     Subtype of `XYZ` for SGL 2020 datasets.
 
@@ -420,6 +460,8 @@ module MagNav
     |`flux_d`    |MagV{`T2`}     | Flux D vector magnetometer measurement struct
     |`flight`    |Vector{`T2`}   | flight number(s)
     |`line`      |Vector{`T2`}   | line number(s), i.e. segments within `flight`
+    |`year`      |Vector{`T2`}   | year
+    |`doy`       |Vector{`T2`}   | day of year
     |`utm_x`     |Vector{`T2`}   | x-coordinate, WGS-84 UTM zone 18N [m]
     |`utm_y`     |Vector{`T2`}   | y-coordinate, WGS-84 UTM zone 18N [m]
     |`utm_z`     |Vector{`T2`}   | z-coordinate, GPS altitude above WGS-84 ellipsoid [m]
@@ -487,7 +529,7 @@ module MagNav
     |`vol_cabt`  |Vector{`T2`}   | voltage sensor: cabinet [V]
     |`vol_fan`   |Vector{`T2`}   | voltage sensor: cooling fan [V]
     """
-    struct XYZ20{T1 <: Signed, T2 <: AbstractFloat} <: XYZ{T1,T2}
+    struct XYZ20{T1 <: Signed, T2 <: AbstractFloat} <: XYZ{T1, T2}
         traj       :: Traj{T1,T2}
         ins        :: INS{T1,T2}
         flux_a     :: MagV{T2}
@@ -496,6 +538,8 @@ module MagNav
         flux_d     :: MagV{T2}
         flight     :: Vector{T2}
         line       :: Vector{T2}
+        year       :: Vector{T2}
+        doy        :: Vector{T2}
         utm_x      :: Vector{T2}
         utm_y      :: Vector{T2}
         utm_z      :: Vector{T2}
@@ -565,7 +609,7 @@ module MagNav
     end
 
     """
-        XYZ21{T1 <: Signed, T2 <: AbstractFloat} <: XYZ{T1,T2}
+        XYZ21{T1 <: Signed, T2 <: AbstractFloat} <: XYZ{T1, T2}
 
     Subtype of `XYZ` for SGL 2021 datasets.
 
@@ -605,7 +649,7 @@ module MagNav
     |`vol_cabt`  |Vector{`T2`}   | voltage sensor: cabinet [V]
     |`vol_fan`   |Vector{`T2`}   | voltage sensor: cooling fan [V]
     """
-    struct XYZ21{T1 <: Signed, T2 <: AbstractFloat} <: XYZ{T1,T2}
+    struct XYZ21{T1 <: Signed, T2 <: AbstractFloat} <: XYZ{T1, T2}
         traj       :: Traj{T1,T2}
         ins        :: INS{T1,T2}
         flux_a     :: MagV{T2}
@@ -727,7 +771,7 @@ module MagNav
     end
 
     """
-        FILTout{T1 <: Signed, T2 <: AbstractFloat} <: Path{T1,T2}
+        FILTout{T1 <: Signed, T2 <: AbstractFloat} <: Path{T1, T2}
 
     Filter extracted output struct. Subtype of `Path`.
 
@@ -786,7 +830,7 @@ module MagNav
     |`n_err`   |Vector{`T2`}| northing error [m]
     |`e_err`   |Vector{`T2`}| easting  error [m]
     """
-    struct FILTout{T1 <: Signed, T2 <: AbstractFloat} <: Path{T1,T2}
+    struct FILTout{T1 <: Signed, T2 <: AbstractFloat} <: Path{T1, T2}
         N        :: T1
         dt       :: T2
         tt       :: Vector{T2}
@@ -851,7 +895,7 @@ module MagNav
     """
         struct NNCompParams <: CompParams
 
-    Neural network-based aeromagnetic compensation parameters struct. 
+    Neural network-based aeromagnetic compensation parameters struct.
     Subtype of `CompParams`.
 
     To see default parameters, type `NNCompParams()`.
@@ -860,29 +904,36 @@ module MagNav
 
     |**Parameter**|**Description**
     |:--|:--
+    |`version`         | MagNav.jl version used to generate this struct
     |`features_setup`  | list of features to include
     |`features_no_norm`| list of features to not normalize
     |`model_type`      | aeromagnetic compensation model type (`see below`)
     |`y_type`          | `y` target type (`see below`)
     |`use_mag`         | scalar magnetometer to use {`:mag_1_uc`, etc.}, only used for `y_type = :c, :d, :e`
-    |`use_vec`         | vector magnetometer (fluxgate) to use for Tolles-Lawson `A` matrix {`:flux_a`, etc.}, not used for `model_type = :m1`
+    |`use_vec`         | vector magnetometer (fluxgate) to use for "external" Tolles-Lawson `A` matrix {`:flux_a`, etc.}, not used for `model_type = :m1`
     |`data_norms`      | Tuple of data normalizations, e.g. `(A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale)`
-    |`weights`         | neural network model weights
+    |`model`           | neural network model
     |`terms`           | Tolles-Lawson terms to use for Tolles-Lawson `A` matrix (or matrices) within `x` matrix {`:permanent`,`:induced`,`:eddy`}
     |`terms_A`         | Tolles-Lawson terms to use for "external" Tolles-Lawson `A` matrix {`:permanent`,`:induced`,`:eddy`,`:bias`}, not used for `model_type = :m1`
     |`sub_diurnal`     | if true, subtract diurnal from scalar magnetometer measurements
     |`sub_igrf`        | if true, subtract IGRF from scalar magnetometer measurements
     |`bpf_mag`         | if true, bpf scalar magnetometer measurements in `x` matrix
-    |`norm_type_A`     | normalization for Tolles-Lawson `A` matrix, not used for `model_type = :m1` (`see below`)
+    |`reorient_vec`    | if true, align vector magnetometers (fluxgates) with body frame
+    |`norm_type_A`     | normalization for "external" Tolles-Lawson `A` matrix, only used for `model_type = :m2*` (`see below`)
     |`norm_type_x`     | normalization for `x` matrix (`see below`)
     |`norm_type_y`     | normalization for `y` target vector (`see below`)
 
-    - `model_type` options:
-        - `:m1`  = standard NN
-        - `:m2a` = NN determines Tolles-Lawson coefficients
-        - `:m2b` = NN determines additive correction to classical Tolles-Lawson
-        - `:m2c` = NN determines additive correction to classical Tolles-Lawson, Tolles-Lawson coefficients tuned as well
-        - `:m2d` = NN determines additive correction to each Tolles-Lawson coefficient
+    - `model_type` options are broken into 3 architectures, with `1` being a standard feedforward neural network and `2,3` being used in conjunction with Tolles-Lawson
+        - `:m1`   = standard feedforward neural network (NN)
+        - `:m2a`  = NN determines Tolles-Lawson (TL) coefficients
+        - `:m2b`  = NN determines additive correction to classical TL
+        - `:m2c`  = NN determines additive correction to classical TL, TL coefficients tuned as well
+        - `:m2d`  = NN determines additive correction to each TL coefficient
+        - `:m3tl` = no NN, TL coefficients fine-tuned via SGD, without Taylor expansion for `y_type` :b and :c (for testing)
+        - `:m3s`  = NN determines scalar correction to TL, using expanded TL vector terms for explainability
+        - `:m3v`  = NN determines vector correction to TL, using expanded TL vector terms for explainability
+        - `:m3sc` = `:m3s` with curriculum learning based on TL error
+        - `:m3vc` = `:m3v` with curriculum learning based on TL error
 
     - `y_type` options:
         - `:a` = anomaly field  #1, compensated tail stinger total field scalar magnetometer measurements
@@ -896,12 +947,12 @@ module MagNav
         - `:normalize`   = min-max normalization
         - `:scale`       = scale by maximum absolute value, bias = 0
         - `:none`        = scale by 1, bias = 0
-    
+
     **Neural Network-Based Model-Specific Parameters:**
 
     |**Parameter**|**Description**
     |:--|:--
-    |`TL_coef`     | Tolles-Lawson coefficients, only used for `model_type = :m2b, :m2d` (and `:m2c` initial `TL_coef`)
+    |`TL_coef`     | Tolles-Lawson coefficients, not used for `model_type = :m1, :m2a`
     |`η_adam`      | learning rate for Adam optimizer
     |`epoch_adam`  | number of epochs for Adam optimizer
     |`epoch_lbfgs` | number of epochs for LBFGS optimizer
@@ -918,14 +969,14 @@ module MagNav
     |`perm_fi`     | if true, perform permutation feature importance
     |`perm_fi_csv` | file name to save permutation feature importance data
 
-    - `activation` options:
+    - `activation` options can be visualized by running `plot_activation()`
         - `relu`  = rectified linear unit
         - `σ`     = sigmoid (logistic function)
         - `swish` = self-gated
         - `tanh`  = hyperbolic tan
-        - run `plot_activation()` for a visual
     """
     @with_kw struct NNCompParams <: CompParams
+        version          :: String          = magnav_version
         features_setup   :: Vector{Symbol}  = [:mag_1_uc,:TL_A_flux_a]
         features_no_norm :: Vector{Symbol}  = Symbol[]
         model_type       :: Symbol          = :m1
@@ -933,16 +984,17 @@ module MagNav
         use_mag          :: Symbol          = :mag_1_uc
         use_vec          :: Symbol          = :flux_a
         data_norms       :: Tuple{Matrix{Float32},Matrix{Float32},Matrix{Float32},Matrix{Float32},Matrix{Float32},Vector{Float32},Vector{Float32}} = (zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),[0f0],[0f0])
-        weights          :: Params          = Params([])
+        model            :: Chain           = Chain()
         terms            :: Vector{Symbol}  = [:permanent,:induced,:eddy]
         terms_A          :: Vector{Symbol}  = [:permanent,:induced,:eddy,:bias]
         sub_diurnal      :: Bool            = false
         sub_igrf         :: Bool            = false
         bpf_mag          :: Bool            = false
+        reorient_vec     :: Bool            = false
         norm_type_A      :: Symbol          = :none
         norm_type_x      :: Symbol          = :standardize
         norm_type_y      :: Symbol          = :standardize
-        TL_coef          :: Vector{Float64} = zeros(18)
+        TL_coef          :: Vector{Float64} = zeros(19)
         η_adam           :: Float64         = 0.001
         epoch_adam       :: Int             = 5
         epoch_lbfgs      :: Int             = 0
@@ -971,20 +1023,22 @@ module MagNav
 
     |**Parameter**|**Description**
     |:--|:--
+    |`version`         | MagNav.jl version used to generate this struct
     |`features_setup`  | list of features to include
     |`features_no_norm`| list of features to not normalize
     |`model_type`      | aeromagnetic compensation model type (`see below`)
     |`y_type`          | `y` target type (`see below`)
     |`use_mag`         | scalar magnetometer to use {`:mag_1_uc`, etc.}, only used for `y_type = :c, :d, :e`
-    |`use_vec`         | vector magnetometer (fluxgate) to use for Tolles-Lawson `A` matrix {`:flux_a`, etc.}, not used for `model_type = :elasticnet, :plsr`
+    |`use_vec`         | vector magnetometer (fluxgate) to use for "external" Tolles-Lawson `A` matrix {`:flux_a`, etc.}, not used for `model_type = :elasticnet, :plsr`
     |`data_norms`      | Tuple of data normalizations, e.g. `(A_bias,A_scale,x_bias,x_scale,y_bias,y_scale)`
-    |`weights`         | linear model coefficients
+    |`model`           | linear model coefficients
     |`terms`           | Tolles-Lawson terms to use for Tolles-Lawson `A` matrix (or matrices) within `x` matrix {`:permanent`,`:induced`,`:eddy`}
     |`terms_A`         | Tolles-Lawson terms to use for "external" Tolles-Lawson `A` matrix {`:permanent`,`:induced`,`:eddy`,`:bias`}, not used for `model_type = :elasticnet, :plsr`
     |`sub_diurnal`     | if true, subtract diurnal from scalar magnetometer measurements
     |`sub_igrf`        | if true, subtract IGRF from scalar magnetometer measurements
     |`bpf_mag`         | if true, bpf scalar magnetometer measurements in `x` matrix
-    |`norm_type_A`     | normalization for Tolles-Lawson `A` matrix, not used for `model_type = :elasticnet, :plsr` (`see below`)
+    |`reorient_vec`    | if true, align vector magnetometers (fluxgates) with body frame
+    |`norm_type_A`     | normalization for "external" Tolles-Lawson `A` matrix, not used for `model_type = :elasticnet, :plsr` (`see below`)
     |`norm_type_x`     | normalization for `x` matrix (`see below`)
     |`norm_type_y`     | normalization for `y` target vector (`see below`)
 
@@ -1016,24 +1070,26 @@ module MagNav
     |`λ_TL`  | ridge parameter, only used for `model_type = :TL, :mod_TL, :map_TL`
     """
     @with_kw struct LinCompParams <: CompParams
-        features_setup   :: Vector{Symbol} = [:mag_1_uc,:TL_A_flux_a]
-        features_no_norm :: Vector{Symbol} = Symbol[]
-        model_type       :: Symbol         = :plsr
-        y_type           :: Symbol         = :d
-        use_mag          :: Symbol         = :mag_1_uc
-        use_vec          :: Symbol         = :flux_a
+        version          :: String          = magnav_version
+        features_setup   :: Vector{Symbol}  = [:mag_1_uc,:TL_A_flux_a]
+        features_no_norm :: Vector{Symbol}  = Symbol[]
+        model_type       :: Symbol          = :plsr
+        y_type           :: Symbol          = :d
+        use_mag          :: Symbol          = :mag_1_uc
+        use_vec          :: Symbol          = :flux_a
         data_norms       :: Tuple{Matrix{Float64},Matrix{Float64},Vector{Float64},Vector{Float64}} = (zeros(1,1),zeros(1,1),[0.0],[0.0])
-        weights          :: Tuple{Vector{Float64},Float64} = ([0.0],0.0)
-        terms            :: Vector{Symbol} = [:permanent,:induced,:eddy]
-        terms_A          :: Vector{Symbol} = [:permanent,:induced,:eddy,:bias]
-        sub_diurnal      :: Bool           = false
-        sub_igrf         :: Bool           = false
-        bpf_mag          :: Bool           = false
-        norm_type_A      :: Symbol         = :none
-        norm_type_x      :: Symbol         = :none
-        norm_type_y      :: Symbol         = :none
-        k_plsr           :: Int            = 18
-        λ_TL             :: Float64        = 0.025
+        model            :: Tuple{Vector{Float64},Float64} = ([0.0],0.0)
+        terms            :: Vector{Symbol}  = [:permanent,:induced,:eddy]
+        terms_A          :: Vector{Symbol}  = [:permanent,:induced,:eddy,:bias]
+        sub_diurnal      :: Bool            = false
+        sub_igrf         :: Bool            = false
+        bpf_mag          :: Bool            = false
+        reorient_vec     :: Bool            = false
+        norm_type_A      :: Symbol          = :none
+        norm_type_x      :: Symbol          = :none
+        norm_type_y      :: Symbol          = :none
+        k_plsr           :: Int             = 18
+        λ_TL             :: Float64         = 0.025
     end
 
     include("analysis_util.jl")
@@ -1067,6 +1123,7 @@ module MagNav
     plot_basic,plot_activation,plot_mag,plot_vec,plot_mag_c,
     plot_PSD,plot_spectrogram,plot_frequency,plot_correlation,
     create_XYZ0,create_traj,create_ins,create_mag_c,corrupt_mag,create_flux,
+    create_informed_xyz,
     euler2dcm,dcm2euler,correct_Cnb,
     ekf,crlb,
     ekf_online_nn,ekf_online_nn_setup,

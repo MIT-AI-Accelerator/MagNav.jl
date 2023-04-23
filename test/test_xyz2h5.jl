@@ -8,7 +8,9 @@ data = xyz2h5(xyz_file,xyz_h5,:Flt1003;return_data=true)
 flights = [:fields20,:fields21,:fields160,
            :Flt1001,:Flt1002,:Flt1003,:Flt1004,:Flt1005,:Flt1004_1005,
            :Flt1006,:Flt1007,:Flt1008,:Flt1009,
-           :Flt1001_160Hz,:Flt1002_160Hz,:Flt2001_2017]
+           :Flt1001_160Hz,:Flt1002_160Hz,:Flt2001_2017,
+           :Flt2001,:Flt2002,:Flt2004,:Flt2005,:Flt2006,
+           :Flt2007,:Flt2008,:Flt2015,:Flt2016,:Flt2017]
 
 @testset "xyz2h5 tests" begin
     @test typeof(xyz2h5(xyz_file,xyz_h5,:Flt1003)) == Nothing
@@ -41,7 +43,8 @@ rm(xyz_h5)
 
 @testset "xyz field tests" begin
     @test_nowarn MagNav.print_fields(xyz)
-    @test_nowarn MagNav.compare_fields(xyz,xyz)
+    @test_nowarn MagNav.compare_fields(xyz,xyz;silent=true)
+    @test typeof(MagNav.compare_fields(xyz,xyz;silent=false)) == Nothing
     @test MagNav.field_check(xyz,MagNav.Traj) == [:traj]
     @test_nowarn MagNav.field_check(xyz,:traj)
     @test_nowarn MagNav.field_check(xyz,:traj,MagNav.Traj)

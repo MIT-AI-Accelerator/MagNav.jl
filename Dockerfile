@@ -60,20 +60,19 @@ USER $NB_UID
 
 # Add packages and precompile
 RUN julia -e 'import Pkg; Pkg.update()' && \
-    julia -e 'import Pkg; Pkg.add("Plots"); using Plots' && \
-    julia -e 'import Pkg; Pkg.add("Distributions"); using Distributions' && \
-    julia -e 'import Pkg; Pkg.add("Optim"); using Optim' && \  
-    julia -e 'import Pkg; Pkg.add("FFTW"); using FFTW' && \  
-    # julia -e 'import Pkg; Pkg.add("StatsPlots"); using StatsPlots' && \  
-    julia -e 'import Pkg; Pkg.add("DSP"); using DSP' && \  
-    julia -e 'import Pkg; Pkg.add("IJulia"); using IJulia' && \
-    julia -e 'import Pkg; Pkg.add("DataFrames"); using DataFrames' && \
-    julia -e 'import Pkg; Pkg.add("CSV"); using CSV' && \
-    julia -e 'import Pkg; Pkg.add("Flux"); using Flux' && \
-    julia -e 'import Pkg; Pkg.add("Zygote"); using Zygote' && \
-    julia -e 'import Pkg; Pkg.add("BSON"); using BSON' && \
     julia -e 'import Pkg; Pkg.add("BenchmarkTools"); using BenchmarkTools' && \
-    julia -e 'import Pkg; Pkg.add("Revise"); using Revise'
+    julia -e 'import Pkg; Pkg.add("BSON"); using BSON' && \
+    julia -e 'import Pkg; Pkg.add("CSV"); using CSV' && \
+    julia -e 'import Pkg; Pkg.add("DataFrames"); using DataFrames' && \
+    julia -e 'import Pkg; Pkg.add("Distributions"); using Distributions' && \
+    julia -e 'import Pkg; Pkg.add("DSP"); using DSP' && \
+    julia -e 'import Pkg; Pkg.add("FFTW"); using FFTW' && \
+    julia -e 'import Pkg; Pkg.add("Flux"); using Flux' && \
+    julia -e 'import Pkg; Pkg.add("IJulia"); using IJulia' && \
+    julia -e 'import Pkg; Pkg.add("Optim"); using Optim' && \
+    julia -e 'import Pkg; Pkg.add("Plots"); using Plots' && \
+    julia -e 'import Pkg; Pkg.add("Revise"); using Revise' && \
+    julia -e 'import Pkg; Pkg.add("Zygote"); using Zygote'
 
 # Install MagNav and add common files
 RUN julia -e 'import Pkg; Pkg.add(url="https://github.com/MIT-AI-Accelerator/MagNav.jl"); using MagNav' 

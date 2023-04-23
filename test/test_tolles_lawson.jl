@@ -62,8 +62,11 @@ end
 end
 
 @testset "fdm tests" begin
-    @test_nowarn fdm(mag_1_c_d;central=true ,fourth=false)
-    @test_nowarn fdm(mag_1_c_d;central=false,fourth=false)
-    @test_nowarn fdm(mag_1_c_d;central=true ,fourth=true)
-    @test_nowarn fdm(mag_1_c_d;central=false,fourth=true)
+    @test_nowarn fdm(mag_1_c_d;scheme=:backward)
+    @test_nowarn fdm(mag_1_c_d;scheme=:forward)
+    @test_nowarn fdm(mag_1_c_d;scheme=:central)
+    @test_nowarn fdm(mag_1_c_d;scheme=:backward2)
+    @test_nowarn fdm(mag_1_c_d;scheme=:forward2)
+    @test_nowarn fdm(mag_1_c_d;scheme=:fourth)
+    @test_nowarn fdm(mag_1_c_d;scheme=:test)
 end

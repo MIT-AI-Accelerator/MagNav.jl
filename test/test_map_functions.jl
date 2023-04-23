@@ -125,10 +125,10 @@ p1 = plot_path(traj;show_plot=false);
 end
 
 p1 = plot_basic(traj.tt,traj.lat);
-df_event = DataFrame(flight=:test,t=49.5,event="test")
+df_event = DataFrame(flight=:test,tt=49.5,event="test")
 
 @testset "plot_events! tests" begin
-    @test_nowarn plot_events!(p1,df_event.t[1],df_event.event[1];t_units=:min)
+    @test_nowarn plot_events!(p1,df_event.tt[1],df_event.event[1];t_units=:min)
     @test_nowarn plot_events!(p1,df_event.flight[1],df_event)
 end
 

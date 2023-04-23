@@ -13,12 +13,12 @@ Optionally returns the magnitude and derivatives of total field.
 - `Bt`:       (optional) magnitude of vector magnetometer measurements or scalar magnetometer measurements for modified Tolles-Lawson [nT]
 - `terms`:    (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
 - `Bt_scale`: (optional) scaling factor for induced and eddy current terms [nT]
-- `return_B`: (optional) if true, also return magnitude and derivatives of `Bt`
+- `return_B`: (optional) if true, also return `Bt` and `B_dot`
 
 **Returns:**
 - `A`:     Tolles-Lawson `A` matrix
-- `Bt`:    (optional) magnitude of total field measurements [nT]
-- `B_dot`: (optional) derivative of total field unit vector [-]
+- `Bt`:    if `return_B = true`, magnitude of total field measurements [nT]
+- `B_dot`: if `return_B = true`, finite differences of total field vector [nT]
 """
 function create_TL_A(Bx, By, Bz;
                      Bt       = sqrt.(Bx.^2+By.^2+Bz.^2),
@@ -50,6 +50,17 @@ function create_TL_A(Bx, By, Bz;
     Bz_hat_Bx_dot = Bz_hat .* Bx_dot ./ Bt_scale
     Bz_hat_By_dot = Bz_hat .* By_dot ./ Bt_scale
     Bz_hat_Bz_dot = Bz_hat .* Bz_dot ./ Bt_scale
+
+    # # original (slightly incorrect) eddy current terms
+    # Bx_hat_Bx_dot = Bx_hat .* fdm(Bx_hat) .* Bt ./ Bt_scale
+    # Bx_hat_By_dot = Bx_hat .* fdm(By_hat) .* Bt ./ Bt_scale
+    # Bx_hat_Bz_dot = Bx_hat .* fdm(Bz_hat) .* Bt ./ Bt_scale
+    # By_hat_Bx_dot = By_hat .* fdm(Bx_hat) .* Bt ./ Bt_scale
+    # By_hat_By_dot = By_hat .* fdm(By_hat) .* Bt ./ Bt_scale
+    # By_hat_Bz_dot = By_hat .* fdm(Bz_hat) .* Bt ./ Bt_scale
+    # Bz_hat_Bx_dot = Bz_hat .* fdm(Bx_hat) .* Bt ./ Bt_scale
+    # Bz_hat_By_dot = Bz_hat .* fdm(By_hat) .* Bt ./ Bt_scale
+    # Bz_hat_Bz_dot = Bz_hat .* fdm(Bz_hat) .* Bt ./ Bt_scale
 
     A = Array{eltype(Bt)}(undef,size(Bt,1),0)
 
@@ -126,12 +137,12 @@ Optionally returns the magnitude and derivatives of total field.
 - `Bt`:       (optional) magnitude of vector magnetometer measurements or scalar magnetometer measurements for modified Tolles-Lawson [nT]
 - `terms`:    (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
 - `Bt_scale`: (optional) scaling factor for induced and eddy current terms [nT]
-- `return_B`: (optional) if true, also return magnitude and derivatives of `Bt`
+- `return_B`: (optional) if true, also return `Bt` and `B_dot`
 
 **Returns:**
 - `A`:     Tolles-Lawson `A` matrix
-- `Bt`:    (optional) magnitude of total field measurements [nT]
-- `B_dot`: (optional) derivative of total field unit vector [-]
+- `Bt`:    if `return_B = true`, magnitude of total field measurements [nT]
+- `B_dot`: if `return_B = true`, finite differences of total field vector [nT]
 """
 function create_TL_A(flux::MagV, ind=trues(length(flux.x));
                      Bt       = sqrt.(flux.x.^2+flux.y.^2+flux.z.^2)[ind],
@@ -171,11 +182,11 @@ measurements and a bandpass, low-pass or high-pass filter.
 - `pole`:       (optional) number of poles for Butterworth filter
 - `trim`        (optional) number of elements to trim after filtering
 - `Bt_scale`:   (optional) scaling factor for induced and eddy current terms [nT]
-- `return_var`: (optional) return `B_var` fit error variance along with `coef`
+- `return_var`: (optional) if true, also return `B_var`
 
 **Returns:**
 - `coef`:  Tolles-Lawson coefficients
-- `B_var`: if `return_var=true`, also return fit error variance
+- `B_var`: if `return_var = true`, fit error variance
 """
 function create_TL_coef(Bx, By, Bz, B;
                         Bt         = sqrt.(Bx.^2+By.^2+Bz.^2),
@@ -246,11 +257,11 @@ measurements and a bandpass, low-pass or high-pass filter.
 - `pole`:       (optional) number of poles for Butterworth filter
 - `trim`        (optional) number of elements to trim after filtering
 - `Bt_scale`:   (optional) scaling factor for induced and eddy current terms [nT]
-- `return_var`: (optional) return `B_var` fit error variance along with `coef`
+- `return_var`: (optional) if true, also return `B_var`
 
 **Returns:**
 - `coef`:  Tolles-Lawson coefficients
-- `B_var`: fit error variance
+- `B_var`: if `return_var = true`, fit error variance
 """
 function create_TL_coef(flux::MagV, B, ind=trues(length(flux.x));
                         Bt         = sqrt.(flux.x.^2+flux.y.^2+flux.z.^2)[ind],
@@ -270,21 +281,48 @@ function create_TL_coef(flux::MagV, B, ind=trues(length(flux.x));
 end # function create_TL_coef
 
 """
-    fdm(x::Vector; central::Bool=true, fourth::Bool=false)
+    fdm(x::Vector; scheme::Symbol=:central)
 
 Finite difference method (FDM) on vector of input data.
 
 **Arguments:**
 - `x`:       input data
-- `central`: (optional) if true, 1st-order central difference, otherwise backward
-- `fourth`:  (optional) if true, 4th-order central difference
+- `scheme`:  (optional) finite difference method scheme used
+    - `backward`:  1st derivative 1st-order backward difference
+    - `forward`:   1st derivative 1st-order forward  difference
+    - `central`:   1st derivative 2nd-order central  difference
+    - `backward2`: 1st derivative 2nd-order backward difference
+    - `forward2`:  1st derivative 2nd-order forward  difference
+    - `fourth`:    4th derivative central difference
 
 **Returns:**
 - `dif`: length of `x` finite differences
 """
-function fdm(x::Vector; central::Bool=true, fourth::Bool=false)
+function fdm(x::Vector; scheme::Symbol=:central)
 
-    if fourth & (length(x) > 4)
+    N = length(x)
+
+    if (scheme == :backward) & (N > 1)
+        dif_1   =  x[2]       - x[1]
+        dif_end =  x[end]     - x[end-1]
+        dif_mid = (x[2:end-1] - x[1:end-2])
+    elseif (scheme == :forward) & (N > 1)
+        dif_1   =  x[2]       - x[1]
+        dif_end =  x[end]     - x[end-1]
+        dif_mid = (x[3:end] - x[2:end-1])
+    elseif (scheme in [:central,:central2]) & (N > 2)
+        dif_1   =  x[2]     - x[1]
+        dif_end =  x[end]   - x[end-1]
+        dif_mid = (x[3:end] - x[1:end-2]) ./ 2
+    elseif (scheme == :backward2) & (N > 3)
+        dif_1   = x[2:3]     - x[1:2]
+        dif_end = (3*x[end]     - 4*x[end-1]   + x[end-2]    ) ./ 2
+        dif_mid = (3*x[3:end-1] - 4*x[2:end-2] + x[1:end-3]  ) ./ 2
+    elseif (scheme == :forward2) & (N > 3)
+        dif_1   = (-x[3]        + 4*x[2]       - 3*x[1]      ) ./ 2
+        dif_end = x[end-1:end] - x[end-2:end-1]
+        dif_mid = (-x[4:end]    + 4*x[3:end-1] - 3*x[2:end-2]) ./ 2
+    elseif (scheme in [:fourth,:central4]) & (N > 4)
         dif_1   = zeros(eltype(x),2)
         dif_end = zeros(eltype(x),2)
         dif_mid = (   x[1:end-4] + 
@@ -292,14 +330,6 @@ function fdm(x::Vector; central::Bool=true, fourth::Bool=false)
                     6*x[3:end-2] + 
                    -4*x[4:end-1] + 
                       x[5:end  ] ) ./ 16 # divided by dx^4
-    elseif central & (length(x) > 2)
-        dif_1   =  x[2]     - x[1]
-        dif_end =  x[end]   - x[end-1]
-        dif_mid = (x[3:end] - x[1:end-2]) ./ 2
-    elseif (length(x) > 1)
-        dif_1   =  x[2]       - x[1]
-        dif_end =  x[end]     - x[end-1]
-        dif_mid = (x[2:end-1] - x[1:end-2])
     else
         return zero(x)
     end

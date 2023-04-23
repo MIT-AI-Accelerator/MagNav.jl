@@ -132,3 +132,42 @@ end
     @test minimum(mag_1_uc .!= mag_1_c )
     @test minimum(abs.(mag_1_uc-mag_1_c) .< mean(abs.(mag_1_c)))
 end
+
+year    = 2020
+doy     = 185
+use_vec = :flux_a
+use_mag = :mag_1_uc
+
+# initialize with XYZ0 struct
+xyz = create_XYZ0(mapS; alt=2000, t=10, mapV=mapV)
+
+# create XYZ1 struct with incorrect IGRF field
+mag_1_c  = xyz.mag_1_c
+mag_1_uc = xyz.mag_1_uc
+xyz = MagNav.XYZ1(xyz.traj, xyz.ins, xyz.flux_a, xyz.flux_a,
+                  xyz.flight, xyz.line, year*one.(mag_1_c), doy*one.(mag_1_c),
+                  zero.(mag_1_c), zero.(mag_1_c), mag_1_c, mag_1_c, mag_1_c,
+                  mag_1_uc, mag_1_uc, mag_1_uc, mag_1_c, mag_1_c, mag_1_c)
+
+# correct IGRF field within XYZ1 struct
+igrf_vec  = get_igrf(xyz; check_xyz=false)
+xyz.igrf .= norm.(igrf_vec)
+
+ind  = get_ind(xyz)
+traj = get_traj(xyz,ind)
+
+TL_coef   = create_TL_coef(getfield(xyz,use_vec), getfield(xyz,use_mag), ind;
+                           terms=[:p,:e,:i], λ=0.025)
+xyz_disp  = create_informed_xyz(xyz, ind, mapS, use_mag, use_vec, TL_coef)
+traj_disp = get_traj(xyz_disp,ind)
+lat_disp  = traj_disp.lat[1] - traj.lat[1]
+lon_disp  = traj_disp.lon[1] - traj.lon[1]
+
+@testset "create_informed_xyz" begin
+    @test traj_disp.tt  == traj.tt
+    @test traj_disp.alt == traj.alt
+    @test 0.0 < abs(lat_disp) < 0.01
+    @test 0.0 < abs(lon_disp) < 0.01
+    @test isapprox(traj_disp.lat, traj.lat .+ lat_disp)
+    @test isapprox(traj_disp.lon, traj.lon .+ lon_disp)
+end

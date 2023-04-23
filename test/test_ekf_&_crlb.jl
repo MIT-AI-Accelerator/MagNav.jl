@@ -70,7 +70,7 @@ ins  = MagNav.INS( N,dt,tt,ins_lat,ins_lon,ins_alt,ins_vn,ins_ve,ins_vd,
                    ins_fn,ins_fe,ins_fd,ins_Cnb,zeros(1,1,1))
 
 mapS = MagNav.MapS(map_map,map_xx,map_yy,map_alt)
-(itp_mapS,der_mapS) = map_interpolate(mapS,:linear;vert=true) # linear to match MATLAB
+(itp_mapS,der_mapS) = map_interpolate(mapS,:linear;return_vert_deriv=true) # linear to match MATLAB
 
 crlb_P = crlb(lat,lon,alt,vn,ve,vd,fn,fe,fd,Cnb,dt,itp_mapS;
               P0       = P0,
