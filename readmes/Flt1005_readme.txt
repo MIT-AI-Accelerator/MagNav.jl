@@ -1,5 +1,5 @@
 Flight 1005
-02-Jul-2020 (doy = ~183.5/366)
+02-Jul-2020 (doy = 184/366)
 
 - Perth mini-survey (within Eastern Ontario) flown at 800m, flight 2 of 2
 - Split into two flights due to weather (low altitude clouds)

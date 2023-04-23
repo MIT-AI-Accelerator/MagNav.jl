@@ -33,7 +33,8 @@ function map_interpolate(map_map, map_xx, map_yy, type::Symbol = :cubic)
 end # function map_interpolate
 
 """
-    map_interpolate(mapS::MapS, type::Symbol = :cubic; vert::Bool = false)
+    map_interpolate(mapS::MapS, type::Symbol = :cubic;
+                    return_vert_deriv::Bool = false)
 
 Create map grid interpolation, equivalent of griddedInterpolant in MATLAB.
 Optionally return vertical derivative grid interpolation, which is calculated
@@ -42,14 +43,16 @@ using finite differences between the map and a slightly upward continued map.
 **Arguments:**
 - `mapS`: `MapS` scalar magnetic anomaly map struct
 - `type`: (optional) type of interpolation {:linear,:quad,:cubic}
-- `vert`: (optional) if true, also return vertical derivative grid interpolation
+- `return_vert_deriv`: (optional) if true, also return `der_map`
 
 **Returns:**
 - `itp_map`: map grid interpolation
+- `der_map`: vertical derivative grid interpolation
 """
-function map_interpolate(mapS::MapS, type::Symbol = :cubic; vert::Bool = false)
+function map_interpolate(mapS::MapS, type::Symbol = :cubic;
+                         return_vert_deriv::Bool = false)
 
-    if vert
+    if return_vert_deriv
         return (map_interpolate(mapS.map,mapS.xx,mapS.yy,type),
                 map_interpolate(upward_fft(mapS,mapS.alt+1).map - mapS.map,
                                            mapS.xx,mapS.yy,type))
@@ -311,8 +314,8 @@ function map_trim(map_map::Matrix, map_xx::Vector, map_yy::Vector, alt;
 
         # get xx/yy limits at 4 corners of data-containing UTMZ map for no data loss
         (lons,lats) = map_lla_lim(map_xx,map_yy,alt,xx_1,xx_nx,yy_1,yy_ny;
-                                  zone_utm  = zone_utm,
-                                  is_north  = is_north)
+                                  zone_utm = zone_utm,
+                                  is_north = is_north)
 
         lla2utm = UTMZfromLLA(WGS84)
 
@@ -470,10 +473,11 @@ end # function map_trim
 """
     map_correct_igrf!(map_map::Matrix, map_alt,
                       map_xx::Vector, map_yy::Vector;
-                      sub_igrf_date  = get_years(2013,293), # 20-Oct-2013
-                      add_igrf_date  = -1,
-                      zone_utm::Int  = 18,
-                      is_north::Bool = true)
+                      sub_igrf_date     = get_years(2013,293), # 20-Oct-2013
+                      add_igrf_date     = -1,
+                      zone_utm::Int     = 18,
+                      is_north::Bool    = true,
+                      map_units::Symbol = :utm)
 
 Correct the International Geomagnetic Reference Field (IGRF), i.e. core field, 
 of a map by subtracting and/or adding the IGRF on specified date(s).
@@ -487,20 +491,22 @@ of a map by subtracting and/or adding the IGRF on specified date(s).
 - `add_igrf_date`: (optional) date of IGRF core field to add [yr], -1 to ignore
 - `zone_utm`:      (optional) UTM zone
 - `is_north`:      (optional) if true, map is in northern hemisphere
+- `map_units`:     (optional) map xx/yy units {`:utm`,`:rad`,`:deg`}
 
 **Returns:**
 - `map_map`: IGRF-corrected 2D gridded map data (mutated)
 """
 function map_correct_igrf!(map_map::Matrix, map_alt,
                            map_xx::Vector, map_yy::Vector;
-                           sub_igrf_date  = get_years(2013,293),
-                           add_igrf_date  = -1,
-                           zone_utm::Int  = 18,
-                           is_north::Bool = true)
+                           sub_igrf_date     = get_years(2013,293),
+                           add_igrf_date     = -1,
+                           zone_utm::Int     = 18,
+                           is_north::Bool    = true,
+                           map_units::Symbol = :utm)
 
     (_,ind1,nx,ny) = map_params(map_map,map_xx,map_yy)
 
-    all(map_alt .< 0) && (map_alt = 300) # in case drape map altitude provided (uses alt = -1)
+    all(map_alt .< 0)    && (map_alt = 300) # in case drape map altitude provided (uses alt = -1)
     length(map_alt) == 1 && (map_alt = map_alt*one.(map_map)) # in case scalar altitude provided
 
     sub_igrf = sub_igrf_date > 0 ? true : false
@@ -515,16 +521,28 @@ function map_correct_igrf!(map_map::Matrix, map_alt,
         for i = 1:nx # time consumer
             for j = 1:ny
                 if ind1[j,i]
-                    lla = utm2lla(UTMZ(map_xx[i],map_yy[j],map_alt[j,i],
-                                       zone_utm,is_north))
+
+                    if map_units == :utm
+                        lla = utm2lla(UTMZ(map_xx[i],map_yy[j],map_alt[j,i],
+                                           zone_utm,is_north))
+                    elseif map_units == :rad
+                        lla = LLA(rad2deg(map_yy[j]),rad2deg(map_xx[i]),map_alt[j,i])
+                    elseif map_units == :deg
+                        lla = LLA(map_yy[j],map_xx[i],map_alt[j,i])
+                    else
+                        error("$map_units map xx/yy units not defined")
+                    end
+
                     if sub_igrf
                         map_map[j,i] -= norm(igrfd(sub_igrf_date,lla.alt,lla.lat,
                                                    lla.lon,Val(:geodetic)))
                     end
+
                     if add_igrf
                         map_map[j,i] += norm(igrfd(add_igrf_date,lla.alt,lla.lat,
                                                    lla.lon,Val(:geodetic)))
                     end
+
                 end
             end
         end
@@ -534,34 +552,38 @@ end # function map_correct_igrf!
 
 """
     map_correct_igrf!(mapS::Union{MapS,MapSd};
-                      sub_igrf_date  = get_years(2013,293), # 20-Oct-2013
-                      add_igrf_date  = -1,
-                      zone_utm::Int  = 18,
-                      is_north::Bool = true)
+                      sub_igrf_date     = get_years(2013,293), # 20-Oct-2013
+                      add_igrf_date     = -1,
+                      zone_utm::Int     = 18,
+                      is_north::Bool    = true,
+                      map_units::Symbol = :rad)
 
 Correct the International Geomagnetic Reference Field (IGRF), i.e. core field, 
 of a map by subtracting and/or adding the IGRF on specified date(s).
 
 **Arguments:**
-- `mapS`:          `MapS` or `MapSd` scalar magnetic anomaly map struct  
+- `mapS`:          `MapS` or `MapSd` scalar magnetic anomaly map struct
 - `sub_igrf_date`: (optional) date of IGRF core field to subtract [yr], -1 to ignore
 - `add_igrf_date`: (optional) date of IGRF core field to add [yr], -1 to ignore
 - `zone_utm`:      (optional) UTM zone
 - `is_north`:      (optional) if true, map is in northern hemisphere
+- `map_units`:     (optional) map xx/yy units {`:utm`,`:rad`,`:deg`}
 
 **Returns:**
 - `mapS`: IGRF-corrected `MapS` or `MapSd` scalar magnetic anomaly map struct (mutated)
 """
 function map_correct_igrf!(mapS::Union{MapS,MapSd};
-                           sub_igrf_date  = get_years(2013,293),
-                           add_igrf_date  = -1,
-                           zone_utm::Int  = 18,
-                           is_north::Bool = true)
+                           sub_igrf_date     = get_years(2013,293),
+                           add_igrf_date     = -1,
+                           zone_utm::Int     = 18,
+                           is_north::Bool    = true,
+                           map_units::Symbol = :rad)
     map_correct_igrf!(mapS.map,mapS.alt,mapS.xx,mapS.yy;
                       sub_igrf_date = sub_igrf_date,
                       add_igrf_date = add_igrf_date,
                       zone_utm      = zone_utm,
-                      is_north      = is_north)
+                      is_north      = is_north,
+                      map_units     = map_units)
 end # function map_correct_igrf!
 
 """
@@ -607,7 +629,7 @@ Fill map areas that are missing map data.
 
 **Arguments:**
 - `mapS`: `MapS` or `MapSd` scalar magnetic anomaly map struct
-- `k`: (optional) number of nearest neighbors for knn
+- `k`:    (optional) number of nearest neighbors for knn
 
 **Returns:**
 - `mapS`: filled `MapS` or `MapSd` scalar magnetic anomaly map struct (mutated)
@@ -792,8 +814,8 @@ function map_utm2lla!(map_map::Matrix, map_xx::Vector, map_yy::Vector, alt;
 
     # get xx/yy limits at 4 corners of data-containing UTMZ map for no data loss
     (lons,lats) = map_lla_lim(map_xx,map_yy,alt,1,nx,1,ny;
-                              zone_utm  = zone_utm,
-                              is_north  = is_north)
+                              zone_utm = zone_utm,
+                              is_north = is_north)
 
     # use interior 2 lons/lats as xx/yy limits for new (LLA) map (stay in range)
     δ = 1e-10 # ad hoc to solve rounding related error
@@ -845,10 +867,10 @@ function map_utm2lla!(mapS::Union{MapS,MapSd};
                       save_h5::Bool  = false,
                       map_h5::String = "map.h5")
     map_utm2lla!(mapS.map,mapS.xx,mapS.yy,mapS.alt;
-                 zone_utm  = zone_utm,
-                 is_north  = is_north,
-                 save_h5   = save_h5,
-                 map_h5    = map_h5)
+                 zone_utm = zone_utm,
+                 is_north = is_north,
+                 save_h5  = save_h5,
+                 map_h5   = map_h5)
 end # function map_utm2lla!
 
 """
@@ -942,7 +964,8 @@ function map_gxf2h5(map_gxf::String, alt_gxf::String, alt;
                       sub_igrf_date = sub_igrf_date,
                       add_igrf_date = add_igrf_date,
                       zone_utm      = zone_utm,
-                      is_north      = is_north)
+                      is_north      = is_north,
+                      map_units     = :utm)
 
     if fill_map # fill areas that are missing map data
         @info("starting fill")
@@ -983,7 +1006,7 @@ function map_gxf2h5(map_gxf::String, alt_gxf::String, alt;
         end
     end
 
-end # map_gxf2h5
+end # function map_gxf2h5
 
 """
     map_gxf2h5(map_gxf::String, alt;
@@ -1118,7 +1141,7 @@ function plot_map!(p1, map_map::Matrix,
             map_yy .= dlat2dn.(deg2rad.(map_yy .- mid_lat), deg2rad.(map_yy))
         end
     else
-        error("map_units $map_units not defined")
+        error("$map_units map xx/yy units not defined")
     end
 
     if plot_units == :rad
@@ -1131,7 +1154,7 @@ function plot_map!(p1, map_map::Matrix,
         xlab = ((map_xx[end] == nx) | !axis) ? "" : "easting [m]"
         ylab = ((map_yy[end] == ny) | !axis) ? "" : "northing [m]"
     else
-        error("plot_units $plot_units  not defined")
+        error("$plot_units plot xx/yy units not defined")
     end
 
     # map indices with zeros (ind0)
@@ -1459,8 +1482,8 @@ function plot_path!(p1, lat, lon;
     end
 
     if zoom_plot
-        xlim = extrema(lon) .+ [-0.2,0.2]*(extrema(lon)[2] - extrema(lon)[1])
-        ylim = extrema(lat) .+ [-0.2,0.2]*(extrema(lat)[2] - extrema(lat)[1])
+        xlim = get_lim(lon,0.2)
+        ylim = get_lim(lat,0.2)
         p1 = plot!(p1,xlim=xlim,ylim=ylim)
     end
 
@@ -1470,7 +1493,7 @@ function plot_path!(p1, lat, lon;
 end # function plot_path!
 
 """
-    plot_path!(p1, path::Path, ind=trues(length(path.lat));
+    plot_path!(p1, path::Path, ind=trues(path.N);
                lab = "",
                fewer_pts::Bool    = true,
                show_plot::Bool    = true,
@@ -1494,7 +1517,7 @@ Plot flight path on an existing plot.
 **Returns:**
 - `nothing`: flight path is plotted on `p1`
 """
-function plot_path!(p1, path::Path, ind=trues(length(path.lat));
+function plot_path!(p1, path::Path, ind=trues(path.N);
                     lab = "",
                     fewer_pts::Bool    = true,
                     show_plot::Bool    = true,
@@ -1559,7 +1582,7 @@ function plot_path(lat, lon;
 end # function plot_path
 
 """
-    plot_path(path::Path, ind=trues(length(path.lat));
+    plot_path(path::Path, ind=trues(path.N);
               lab = "",
               dpi::Int           = 200,
               margin::Int        = 2,
@@ -1586,7 +1609,7 @@ Plot flight path.
 **Returns:**
 - `p1`: plot with flight path
 """
-function plot_path(path::Path, ind=trues(length(path.lat));
+function plot_path(path::Path, ind=trues(path.N);
                    lab = "",
                    dpi::Int           = 200,
                    margin::Int        = 2,
@@ -1656,12 +1679,13 @@ function plot_events!(p1, flight::Symbol, df_event::DataFrame;
                       t0=0, t_units::Symbol=:min, legend::Symbol=:outertopright)
     xlim = xlims(p1)
     t_units == :min && (xlim = xlims(p1).*60)
-    df   = df_event[(df_event[:,:flight]  .== flight)  .& 
-                    (df_event[:,:t] .- t0 .>  xlim[1]) .& 
-                    (df_event[:,:t] .- t0 .<  xlim[2]),:]
+    df   = df_event[(df_event[:,:flight]   .== flight)  .& 
+                    (df_event[:,:tt] .- t0 .>  xlim[1]) .& 
+                    (df_event[:,:tt] .- t0 .<  xlim[2]),:]
     for i in axes(df,1)
         lab = show_lab ? string(df[i,:event]) : nothing
-        plot_events!(p1,df[i,:t]-t0,lab;ylim=ylim,t_units=t_units,legend=legend)
+        plot_events!(p1,df[i,:tt]-t0,lab;
+                     ylim=ylim,t_units=t_units,legend=legend)
     end
     return (p1)
 end # function plot_events
@@ -1686,7 +1710,7 @@ function map_check(map_map::Map, lat, lon)
     for i = 1:N
         minimum(map_map.xx) < lon[i] < maximum(map_map.xx) || (val[i] = false)
         minimum(map_map.yy) < lat[i] < maximum(map_map.yy) || (val[i] = false)
-        val[i] == true && (itp_map(lon[i],lat[i]) != 0     || (val[i] = false))
+        val[i] && (itp_map(lon[i],lat[i]) != 0             || (val[i] = false))
     end
     return all(val)
 end # function map_check

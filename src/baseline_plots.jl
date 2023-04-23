@@ -26,7 +26,7 @@ end # function plot_basic
 
 """
     plot_activation(activation = [:relu,:σ,:swish,:tanh];
-                    plot_der::Bool    = false,
+                    plot_deriv::Bool  = false,
                     save_plot::Bool   = false,
                     file_name::String = "act_func")
 
@@ -38,7 +38,7 @@ Plot activation function(s) or their derivative(s).
     - `σ`     = sigmoid (logistic function)
     - `swish` = self-gated
     - `tanh`  = hyperbolic tan
-- `plot_der`:   (optional) if true, plot activation function derivatives
+- `plot_deriv`: (optional) if true, plot activation function derivatives
 - `save_plot`:  (optional) if true, plot will be saved
 - `file_name`:  (optional) plot file name to save
 
@@ -46,7 +46,7 @@ Plot activation function(s) or their derivative(s).
 - `p1`: plot of activation function(s) or their derivative(s)
 """
 function plot_activation(activation = [:relu,:σ,:swish,:tanh];
-                         plot_der::Bool    = false,
+                         plot_deriv::Bool  = false,
                          save_plot::Bool   = false,
                          file_name::String = "act_func")
 
@@ -64,7 +64,7 @@ function plot_activation(activation = [:relu,:σ,:swish,:tanh];
     d_swish = ForwardDiff.derivative.(swish,x)
     d_tanh  = ForwardDiff.derivative.(tanh,x)
 
-    if !plot_der # plot activation functions
+    if !plot_deriv # plot activation functions
         p1 = plot(xlab="z",ylab="f(z)",xlim=(-6,4),ylim=(-2,4),
                   legend=:topleft,margin=2*mm,dpi=dpi)
         :relu  in activation && plot!(p1,x,p_relu ,lab="ReLU"   ,lw=2,ls=:solid)
@@ -91,7 +91,7 @@ end # function plot_activation
              detrend_data::Bool        = false,
              use_mags::Vector{Symbol}  = [:all_mags],
              vec_terms::Vector{Symbol} = [:all],
-             ylim                      = [],
+             ylim                      = (),
              dpi::Int                  = 200,
              show_plot::Bool           = true,
              save_plot::Bool           = false,
@@ -121,7 +121,7 @@ function plot_mag(xyz::XYZ;
                   detrend_data::Bool        = false,
                   use_mags::Vector{Symbol}  = [:all_mags],
                   vec_terms::Vector{Symbol} = [:all],
-                  ylim                      = [],
+                  ylim                      = (),
                   dpi::Int                  = 200,
                   show_plot::Bool           = true,
                   save_plot::Bool           = false,
@@ -143,7 +143,7 @@ function plot_mag(xyz::XYZ;
 
         ylab = "magnetic field error [nT]"
 
-        if ylim == []
+        if isempty(ylim)
             p1 = plot(lw=2,dpi=dpi,xlab=xlab,ylab=ylab)
         else
             p1 = plot(lw=2,dpi=dpi,xlab=xlab,ylab=ylab,ylim=ylim)
@@ -166,7 +166,7 @@ function plot_mag(xyz::XYZ;
         ylab = "magnetic field [nT]"
         ylab = detrend_data ? "detrended $ylab" : ylab
 
-        if ylim == []
+        if isempty(ylim)
             p1 = plot(lw=2,dpi=dpi,xlab=xlab,ylab=ylab)
         else
             p1 = plot(lw=2,dpi=dpi,xlab=xlab,ylab=ylab,ylim=ylim)
@@ -191,7 +191,7 @@ function plot_mag(xyz::XYZ;
         ylab = "magnetic field [nT]"
         ylab = detrend_data ? "detrended $ylab" : ylab
 
-        if ylim == []
+        if isempty(ylim)
             p1 = plot(lw=2,dpi=dpi,xlab=xlab,ylab=ylab)
         else
             p1 = plot(lw=2,dpi=dpi,xlab=xlab,ylab=ylab,ylim=ylim)
@@ -207,7 +207,7 @@ function plot_mag(xyz::XYZ;
 
         ylab = ""
 
-        if ylim == []
+        if isempty(ylim)
             p1 = plot(lw=2,dpi=dpi,xlab=xlab,ylab=ylab)
         else
             p1 = plot(lw=2,dpi=dpi,xlab=xlab,ylab=ylab,ylim=ylim)
@@ -242,7 +242,7 @@ end # function plot_mag
                plot_diff::Bool          = false,
                plot_mag_1_uc::Bool      = true,
                plot_mag_1_c::Bool       = true,
-               ylim                     = [],
+               ylim                     = (),
                dpi::Int                 = 200,
                show_plot::Bool          = true,
                save_plot::Bool          = false,
@@ -292,7 +292,7 @@ function plot_mag_c(xyz::XYZ,xyz_comp::XYZ;
                     plot_mag_1_uc::Bool      = true,
                     plot_mag_1_c::Bool       = true,
                     dpi::Int                 = 200,
-                    ylim                     = [],
+                    ylim                     = (),
                     show_plot::Bool          = true,
                     save_plot::Bool          = false,
                     file_name::String        = "scalar_mags_comp")
@@ -307,7 +307,7 @@ function plot_mag_c(xyz::XYZ,xyz_comp::XYZ;
     xlab = "time [min]"
     ylab = "magnetic field [nT]"
 
-    if ylim == []
+    if isempty(ylim)
         p1 = plot(lw=2,dpi=dpi,xlab=xlab,ylab=ylab)
     else
         p1 = plot(lw=2,dpi=dpi,xlab=xlab,ylab=ylab,ylim=ylim)

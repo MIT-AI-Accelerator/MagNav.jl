@@ -29,14 +29,14 @@ data file took 46.8 min to process using a 64 GB MacBook Pro.
 - `xyz_file`:       path/name of .xyz file containing flight data
 - `xyz_h5`:         path/name of HDF5 file to save with flight data
 - `flight`:         SGL flight (e.g. `:Flt1001`)
-- `lines`:          selected line number(s) to ONLY include or exclude, must be a vector of 3-element (`line`, `start_time`, `stop_time`) Tuple(s)
-- `lines_type`:     whether to ONLY `:include` (i.e. to generate testing data) or `:exclude` (i.e. to generate training data) `lines`
-- `tt_sort`:        if true, sort data by time (instead of line)
-- `downsample_160`: if true, downsample 160 Hz data to 10 Hz (only for 160 Hz data files)
-- `return_data`:    if true, return internal data matrix instead of writing HDF5 file 
+- `lines`:          (optional) selected line number(s) to ONLY include or exclude, must be a vector of 3-element (`line`, `start_time`, `stop_time`) Tuple(s)
+- `lines_type`:     (optional) whether to ONLY `:include` (i.e. to generate testing data) or `:exclude` (i.e. to generate training data) `lines`
+- `tt_sort`:        (optional) if true, sort data by time (instead of line)
+- `downsample_160`: (optional) if true, downsample 160 Hz data to 10 Hz (only for 160 Hz data files)
+- `return_data`:    (optional) if true, return `data` instead of writing `xyz_h5` HDF5 file 
 
 **Returns:**
-- `data`: internal data matrix, OR, `nothing`: HDF5 file `xyz_h5` is created
+- `data`: if `return_data = true`, internal data matrix
 """
 function xyz2h5(xyz_file::String, xyz_h5::String, flight::Symbol;
                 lines::Vector        = [()],
@@ -307,18 +307,19 @@ function print_fields(s)
 end # function print_fields
 
 """
-    compare_fields(s1, s2)
+    compare_fields(s1, s2; silent::Bool=false)
 
 Compare data for each data field in 2 structs of the same type.
 
 **Arguments:**
-- `s1`: struct 1
-- `s2`: struct 2
+- `s1`:     struct 1
+- `s2`:     struct 2
+- `silent`: (optional) if true, no summary print out
 
 **Returns:**
-- `nothing`: different data fields in `s1` and `s2` (if any) are printed out
+- `N_dif`: if `silent = false`, number of different fields
 """
-function compare_fields(s1, s2)
+function compare_fields(s1, s2; silent::Bool=false)
     t1 = typeof(s1)
     t2 = typeof(s2)
     @assert t1 == t2 "$t1 & $t2 types do no match"
@@ -326,19 +327,45 @@ function compare_fields(s1, s2)
     for field in fieldnames(t1)
         t = typeof(getfield(s1,field))
         if parentmodule(t) == MagNav
-            for f in fieldnames(t)
-                dif = sum(abs.(getfield(getfield(s1,field),f) - 
-                               getfield(getfield(s2,field),f)))
-                dif ≈ 0 || println("$field.$f  ",dif)
-                dif ≈ 0 || (N_dif += 1)
-            end
+            N_dif_add = compare_fields(getfield(s1,field),getfield(s2,field);
+                                       silent=true)
+            N_dif_add == 0 || println("($field is above)")
+            N_dif += N_dif_add
         else
-            dif = sum(abs.(getfield(s1,field) - getfield(s2,field)))
-            dif ≈ 0 || println("$field  ",dif)
-            dif ≈ 0 || (N_dif += 1)
+            if eltype(getfield(s1,field)) <: Number
+                dif = sum(abs.(getfield(s1,field) - getfield(s2,field)))
+                dif ≈ 0 || println("$field  ",dif)
+                dif ≈ 0 || (N_dif += 1)
+            elseif typeof(getfield(s1,field)) <: Chain
+                m1 = getfield(s1,field)
+                m2 = getfield(s2,field)
+                if length(m1) != length(m2)
+                    println("size of $field is different")
+                    N_dif += 1
+                else
+                    for i in eachindex(m1)
+                        for f in [:weight,:bias,:σ]
+                            if getfield(m1[i],f) != getfield(m2[i],f)
+                                println("$field field $f is different")
+                                N_dif += 1
+                            end
+                        end
+                    end
+                end
+            else
+                if getfield(s1,field) != getfield(s2,field)
+                    println("non-numeric field $field is different")
+                    N_dif += 1
+                end
+            end
         end
     end
-    N_dif == 0 && @info("all data fields exactly match")
+
+    if silent
+        return (N_dif)
+    else
+        @info("number of different data fields: $N_dif")
+    end
 end # function compare_fields
 
 """
@@ -431,7 +458,17 @@ Get field names for given SGL flight.
     - `:Flt1007`
     - `:Flt1008`
     - `:Flt1009`
-    - `:Flt2001_2017
+    - `:Flt2001_2017`
+    - `:Flt2001`
+    - `:Flt2002`
+    - `:Flt2004`
+    - `:Flt2005`
+    - `:Flt2006`
+    - `:Flt2007`
+    - `:Flt2008`
+    - `:Flt2015`
+    - `:Flt2016`
+    - `:Flt2017`
 
 **Arguments:**
 - `flight`: SGL flight (e.g. `:Flt1001`)
@@ -446,7 +483,7 @@ function xyz_fields(flight::Symbol)
     fields21  = string(sgl_fields(),"/fields_sgl_2021.csv")
     fields160 = string(sgl_fields(),"/fields_sgl_160.csv" )
 
-    d = Dict()
+    d = Dict{Symbol,Any}()
     push!(d, :fields20  => Symbol.(vec(readdlm(fields20 ,','))))
     push!(d, :fields21  => Symbol.(vec(readdlm(fields21 ,','))))
     push!(d, :fields160 => Symbol.(vec(readdlm(fields160,','))))
@@ -484,7 +521,9 @@ function xyz_fields(flight::Symbol)
 
         return (d[:fields160][ind])
 
-    elseif flight in [:Flt2001_2017]
+    elseif flight in [:Flt2001_2017,
+                      :Flt2001,:Flt2002,:Flt2004,:Flt2005,:Flt2006,
+                      :Flt2007,:Flt2008,:Flt2015,:Flt2016,:Flt2017]
 
         return (d[:fields21])
 

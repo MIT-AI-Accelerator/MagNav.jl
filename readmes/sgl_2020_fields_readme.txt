@@ -7,6 +7,8 @@ currents and voltages. (WGS-84) is altitude above WGS-84 ellipsoid.
 --------------------------------------------------------------------------------
         line        -    line number
       flight        -    flight number
+        year        -    year
+         doy        -    day of year
           tt        s    fiducial seconds past midnight UTC
        utm_x        m    x-coordinate, WGS-84 UTM zone 18N
        utm_y        m    y-coordinate, WGS-84 UTM zone 18N

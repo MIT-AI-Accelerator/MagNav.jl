@@ -51,16 +51,16 @@ Run navigation filter and optionally compute Cramér–Rao lower bound (CRLB).
 - `run_crlb`:  (optional) if true, compute the Cramér–Rao lower bound (CRLB)
 
 **Returns:**
-- if `extract == true`  & `run_crlb = true`
+- if `extract = true`  & `run_crlb = true`
     - `crlb_out`: `CRLBout` Cramér–Rao lower bound extracted output struct
     - `ins_out`:  `INSout`  inertial navigation system extracted output struct
     - `filt_out`: `FILTout` filter extracted output struct
-- if `extract == true`  & `run_crlb = false`
+- if `extract = true`  & `run_crlb = false`
     - `filt_out`: `FILTout` filter extracted output struct
-- if `extract == false` & `run_crlb = true`
+- if `extract = false` & `run_crlb = true`
     - `filt_res`: `FILTres` filter results struct
     - `crlb_P`:   Cramér–Rao lower bound non-linear covariance matrix
-- if `extract == false` & `run_crlb = false`
+- if `extract = false` & `run_crlb = false`
     - `filt_res`: `FILTres` filter results struct
 """
 function run_filt(traj::Traj, ins::INS, meas, itp_mapS, filt_type::Symbol=:ekf;
@@ -189,7 +189,6 @@ function run_filt(traj::Traj, ins::INS, meas, itp_mapS,
                   fogm_tau   = 600.0,
                   date       = get_years(2020,185),
                   core::Bool = false,
-                  der_mapS   = map_itp(zeros(2,2),[-pi,pi],[-pi/2,pi/2]),
                   map_alt    = 0,
                   nn_x       = nothing,
                   m          = nothing,
@@ -466,8 +465,8 @@ function plot_filt!(p1, traj::Traj, ins::INS, filt_out::FILTout;
     tt   = (traj.tt[i] .- traj.tt[i][1]) / 60
     lon  = rad2deg.([traj.lon;ins.lon;filt_out.lon])
     lat  = rad2deg.([traj.lat;ins.lat;filt_out.lat])
-    xlim = extrema(lon) .+ [-0.05,0.05]*(extrema(lon)[2] - extrema(lon)[1])
-    ylim = extrema(lat) .+ [-0.05,0.05]*(extrema(lat)[2] - extrema(lat)[1])
+    xlim = get_lim(lon,0.05)
+    ylim = get_lim(lat,0.05)
 
     plot!(p1,xlab="longitude [deg]",ylab="latitude [deg]",dpi=dpi)
     plot!(p1,rad2deg.(traj.lon[i])    ,rad2deg.(traj.lat[i])    ,lab="gps")
@@ -553,7 +552,7 @@ function plot_filt!(p1, traj::Traj, ins::INS, filt_out::FILTout;
     # save_plot && png(p12,"gyroscope_bias")
 
     vel_plot ? (return (p1, p2, p3, p5, p6)) : (return (p1, p2, p3))
-end # plot_filt!
+end # function plot_filt!
 
 """
     plot_filt(traj::Traj, ins::INS, filt_out::FILTout;
@@ -733,7 +732,7 @@ function plot_filt_err(traj::Traj, filt_out::FILTout, crlb_out::CRLBout;
     # save_plot && png(p14,"gyroscope_bias_σ")
 
     vel_plot ? (return (p2, p3, p5, p6)) : (return (p2, p3))
-end # plot_filt_err
+end # function plot_filt_err
 
 """
     plot_mag_map(path::Path, mag, itp_mapS;
@@ -870,7 +869,7 @@ function plot_autocor(x::Vector, dt=0.1, dt_max=300.0; show_plot::Bool=false)
     @info("τ $s")
 
     return (p1)
-end # plot_autocor
+end # function plot_autocor
 
 """
     chisq_pdf(x, k::Int=1)
@@ -928,9 +927,9 @@ end # function chisq_q
 Create `x` and `y` confidence ellipse points for a 2x2 covariance matrix.
 
 **Arguments:**
-- `P`: 2x2 covariance matrix
+- `P`:    2x2 covariance matrix
 - `clip`: (optional) clipping radius
-- `n`: (optional) number of confidence ellipse points
+- `n`:    (optional) number of confidence ellipse points
 
 **Returns:**
 - `x`: x-axis confidence ellipse points
@@ -972,13 +971,13 @@ Plot a confidence ellipse for a 2x2 covariance matrix (2 degrees of freedom).
 Visualization of a 2D confidence interval.
 
 **Arguments:**
-- `p1`:    starting plot (e.g. map)
-- `P`:     2x2 covariance matrix
-- `μ`:     (optional) confidence ellipse center (in same units as `P`)
-- `conf`:  (optional) percentile {0:1}
-- `clip`:  (optional) clipping radius (in same units as `P`)
-- `n`:     (optional) number of confidence ellipse points
-- `lim`:   (optional) `x` and `y` plotting limits (in same units as `P`)
+- `p1`:         starting plot (e.g. map)
+- `P`:          2x2 covariance matrix
+- `μ`:          (optional) confidence ellipse center (in same units as `P`)
+- `conf`:       (optional) percentile {0:1}
+- `clip`:       (optional) clipping radius (in same units as `P`)
+- `n`:          (optional) number of confidence ellipse points
+- `lim`:        (optional) `x` and `y` plotting limits (in same units as `P`)
 - `margin`:     (optional) margin around plot [mm]
 - `axis`:       (optional) if true, show axes
 - `plot_eigax`: (optional) if true, show major and minor axes
@@ -1008,7 +1007,7 @@ function conf_ellipse!(p1, P;
 
     # check arguments
     xlim = ylim = lim === nothing  ? lim : (-lim,lim)
-    xlab = ylab = axis == true     ? lab : nothing
+    xlab = ylab = axis             ? lab : nothing
     @assert all(real(eigval) .> 0) "P is not positive definite"
     @assert size(P) == (2,2)       "P is size $(size(P)) ≂̸ (2,2)"
     @assert length(μ) == 2         "μ is length $length(μ) ≂̸ 2"
@@ -1054,12 +1053,12 @@ Plot a confidence ellipse for a 2x2 covariance matrix (2 degrees of freedom).
 Visualization of a 2D confidence interval.
 
 **Arguments:**
-- `P`:     2x2 covariance matrix
-- `μ`:     (optional) confidence ellipse center (in same units as `P`)
-- `conf`:  (optional) percentile {0:1}
-- `clip`:  (optional) clipping radius (in same units as `P`)
-- `n`:     (optional) number of confidence ellipse points
-- `lim`:   (optional) `x` and `y` plotting limits (in same units as `P`)
+- `P`:          2x2 covariance matrix
+- `μ`:          (optional) confidence ellipse center (in same units as `P`)
+- `conf`:       (optional) percentile {0:1}
+- `clip`:       (optional) clipping radius (in same units as `P`)
+- `n`:          (optional) number of confidence ellipse points
+- `lim`:        (optional) `x` and `y` plotting limits (in same units as `P`)
 - `margin`:     (optional) margin around plot [mm]
 - `axis`:       (optional) if true, show axes
 - `plot_eigax`: (optional) if true, show major and minor axes
@@ -1108,9 +1107,9 @@ end # function conf_ellipse
 Convert (position) confidence ellipse units for a 2x2 covariance matrix.
 
 **Arguments:**
-- `P`: 2x2 covariance matrix [rad]
+- `P`:          2x2 covariance matrix [rad]
 - `conf_units`: (optional) confidence ellipse units {`:m`,`:ft`,`:deg`,`:rad`}
-- `lat1`: (optional) nominal latitude [rad], only used if `conf_units = :m` or `:ft`
+- `lat1`:       (optional) nominal latitude [rad], only used if `conf_units = :m` or `:ft`
 
 **Returns:**
 - `P`: 2x2 covariance matrix with converted units
@@ -1140,8 +1139,8 @@ end # function units_ellipse
 Convert (position) confidence ellipse units for a 2x2 covariance matrix.
 
 **Arguments:**
-- `filt_res`: `FILTres` filter results struct
-- `filt_out`: `FILTout` filter extracted output struct
+- `filt_res`:   `FILTres` filter results struct
+- `filt_out`:   `FILTout` filter extracted output struct
 - `conf_units`: (optional) confidence ellipse units {`:m`,`:ft`,`:deg`,`:rad`}
 
 **Returns:**

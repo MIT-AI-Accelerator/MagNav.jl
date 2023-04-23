@@ -47,17 +47,17 @@ lazy = true
     url = "https://www.dropbox.com/s/ql3m59eajuhugbi/ottawa_area_maps_v1.tar.gz"
 
 [sgl_2020_train]
-git-tree-sha1 = "7cc3c16f93d0edb572a106e2b8ac7010066b8cb0"
+git-tree-sha1 = "c3f3d3462514a6c52576cf8017a650ea9d10e64b"
 lazy = true
 
     [[sgl_2020_train.download]]
-    sha256 = "033a5a8a86251f0e1ae0e670a918ca3ee3403efb9eb875166960a1055abb8603"
-    url = "https://www.dropbox.com/s/ge5np08npvidi3r/sgl_2020_train_v1.tar.gz"
+    sha256 = "bcaa3cdc7b4730f06713c93fb0a9ccafe70a292fbc5819a0e86b98e23c1f74f2"
+    url = "https://www.dropbox.com/s/hp33v1gyof8amen/sgl_2020_train_v2.tar.gz"
 
 [sgl_fields]
-git-tree-sha1 = "ebf723ceedc20ca151b9e9dd7980f8b5b56c14af"
+git-tree-sha1 = "1d46dc48ad1026df78a42a24d743de6796aa52d8"
 lazy = true
 
     [[sgl_fields.download]]
-    sha256 = "ec017d36432bdea8474d7e9dba6249d89373f37f6e9c3b933495f0bcc5a254dd"
-    url = "https://www.dropbox.com/s/9b0o172ywz50xhi/sgl_fields_v1.tar.gz"
+    sha256 = "48457ec7c58d83e028000487181c546955664583388fe91424acc09563723fdf"
+    url = "https://www.dropbox.com/s/kuiri47pobzhp73/sgl_fields_v2.tar.gz"

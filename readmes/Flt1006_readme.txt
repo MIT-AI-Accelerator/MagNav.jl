@@ -1,5 +1,5 @@
 Flight 1006
-06-Jul-2020 (doy = ~187.5/366)
+06-Jul-2020 (doy = 188/366)
 
 - Compensation maneuvers in FOM at 10,000ft (3048m), 13,000ft (3962m), 17,000ft (5181m)
 - Compensation maneuvers in Eastern Ontario at 400m

@@ -25,7 +25,7 @@ Reference: Blakely, Potential Theory in Gravity and Magnetic Applications,
 function upward_fft(map_map, dx, dy, dz; expand::Bool=true, α=0)
     dz > 0 && (α = 0) # ensure no regularization if upward
 
-    if expand == true
+    if expand
         (ny,nx)  = size(map_map)
         pad      = maximum(ceil.(Int,10*abs(dz)./(dx,dy))) # set pad > 10*dz
         (map_temp,px,py) = map_expand(map_map,pad) # expand with pad
@@ -242,7 +242,7 @@ function downward_L(mapS::Union{MapS,MapSd}, alt, α::Vector;
     dx      = dlon2de(dlon,mean(mapS.yy))
     dy      = dlat2dn(dlat,mean(mapS.yy))
     dz      = length(mapS.alt) > 1 ? alt - median(mapS.alt[ind]) : alt - mapS.alt
-    if expand == true
+    if expand
         (ny,nx)  = size(map_map)
         pad      = maximum(ceil.(Int,10*abs(dz)./(dx,dy))) # set pad > 10*dz
         (map_temp,px,py) = map_expand(map_map,pad) # expand with pad

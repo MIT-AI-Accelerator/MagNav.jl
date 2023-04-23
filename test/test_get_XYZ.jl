@@ -27,7 +27,8 @@ end
 
 df_flight[:,:xyz_type] .= :XYZ21
 
-@testset "get_XYZ21 tests" begin #* not actually XYZ21, should still pass
+#* not actually XYZ21, should still pass, keeping this way until public release
+@testset "get_XYZ21 tests" begin
     @test_nowarn get_XYZ21(xyz_files[1];tt_sort=true,silent=true)
     @test_nowarn get_XYZ(flights[1],df_flight;tt_sort=true,silent=true)
 end

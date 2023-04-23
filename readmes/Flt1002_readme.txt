@@ -1,5 +1,5 @@
 Flight 1002
-20-Jun-2020 (doy = ~171.5/366)
+20-Jun-2020 (doy = 172/366)
 
 - 2 compensations (start & end)
 - 10 repeat survey lines (5 Eastern Ontario & 5 Renfrew)

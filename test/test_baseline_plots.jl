@@ -68,8 +68,8 @@ end
 @testset "plot_activation tests" begin
     @test_nowarn plot_activation();
     @test_nowarn plot_activation([:relu,:swish];
-                                 plot_der  = true,
-                                 save_plot = false);
+                                 plot_deriv = true,
+                                 save_plot  = false);
 end
 
 @testset "plot_mag tests" begin
@@ -82,7 +82,7 @@ end
                           detrend_data = true,
                           use_mags     = [:mag_1_c,:mag_1_uc],
                           vec_terms    = [:all],
-                          ylim         = [-300,300],
+                          ylim         = (-300,300),
                           dpi          = 100,
                           show_plot    = false,
                           save_plot    = false);
@@ -91,7 +91,7 @@ end
                           detrend_data = true,
                           use_mags     = [:comp_mags],
                           vec_terms    = [:all],
-                          ylim         = [-1,1],
+                          ylim         = (-1,1),
                           dpi          = 100,
                           show_plot    = false,
                           save_plot    = false);
@@ -100,7 +100,7 @@ end
                           detrend_data = true,
                           use_mags     = [:flux_a],
                           vec_terms    = [:all],
-                          ylim         = [-1000,1000],
+                          ylim         = (-1000,1000),
                           dpi          = 100,
                           show_plot    = false,
                           save_plot    = false);
@@ -109,7 +109,7 @@ end
                           detrend_data = true,
                           use_mags     = [:flight],
                           vec_terms    = [:all],
-                          ylim         = [-1,1],
+                          ylim         = (-1,1),
                           dpi          = 100,
                           show_plot    = false,
                           save_plot    = false);
@@ -133,7 +133,7 @@ end
                             plot_mag_1_uc = false,
                             plot_mag_1_c  = false,
                             dpi           = 100,
-                            ylim          = [-50,50],
+                            ylim          = (-50,50),
                             show_plot     = false,
                             save_plot     = false)) <: Plot
 end

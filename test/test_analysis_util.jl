@@ -143,23 +143,22 @@ end
     @test_nowarn get_nn_m(1,1;hidden=[1,1,1])
     @test_nowarn get_nn_m(1,1;hidden=[1],final_bias=false)
     @test_nowarn get_nn_m(1,1;hidden=[1],skip_con=true)
-    @test typeof(get_nn_m(Flux.params(get_nn_m(1,1;hidden=[1],final_bias=true)))) <: Flux.Chain
-    @test typeof(get_nn_m(Flux.params(get_nn_m(1,1;hidden=[1],final_bias=false)))) <: Flux.Chain
     @test_throws ErrorException get_nn_m(1,1;hidden=[1,1,1,1])
     @test_throws ErrorException get_nn_m(1,1;hidden=[1,1],skip_con=true)
 end
 
 m = get_nn_m(3,1;hidden=[1])
 weights = Flux.params(m)
+α = 0.5
 
 @testset "sparse_group_lasso tests" begin
-    @test sparse_group_lasso(m)     ≈ sparse_group_lasso(weights)
-    @test sparse_group_lasso(m,0.5) ≈ sparse_group_lasso(weights,0.5)
+    @test sparse_group_lasso(m)   ≈ sparse_group_lasso(weights)
+    @test sparse_group_lasso(m,α) ≈ sparse_group_lasso(weights,α)
 end
 
-A = randn(5,9)
-x = randn(5,3)
-y = randn(5)
+A = randn(Float32,5,9)
+x = randn(Float32,5,3)
+y = randn(Float32,5)
 (A_bias,A_scale,A_norm) = norm_sets(A)
 (x_bias,x_scale,x_norm) = norm_sets(x)
 (y_bias,y_scale,y_norm) = norm_sets(y)
@@ -202,7 +201,6 @@ data_norms_6 = (A_bias,A_scale,x_bias,x_scale,y_bias,y_scale)
 data_norms_5 = (v_scale,x_bias,x_scale,y_bias,y_scale)
 data_norms_4 = (x_bias,x_scale,y_bias,y_scale)
 data_norms_A = (0,1,v_scale,x_bias,x_scale,y_bias,y_scale)
-
 
 @testset "unpack_data_norms tests" begin
     @test MagNav.unpack_data_norms(data_norms_7) == data_norms_7
@@ -255,23 +253,12 @@ features = [:f1,:f2,:f3]
     @test_nowarn MagNav.predict_shapley(m,DataFrame(x,features))
     @test_nowarn eval_shapley(m,x,features)
     @test_nowarn plot_shapley(df_shap,baseline_shap)
-    @test_nowarn eval_gsa(m,x)
+    @test typeof(eval_gsa(m,x)) <: Vector
 end
 
-date_start = get_years(2020,185)
-N          = length(xyz.traj.lat[ind])
-tt         = xyz.traj.tt[ind] / (60 * 60 * 24 * get_days_per_year(date_start)) # [yr]
-alt        = xyz.traj.alt[ind]
-lat        = xyz.traj.lat[ind]
-lon        = xyz.traj.lon[ind]
-igrf_time  = date_start .+ tt
-xyz.igrf[ind] = norm.([igrf(igrf_time[i],alt[i],lat[i],lon[i],
-                       Val(:geodetic)) for i = 1:N])
-
 @testset "get_igrf tests" begin
-    @test_nowarn get_igrf(xyz,ind;date_start=date_start)
-    @test_nowarn get_igrf(xyz,ind;date_start=date_start,
-                          frame=:nav,norm_igrf=true)
+    @test_nowarn get_igrf(xyz,ind)
+    @test_nowarn get_igrf(xyz,ind;frame=:nav,norm_igrf=true)
 end
 
 vec_in   = randn(3)
