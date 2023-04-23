@@ -642,11 +642,11 @@ function extract_TL_vector(TL_coef_p, TL_coef_i, TL_coef_e, terms; Bt_scale=5000
     end
 
     if any([:eddy,:e,:eddy9,:e9] .∈ (terms,))
-        TL_coef_e = vec(TL_coef_e')                    * Bt_scale
+        TL_coef_e = vec(TL_coef_e')          * Bt_scale
     elseif any([:eddy8,:e8] .∈ (terms,))
-        TL_coef_e = vec(TL_coef_e')[1:end-1]           * Bt_scale
+        TL_coef_e = vec(TL_coef_e')[1:8]     * Bt_scale
     elseif any([:eddy3,:e3] .∈ (terms,))
-        TL_coef_e = vec(TL_coef_e')[[1,1],[2,2],[3,3]] * Bt_scale
+        TL_coef_e = vec(TL_coef_e')[[1,5,9]] * Bt_scale
     else
         TL_coef_e = []
     end
