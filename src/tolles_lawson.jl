@@ -212,7 +212,7 @@ function create_TL_coef(Bx, By, Bz, B;
     # create Tolles-Lawson `A` matrix
     A = create_TL_A(Bx,By,Bz;Bt=Bt,terms=terms,Bt_scale=Bt_scale)
 
-    # filter columns of A (e.g. Bx_hat) & measurements and trim edges
+    # filter columns of A (e.g., Bx_hat) & measurements and trim edges
     perform_filter && (A = bpf_data(A;bpf=bpf)[trim+1:end-trim,:])
     perform_filter && (B = bpf_data(B;bpf=bpf)[trim+1:end-trim,:])
 

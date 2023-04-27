@@ -52,7 +52,7 @@ No required arguments, though many are available to create custom data.
 - `N_waves`:  (optional) number of sine waves along path
 - `mapV`:     (optional) `MapV` vector magnetic anomaly map struct
 - `flight`:   (optional) flight number
-- `line`:     (optional) line number, i.e. segment within `flight`
+- `line`:     (optional) line number, i.e., segment within `flight`
 - `attempts`: (optional) maximum attempts at creating flight path on `mapS`
 - `save_h5`:  (optional) if true, save HDF5 file `xyz_h5`
 - `xyz_h5`:   (optional) path/name of HDF5 file to save with flight data
@@ -586,7 +586,7 @@ Create compensated (clean) scalar magnetometer measurements from a scalar
 magnetic anomaly map.
 
 **Arguments:**
-- `path`:       `Path` struct, i.e. `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
+- `path`:       `Path` struct, i.e., `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
 - `mapS`:       (optional) `MapS` scalar magnetic anomaly map struct
 - `meas_var`:   (optional) measurement (white) noise variance [nT^2]
 - `fogm_sigma`: (optional) FOGM catch-all bias [nT]
@@ -792,7 +792,7 @@ Create compensated (clean) vector magnetometer measurements from a vector
 magnetic anomaly map.
 
 **Arguments:**
-- `path`:       `Path` struct, i.e. `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
+- `path`:       `Path` struct, i.e., `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
 - `mapV`:       (optional) `MapV` vector magnetic anomaly map struct
 - `meas_var`:   (optional) measurement (white) noise variance [nT^2]
 - `fogm_sigma`: (optional) FOGM catch-all bias [nT]
@@ -863,8 +863,8 @@ Internal helper function to get the imputed Earth vector between two locations.
 - `Bt_scale`:   (optional) scaling factor for induced and eddy current terms [nT]
 
 **Returns:**
-- `TL_aircraft`: `3`x`N` matrix of TL aircraft vector field
-- `B_earth`:     `3`x`N` matrix of Earth vector field
+- `TL_aircraft`: `3` x `N` matrix of TL aircraft vector field
+- `B_earth`:     `3` x `N` matrix of Earth vector field
 - `map_val`:     vector of magnetic anomaly map values
 """
 function calculate_imputed_TL_earth(xyz::Union{XYZ1,XYZ20,XYZ21}, ind, 

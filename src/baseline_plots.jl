@@ -104,7 +104,7 @@ Plot scalar or vector (fluxgate) magnetometer data from a given flight test.
 - `ind`:          (optional) selected data indices
 - `detrend_data`: (optional) if true, plot data will be detrended
 - `use_mags`:     (optional) scalar or vector (fluxgate) magnetometers to plot {`:all_mags`, `:comp_mags` or `:mag_1_c`, `:mag_1_uc`, `:flux_a`, etc.}
-    - `:all_mags`  = all provided scalar magnetometer fields, e.g. `:mag_1_c`, `:mag_1_uc`, etc.
+    - `:all_mags`  = all provided scalar magnetometer fields, e.g., `:mag_1_c`, `:mag_1_uc`, etc.
     - `:comp_mags` = provided compensation(s) between `:mag_1_uc` & `:mag_1_c`, etc.
 - `vec_terms`:    (optional) vector magnetometer (fluxgate) terms to plot {`:all` or `:x`,`:y`,`:z`,`:t`}
 - `ylim`:         (optional) 2-element y limits for plotting
@@ -249,7 +249,7 @@ end # function plot_mag
                file_name::String        = "scalar_mags_comp")
 
 Plot compensated magnetometer(s) data from a given flight test. Assumes `mag_1` 
-(i.e. `:mag_1_uc` & `:mag_1_c`) is the best magnetometer (i.e. stinger).
+(i.e., `:mag_1_uc` & `:mag_1_c`) is the best magnetometer (i.e., stinger).
 
 **Arguments:**
 - `xyz`:           `XYZ` flight data struct
@@ -263,7 +263,7 @@ Plot compensated magnetometer(s) data from a given flight test. Assumes `mag_1`
 - `pass2`:         (optional) filter second passband frequency [Hz]
 - `fs`:            (optional) filter sampling frequency [Hz]
 - `use_mags`:      (optional) scalar or vector (fluxgate) magnetometers to plot {`:all_mags`, or `:mag_1_uc`, etc.}
-    - `:all_mags`  = all uncompensated scalar magnetometer fields, e.g. `:mag_1_uc`, etc.
+    - `:all_mags`  = all uncompensated scalar magnetometer fields, e.g., `:mag_1_uc`, etc.
 - `use_vec`:       (optional) vector magnetometer (fluxgate) to use for Tolles-Lawson `A` matrix {`:flux_a`, etc.}
 - `plot_diff`:     (optional) if true, plot difference between `provided` compensated data & compensated mags `as done here`
 - `plot_mag_1_uc`: (optional) if true, plot mag_1_uc (uncompensated mag_1)

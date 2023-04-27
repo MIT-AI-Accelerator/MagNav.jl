@@ -7,7 +7,7 @@
             clims::Tuple      = (0,0))
 
 Create kmz file of map for use with Google Earth. Generates an "icon" overlay, 
-and is thus not meant for large maps (e.g. > 5 deg x 5 deg).
+and is thus not meant for large maps (e.g., > 5 deg x 5 deg).
 
 **Arguments:**
 - `map_map`:   `ny` x `nx` 2D gridded map data
@@ -116,7 +116,7 @@ end # function map2kmz
             clims::Tuple     = (0,0))
 
 Create kmz file of map for use with Google Earth. Generates an "icon" overlay, 
-and is thus not meant for large maps (e.g. > 5 deg x 5 deg).
+and is thus not meant for large maps (e.g., > 5 deg x 5 deg).
 
 **Arguments:**
 - `mapS`:      `MapS` or `MapSd` scalar magnetic anomaly map struct
@@ -304,7 +304,7 @@ end # function path2kml
 Create kml file of flight path for use with Google Earth.
 
 **Arguments:**
-- `path`:      `Path` struct, i.e. `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
+- `path`:      `Path` struct, i.e., `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
 - `path_name`: (optional) flight path name
 - `width`:     (optional) line width
 - `color1`:    (optional) path color

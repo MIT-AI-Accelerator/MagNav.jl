@@ -1,12 +1,12 @@
 """
     upward_fft(map_map, dx, dy, dz; expand::Bool=true, α=0)
 
-Upward continuation of a potential field (i.e. magnetic anomaly field) map. 
+Upward continuation of a potential field (i.e., magnetic anomaly field) map. 
 Uses the Fast Fourier Transform to convert the map to the frequency domain, 
 applies an upward continuation filter, and converts back to the spatial domain. 
 Optionally expands the map temporarily with periodic padding. Downward 
 continuation can be done to a limited degree as well, but be careful as this 
-can be unstable and amplify high frequencies (i.e. noise).
+can be unstable and amplify high frequencies (i.e., noise).
 
 Reference: Blakely, Potential Theory in Gravity and Magnetic Applications, 
 2009, Chapter 12 & Appendix B (pg. 315-317 & 402).
@@ -82,7 +82,7 @@ end # function upward_fft
 """
     vector_fft(map_map, dx, dy, D, I)
 
-Get potential field (i.e. magnetic anomaly field) map vector components 
+Get potential field (i.e., magnetic anomaly field) map vector components 
 using declination and inclination.
 
 **Arguments:**
@@ -132,7 +132,7 @@ Create radial wavenumber (spatial frequency) grid.
 - `ny`: y-direction map dimension [-]
 
 **Returns:**
-- `k`:  `ny` x `nx` radial wavenumber (i.e. magnitude of wave vector)
+- `k`:  `ny` x `nx` radial wavenumber (i.e., magnitude of wave vector)
 - `kx`: `ny` x `nx` x-direction radial wavenumber
 - `ky`: `ny` x `nx` y-direction radial wavenumber
 """
@@ -154,12 +154,12 @@ algorithm to be used during upward/downward continuation.
 
 **Arguments**
 - `map_map`: `ny` x `nx` 2D gridded map data
-- `pad`: minimum padding along map edges
+- `pad`:     minimum padding (grid cells) along map edges
 
 **Returns:**
 - `map_out`: `ny` x `nx` 2D gridded map data with padding
-- `padx`: x-direction padding (on first edge)
-- `pady`: y-direction padding (on first edge)
+- `padx`:    x-direction padding (grid cells) applied on first edge
+- `pady`:    y-direction padding (grid cells) applied on first edge
 """
 function map_expand(map_map, pad::Int=1)
 
@@ -227,7 +227,7 @@ maximum of curvature may or may not be the optimal regularization parameter.
 - `alt`:    target downward continuation altitude [m]
 - `α`:      (geometric) sequence of regularization parameters
 - `expand`: (optional) if true, expand map temporarily to limit edge effects
-- `ind`:    (optional) selected map indices (e.g. non-edge data)
+- `ind`:    (optional) selected map indices (e.g., non-edge data)
 
 **Returns:**
 - `norms`: L-infinity norm of difference between sequential D.C. solutions
@@ -279,7 +279,7 @@ end # function downward_L
 """
     psd(map_map, dx, dy)
 
-Power spectral density of a potential field (i.e. magnetic anomaly field) map. 
+Power spectral density of a potential field (i.e., magnetic anomaly field) map. 
 Uses the Fast Fourier Transform to determine the spectral energy distribution 
 across the radial wavenumbers (spatial frequencies) in the Fourier transform.
 

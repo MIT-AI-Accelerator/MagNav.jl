@@ -161,7 +161,7 @@ end # function get_bpf
 Bandpass (or low-pass or high-pass) filter columns of matrix.
 
 **Arguments:**
-- `x`:   matrix of input data (e.g. Tolles-Lawson `A` matrix)
+- `x`:   matrix of input data (e.g., Tolles-Lawson `A` matrix)
 - `bpf`: (optional) filter object
 
 **Returns:**
@@ -181,7 +181,7 @@ end # function bpf_data
 Bandpass (or low-pass or high-pass) filter vector.
 
 **Arguments:**
-- `x`:   input data (e.g. magnetometer measurements)
+- `x`:   input data (e.g., magnetometer measurements)
 - `bpf`: (optional) filter object
 
 **Returns:**
@@ -930,7 +930,7 @@ Get neural network model. Valid for 0-3 hidden layers.
 **Arguments:**
 - `xS`: size of input layer
 - `yS`: size of output layer
-- `hidden`:     (optional) hidden layers & nodes, e.g. `[8,8]` for 2 hidden layers, 8 nodes each
+- `hidden`:     (optional) hidden layers & nodes, e.g., `[8,8]` for 2 hidden layers, 8 nodes each
 - `activation`: (optional) activation function
     - `relu`  = rectified linear unit
     - `σ`     = sigmoid (logistic function)
@@ -1251,7 +1251,7 @@ Internal helper function to unpack data normalizations, some of which may
 not be present due to earlier package versions being used.
 
 **Arguments:**
-- `data_norms`: Tuple of data normalizations, e.g. `(A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale)`
+- `data_norms`: Tuple of data normalizations, e.g., `(A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale)`
 
 **Returns:**
 - `data_norms`: length-7 Tuple of data normalizations, `(A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale)`
@@ -1632,7 +1632,7 @@ Reference: https://nredell.github.io/ShapML.jl/dev/#Examples-1
 - `num_mc`:   (optional) number of Monte Carlo simulations
 
 **Returns:**
-- `df_shap`: DataFrame of Shapley effects
+- `df_shap`:       DataFrame of Shapley effects
 - `baseline_shap`: intercept of Shapley effects
 """
 function eval_shapley(m, x, features::Vector{Symbol},
@@ -1726,7 +1726,7 @@ function eval_gsa(m, x, N::Int=min(10000,size(x,1)))
     method      = Morris(num_trajectory=N,relative_scale=true)
     param_range = vec(extrema(x,dims=1))
     means       = vec(gsa(m,method,param_range;N=N).means)
-    # produces Float32 warning even if param_range is Float32
+    #* note: produces Float32 warning even if param_range is Float32
 
     return (means)
 end # function eval_gsa
@@ -1749,7 +1749,7 @@ date in IGRF time (years since 0 CE), and reference frame.
 - `check_xyz`: (optional) if true, cross-check with `igrf` field in `xyz`
 
 **Returns:**
-- `igrf_vec`: `N`x`3` stacked vector for N indices and 3 coordinates of IGRF in desired frame
+- `igrf_vec`: `N` x `3` stacked vector for N indices and 3 coordinates of IGRF in desired frame
 """
 function get_igrf(xyz::Union{XYZ1,XYZ20,XYZ21}, ind=trues(xyz.traj.N);
                   frame           = :body,
@@ -1844,14 +1844,14 @@ end # function project_body_field_to_2d_igrf
 """
     get_optimal_rotation_matrix(v1s, v2s)
 
-Returns the `3`x`3` rotation matrix rotating the directions of v1s into v2s.
+Returns the `3` x `3` rotation matrix rotating the directions of v1s into v2s.
 Uses the Kabsch algorithm.
 
 Reference: https://en.wikipedia.org/wiki/Kabsch_algorithm
 
 **Arguments:**
-- `v1s`: `N`x`3` matrix for first  set of 3D points
-- `v2s`: `N`x`3` matrix for second set of 3D points
+- `v1s`: `N` x `3` matrix for first  set of 3D points
+- `v2s`: `N` x `3` matrix for second set of 3D points
 
 **Returns:**
 - `R`: 3D matrix rotatating v1s into v2s' directions

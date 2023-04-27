@@ -39,7 +39,7 @@ If an HDF5 file is provided, the possible fields in the file are:
 |`mag_1_uc`|vector | Mag 1 uncompensated (corrupted) scalar magnetometer measurements [nT]
 |`mag_1_c` |vector | Mag 1 compensated (clean) scalar magnetometer measurements [nT]
 |`flight`  |vector | flight number(s)
-|`line`    |vector | line number(s), i.e. segments within `flight`
+|`line`    |vector | line number(s), i.e., segments within `flight`
 |`ins_dt`  |scalar | INS measurement time step [s]
 |`ins_tt`  |vector | INS time [s]
 |`ins_lat` |vector | INS latitude  [deg]
@@ -67,7 +67,7 @@ standard way the MATLAB-companion produces data.
 - `traj_field`: (optional) trajectory struct field within MAT file to use, not relevant for HDF5 file
 - `ins_field`:  (optional) INS struct field within MAT file to use, `:none` if unavailable, not relevant for HDF5 file
 - `flight`:     (optional) flight number, only used if not in file
-- `line`:       (optional) line number, i.e. segment within `flight`, only used if not in file
+- `line`:       (optional) line number, i.e., segment within `flight`, only used if not in file
 - `dt`:         (optional) measurement time step [s], only used if not in file
 - `silent`:     (optional) if true, no print outs
 

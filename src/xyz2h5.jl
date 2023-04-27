@@ -28,9 +28,9 @@ data file took 46.8 min to process using a 64 GB MacBook Pro.
 **Arguments:**
 - `xyz_file`:       path/name of .xyz file containing flight data
 - `xyz_h5`:         path/name of HDF5 file to save with flight data
-- `flight`:         SGL flight (e.g. `:Flt1001`)
+- `flight`:         SGL flight (e.g., `:Flt1001`)
 - `lines`:          (optional) selected line number(s) to ONLY include or exclude, must be a vector of 3-element (`line`, `start_time`, `stop_time`) Tuple(s)
-- `lines_type`:     (optional) whether to ONLY `:include` (i.e. to generate testing data) or `:exclude` (i.e. to generate training data) `lines`
+- `lines_type`:     (optional) whether to ONLY `:include` (i.e., to generate testing data) or `:exclude` (i.e., to generate training data) `lines`
 - `tt_sort`:        (optional) if true, sort data by time (instead of line)
 - `downsample_160`: (optional) if true, downsample 160 Hz data to 10 Hz (only for 160 Hz data files)
 - `return_data`:    (optional) if true, return `data` instead of writing `xyz_h5` HDF5 file 
@@ -471,7 +471,7 @@ Get field names for given SGL flight.
     - `:Flt2017`
 
 **Arguments:**
-- `flight`: SGL flight (e.g. `:Flt1001`)
+- `flight`: SGL flight (e.g., `:Flt1001`)
 
 **Returns:**
 - `fields`: list of data field names (Symbols)

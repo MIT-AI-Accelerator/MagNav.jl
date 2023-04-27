@@ -182,9 +182,9 @@ module MagNav
 
     |**Field**|**Type**|**Description**
     |:--|:--|:--
-    |`map`|Matrix{`T2`}| scalar magnetic anomaly map [nT]
-    |`xx` |Vector{`T2`}| latitude  [rad]
-    |`yy` |Vector{`T2`}| longitude [rad]
+    |`map`|Matrix{`T2`}| `ny` x `nx` scalar magnetic anomaly map [nT]
+    |`xx` |Vector{`T2`}| `nx` latitude  map coordinates [rad]
+    |`yy` |Vector{`T2`}| `ny` longitude map coordinates [rad]
     |`alt`|`T2`        | altitude  [m]
     """
     struct MapS{T2 <: AbstractFloat} <: Map{T2}
@@ -202,10 +202,10 @@ module MagNav
 
     |**Field**|**Type**|**Description**
     |:--|:--|:--
-    |`map`|Matrix{`T2`}| scalar magnetic anomaly map [nT]
-    |`xx` |Vector{`T2`}| latitude  [rad]
-    |`yy` |Vector{`T2`}| longitude [rad]
-    |`alt`|Matrix{`T2`}| altitude map [m]
+    |`map`|Matrix{`T2`}| `ny` x `nx` scalar magnetic anomaly map [nT]
+    |`xx` |Vector{`T2`}| `nx` latitude  map coordinates [rad]
+    |`yy` |Vector{`T2`}| `ny` longitude map coordinates [rad]
+    |`alt`|Matrix{`T2`}| `ny` x `nx` altitude map [m]
     """
     struct MapSd{T2 <: AbstractFloat} <: Map{T2}
         map :: Matrix{T2}
@@ -221,11 +221,11 @@ module MagNav
 
     |**Field**|**Type**|**Description**
     |:--|:--|:--
-    |`mapX`|Matrix{`T2`}| x-direction magnetic anomaly map [nT]
-    |`mapY`|Matrix{`T2`}| y-direction magnetic anomaly map [nT]
-    |`mapZ`|Matrix{`T2`}| z-direction magnetic anomaly map [nT]
-    |`xx`  |Vector{`T2`}| latitude  [rad]
-    |`yy`  |Vector{`T2`}| longitude [rad]
+    |`mapX`|Matrix{`T2`}| `ny` x `nx` x-direction magnetic anomaly map [nT]
+    |`mapY`|Matrix{`T2`}| `ny` x `nx` y-direction magnetic anomaly map [nT]
+    |`mapZ`|Matrix{`T2`}| `ny` x `nx` z-direction magnetic anomaly map [nT]
+    |`xx`  |Vector{`T2`}| `nx` latitude  map coordinates [rad]
+    |`yy`  |Vector{`T2`}| `ny` longitude map coordinates [rad]
     |`alt` |`T2`        | altitude  [m]
     """
     struct MapV{T2 <: AbstractFloat} <: Map{T2}
@@ -245,12 +245,12 @@ module MagNav
 
     |**Field**|**Type**|**Description**
     |:--|:--|:--
-    |`mapX`|Matrix{`T2`}| x-direction magnetic anomaly map [nT]
-    |`mapY`|Matrix{`T2`}| y-direction magnetic anomaly map [nT]
-    |`mapZ`|Matrix{`T2`}| z-direction magnetic anomaly map [nT]
-    |`xx`  |Vector{`T2`}| latitude  [rad]
-    |`yy`  |Vector{`T2`}| longitude [rad]
-    |`alt` |Matrix{`T2`}| altitude map [m]
+    |`mapX`|Matrix{`T2`}| `ny` x `nx` x-direction magnetic anomaly map [nT]
+    |`mapY`|Matrix{`T2`}| `ny` x `nx` y-direction magnetic anomaly map [nT]
+    |`mapZ`|Matrix{`T2`}| `ny` x `nx` z-direction magnetic anomaly map [nT]
+    |`xx`  |Vector{`T2`}| `nx` latitude  map coordinates [rad]
+    |`yy`  |Vector{`T2`}| `ny` longitude map coordinates [rad]
+    |`alt` |Matrix{`T2`}| `ny` x `nx` altitude map [m]
     """
     struct MapVd{T2 <: AbstractFloat} <: Map{T2}
         mapX :: Matrix{T2}
@@ -290,7 +290,7 @@ module MagNav
     """
         Traj{T1 <: Signed, T2 <: AbstractFloat}
 
-    Trajectory struct, i.e. GPS or other truth flight data. Subtype of `Path`.
+    Trajectory struct, i.e., GPS or other truth flight data. Subtype of `Path`.
 
     |**Field**|**Type**|**Description**
     |:--|:--|:--
@@ -306,7 +306,7 @@ module MagNav
     |`fn` |Vector{`T2`} | north specific force [m/s]
     |`fe` |Vector{`T2`} | east  specific force [m/s]
     |`fd` |Vector{`T2`} | down  specific force [m/s]
-    |`Cnb`|Array{`T2,3`}| `3`x`3`x`N` direction cosine matrix (body to navigation) [-]
+    |`Cnb`|Array{`T2,3`}| `3` x `3` x `N` direction cosine matrix (body to navigation) [-]
     """
     struct Traj{T1 <: Signed, T2 <: AbstractFloat} <: Path{T1, T2}
         N   :: T1
@@ -343,8 +343,8 @@ module MagNav
     |`fn` |Vector{`T2`} | north specific force [m/s]
     |`fe` |Vector{`T2`} | east  specific force [m/s]
     |`fd` |Vector{`T2`} | down  specific force [m/s]
-    |`Cnb`|Array{`T2,3`}| `3`x`3`x`N` direction cosine matrix (body to navigation) [-]
-    |`P`  |Array{`T2,3`}| `17`x`17`x`N` covariance matrix, only relevant for simulated data, otherwise zeros [-]
+    |`Cnb`|Array{`T2,3`}| `3` x `3` x `N` direction cosine matrix (body to navigation) [-]
+    |`P`  |Array{`T2,3`}| `17` x `17` x `N` covariance matrix, only relevant for simulated data, otherwise zeros [-]
     """
     struct INS{T1 <: Signed, T2 <: AbstractFloat} <: Path{T1, T2}
         N   :: T1
@@ -381,7 +381,7 @@ module MagNav
     |`ins`     |INS{`T1`,`T2`} | inertial navigation system struct
     |`flux_a`  |MagV{`T2`}     | Flux A vector magnetometer measurement struct
     |`flight`  |Vector{`T2`}   | flight number(s)
-    |`line`    |Vector{`T2`}   | line number(s), i.e. segments within `flight`
+    |`line`    |Vector{`T2`}   | line number(s), i.e., segments within `flight`
     |`mag_1_c` |Vector{`T2`}   | Mag 1 compensated (clean) scalar magnetometer measurements [nT]
     |`mag_1_uc`|Vector{`T2`}   | Mag 1 uncompensated (corrupted) scalar magnetometer measurements [nT]
     """
@@ -399,7 +399,7 @@ module MagNav
         XYZ1{T1 <: Signed, T2 <: AbstractFloat} <: XYZ{T1, T2}
 
     Subtype of `XYZ` containing a flexible dataset for future use. Feed in
-    NaNs for any unused fields (e.g. `aux_3`) when creating struct.
+    NaNs for any unused fields (e.g., `aux_3`) when creating struct.
 
     |**Field**|**Type**|**Description**
     |:--|:--|:--
@@ -408,11 +408,11 @@ module MagNav
     |`flux_a`  |MagV{`T2`}     | Flux A vector magnetometer measurement struct
     |`flux_b`  |MagV{`T2`}     | Flux B vector magnetometer measurement struct
     |`flight`  |Vector{`T2`}   | flight number(s)
-    |`line`    |Vector{`T2`}   | line number(s), i.e. segments within `flight`
+    |`line`    |Vector{`T2`}   | line number(s), i.e., segments within `flight`
     |`year`    |Vector{`T2`}   | year
     |`doy`     |Vector{`T2`}   | day of year
-    |`diurnal` |Vector{`T2`}   | measured diurnal, i.e. temporal variations or space weather effects [nT]
-    |`igrf`    |Vector{`T2`}   | International Geomagnetic Reference Field (IGRF), i.e. core field [nT]
+    |`diurnal` |Vector{`T2`}   | measured diurnal, i.e., temporal variations or space weather effects [nT]
+    |`igrf`    |Vector{`T2`}   | International Geomagnetic Reference Field (IGRF), i.e., core field [nT]
     |`mag_1_c` |Vector{`T2`}   | Mag 1 compensated (clean) scalar magnetometer measurements [nT]
     |`mag_2_c` |Vector{`T2`}   | Mag 2 compensated (clean) scalar magnetometer measurements [nT]
     |`mag_3_c` |Vector{`T2`}   | Mag 3 compensated (clean) scalar magnetometer measurements [nT]
@@ -459,7 +459,7 @@ module MagNav
     |`flux_c`    |MagV{`T2`}     | Flux C vector magnetometer measurement struct
     |`flux_d`    |MagV{`T2`}     | Flux D vector magnetometer measurement struct
     |`flight`    |Vector{`T2`}   | flight number(s)
-    |`line`      |Vector{`T2`}   | line number(s), i.e. segments within `flight`
+    |`line`      |Vector{`T2`}   | line number(s), i.e., segments within `flight`
     |`year`      |Vector{`T2`}   | year
     |`doy`       |Vector{`T2`}   | day of year
     |`utm_x`     |Vector{`T2`}   | x-coordinate, WGS-84 UTM zone 18N [m]
@@ -467,8 +467,8 @@ module MagNav
     |`utm_z`     |Vector{`T2`}   | z-coordinate, GPS altitude above WGS-84 ellipsoid [m]
     |`msl`       |Vector{`T2`}   | z-coordinate, GPS altitude above EGM2008 Geoid [m]
     |`baro`      |Vector{`T2`}   | barometric altimeter [m]
-    |`diurnal`   |Vector{`T2`}   | measured diurnal, i.e. temporal variations or space weather effects [nT]
-    |`igrf`      |Vector{`T2`}   | International Geomagnetic Reference Field (IGRF), i.e. core field [nT]
+    |`diurnal`   |Vector{`T2`}   | measured diurnal, i.e., temporal variations or space weather effects [nT]
+    |`igrf`      |Vector{`T2`}   | International Geomagnetic Reference Field (IGRF), i.e., core field [nT]
     |`mag_1_c`   |Vector{`T2`}   | Mag 1 compensated (clean) scalar magnetometer measurements [nT]
     |`mag_1_lag` |Vector{`T2`}   | Mag 1 lag-corrected scalar magnetometer measurements [nT]
     |`mag_1_dc`  |Vector{`T2`}   | Mag 1 diurnal-corrected scalar magnetometer measurements [nT]
@@ -622,7 +622,7 @@ module MagNav
     |`flux_c`    |MagV{`T2`}     | Flux C vector magnetometer measurement struct
     |`flux_d`    |MagV{`T2`}     | Flux D vector magnetometer measurement struct
     |`flight`    |Vector{`T2`}   | flight number(s)
-    |`line`      |Vector{`T2`}   | line number(s), i.e. segments within `flight`
+    |`line`      |Vector{`T2`}   | line number(s), i.e., segments within `flight`
     |`year`      |Vector{`T2`}   | year
     |`doy`       |Vector{`T2`}   | day of year
     |`utm_x`     |Vector{`T2`}   | x-coordinate, WGS-84 UTM zone 18N [m]
@@ -630,8 +630,8 @@ module MagNav
     |`utm_z`     |Vector{`T2`}   | z-coordinate, GPS altitude above WGS-84 ellipsoid [m]
     |`msl`       |Vector{`T2`}   | z-coordinate, GPS altitude above EGM2008 Geoid [m]
     |`baro`      |Vector{`T2`}   | barometric altimeter [m]
-    |`diurnal`   |Vector{`T2`}   | measured diurnal, i.e. temporal variations or space weather effects [nT]
-    |`igrf`      |Vector{`T2`}   | International Geomagnetic Reference Field (IGRF), i.e. core field [nT]
+    |`diurnal`   |Vector{`T2`}   | measured diurnal, i.e., temporal variations or space weather effects [nT]
+    |`igrf`      |Vector{`T2`}   | International Geomagnetic Reference Field (IGRF), i.e., core field [nT]
     |`mag_1_c`   |Vector{`T2`}   | Mag 1 compensated (clean) scalar magnetometer measurements [nT]
     |`mag_1_uc`  |Vector{`T2`}   | Mag 1 uncompensated (corrupted) scalar magnetometer measurements [nT]
     |`mag_2_uc`  |Vector{`T2`}   | Mag 2 uncompensated (corrupted) scalar magnetometer measurements [nT]
@@ -692,10 +692,10 @@ module MagNav
 
     |**Field**|**Type**|**Description**
     |:--|:--|:--
-    |`x`|Matrix{`T2`}   | filtered states, i.e. E(x_t   y_1,..,y_t)
-    |`P`|Array{`T2`,`3`}| non-linear covariance matrix
-    |`r`|Matrix{`T2`}   | measurement residuals [nT]
-    |`c`|`Bool`         | if true, filter converged
+    |`x`|Matrix{`T2`} | filtered states, i.e., E(x_t   y_1,..,y_t)
+    |`P`|Array{`T2,3`}| non-linear covariance matrix
+    |`r`|Matrix{`T2`} | measurement residuals [nT]
+    |`c`|`Bool`       | if true, filter converged
     """
     struct FILTres{T2 <: AbstractFloat}
         x :: Matrix{T2}
@@ -911,7 +911,7 @@ module MagNav
     |`y_type`          | `y` target type (`see below`)
     |`use_mag`         | scalar magnetometer to use {`:mag_1_uc`, etc.}, only used for `y_type = :c, :d, :e`
     |`use_vec`         | vector magnetometer (fluxgate) to use for "external" Tolles-Lawson `A` matrix {`:flux_a`, etc.}, not used for `model_type = :m1`
-    |`data_norms`      | Tuple of data normalizations, e.g. `(A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale)`
+    |`data_norms`      | Tuple of data normalizations, e.g., `(A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale)`
     |`model`           | neural network model
     |`terms`           | Tolles-Lawson terms to use for Tolles-Lawson `A` matrix (or matrices) within `x` matrix {`:permanent`,`:induced`,`:eddy`}
     |`terms_A`         | Tolles-Lawson terms to use for "external" Tolles-Lawson `A` matrix {`:permanent`,`:induced`,`:eddy`,`:bias`}, not used for `model_type = :m1`
@@ -956,7 +956,7 @@ module MagNav
     |`η_adam`      | learning rate for Adam optimizer
     |`epoch_adam`  | number of epochs for Adam optimizer
     |`epoch_lbfgs` | number of epochs for LBFGS optimizer
-    |`hidden`      | hidden layers & nodes, e.g. `[8,8]` for 2 hidden layers, 8 nodes each
+    |`hidden`      | hidden layers & nodes, e.g., `[8,8]` for 2 hidden layers, 8 nodes each
     |`activation`  | activation function (`see below`)
     |`batchsize`   | mini-batch size
     |`frac_train`  | fraction of training data used for training (remainder for validation), only used for Adam optimizer
@@ -1030,7 +1030,7 @@ module MagNav
     |`y_type`          | `y` target type (`see below`)
     |`use_mag`         | scalar magnetometer to use {`:mag_1_uc`, etc.}, only used for `y_type = :c, :d, :e`
     |`use_vec`         | vector magnetometer (fluxgate) to use for "external" Tolles-Lawson `A` matrix {`:flux_a`, etc.}, not used for `model_type = :elasticnet, :plsr`
-    |`data_norms`      | Tuple of data normalizations, e.g. `(A_bias,A_scale,x_bias,x_scale,y_bias,y_scale)`
+    |`data_norms`      | Tuple of data normalizations, e.g., `(A_bias,A_scale,x_bias,x_scale,y_bias,y_scale)`
     |`model`           | linear model coefficients
     |`terms`           | Tolles-Lawson terms to use for Tolles-Lawson `A` matrix (or matrices) within `x` matrix {`:permanent`,`:induced`,`:eddy`}
     |`terms_A`         | Tolles-Lawson terms to use for "external" Tolles-Lawson `A` matrix {`:permanent`,`:induced`,`:eddy`,`:bias`}, not used for `model_type = :elasticnet, :plsr`
