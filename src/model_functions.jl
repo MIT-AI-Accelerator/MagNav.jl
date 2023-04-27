@@ -492,12 +492,14 @@ function get_Phi(nx::Int, lat, vn, ve, vd, fn, fe, fd, Cnb,
                             vec_states = vec_states,
                             fogm_state = fogm_state) * dt)
 
-    # # slightly more allocations & slightly slower
+    # #* note: slightly more allocations & slightly slower
     # sparse(exponential!(get_pinson(nx,lat,vn,ve,vd,fn,fe,fd,Cnb;
-    #                                baro_tau = baro_tau,
-    #                                acc_tau  = acc_tau,
-    #                                gyro_tau = gyro_tau,
-    #                                fogm_tau = fogm_tau) * dt))
+    #                                baro_tau   = baro_tau,
+    #                                acc_tau    = acc_tau,
+    #                                gyro_tau   = gyro_tau,
+    #                                fogm_tau   = fogm_tau,
+    #                                vec_states = vec_states,
+    #                                fogm_state = fogm_state) * dt))
 
 end # function get_Phi
 
@@ -510,12 +512,12 @@ Get expected magnetic measurement Jacobian (gradient here) for EKF.
 
 **Arguments:**
 - `itp_mapS`: scalar map grid interpolation
-- `x`:    states [lat, lon, ... S]
-- `lat`:  latitude [rad]
-- `lon`:  longitude [rad]
-- `alt`:  altitude [m]
-- `date`: (optional) measurement date for IGRF [yr]
-- `core`: (optional) if true, include core magnetic field in measurement
+- `x`:        states [lat, lon, ... S]
+- `lat`:      latitude [rad]
+- `lon`:      longitude [rad]
+- `alt`:      altitude [m]
+- `date`:     (optional) measurement date for IGRF [yr]
+- `core`:     (optional) if true, include core magnetic field in measurement
 
 **Returns:**
 - `H`: expected magnetic measurement Jacobian [nT/rad]
@@ -541,12 +543,12 @@ FOGM catch-all, and optionally IGRF for core magnetic field.
 
 **Arguments:**
 - `itp_mapS`: scalar map grid interpolation
-- `x`:    states [lat, lon, ... S]
-- `lat`:  latitude [rad]
-- `lon`:  longitude [rad]
-- `alt`:  altitude [m]
-- `date`: (optional) measurement date for IGRF [yr]
-- `core`: (optional) if true, include core magnetic field in measurement
+- `x`:        states [lat, lon, ... S]
+- `lat`:      latitude [rad]
+- `lon`:      longitude [rad]
+- `alt`:      altitude [m]
+- `date`:     (optional) measurement date for IGRF [yr]
+- `core`:     (optional) if true, include core magnetic field in measurement
 
 **Returns:**
 - `h`: expected magnetic measurement [nT]
@@ -608,9 +610,9 @@ Local map gradient.
 
 **Arguments:**
 - `itp_mapS`: scalar map grid interpolation
-- `lat`: latitude [rad]
-- `lon`: longitude [rad]
-- `δ`:   (optional) finite difference map sample interval
+- `lat`:      latitude [rad]
+- `lon`:      longitude [rad]
+- `δ`:        (optional) finite difference map sample interval
 
 **Returns:**
 - `map_grad`: local map gradient: δmap/δlat, δmap/δlon [nT/rad]

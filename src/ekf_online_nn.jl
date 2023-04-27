@@ -27,7 +27,7 @@ Extended Kalman filter (EKF) with online learning of neural network weights.
 - `itp_mapS`: scalar map grid interpolation
 - `nn_x`:     `x` matrix for neural network
 - `m`:        neural network model, does not work with skip connections
-- `y_norms`:  Tuple of `y` normalizations, i.e. `(y_bias,y_scale)`
+- `y_norms`:  Tuple of `y` normalizations, i.e., `(y_bias,y_scale)`
 - `P0`:       initial covariance matrix
 - `Qd`:       discrete time process/system noise matrix
 - `R`:        measurement (white) noise variance
@@ -158,7 +158,7 @@ Extended Kalman filter (EKF) with online learning of neural network weights.
 - `itp_mapS`: scalar map grid interpolation
 - `nn_x`:     `x` matrix for neural network
 - `m`:        neural network model, does not work with skip connections
-- `y_norms`:  Tuple of `y` normalizations, i.e. `(y_bias,y_scale)`
+- `y_norms`:  Tuple of `y` normalizations, i.e., `(y_bias,y_scale)`
 - `P0`:       initial covariance matrix
 - `Qd`:       discrete time process/system noise matrix
 - `R`:        measurement (white) noise variance
@@ -230,7 +230,7 @@ Setup for extended Kalman filter (EKF) with online learning of neural network we
 - `x`:       input data
 - `y`:       observed data
 - `m`:       neural network model, does not work with skip connections
-- `y_norms`: Tuple of `y` normalizations, i.e. `(y_bias,y_scale)`
+- `y_norms`: Tuple of `y` normalizations, i.e., `(y_bias,y_scale)`
 - `N_sigma`: (optional) number of neural network weights sets to use to create `nn_sigma`
 
 **Returns:**

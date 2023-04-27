@@ -262,7 +262,7 @@ indices for the original map that will produce the appropriate trimmed map.
 - `map_xx`:    `nx` x-direction map coordinates [m] or [rad] or [deg]
 - `map_yy`:    `ny` y-direction map coordinates [m] or [rad] or [deg]
 - `alt`:       nominal map altitude, median used for 2D altitude map [m]
-- `pad`:       (optional) minimum padding along map edges
+- `pad`:       (optional) minimum padding (grid cells) along map edges
 - `xx_lim`:    (optional) x-direction map limits `(xx_min,xx_max)` [m] or [rad] or [deg]
 - `yy_lim`:    (optional) y-direction map limits `(yy_min,yy_max)` [m] or [rad] or [deg]
 - `zone_utm`:  (optional) UTM zone
@@ -386,7 +386,7 @@ trimmed magnetic anomaly map struct.
 
 **Arguments:**
 - `map_map`:  `Map` magnetic anomaly map struct
-- `pad`:      (optional) minimum padding along map edges
+- `pad`:      (optional) minimum padding (grid cells) along map edges
 - `xx_lim`:   (optional) x-direction map limits `(xx_min,xx_max)` [rad]
 - `yy_lim`:   (optional) y-direction map limits `(yy_min,yy_max)` [rad]
 - `zone_utm`: (optional) UTM zone
@@ -409,10 +409,10 @@ function map_trim(map_map::Map;
                                    pad=pad,xx_lim=xx_lim,yy_lim=yy_lim,
                                    zone_utm=zone_utm,is_north=is_north,
                                    map_units=:rad,silent=silent)
-        if typeof(map_map) <: MapS # 2D
+        if typeof(map_map) <: MapS
             return MapS(map_map.map[ind_yy,ind_xx],map_map.xx[ind_xx],
                         map_map.yy[ind_yy],map_map.alt)
-        else # 3D
+        else # drape
             return MapSd(map_map.map[ind_yy,ind_xx],map_map.xx[ind_xx],
                          map_map.yy[ind_yy],map_map.alt[ind_yy,ind_xx])
         end
@@ -421,11 +421,11 @@ function map_trim(map_map::Map;
                                    pad=pad,xx_lim=xx_lim,yy_lim=yy_lim,
                                    zone_utm=zone_utm,is_north=is_north,
                                    map_units=:rad,silent=silent)
-        if typeof(map_map) <: MapV # 2D
+        if typeof(map_map) <: MapV
             return MapV(map_map.mapX[ind_yy,ind_xx],map_map.mapY[ind_yy,ind_xx],
                         map_map.mapZ[ind_yy,ind_xx],map_map.xx[ind_xx],
                         map_map.yy[ind_yy],map_map.alt)
-        else
+        else # drape
             return MapVd(map_map.mapX[ind_yy,ind_xx],map_map.mapY[ind_yy,ind_xx],
                          map_map.mapZ[ind_yy,ind_xx],map_map.xx[ind_xx],
                          map_map.yy[ind_yy],map_map.alt[ind_yy,ind_xx])
@@ -447,8 +447,8 @@ magnetic anomaly map struct.
 
 **Arguments:**
 - `map_map`:  `Map` magnetic anomaly map struct
-- `path`:     `Path` struct, i.e. `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
-- `pad`:      (optional) minimum padding along map edges
+- `path`:     `Path` struct, i.e., `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
+- `pad`:      (optional) minimum padding (grid cells) along map edges
 - `zone_utm`: (optional) UTM zone
 - `is_north`: (optional) if true, map is in northern hemisphere
 - `silent`:   (optional) if true, no print outs
@@ -479,12 +479,12 @@ end # function map_trim
                       is_north::Bool    = true,
                       map_units::Symbol = :utm)
 
-Correct the International Geomagnetic Reference Field (IGRF), i.e. core field, 
+Correct the International Geomagnetic Reference Field (IGRF), i.e., core field, 
 of a map by subtracting and/or adding the IGRF on specified date(s).
 
 **Arguments:**
 - `map_map`:       `ny` x `nx` 2D gridded map data on UTMZ grid
-- `map_alt`:       `ny` x `nx` 2D gridded altitude map data [m]
+- `map_alt`:       `ny` x `nx` 2D gridded altitude map data, single altitude value may be provided [m]
 - `map_xx`:        `nx` x-direction map coordinates [m]
 - `map_yy`:        `ny` y-direction map coordinates [m]
 - `sub_igrf_date`: (optional) date of IGRF core field to subtract [yr], -1 to ignore
@@ -558,7 +558,7 @@ end # function map_correct_igrf!
                       is_north::Bool    = true,
                       map_units::Symbol = :rad)
 
-Correct the International Geomagnetic Reference Field (IGRF), i.e. core field, 
+Correct the International Geomagnetic Reference Field (IGRF), i.e., core field, 
 of a map by subtracting and/or adding the IGRF on specified date(s).
 
 **Arguments:**
@@ -653,11 +653,11 @@ Reference: Cordell, Phillips, & Godson, U.S. Geological Survey Potential-Field
 Software Version 2.0, 1992.
 
 **Arguments:**
-- `map_map`:  `ny` x `nx` 2D gridded target (e.g. magnetic) map data on [m] grid
+- `map_map`:  `ny` x `nx` 2D gridded target (e.g., magnetic) map data on [m] grid
 - `map_alt`:  `ny` x `nx` 2D gridded altitude map data [m]
 - `map_xx`:   `nx` x-direction map coordinates [m]
 - `map_yy`:   `ny` y-direction map coordinates [m]
-- `alt`:      final map altitude after upward continuation [m], -1 for drape map
+- `alt`:      final map altitude after upward continuation [m]
 - `down_cont`:(optional) if true, downward continue if needed, only used if `up_cont = true`
 - `dz`:       (optional) upward continuation step size [m]
 - `down_max`: (optional) maximum downward continuation distance [m]
@@ -740,8 +740,8 @@ Reference: Cordell, Phillips, & Godson, U.S. Geological Survey Potential-Field
 Software Version 2.0, 1992.
 
 **Arguments:**
-- `MapSd`:   `MapSd` scalar magnetic anomaly map struct
-- `alt`:      final map altitude after upward continuation [m], -1 for drape map
+- `mapSd`:   `MapSd` scalar magnetic anomaly map struct
+- `alt`:      final map altitude after upward continuation [m]
 - `down_cont`:(optional) if true, downward continue if needed
 - `dz`:       (optional) upward continuation step size [m]
 - `down_max`: (optional) maximum downward continuation distance [m]
@@ -898,14 +898,14 @@ Convert map file from .gxf to HDF5. The order of operations is:
 - upward continue to `alt` => 
 - convert grid from UTMZ to LLA
 This can be memory intensive, largely depending on the map size and `dz`. If 
-`up_cont` = true, a `MapS` struct (2D map) is returned. If `up_cont` = false, 
-a `MapSd` struct is returned, while has an included altitude map.
+`up_cont = true`, a `MapS` struct is returned. If `up_cont = false`, a `MapSd` 
+struct is returned, which has an included altitude map.
 
 **Arguments:**
-- `map_gxf`:       path/name of .gxf file with target (e.g. magnetic) map data
+- `map_gxf`:       path/name of .gxf file with target (e.g., magnetic) map data
 - `alt_gxf`:       path/name of .gxf file with altitude map data
 - `alt`:           final map altitude after upward continuation [m], -1 for drape map
-- `pad`:           (optional) minimum padding along map edges
+- `pad`:           (optional) minimum padding (grid cells) along map edges
 - `sub_igrf_date`: (optional) date of IGRF core field to subtract [yr], -1 to ignore
 - `add_igrf_date`: (optional) date of IGRF core field to add [yr], -1 to ignore
 - `zone_utm`:      (optional) UTM zone
@@ -941,7 +941,7 @@ function map_gxf2h5(map_gxf::String, alt_gxf::String, alt;
 
     @info("starting .gxf read")
 
-    # get raw target (e.g. magnetic) and altitude data
+    # get raw target (e.g., magnetic) and altitude data
     (map_map,map_xx ,map_yy ) = map_get_gxf(map_gxf)
     (map_alt,map_xx_,map_yy_) = map_get_gxf(alt_gxf)
 
@@ -973,12 +973,16 @@ function map_gxf2h5(map_gxf::String, alt_gxf::String, alt;
         map_fill!(map_alt,map_xx,map_yy)
     end
 
-    if up_cont # upward continue to alt
-        map_chessboard!(map_map,map_alt,map_xx,map_yy,alt;
-                        down_cont = down_cont,
-                        dz        = dz,
-                        down_max  = down_max,
-                        α         = α)
+    if up_cont # upward/downward continue to alt
+        if all(alt .< 0)
+            @info("not upward continuing to `alt`, -1 provided")
+        else
+            map_chessboard!(map_map,map_alt,map_xx,map_yy,alt;
+                            down_cont = down_cont,
+                            dz        = dz,
+                            down_max  = down_max,
+                            α         = α)
+        end
     end
 
     if get_lla # convert map grid from UTMZ to LLA
@@ -1024,7 +1028,7 @@ Convert map file from .gxf to HDF5. The order of operations is:
 Specifically meant for SMALL and LEVEL maps ONLY.
 
 **Arguments:**
-- `map_gxf`:  path/name of .gxf file with target (e.g. magnetic) map data
+- `map_gxf`:  path/name of .gxf file with target (e.g., magnetic) map data
 - `alt`    :  map altitude [m]
 - `fill_map`: (optional) if true, fill areas that are missing map data
 - `get_lla`:  (optional) if true, convert map grid from UTMZ to LLA
@@ -1505,7 +1509,7 @@ Plot flight path on an existing plot.
 
 **Arguments:**
 - `p1`:         existing plot
-- `path`:       `Path` struct, i.e. `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
+- `path`:       `Path` struct, i.e., `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
 - `ind`:        (optional) selected data indices
 - `lab`:        (optional) data (legend) label
 - `fewer_pts`:  (optional) if true, reduce number of data points plotted
@@ -1595,7 +1599,7 @@ end # function plot_path
 Plot flight path.
 
 **Arguments:**
-- `path`: `Path` struct, i.e. `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
+- `path`: `Path` struct, i.e., `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
 - `ind`:        (optional) selected data indices
 - `lab`:        (optional) data (legend) label
 - `dpi`:        (optional) dots per inch (image resolution)
@@ -1722,7 +1726,7 @@ Check if latitude and longitude points are on given map.
 
 **Arguments:**
 - `map_map`: `Map` magnetic anomaly map struct
-- `path`:    `Path` struct, i.e. `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
+- `path`:    `Path` struct, i.e., `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
 - `ind`:     (optional) selected data indices
 
 **Returns:**
@@ -1739,7 +1743,7 @@ Check if latitude and longitude points are on given map(s).
 
 **Arguments:**
 - `map_map`: `Map` magnetic anomaly map struct(s)
-- `path`:    `Path` struct, i.e. `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
+- `path`:    `Path` struct, i.e., `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
 - `ind`:     (optional) selected data indices
 
 **Returns:**

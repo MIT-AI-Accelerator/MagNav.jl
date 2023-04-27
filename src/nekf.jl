@@ -196,13 +196,13 @@ time step with a pre-computed `Phi` dynamics matrix.
 - `P`:        non-linear covariance matrix
 - `Qd`:       discrete time process/system noise matrix
 - `R`:        measurement (white) noise variance
-- `x`:        filtered states, i.e. E(x_t | y_1,..,y_t)
+- `x`:        filtered states, i.e., E(x_t | y_1,..,y_t)
 - `date`:     (optional) measurement date for IGRF [yr]
 - `core`:     (optional) if true, include core magnetic field in measurement
 
 **Returns:**
 - `P`: non-linear covariance matrix
-- `x`: filtered states, i.e. E(x_t | y_1,..,y_t)
+- `x`: filtered states, i.e., E(x_t | y_1,..,y_t)
 """
 function ekf_single(lat, lon, alt, Phi, meas, itp_mapS,
                     nn_x::Vector = meas,
@@ -283,7 +283,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
 - `gyro_tau`:   (optional) gyroscope time constant [s]
 - `fogm_tau`:   (optional) FOGM catch-all time constant [s]
 - `epoch_adam`: (optional) number of epochs for Adam optimizer
-- `hidden`:     (optional) hidden layers & nodes, e.g. `[8,8]` for 2 hidden layers, 8 nodes each
+- `hidden`:     (optional) hidden layers & nodes, e.g., `[8,8]` for 2 hidden layers, 8 nodes each
 - `activation`: (optional) activation function
     - `relu`  = rectified linear unit
     - `σ`     = sigmoid (logistic function)
@@ -402,7 +402,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
 - `gyro_tau`:   (optional) gyroscope time constant [s]
 - `fogm_tau`:   (optional) FOGM catch-all time constant [s]
 - `epoch_adam`: (optional) number of epochs for Adam optimizer
-- `hidden`:     (optional) hidden layers & nodes, e.g. `[8,8]` for 2 hidden layers, 8 nodes each
+- `hidden`:     (optional) hidden layers & nodes, e.g., `[8,8]` for 2 hidden layers, 8 nodes each
 - `activation`: (optional) activation function
     - `relu`  = rectified linear unit
     - `σ`     = sigmoid (logistic function)
@@ -480,7 +480,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
 - `gyro_tau`:   (optional) gyroscope time constant [s]
 - `fogm_tau`:   (optional) FOGM catch-all time constant [s]
 - `epoch_adam`: (optional) number of epochs for Adam optimizer
-- `hidden`:     (optional) hidden layers & nodes, e.g. `[8,8]` for 2 hidden layers, 8 nodes each
+- `hidden`:     (optional) hidden layers & nodes, e.g., `[8,8]` for 2 hidden layers, 8 nodes each
 - `activation`: (optional) activation function
     - `relu`  = rectified linear unit
     - `σ`     = sigmoid (logistic function)
@@ -493,7 +493,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
 
 **Returns:**
 - `m`:          neural network model
-- `data_norms`: Tuple of data normalizations, e.g. `(v_scale,x_bias,x_scale)`
+- `data_norms`: Tuple of data normalizations, e.g., `(v_scale,x_bias,x_scale)`
 """
 function nekf_train(xyz::XYZ, ind, meas, itp_mapS, x::Matrix;
                     P0                   = create_P0(),

@@ -43,7 +43,7 @@ Run navigation filter and optionally compute Cramér–Rao lower bound (CRLB).
 - `map_alt`:   (optional) map altitude [m]
 - `nn_x`:      (optional) `x` matrix for neural network
 - `m`:         (optional) neural network model
-- `y_norms`:   (optional) Tuple of `y` normalizations, i.e. `(y_bias,y_scale)`
+- `y_norms`:   (optional) Tuple of `y` normalizations, i.e., `(y_bias,y_scale)`
 - `terms`:     (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
 - `flux`:      (optional) `MagV` vector magnetometer measurement struct
 - `x0_TL`:     (optional) initial Tolles-Lawson coefficient states
@@ -174,7 +174,7 @@ end # function run_filt
 Run multiple filter models and print results (nothing returned.)
 
 **Arguments:**
-- `filt_type`: multiple filter types, e.g. [`:ekf`,`:ekf_online_nn`]
+- `filt_type`: multiple filter types, e.g., [`:ekf`,`:ekf_online_nn`]
 """
 function run_filt(traj::Traj, ins::INS, meas, itp_mapS,
                   filt_type::Vector{Symbol};
@@ -746,7 +746,7 @@ end # function plot_filt_err
 Plot scalar magnetometer measurements vs map values.
 
 **Arguments:**
-- `path`:         `Path` struct, i.e. `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
+- `path`:         `Path` struct, i.e., `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
 - `mag`:          scalar magnetometer measurements [nT]
 - `itp_mapS`:     scalar map grid interpolation
 - `lab`:          (optional) magnetometer data (legend) label
@@ -801,7 +801,7 @@ end # function plot_mag_map
 Plot scalar magnetometer measurement vs map value errors.
 
 **Arguments:**
-- `path`:         `Path` struct, i.e. `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
+- `path`:         `Path` struct, i.e., `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
 - `mag`:          scalar magnetometer measurements [nT]
 - `itp_mapS`:     scalar map grid interpolation
 - `lab`:          (optional) data (legend) label
@@ -841,7 +841,7 @@ end # function plot_mag_map_err
 """
     plot_autocor(x::Vector, dt=0.1, dt_max=300.0; show_plot::Bool=false)
 
-Plot autocorrelation of data (e.g. actual - expected measurements). Prints out 
+Plot autocorrelation of data (e.g., actual - expected measurements). Prints out 
 `σ` = standard deviation & `τ` = autocorrelation decay to e^-1 of `x`.
 
 **Arguments:**
@@ -911,7 +911,7 @@ end # function chisq_cdf
 Quantile function (inverse CDF) of the chi-square distribution.
 
 **Arguments:**
-- `P`: percentile (`1 - p-value`), i.e. lower incomplete gamma function ratio
+- `P`: percentile (`1 - p-value`), i.e., lower incomplete gamma function ratio
 - `k`: degrees of freedom
 
 **Returns:**
@@ -971,7 +971,7 @@ Plot a confidence ellipse for a 2x2 covariance matrix (2 degrees of freedom).
 Visualization of a 2D confidence interval.
 
 **Arguments:**
-- `p1`:         starting plot (e.g. map)
+- `p1`:         starting plot (e.g., map)
 - `P`:          2x2 covariance matrix
 - `μ`:          (optional) confidence ellipse center (in same units as `P`)
 - `conf`:       (optional) percentile {0:1}
@@ -1179,8 +1179,8 @@ Create a (position) confidence ellipse gif for a 2x2 (xN) covariance matrix.
 - `gif_name`:   (optional) map name to save
 - `lat1`:       (optional) nominal latitude [rad], only used if `conf_units = :m` or `:ft`
 - `dt`:         (optional) measurement time step [s]
-- `di`:         (optional) gif measurement interval (e.g. `di = 10` uses every 10th measurement)
-- `speedup`:    (optional) gif speedup (e.g. `speedup = 60` is 60x speed)
+- `di`:         (optional) gif measurement interval (e.g., `di = 10` uses every 10th measurement)
+- `speedup`:    (optional) gif speedup (e.g., `speedup = 60` is 60x speed)
 - `conf_units`: (optional) confidence ellipse units {`:m`,`:ft`,`:deg`,`:rad`}
 - `μ`:          (optional) confidence ellipse center (in `conf_units`)
 - `conf`:       (optional) percentile {0:1}
@@ -1272,8 +1272,8 @@ Create a (position) confidence ellipse gif for a 2x2 (xN) covariance matrix.
 - `gif_name`:   (optional) map name to save
 - `map_map`:    (optional) `Map` magnetic anomaly map struct
 - `dt`:         (optional) measurement time step [s]
-- `di`:         (optional) gif measurement interval (e.g. `di = 10` uses every 10th measurement)
-- `speedup`:    (optional) gif speedup (e.g. `speedup = 60` is 60x speed)
+- `di`:         (optional) gif measurement interval (e.g., `di = 10` uses every 10th measurement)
+- `speedup`:    (optional) gif speedup (e.g., `speedup = 60` is 60x speed)
 - `conf_units`: (optional) confidence ellipse units {`:m`,`:ft`,`:deg`,`:rad`}
 - `μ`:          (optional) confidence ellipse center (in `conf_units`)
 - `conf`:       (optional) percentile {0:1}

@@ -1,5 +1,5 @@
 """
-    get_map(map_file::String; map_units::Symbol=:deg)
+    get_map(map_file::String=namad; map_units::Symbol=:deg)
 
 Get map data from saved file. Map files are typically saved with `:deg` units.
 
@@ -10,7 +10,7 @@ Get map data from saved file. Map files are typically saved with `:deg` units.
 **Returns:**
 - `mapS` or `mapV`: `MapS` scalar or `MapV` vector magnetic anomaly map struct
 """
-function get_map(map_file::String; map_units::Symbol=:deg)
+function get_map(map_file::String=namad; map_units::Symbol=:deg)
 
     map_vec = false
 

@@ -566,9 +566,9 @@ end # function get_curriculum_indices
 - `Bt_scale`: (optional) scaling factor for induced and eddy current terms [nT]
 
 **Returns**
-- `TL_coef_p`: `3`x`1` vector of permanent field coefficients
-- `TL_coef_i`: `3`x`3` symmetric matrix of induced field coefficients, denormalized
-- `TL_coef_e`: `3`x`3` matrix of eddy current coefficients, denormalized
+- `TL_coef_p`: `3` x `1` vector of permanent field coefficients
+- `TL_coef_i`: `3` x `3` symmetric matrix of induced field coefficients, denormalized
+- `TL_coef_e`: `3` x `3` matrix of eddy current coefficients, denormalized
 """
 function extract_TL_matrices(TL_coef, terms; Bt_scale=50000f0)
     @assert any([:permanent,:p,:permanent3,:p3] .∈ (terms,)) "permanent terms are required"
@@ -618,9 +618,9 @@ end # function extract_TL_matrices
     extract_TL_vector(TL_coef_p, TL_coef_i, TL_coef_e, terms; Bt_scale=50000f0)
 
 **Arguments**
-- `TL_coef_p`: `3`x`1` vector of permanent field coefficients
-- `TL_coef_i`: `3`x`3` symmetric matrix of induced field coefficients, denormalized
-- `TL_coef_e`: `3`x`3` matrix of eddy current coefficients, denormalized
+- `TL_coef_p`: `3` x `1` vector of permanent field coefficients
+- `TL_coef_i`: `3` x `3` symmetric matrix of induced field coefficients, denormalized
+- `TL_coef_e`: `3` x `3` matrix of eddy current coefficients, denormalized
 - `terms`:     Tolles-Lawson terms used {`:permanent`,`:induced`,`:eddy`}
 - `Bt_scale`:  (optional) scaling factor for induced and eddy current terms [nT]
 
@@ -661,18 +661,18 @@ end # function extract_TL_vector
                            return_parts::Bool=false)
 
 **Arguments**
-- `B_vec`:        `3`x`N` matrix of vector magnetometer measurements
-- `B_vec_dot`:    `3`x`N` matrix of vector magnetometer measurement derivatives
-- `TL_coef_p`:    `3`x`1` vector of permanent field coefficients
-- `TL_coef_i`:    `3`x`3` symmetric matrix of induced field coefficients, denormalized
-- `TL_coef_e`:    `3`x`3` matrix of eddy current coefficients, denormalized
+- `B_vec`:        `3` x `N` matrix of vector magnetometer measurements
+- `B_vec_dot`:    `3` x `N` matrix of vector magnetometer measurement derivatives
+- `TL_coef_p`:    `3` x `1` vector of permanent field coefficients
+- `TL_coef_i`:    `3` x `3` symmetric matrix of induced field coefficients, denormalized
+- `TL_coef_e`:    `3` x `3` matrix of eddy current coefficients, denormalized
 - `return_parts`: (optional) if true, also return `TL_perm`, `TL_induced`, and `TL_eddy`
 
 **Returns**
-- `TL_aircraft`: `3`x`N` matrix of TL aircraft vector field
-- `TL_perm`:     `3`x`N` if `return_parts = true`, matrix of TL permanent vector field
-- `TL_induced`:  `3`x`N` if `return_parts = true`, matrix of TL induced vector field
-- `TL_eddy`:     `3`x`N` if `return_parts = true`, matrix of TL eddy current vector field
+- `TL_aircraft`: `3` x `N` matrix of TL aircraft vector field
+- `TL_perm`:     `3` x `N` if `return_parts = true`, matrix of TL permanent vector field
+- `TL_induced`:  `3` x `N` if `return_parts = true`, matrix of TL induced vector field
+- `TL_eddy`:     `3` x `N` if `return_parts = true`, matrix of TL eddy current vector field
 """
 function get_TL_aircraft_vector(B_vec, B_vec_dot, TL_coef_p, TL_coef_i, TL_coef_e;
                                 return_parts::Bool=false)
@@ -735,7 +735,7 @@ subtracted out from the `y` target value)
 
 Currently, it is recommended to use a low-pass (not a band-pass) filter to
 initialize the Tolles-Lawson coefficients, as a band-pass filter removes the
-Earth field and leaves a large bias in the aircraft field prediction, e.g.:
+Earth field and leaves a large bias in the aircraft field prediction, e.g.,
 `TL_coef = create_TL_coef(getfield(xyz,use_vec), getfield(xyz,use_mag)-xyz.mag_1_c, TL_ind;
                           terms=terms, pass1=0.0, pass2=0.9)`
 
@@ -1210,7 +1210,7 @@ regularization.
 
 **Returns:**
 - `model`:      Tuple of PLSR-based model `(coefficients, bias=0)`
-- `data_norms`: Tuple of data normalizations, e.g. `(x_bias,x_scale,y_bias,y_scale)`
+- `data_norms`: Tuple of data normalizations, e.g., `(x_bias,x_scale,y_bias,y_scale)`
 - `y_hat`:      predicted data
 - `err`:        mean-corrected (per line) error
 - `coef_set`:   if `return_set = true`, set of coefficients (size `nx` x `ny` x `k`)
@@ -1291,9 +1291,10 @@ function plsr_fit(x, y, k::Int=size(x,2);   # N x nx , N x ny , k
     return ((coef, bias), data_norms, y_hat, err)
 end # function plsr_fit
 
-# note: the existing PLSR Julia package (PartialLeastSquaresRegressor.jl) gives
-# the exact same result, but takes 3x longer, requires more dependencies, has
-# issues working in src, and only provides output for a single k per evaluation
+# #* note: the existing PLSR Julia package (PartialLeastSquaresRegressor.jl)
+# #* gives the exact same result, but takes 3x longer, requires more
+# #* dependencies, has issues working in src, and only provides output for a
+# #* single k per evaluation
 # regressor = PLSRegressor(n_factors=k) # create model
 # plsr_p = @pipeline Standardizer regressor target=Standardizer # build pipeline
 # plsr_m = machine(plsr_p,DataFrame(x,features),y) # create machine
@@ -1316,7 +1317,7 @@ Fit an elastic net (ridge regression and/or Lasso) model to data.
 
 **Returns:**
 - `model`:      Tuple of elastic net-based model `(coefficients, bias)`
-- `data_norms`: Tuple of data normalizations, e.g. `(x_bias,x_scale,y_bias,y_scale)`
+- `data_norms`: Tuple of data normalizations, e.g., `(x_bias,x_scale,y_bias,y_scale)`
 - `y_hat`:      predicted data
 - `err`:        mean-corrected (per line) error
 """
@@ -1369,7 +1370,7 @@ Fit a linear regression model to data.
 **Arguments:**
 - `x`:           input data
 - `y`:           observed data
-- `trim`:        (optional) number of elements to trim (e.g. due to bpf)
+- `trim`:        (optional) number of elements to trim (e.g., due to bpf)
 - `λ`:           (optional) ridge parameter
 - `norm_type_x`: (optional) normalization for `x` matrix
 - `norm_type_y`: (optional) normalization for `y` target vector
@@ -1378,7 +1379,7 @@ Fit a linear regression model to data.
 
 **Returns:**
 - `model`:      Tuple of linear regression model `(coefficients, bias=0)`
-- `data_norms`: Tuple of data normalizations, e.g. `(x_bias,x_scale,y_bias,y_scale)`
+- `data_norms`: Tuple of data normalizations, e.g., `(x_bias,x_scale,y_bias,y_scale)`
 - `y_hat`:      predicted data
 - `err`:        mean-corrected (per line) error
 """
@@ -1426,7 +1427,7 @@ Evaluate linear model performance.
 **Arguments:**
 - `x`:          input data
 - `y`:          observed data
-- `data_norms`: Tuple of data normalizations, e.g. `(x_bias,x_scale,y_bias,y_scale)`
+- `data_norms`: Tuple of data normalizations, e.g., `(x_bias,x_scale,y_bias,y_scale)`
 - `model`:      Tuple of model `(coefficients, bias)` or only `coefficients`
 - `l_segs`:     (optional) vector of lengths of `lines`, sum(l_segs) == length(y)
 - `silent`:     (optional) if true, no print outs

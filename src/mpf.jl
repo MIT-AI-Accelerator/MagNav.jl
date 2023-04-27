@@ -70,7 +70,7 @@ function mpf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS;
     ny     = size(meas,2) # measurement dimension
 
     H      = [zeros(1,nxl-1) 1] # linear measurement Jacobian
-    x_out  = zeros(nx,N)        # filtered states, i.e. E[x(t) | y_1,..,y_t]
+    x_out  = zeros(nx,N)        # filtered states, i.e., E[x(t) | y_1,..,y_t]
     Pn_out = zeros(nxn,nxn,N)   # non-linear portion of covariance matrix
     Pl_out = zeros(nxl,nxl,N)   # linear portion of covariance matrix
     resid  = zeros(ny,N)        # measurement residuals

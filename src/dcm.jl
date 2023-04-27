@@ -27,7 +27,7 @@ Section 3.6 (pg. 36-41 & 537).
 - `order`: (optional) rotation order {`:body2nav`,`:nav2body`}
 
 **Returns:**
-- `dcm`: `3`x`3`x`N` direction cosine matrices [-]
+- `dcm`: `3` x `3` x `N` direction cosine matrices [-]
 """
 function euler2dcm(roll, pitch, yaw, order::Symbol=:body2nav)
 
@@ -98,7 +98,7 @@ Reference: Titterton & Weston, Strapdown Inertial Navigation Technology, 2004,
 Section 3.6 (pg. 36-41 & 537).
 
 **Arguments:**
-- `dcm`: `3`x`3`x`N` direction cosine matrices [-]
+- `dcm`:   `3` x `3` x `N` direction cosine matrices [-]
 - `order`: (optional) rotation order {`:body2nav`,`:nav2body`}
 
 **Returns:**
@@ -144,11 +144,11 @@ Reference: Titterton & Weston, Strapdown Inertial Navigation Technology, 2004,
 eq. 10.10 (pg. 284) and eq. 12.6 (pg. 342).
 
 **Arguments:**
-- `Cnb`: `3`x`3`x`N` direction cosine matrices (BODY TO NAVIGATION) [-]
-- `tilt_err`: [3xN] [`X`,`Y`,`Z`] tilt angle errors [rad]
+- `Cnb`:      `3` x `3` x `N` direction cosine matrices (BODY TO NAVIGATION) [-]
+- `tilt_err`: `3` x `N` [`X`,`Y`,`Z`] tilt angle errors [rad]
 
 **Returns:**
-- `Cnb_estimate`: `3`x`3`x`N` "in error" direction cosine matrices [-]
+- `Cnb_estimate`: `3` x `3` x `N` "in error" direction cosine matrices [-]
 """
 function correct_Cnb(Cnb, tilt_err)
 
