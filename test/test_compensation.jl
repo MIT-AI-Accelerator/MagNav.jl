@@ -259,16 +259,16 @@ rm(drop_fi_bson*"_4.bson")
 end
 
 @testset "comp_m3_test tests" begin
-    @test_throws ErrorException MagNav.comp_m3_test(line_test,df_line,df_flight,df,
-                                  comp_params_3tl;silent=true)[end-1]
-    @test std(MagNav.comp_m3_test(line_test,df_line,df_flight,df,
-                                  comp_params_3s ;silent=true)[end-1]) < 5
-    @test std(MagNav.comp_m3_test(line_test,df_line,df_flight,df,
-                                  comp_params_3v ;silent=true)[end-1]) < 5
-    @test std(MagNav.comp_m3_test(line_test,df_line,df_flight,df,
-                                  comp_params_3sc;silent=true)[end-1]) < 100
-    @test std(MagNav.comp_m3_test(line_test,df_line,df_flight,df,
-                                  comp_params_3vc;silent=true)[end-1]) < 100
+    @test_throws ErrorException comp_m3_test(line_test,df_line,df_flight,df,
+                                             comp_params_3tl;silent=true)[end-1]
+    @test std(comp_m3_test(line_test,df_line,df_flight,df,
+                           comp_params_3s ;silent=true)[end-1]) < 5
+    @test std(comp_m3_test(line_test,df_line,df_flight,df,
+                           comp_params_3v ;silent=true)[end-1]) < 5
+    @test std(comp_m3_test(line_test,df_line,df_flight,df,
+                           comp_params_3sc;silent=true)[end-1]) < 100
+    @test std(comp_m3_test(line_test,df_line,df_flight,df,
+                           comp_params_3vc;silent=true)[end-1]) < 100
 end
 
 batchsize   = 5

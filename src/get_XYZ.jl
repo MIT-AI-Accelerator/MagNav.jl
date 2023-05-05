@@ -327,20 +327,20 @@ the body frame. Operates in place on passed-in `XYZ` flight data.
 """
 function xyz_reorient_vec!(xyz::Union{XYZ1,XYZ20,XYZ21})
     for use_vec in field_check(xyz,MagV)
-        flux = getfield(xyz,use_vec) # grab the vector magnetometer info
+        flux = getfield(xyz,use_vec) # get vector magnetometer data
         if any(isnan,flux.t)
             @info("Found NaNs, not reorienting $use_vec")
         else
-            # get start time of flight (seconds past midnight) and compute the IGRF directions
+            # get start time of flight (seconds past midnight) and compute IGRF directions
             ind            = trues(length(flux.x)) # do for whole flight
             norm_igrf_vecs = get_igrf(xyz,ind;frame=:body,norm_igrf=true)
 
-            # compute optimal rotation matrix for this flight line
+            # compute optimal rotation matrix for this flight
             igrf_matrix = permutedims(reduce(hcat,norm_igrf_vecs))
             flux_matrix = permutedims(reduce(hcat,normalize.([ [x,y,z] for (x,y,z) in zip(flux.x,flux.y,flux.z) ])))
             R = get_optimal_rotation_matrix(flux_matrix,igrf_matrix)
 
-            # correct vector magnetometer
+            # correct vector magnetometer data
             for (i,Bt) in enumerate(flux.t)
                   new_flux = Bt*R*flux_matrix[i,:]
                   flux.x[i] = new_flux[1]

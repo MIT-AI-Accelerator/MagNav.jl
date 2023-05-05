@@ -1915,18 +1915,17 @@ function get_years(year, doy)
 end # function get_years
 
 """
-    get_lim(x, frac_trim=0)
+    get_lim(x, frac=0)
 
-Internal helper function to get trimmed limits (extrema) of data.
+Internal helper function to get expanded limits (extrema) of data.
 
 **Arguments:**
-- `x`:         data
-- `frac_trim`: fraction of `x` limits (extrema) to exclude
+- `x`:    data
+- `frac`: fraction of `x` limits (extrema) to expand
 
 **Returns:**
-- `lim`: trimmed limits (extrema) of`x`
+- `lim`: limits (extrema) of `x` expanded by `frac` on each end
 """
-function get_lim(x, frac_trim=0)
-    @assert frac_trim < 0.5 "frac_trim must be < 0.5"
-    extrema(x) .+ (-frac_trim,frac_trim) .* (extrema(x)[2] - extrema(x)[1])
+function get_lim(x, frac=0)
+    extrema(x) .+ (-frac,frac) .* (extrema(x)[2] - extrema(x)[1])
 end # function get_lim

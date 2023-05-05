@@ -165,6 +165,9 @@ module MagNav
     in (using k nearest neighbors) so that the grids are completely filled.
     Care must be taken to not navigate in the filled-in areas, as this is not
     real data and only done for more accurate upward continuation of the maps.
+    Use the `map_check` function on `Eastern_plot.h5` or `Renfrew_plot.h5` with
+    the desired flight path data to determine if the `Eastern` and/or `Renfrew`
+    maps may be used without navigating into any filled-in (artificial) areas.
     """
     ottawa_area_maps() = joinpath(artifact"ottawa_area_maps","ottawa_area_maps")
 
@@ -235,30 +238,6 @@ module MagNav
         xx   :: Vector{T2}
         yy   :: Vector{T2}
         alt  :: T2
-    end
-
-    """
-        MapVd{T2 <: AbstractFloat} <: Map{T2}
-
-    Vector magnetic anomaly map struct used to store an additional altitude
-    map for drape maps. Subtype of `Map`.
-
-    |**Field**|**Type**|**Description**
-    |:--|:--|:--
-    |`mapX`|Matrix{`T2`}| `ny` x `nx` x-direction magnetic anomaly map [nT]
-    |`mapY`|Matrix{`T2`}| `ny` x `nx` y-direction magnetic anomaly map [nT]
-    |`mapZ`|Matrix{`T2`}| `ny` x `nx` z-direction magnetic anomaly map [nT]
-    |`xx`  |Vector{`T2`}| `nx` latitude  map coordinates [rad]
-    |`yy`  |Vector{`T2`}| `ny` longitude map coordinates [rad]
-    |`alt` |Matrix{`T2`}| `ny` x `nx` altitude map [m]
-    """
-    struct MapVd{T2 <: AbstractFloat} <: Map{T2}
-        mapX :: Matrix{T2}
-        mapY :: Matrix{T2}
-        mapZ :: Matrix{T2}
-        xx   :: Vector{T2}
-        yy   :: Vector{T2}
-        alt  :: Matrix{T2}
     end
 
     """
@@ -417,7 +396,7 @@ module MagNav
     |`mag_2_c` |Vector{`T2`}   | Mag 2 compensated (clean) scalar magnetometer measurements [nT]
     |`mag_3_c` |Vector{`T2`}   | Mag 3 compensated (clean) scalar magnetometer measurements [nT]
     |`mag_1_uc`|Vector{`T2`}   | Mag 1 uncompensated (corrupted) scalar magnetometer measurements [nT]
-    |`mag_2_uc`|Vector{`T2`}   | Mag 3 uncompensated (corrupted) scalar magnetometer measurements [nT]
+    |`mag_2_uc`|Vector{`T2`}   | Mag 2 uncompensated (corrupted) scalar magnetometer measurements [nT]
     |`mag_3_uc`|Vector{`T2`}   | Mag 3 uncompensated (corrupted) scalar magnetometer measurements [nT]
     |`aux_1`   |Vector{`T2`}   | flexible-use auxiliary data 1
     |`aux_2`   |Vector{`T2`}   | flexible-use auxiliary data 2
@@ -996,15 +975,15 @@ module MagNav
         norm_type_y      :: Symbol          = :standardize
         TL_coef          :: Vector{Float64} = zeros(19)
         η_adam           :: Float64         = 0.001
-        epoch_adam       :: Int             = 5
-        epoch_lbfgs      :: Int             = 0
-        hidden           :: Vector{Int}     = [8]
+        epoch_adam       :: Int64           = 5
+        epoch_lbfgs      :: Int64           = 0
+        hidden           :: Vector{Int64}   = [8]
         activation       :: Function        = swish
-        batchsize        :: Int             = 2048
+        batchsize        :: Int64           = 2048
         frac_train       :: Float64         = 14/17
         α_sgl            :: Float64         = 1.0
         λ_sgl            :: Float64         = 0.0
-        k_pca            :: Int             = -1
+        k_pca            :: Int64           = -1
         drop_fi          :: Bool            = false
         drop_fi_bson     :: String          = "drop_fi"
         drop_fi_csv      :: String          = "drop_fi.csv"
@@ -1088,7 +1067,7 @@ module MagNav
         norm_type_A      :: Symbol          = :none
         norm_type_x      :: Symbol          = :none
         norm_type_y      :: Symbol          = :none
-        k_plsr           :: Int             = 18
+        k_plsr           :: Int64           = 18
         λ_TL             :: Float64         = 0.025
     end
 
@@ -1133,17 +1112,18 @@ module MagNav
     get_map,save_map,
     get_XYZ20,get_XYZ21,get_XYZ,
     get_XYZ0,get_traj,get_ins,
+    map2kmz,path2kml,
     upward_fft,downward_L,vector_fft,create_k,psd,
     map_interpolate,map_itp,map_get_gxf,map_gxf2h5,map_trim,
-    map_correct_igrf!,map_fill!,map_chessboard!,map_chessboard,map_utm2lla!,
+    map_correct_igrf!,map_correct_igrf,map_fill!,map_fill,
+    map_chessboard!,map_chessboard,map_utm2lla!,map_utm2lla,
     plot_map!,plot_map,plot_path!,plot_path,plot_events!,map_check,
-    map2kmz,path2kml,
     create_model,get_pinson,get_Phi,get_g,get_H,get_h,
     map_grad,igrf_grad,fogm,chol,
     mpf,
     nekf,nekf_train,
     plsr_fit,elasticnet_fit,linear_test,
-    comp_train,comp_test,comp_m2bc_test,comp_train_test,
+    comp_train,comp_test,comp_m2bc_test,comp_m3_test,comp_train_test,
     create_TL_A,create_TL_coef,fdm,
     xyz2h5,field_extrema,xyz_fields,
     LinCompParams,NNCompParams

@@ -1,5 +1,6 @@
 using MagNav, Test, MAT
 using DataFrames, Flux, LinearAlgebra, SatelliteToolbox, Statistics
+using MagNav: project_vector_to_2d, unpack_data_norms
 
 test_file = joinpath(@__DIR__,"test_data/test_data_params.mat")
 params    = matopen(test_file,"r") do file
@@ -203,12 +204,12 @@ data_norms_4 = (x_bias,x_scale,y_bias,y_scale)
 data_norms_A = (0,1,v_scale,x_bias,x_scale,y_bias,y_scale)
 
 @testset "unpack_data_norms tests" begin
-    @test MagNav.unpack_data_norms(data_norms_7) == data_norms_7
-    @test MagNav.unpack_data_norms(data_norms_6) == data_norms_7
-    @test MagNav.unpack_data_norms(data_norms_5) == data_norms_A
-    @test MagNav.unpack_data_norms(data_norms_4) == data_norms_A
-    @test_throws ErrorException MagNav.unpack_data_norms((0,0,0,0,0,0,0,0))
-    @test_throws ErrorException MagNav.unpack_data_norms((0,0,0))
+    @test unpack_data_norms(data_norms_7) == data_norms_7
+    @test unpack_data_norms(data_norms_6) == data_norms_7
+    @test unpack_data_norms(data_norms_5) == data_norms_A
+    @test unpack_data_norms(data_norms_4) == data_norms_A
+    @test_throws ErrorException unpack_data_norms((0,0,0,0,0,0,0,0))
+    @test_throws ErrorException unpack_data_norms((0,0,0))
 end
 
 @testset "get_ind tests" begin
@@ -267,10 +268,10 @@ igrf_in  = vec_in ./ norm(vec_in)
 dcm      = xyz.ins.Cnb[:,:,1]
 
 @testset "project_vector_to_2d tests" begin
-    @test_throws AssertionError MagNav.project_vector_to_2d(vec_in,[1,0,0],[1,0,0])
-    @test_throws AssertionError MagNav.project_vector_to_2d(vec_in,[1,1,0],[0,1,0])
-    @test_throws AssertionError MagNav.project_vector_to_2d(vec_in,[1,0,0],[1,1,0])
-    @test_nowarn MagNav.project_vector_to_2d(vec_in,[1,0,0],[0,1,0])
+    @test_throws AssertionError project_vector_to_2d(vec_in,[1,0,0],[1,0,0])
+    @test_throws AssertionError project_vector_to_2d(vec_in,[1,1,0],[0,1,0])
+    @test_throws AssertionError project_vector_to_2d(vec_in,[1,0,0],[1,1,0])
+    @test_nowarn project_vector_to_2d(vec_in,[1,0,0],[0,1,0])
 end
 
 @testset "project_body_field_to_2d_igrf tests" begin

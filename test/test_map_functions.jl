@@ -1,4 +1,5 @@
 using MagNav, Test, MAT, DataFrames, Geodesy, Plots
+using MagNav: MapS, MapSd, MapV
 
 test_file = joinpath(@__DIR__,"test_data/test_data_grid.mat")
 grid_data = matopen(test_file,"r") do file
@@ -19,8 +20,7 @@ mapP = get_map(string(MagNav.ottawa_area_maps(),"/HighAlt_5181.h5"))
 mapV = get_map(MagNav.emm720)
 mapV = map_trim(mapV,traj)
 
-mapSd = MagNav.MapSd(mapS.map,mapS.xx,mapS.yy,mapS.alt*one.(mapS.map))
-mapVd = MagNav.MapVd(mapV.mapX,mapV.mapY,mapV.mapZ,mapV.xx,mapV.yy,mapV.alt*one.(mapV.mapX))
+mapSd = MapSd(mapS.map,mapS.xx,mapS.yy,mapS.alt*one.(mapS.map))
 
 @testset "map_interpolate tests" begin
     @test itp_mapS(traj.lon[1],traj.lat[1]) ≈ grid_data["itp_map"]
@@ -54,44 +54,50 @@ end
     @test map_trim(mapS ).map  ≈ mapS.map
     @test map_trim(mapSd).map  ≈ mapSd.map
     @test map_trim(mapV ).mapX ≈ mapV.mapX
-    @test map_trim(mapVd).mapX ≈ mapVd.mapX
 end
 
-@testset "map_correct_igrf! tests" begin
-    @test_logs (:info,) map_correct_igrf!(deepcopy(mapS );add_igrf_date=get_years(2013,293))
-    @test_logs (:info,) map_correct_igrf!(deepcopy(mapSd);add_igrf_date=get_years(2013,293))
+add_igrf_date = get_years(2013,293)
+
+@testset "map_correct_igrf tests" begin
+    @test typeof(map_correct_igrf(mapS ;add_igrf_date=add_igrf_date)) <: MapS
+    @test typeof(map_correct_igrf(mapSd;add_igrf_date=add_igrf_date)) <: MapSd
+end
+
+@testset "map_fill tests" begin
+    @test typeof(map_fill(mapS )) <: MapS
+    @test typeof(map_fill(mapSd)) <: MapSd
 end
 
 @testset "map_chessboard tests" begin
     mapSd.alt[1,1] = mapS.alt+200
     mapSd.alt[2,2] = mapS.alt-601
-    @test typeof(map_chessboard(mapSd,mapS.alt;dz=200)) <: MagNav.MapS
-    @test typeof(map_chessboard(mapSd,mapS.alt;down_cont=false,dz=200)) <: MagNav.MapS
+    @test typeof(map_chessboard(mapSd,mapS.alt;dz=200)) <: MapS
+    @test typeof(map_chessboard(mapSd,mapS.alt;down_cont=false,dz=200)) <: MapS
 end
 
 lla2utm  = UTMZfromLLA(WGS84)
 utm_temp = lla2utm.(LLA.(rad2deg.(mapS.yy),rad2deg.(mapS.xx),mapS.alt))
-mapUTM   = MagNav.MapS( mapS.map,[utm_temp[i].x for i = 1:length(mapS.xx)],
+mapUTM   = MapS( mapS.map,[utm_temp[i].x for i = 1:length(mapS.xx)],
                         [utm_temp[i].y for i = 1:length(mapS.yy)],mapS.alt)
-mapUTMd  = MagNav.MapSd(mapS.map,[utm_temp[i].x for i = 1:length(mapS.xx)],
+mapUTMd  = MapSd(mapS.map,[utm_temp[i].x for i = 1:length(mapS.xx)],
                         [utm_temp[i].y for i = 1:length(mapS.yy)],mapSd.alt)
 
-@testset "map_utm2lla! tests" begin
-    @test typeof(map_utm2lla!(mapUTM )) <: MagNav.MapS
-    @test typeof(map_utm2lla!(mapUTMd)) <: MagNav.MapSd
+@testset "map_utm2lla tests" begin
+    @test typeof(map_utm2lla(mapUTM )) <: MapS
+    @test typeof(map_utm2lla(mapUTMd)) <: MapSd
 end
 
 @testset "map_gxf2h5 tests" begin
-    @test typeof(map_gxf2h5(gxf_file,5181;get_lla=true ,save_h5=false)) <: MagNav.MapS
-    @test typeof(map_gxf2h5(gxf_file,5181;get_lla=false,save_h5=false)) <: MagNav.MapS
+    @test typeof(map_gxf2h5(gxf_file,5181;get_lla=true ,save_h5=false)) <: MapS
+    @test typeof(map_gxf2h5(gxf_file,5181;get_lla=false,save_h5=false)) <: MapS
     @test typeof(map_gxf2h5(gxf_file,gxf_file,5181;
-                            up_cont=false,get_lla=true ,save_h5=false)) <: MagNav.MapSd
+                            up_cont=false,get_lla=true ,save_h5=false)) <: MapSd
     @test typeof(map_gxf2h5(gxf_file,gxf_file,5181;
-                            up_cont=false,get_lla=false,save_h5=false)) <: MagNav.MapSd
+                            up_cont=false,get_lla=false,save_h5=false)) <: MapSd
     @test typeof(map_gxf2h5(gxf_file,gxf_file,120;
-                            up_cont=true ,get_lla=true ,save_h5=false)) <: MagNav.MapS
+                            up_cont=true ,get_lla=true ,save_h5=false)) <: MapS
     @test typeof(map_gxf2h5(gxf_file,gxf_file,120;
-                            up_cont=true ,get_lla=false,save_h5=false)) <: MagNav.MapS
+                            up_cont=true ,get_lla=false,save_h5=false)) <: MapS
 end
 
 p1 = plot();
