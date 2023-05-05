@@ -7,13 +7,13 @@
              dt                 = 0.1,
              silent::Bool       = false)
 
-Get the minimum dataset required for MagNav from saved HDF5 or MAT file. 
-Not all fields within the `XYZ0` flight data struct are required. The minimum 
-data required in the HDF5 or MAT file includes: 
+Get the minimum dataset required for MagNav from saved HDF5 or MAT file.
+Not all fields within the `XYZ0` flight data struct are required. The minimum
+data required in the HDF5 or MAT file includes:
 - `lat`, `lon`, `alt` (position)
 - `mag_1_uc` OR `mag_1_c` (scalar magnetometer measurements)
 
-If an HDF5 file is provided, the possible fields in the file are: 
+If an HDF5 file is provided, the possible fields in the file are:
 
 |**Field**|**Type**|**Description**
 |:--|:--|:--
@@ -57,10 +57,10 @@ If an HDF5 file is provided, the possible fields in the file are:
 |`ins_yaw` |vector | INS yaw [deg]
 |`ins_P`   |17x17xN| INS covariance matrix, only relevant for simulated data, otherwise zeros [-]
 
-If a MAT file is provided, the above fields may also be provided, but the 
-non-INS fields should be within a `traj_field` struct and the INS fields should 
-be within an `ins_field` struct and without `ins_` prefixes. This is the 
-standard way the MATLAB-companion produces data.
+If a MAT file is provided, the above fields may also be provided, but the
+non-INS fields should be within the specified `traj_field` MAT struct and the
+INS fields should be within the specified `ins_field` MAT struct and without
+`ins_` prefixes. This is the standard way the MATLAB-companion outputs data.
 
 **Arguments:**
 - `xyz_file`:   path/name of HDF5 or MAT file containing flight data
@@ -90,6 +90,7 @@ function get_XYZ0(xyz_file::String,
 
         xyz_data = h5open(xyz_file,"r") # read-only
 
+        # if needed, create INS struct
         if any(isnan.(read_check(xyz_data,:ins_lat,1,true))) | 
            any(isnan.(read_check(xyz_data,:ins_lon,1,true))) |
            any(isnan.(read_check(xyz_data,:ins_alt,1,true)))
@@ -116,6 +117,7 @@ function get_XYZ0(xyz_file::String,
 
     elseif occursin(".mat",xyz_file) # get data from MAT file
 
+        # if needed, create INS struct
         if ins_field == :none
             ins = create_ins(traj)
         else
@@ -179,7 +181,32 @@ end # function get_XYZ0
 """
     get_traj(traj_file::String, field::Symbol=:traj; dt=0.1, silent::Bool=false)
 
-Get trajectory data from saved HDF5 or MAT file.
+Get trajectory data from saved HDF5 or MAT file. The only required fields are
+`lat`, `lon`, and `alt` (position).
+
+If an HDF5 file is provided, the possible fields in the file are: 
+
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+|`dt`      |scalar | measurement time step [s]
+|`tt`      |vector | time [s]
+|`lat`     |vector | latitude  [deg]
+|`lon`     |vector | longitude [deg]
+|`alt`     |vector | altitude  [m]
+|`vn`      |vector | north velocity [m/s]
+|`ve`      |vector | east  velocity [m/s]
+|`vd`      |vector | down  velocity [m/s]
+|`fn`      |vector | north specific force [m/s]
+|`fe`      |vector | east  specific force [m/s]
+|`fd`      |vector | down  specific force [m/s]
+|`Cnb`     |3x3xN  | direction cosine matrix (body to navigation) [-]
+|`roll`    |vector | roll [deg]
+|`pitch`   |vector | pitch [deg]
+|`yaw`     |vector | yaw [deg]
+
+If a MAT file is provided, the above fields may also be provided, but they
+should be within the specified `traj_field` MAT struct. This is the standard
+way the MATLAB-companion outputs data.
 
 **Arguments:**
 - `traj_file`: path/name of HDF5 or MAT file containing trajectory data
@@ -274,12 +301,12 @@ function get_traj(traj_file::String, field::Symbol=:traj; dt=0.1, silent::Bool=f
 
     N = length(lat)
 
-    # if needed, create tt
+    # if needed, create tt, otherwise get dt from tt
     if any(isnan.(tt))
         silent || @info("creating time data")
-        tt = [LinRange(0:dt:dt*(N-1));]
+        tt = round.(0:dt:dt*(N-1),digits=9)
     else
-        dt = tt[2] - tt[1]
+        dt = round(tt[2] - tt[1],digits=9)
     end
 
     # if needed, create vn, ve, vd
@@ -300,12 +327,12 @@ function get_traj(traj_file::String, field::Symbol=:traj; dt=0.1, silent::Bool=f
         fd = fdm(vd) / dt .- g_earth
     end
 
-    # if needed, create Cnb
+    # if needed, create Cnb, otherwise get Cnb from RPY
     if any(isnan.(Cnb))
         if any(isnan.([roll;pitch;yaw]))
             silent || @info("creating direction cosine matrix data")
             Cnb = create_dcm(vn,ve,dt,:body2nav)
-        else # use RPY to get Cnb
+        else
             Cnb = euler2dcm(roll,pitch,yaw,:body2nav)
         end
     end
@@ -316,7 +343,33 @@ end # function get_traj
 """
     get_ins(ins_file::String, field::Symbol=:ins_data; dt=0.1, silent::Bool=false)
 
-Get inertial navigation system data from saved HDF5 or MAT file.
+Get inertial navigation system data from saved HDF5 or MAT file. The only
+required fields are `ins_lat`, `ins_lon`, and `ins_alt` (position).
+
+If an HDF5 file is provided, the possible fields in the file are:
+
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+|`ins_dt`  |scalar | INS measurement time step [s]
+|`ins_tt`  |vector | INS time [s]
+|`ins_lat` |vector | INS latitude  [deg]
+|`ins_lon` |vector | INS longitude [deg]
+|`ins_alt` |vector | INS altitude  [m]
+|`ins_vn`  |vector | INS north velocity [m/s]
+|`ins_ve`  |vector | INS east  velocity [m/s]
+|`ins_vd`  |vector | INS down  velocity [m/s]
+|`ins_fn`  |vector | INS north specific force [m/s]
+|`ins_fe`  |vector | INS east  specific force [m/s]
+|`ins_fd`  |vector | INS down  specific force [m/s]
+|`ins_Cnb` |3x3xN  | INS direction cosine matrix (body to navigation) [-]
+|`ins_roll`|vector | INS roll [deg]
+|`ins_pitch`|vector| INS pitch [deg]
+|`ins_yaw` |vector | INS yaw [deg]
+|`ins_P`   |17x17xN| INS covariance matrix, only relevant for simulated data, otherwise zeros [-]
+
+If a MAT file is provided, the above fields may also be provided, but they
+should be within the specified `ins_field` MAT struct and without `ins_`
+prefixes. This is the standard way the MATLAB-companion outputs data.
 
 **Arguments:**
 - `ins_file`: path/name of HDF5 or MAT file containing INS data
@@ -413,12 +466,12 @@ function get_ins(ins_file::String, field::Symbol=:ins_data; dt=0.1, silent::Bool
 
     N = length(lat)
 
-    # if needed, create tt
+    # if needed, create tt, otherwise get dt from tt
     if any(isnan.(tt))
         silent || @info("creating INS time data")
-        tt = [LinRange(0:dt:dt*(N-1));]
+        tt = round.(0:dt:dt*(N-1),digits=9)
     else
-        dt = tt[2] - tt[1]
+        dt = round(tt[2] - tt[1],digits=9)
     end
 
     # if needed, create vn, ve, vd
@@ -439,12 +492,12 @@ function get_ins(ins_file::String, field::Symbol=:ins_data; dt=0.1, silent::Bool
         fd = fdm(vd) / dt .- g_earth
     end
 
-    # if needed, create Cnb
+    # if needed, create Cnb, otherwise get Cnb from RPY
     if any(isnan.(Cnb))
         if any(isnan.([roll;pitch;yaw]))
             silent || @info("creating INS direction cosine matrix data")
             Cnb = create_dcm(vn,ve,dt,:body2nav)
-        else # use RPY to get Cnb
+        else
             Cnb = euler2dcm(roll,pitch,yaw,:body2nav)
         end
     end
@@ -489,6 +542,7 @@ function (ins::INS)(ind=trues(ins.N);
 
     ind = findall((1:ins.N) .∈ ((1:ins.N)[ind],))
 
+    # set first N_zero_ll INS lat & lon to specified lat & lon
     if N_zero_ll > 0
         (ins_lat,ins_lon) = zero_ins_ll(ins.lat[ind],ins.lon[ind],err,lat,lon)
     else
@@ -500,7 +554,7 @@ function (ins::INS)(ind=trues(ins.N);
                ins.vn[ind] ,  ins.ve[ind] , ins.vd[ind]   ,
                ins.fn[ind] ,  ins.fe[ind] , ins.fd[ind]   ,
                ins.Cnb[:,:,ind], ins.P[:,:,ind])
-end # function (ins::INS)
+end # function INS
 
 """
     zero_ins_ll(ins_lat, ins_lon, err=0.0, lat=ins_lat[1:1], lon=ins_lon[1:1])
@@ -576,8 +630,8 @@ function (traj::Traj)(ind=trues(traj.N))
                 traj.vn[ind]  , traj.ve[ind]   , traj.vd[ind]   ,
                 traj.fn[ind]  , traj.fe[ind]   , traj.fd[ind]   ,
                 traj.Cnb[:,:,ind])
-end # function (traj::Traj)
+end # function Traj
 
 function (flux::MagV)(ind=trues(length(flux.x)))
     return MagV(flux.x[ind], flux.y[ind], flux.z[ind], flux.t[ind])
-end # function (flux::MagV)
+end # function MagV

@@ -20,27 +20,26 @@ Reference: Blakely, Potential Theory in Gravity and Magnetic Applications,
 - `α`:       (optional) regularization parameter for downward continuation
 
 **Returns**
-- `map_out`: `ny` x `nx` upward continued 2D gridded map data
+- `map_map`: `ny` x `nx` 2D gridded map data, upward continued
 """
 function upward_fft(map_map, dx, dy, dz; expand::Bool=true, α=0)
     dz > 0 && (α = 0) # ensure no regularization if upward
 
+    (ny,nx) = size(map_map)
+
     if expand
-        (ny,nx)  = size(map_map)
-        pad      = maximum(ceil.(Int,10*abs(dz)./(dx,dy))) # set pad > 10*dz
-        (map_temp,px,py) = map_expand(map_map,pad) # expand with pad
-        (Ny,Nx)  = size(map_temp)
-        (k,_,_)  = create_k(dx,dy,Nx,Ny) # radial wavenumber grid
-        H        = exp.(-k.*dz) ./ (1 .+ α .* k.^2 .* exp.(-k.*dz)) # filter
-        map_out  = real(ifft(fft(map_temp).*H))[(1:ny).+py,(1:nx).+px]
+        pad = maximum(ceil.(Int,10*abs(dz)./(dx,dy))) # set pad > 10*dz
+        (map_map,px,py) = map_expand(map_map,pad)     # expand with pad
+        (Ny,Nx) = size(map_map)
     else
-        (ny,nx)  = size(map_map)
-        (k,_,_)  = create_k(dx,dy,nx,ny) # radial wavenumber grid
-        H        = exp.(-k.*dz) ./ (1 .+ α .* k.^2 .* exp.(-k.*dz)) # filter
-        map_out  = real(ifft(fft(map_map).*H))
+        (Ny,Nx,px,py) = (ny,nx,0,0)
     end
 
-    return (map_out)
+    (k,_,_) = create_k(dx,dy,Nx,Ny) # radial wavenumber grid
+    H       = exp.(-k.*dz) ./ (1 .+ α .* k.^2 .* exp.(-k.*dz)) # filter
+    map_map = real(ifft(fft(map_map).*H))[(1:ny).+py,(1:nx).+px]
+
+    return (map_map)
 end # function upward_fft
 
 """
@@ -53,7 +52,7 @@ end # function upward_fft
 - `α`:       (optional) regularization parameter for downward continuation
 
 **Returns**
-- `map_out`: `MapS` scalar or `MapV` vector magnetic anomaly map struct with upward continued map
+- `map_map`: `MapS` scalar or `MapV` vector magnetic anomaly map struct, upward continued
 """
 function upward_fft(map_map::Union{MapS,MapV}, alt; expand::Bool=true, α=0)
     alt = convert(eltype(map_map.xx),alt)
@@ -64,15 +63,15 @@ function upward_fft(map_map::Union{MapS,MapV}, alt; expand::Bool=true, α=0)
         dy   = dlat2dn(dlat,mean(map_map.yy))
         dz   = alt-map_map.alt
         if typeof(map_map) <: MapS # scalar map
-            map_out = MapS(upward_fft(map_map.map,dx,dy,dz,expand=expand,α=α),
+            map_map = MapS(upward_fft(map_map.map,dx,dy,dz,expand=expand,α=α),
                            map_map.xx,map_map.yy,convert(eltype(map_map),alt))
         else # vector map
             mapX    = upward_fft(map_map.mapX,dx,dy,dz,expand=expand,α=α)
             mapY    = upward_fft(map_map.mapY,dx,dy,dz,expand=expand,α=α)
             mapZ    = upward_fft(map_map.mapZ,dx,dy,dz,expand=expand,α=α)
-            map_out = MapV(mapX,mapY,mapZ,map_map.xx,map_map.yy,alt)
+            map_map = MapV(mapX,mapY,mapZ,map_map.xx,map_map.yy,alt)
         end
-        return (map_out)
+        return (map_map)
     else
         @info("for downward continuation, α must be specified")
         return (map_map)
@@ -145,7 +144,7 @@ function create_k(dx, dy, nx::Int, ny::Int)
 end # function create_k
 
 """
-    map_expand(map_map, pad::Int=1)
+    map_expand(map_map::Matrix, pad::Int=1)
 
 Expand map with padding on each edge to eliminate discontinuities in 
 discrete Fourier transform. Map is “wrapped around” to make it periodic. 
@@ -157,41 +156,43 @@ algorithm to be used during upward/downward continuation.
 - `pad`:     minimum padding (grid cells) along map edges
 
 **Returns:**
-- `map_out`: `ny` x `nx` 2D gridded map data with padding
+- `map_map`: `ny` x `nx` 2D gridded map data, expanded (padded)
 - `padx`:    x-direction padding (grid cells) applied on first edge
 - `pady`:    y-direction padding (grid cells) applied on first edge
 """
-function map_expand(map_map, pad::Int=1)
+function map_expand(map_map::Matrix, pad::Int=1)
 
-    (ny,nx) = size(map_map) # original map size
+    map_ = deepcopy(map_map)
+
+    (ny,nx) = size(map_) # original map size
     (Ny,Nx) = smooth7.((ny,nx).+2*pad) # map size with 7-smooth padding
     # (Ny,Nx) = (ny,nx).+ 2*pad # map size with naive padding
 
     # padding on each edge
-    pady    = (floor(Int,(Ny-ny)/2),ceil(Int,(Ny-ny)/2))
-    padx    = (floor(Int,(Nx-nx)/2),ceil(Int,(Nx-nx)/2))
+    pady = (floor(Int,(Ny-ny)/2),ceil(Int,(Ny-ny)/2))
+    padx = (floor(Int,(Nx-nx)/2),ceil(Int,(Nx-nx)/2))
 
     # place original map in middle of new map
     (y1,y2) = (1,ny) .+ pady[1]
     (x1,x2) = (1,nx) .+ padx[1]
-    map_out = zeros(Ny,Nx)
-    map_out[y1:y2,x1:x2] = map_map
+    map_map = zeros(Ny,Nx)
+    map_map[y1:y2,x1:x2] = map_
 
     # fill row edges (right/left)
     for i = y1:y2
-        vals = LinRange(map_out[i,x1],map_out[i,x2],Nx-nx+2)[2:end-1]
-        map_out[i,1:x1-1  ] = reverse(vals[1:1:padx[1]])
-        map_out[i,x2+1:end] = reverse(vals[(1:padx[2]).+padx[1]])
+        vals = LinRange(map_map[i,x1],map_map[i,x2],Nx-nx+2)[2:end-1]
+        map_map[i,1:x1-1  ] = reverse(vals[1:1:padx[1]])
+        map_map[i,x2+1:end] = reverse(vals[(1:padx[2]).+padx[1]])
     end
 
     # fill column edges (top/bottom)
     for i = 1:Nx
-        vals = LinRange(map_out[y1,i],map_out[y2,i],Ny-ny+2)[2:end-1]
-        map_out[1:y1-1  ,i] = reverse(vals[1:1:pady[1]])
-        map_out[y2+1:end,i] = reverse(vals[(1:pady[2]).+pady[1]])
+        vals = LinRange(map_map[y1,i],map_map[y2,i],Ny-ny+2)[2:end-1]
+        map_map[1:y1-1  ,i] = reverse(vals[1:1:pady[1]])
+        map_map[y2+1:end,i] = reverse(vals[(1:pady[2]).+pady[1]])
     end
 
-    return (map_out, padx[1], pady[1])
+    return (map_map, padx[1], pady[1])
 end # function map_expand
 
 """
@@ -235,6 +236,7 @@ maximum of curvature may or may not be the optimal regularization parameter.
 function downward_L(mapS::Union{MapS,MapSd}, alt, α::Vector;
                     expand::Bool = true,
                     ind          = map_params(mapS)[2])
+
     norms   = zeros(length(α)-1)
     map_map = deepcopy(mapS.map)
     dlon    = abs(mapS.xx[end]-mapS.xx[1])/(length(mapS.xx)-1)
@@ -242,35 +244,27 @@ function downward_L(mapS::Union{MapS,MapSd}, alt, α::Vector;
     dx      = dlon2de(dlon,mean(mapS.yy))
     dy      = dlat2dn(dlat,mean(mapS.yy))
     dz      = length(mapS.alt) > 1 ? alt - median(mapS.alt[ind]) : alt - mapS.alt
+    (ny,nx) = size(map_map)
+
     if expand
-        (ny,nx)  = size(map_map)
-        pad      = maximum(ceil.(Int,10*abs(dz)./(dx,dy))) # set pad > 10*dz
-        (map_temp,px,py) = map_expand(map_map,pad) # expand with pad
-        (Ny,Nx)  = size(map_temp)
-        (k,_,_)  = create_k(dx,dy,Nx,Ny) # radial wavenumber grid
-        H_temp   = exp.(-k.*dz)
-        H        = H_temp ./ (1 .+ α[1] .* k.^2 .* H_temp) # filter
-        map_old  = real(ifft(fft(map_temp).*H))
-        map_old  = map_old[(1:ny).+py,(1:nx).+px][ind]
-        for i = 2:length(α)
-            H       = H_temp ./ (1 .+ α[i] .* k.^2 .* H_temp) # filter
-            map_new = real(ifft(fft(map_temp).*H))
-            map_new = map_new[(1:ny).+py,(1:nx).+px][ind]
-            norms[i-1] = norm(map_new-map_old,Inf)
-            map_old = map_new
-        end
+        pad = maximum(ceil.(Int,10*abs(dz)./(dx,dy))) # set pad > 10*dz
+        (map_map,px,py) = map_expand(map_map,pad)     # expand with pad
+        (Ny,Nx) = size(map_map)
     else
-        (ny,nx)  = size(map_map)
-        (k,_,_)  = create_k(dx,dy,nx,ny) # radial wavenumber grid
-        H_temp   = exp.(-k.*dz)
-        H        = H_temp ./ (1 .+ α[1] .* k.^2 .* H_temp) # filter
-        map_old  = real(ifft(fft(map_map).*H))[ind]
-        for i = 2:length(α)
-            H       = H_temp ./ (1 .+ α[i] .* k.^2 .* H_temp) # filter
-            map_new = real(ifft(fft(map_map).*H))[ind]
-            norms[i-1] = norm(map_new-map_old,Inf)
-            map_old = map_new
-        end
+        (Ny,Nx,px,py) = (ny,nx,0,0)
+    end
+
+    (k,_,_) = create_k(dx,dy,Nx,Ny) # radial wavenumber grid
+    H_temp  = exp.(-k.*dz)
+    H       = H_temp ./ (1 .+ α[1] .* k.^2 .* H_temp) # filter
+    map_old = real(ifft(fft(map_map).*H))
+    map_old = map_old[(1:ny).+py,(1:nx).+px][ind]
+    for i = 2:length(α)
+        H       = H_temp ./ (1 .+ α[i] .* k.^2 .* H_temp) # filter
+        map_new = real(ifft(fft(map_map).*H))
+        map_new = map_new[(1:ny).+py,(1:nx).+px][ind]
+        norms[i-1] = norm(map_new-map_old,Inf)
+        map_old = map_new
     end
 
     return (norms)

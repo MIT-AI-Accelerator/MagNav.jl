@@ -168,6 +168,6 @@ lon_disp  = traj_disp.lon[1] - traj.lon[1]
     @test traj_disp.alt == traj.alt
     @test 0.0 < abs(lat_disp) < 0.01
     @test 0.0 < abs(lon_disp) < 0.01
-    @test isapprox(traj_disp.lat, traj.lat .+ lat_disp)
-    @test isapprox(traj_disp.lon, traj.lon .+ lon_disp)
+    @test traj_disp.lat ≈ traj.lat .+ lat_disp
+    @test traj_disp.lon ≈ traj.lon .+ lon_disp
 end

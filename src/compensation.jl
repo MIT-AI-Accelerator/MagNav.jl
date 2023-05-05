@@ -916,7 +916,6 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
 
     ## setup optimizer and loss function
     if model_type in [:m3g]
-        #TODO change these constants to be globally initialized
         opt = Scheduler(Step(λ = η_adam, γ = 0.8, step_sizes = [epoch_adam ÷ 2,epoch_adam ÷ 5, epoch_adam ÷ 5]), Adam())
     else
         opt = Adam(η_adam)
@@ -1022,7 +1021,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
     for i = 1:epoch_adam
         if model_type in [:m3tl,:m3s,:m3v] # train on NN model weights + TL coef
             Flux.train!(loss,Flux.params(m,TL_coef_p,TL_coef_i.data,TL_coef_e),data_train,opt)
-        elseif model_type in [:m3sc,:m3vc] #TODO change these constants to be globally initialized
+        elseif model_type in [:m3sc,:m3vc]
             if i < epoch_adam * (1. / 10.)
                 pms = Flux.params(TL_coef_p)
             elseif i < epoch_adam * (2. / 10.)
@@ -1781,7 +1780,7 @@ function comp_train(xyz::XYZ, ind, mapS::MapS=MapS(zeros(1,1),[0.0],[0.0],0.0);
 end # function comp_train
 
 """
-    comp_train(xyz_array::Vector{MagNav.XYZ20{Int64, Float64}},
+    comp_train(xyz_array::Vector{XYZ20{Int64,Float64}},
                ind_array::Vector{BitVector},
                mapS::MapS              = MapS(zeros(1,1),[0.0],[0.0],0.0);
                comp_params::CompParams = NNCompParams(),
@@ -1809,7 +1808,7 @@ Train an aeromagnetic compensation model.
 - `err`:         compensation error
 - `features`:    full list of features (including components of TL `A`, etc.)
 """
-function comp_train(xyz_array::Vector{MagNav.XYZ20{Int64, Float64}},
+function comp_train(xyz_array::Vector{XYZ20{Int64,Float64}},
                     ind_array::Vector{BitVector},
                     mapS::MapS              = MapS(zeros(1,1),[0.0],[0.0],0.0);
                     comp_params::CompParams = NNCompParams(),

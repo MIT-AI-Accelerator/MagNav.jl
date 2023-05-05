@@ -562,7 +562,7 @@ function create_mag_c(lat, lon, mapS::MapS=get_map(namad);
         (ind0,ind1,_,_) = map_params(mapS) # fill map first, if > 1% unfilled
         if sum(ind0)/(sum(ind0)+sum(ind1)) > 0.01
             @info("filling in scalar map")
-            map_fill!(mapS)
+            mapS = map_fill(mapS)
         end
         @info("upward continuing scalar map")
         mapS = upward_fft(mapS,alt)

@@ -89,6 +89,7 @@ function ekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS;
                                        date=date,core=core)
         end
 
+        # residual store
         r_out[:,t] = resid
 
         # measurement Jacobian (repeated gradient here) [ny x nx]
@@ -115,7 +116,7 @@ function ekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS;
         x = x + K*resid         # x_t [nx]
         P = (I - K*H) * P       # P_t [nx x nx]
 
-        # state, covariance, and residual store
+        # state and covariance store
         x_out[:,t]   = x
         P_out[:,:,t] = P
 

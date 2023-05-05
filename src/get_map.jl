@@ -78,7 +78,7 @@ function get_map(map_file::String=namad; map_units::Symbol=:deg)
            ((length(map_yy),length(map_xx)) == size(map_mapY)) & 
            ((length(map_yy),length(map_xx)) == size(map_mapZ))
             if map_d
-                return MapVd(map_mapX,map_mapY,map_mapZ,map_xx,map_yy,map_alt)
+                error("map altitude is not scalar")
             else
                 return MapV( map_mapX,map_mapY,map_mapZ,map_xx,map_yy,map_alt)
             end
