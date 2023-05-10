@@ -413,12 +413,12 @@ module MagNav
         doy      :: Vector{T2}
         diurnal  :: Vector{T2}
         igrf     :: Vector{T2}
-        mag_1_uc :: Vector{T2}
-        mag_2_uc :: Vector{T2}
-        mag_3_uc :: Vector{T2}
         mag_1_c  :: Vector{T2}
         mag_2_c  :: Vector{T2}
         mag_3_c  :: Vector{T2}
+        mag_1_uc :: Vector{T2}
+        mag_2_uc :: Vector{T2}
+        mag_3_uc :: Vector{T2}
         aux_1    :: Vector{T2}
         aux_2    :: Vector{T2}
         aux_3    :: Vector{T2}
