@@ -17,7 +17,7 @@ dz = map_data["dz"]
 
 (k,kx,ky) = create_k(dx,dy,nx,ny)
 
-mapS = get_map(MagNav.namad)
+mapS = get_map(MagNav.emag2)
 mapS = map_trim(mapS,traj)
 
 mapV = get_map(MagNav.emm720)
