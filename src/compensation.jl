@@ -102,7 +102,7 @@ function nn_comp_1_train(x, y, no_norm;
     if model == Chain() # not re-training with known model
         m = get_nn_m(xS,yS;hidden=hidden,activation=activation)
     else # initial model already known
-        m = model
+        m = deepcopy(model)
     end
 
     ## setup optimizer and loss function
@@ -129,7 +129,7 @@ function nn_comp_1_train(x, y, no_norm;
     best_loss = loss_all(data_val)
     isempty(x_test) || (best_test_error = test_error_nT(y_test, y_bias, y_scale, m, x_norm_test))
 
-    @info("Epoch 0: loss = $best_loss")
+    @info("epoch 0: loss = $best_loss")
     for i = 1:epoch_adam
         Flux.train!(loss,Flux.params(m),data_train,opt)
         current_loss  = loss_all(data_val)
@@ -139,14 +139,14 @@ function nn_comp_1_train(x, y, no_norm;
                 best_loss = current_loss
                 m_store   = deepcopy(m)
             end
-            mod(i,5) == 0 && @info("Epoch $i: loss = $best_loss")
+            mod(i,5) == 0 && @info("epoch $i: loss = $best_loss")
         else
             test_error = test_error_nT(y_test, y_bias, y_scale, m, x_norm_test)
             if test_error < best_test_error
                 best_test_error = test_error
                 m_store = deepcopy(m)
             end
-            mod(i,5) == 0 && @info("Epoch $i: loss = $current_loss, test error = $(round(best_test_error,digits=2)) nT")
+            mod(i,5) == 0 && @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error,digits=2)) nT")
         end
         if mod(i,10) == 0
             y_hat = denorm_sets(y_bias,y_scale,vec(m(x_norm')))
@@ -202,14 +202,14 @@ end # function nn_comp_1_train
 
 """
     nn_comp_1_test(x, y, data_norms::Tuple, model::Chain;
-                   l_segs::Vector       = [length(y)],
-                   silent::Bool         = false)
+                   l_segs::Vector = [length(y)],
+                   silent::Bool   = false)
 
 Evaluate neural network-based aeromagnetic compensation, model 1 performance.
 """
 function nn_comp_1_test(x, y, data_norms::Tuple, model::Chain;
-                        l_segs::Vector       = [length(y)],
-                        silent::Bool         = false)
+                        l_segs::Vector = [length(y)],
+                        silent::Bool   = false)
 
     # convert to Float32 for consistency with nn_comp_1_train
     x = convert.(Float32,x)
@@ -356,7 +356,7 @@ function nn_comp_2_train(A, x, y, no_norm;
     if model == Chain() # not re-training with known model
         m = get_nn_m(xS,yS;hidden=hidden,activation=activation)
     else # initial model already known
-        m = model
+        m = deepcopy(model)
     end
 
     TL_coef = TL_coef/y_scale
@@ -406,7 +406,7 @@ function nn_comp_2_train(A, x, y, no_norm;
     best_loss = loss_all(data_val)
     isempty(x_test) || (best_test_error = test_error_nT(y_test, y_bias, y_scale, m, A_norm_test, x_norm_test))
 
-    @info("Epoch 0: loss = $best_loss")
+    @info("epoch 0: loss = $best_loss")
     for i = 1:epoch_adam
         if model_type in [:m2a,:m2b,:m2d] # train on NN model weights only
             Flux.train!(loss,Flux.params(m),data_train,opt)
@@ -420,7 +420,7 @@ function nn_comp_2_train(A, x, y, no_norm;
                 m_store = deepcopy(m)
                 TL_coef_store = deepcopy(TL_coef*y_scale)
             end
-            mod(i,5) == 0 && @info("Epoch $i: loss = $best_loss")
+            mod(i,5) == 0 && @info("epoch $i: loss = $best_loss")
         else
             test_error = test_error_nT(y_test, y_bias, y_scale, m, A_norm_test, x_norm_test)
             if test_error < best_test_error
@@ -428,7 +428,7 @@ function nn_comp_2_train(A, x, y, no_norm;
                 m_store = deepcopy(m)
                 TL_coef_store = deepcopy(TL_coef*y_scale)
             end
-            mod(i,5) == 0 && @info("Epoch $i: loss = $current_loss, test error = $(round(best_test_error,digits=2)) nT")
+            mod(i,5) == 0 && @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error,digits=2)) nT")
         end
         if mod(i,10) == 0
             y_hat = get_test_yhat(y_bias, y_scale, m, A_norm, x_norm)
@@ -532,10 +532,10 @@ function nn_comp_2_test(A, x, y, data_norms::Tuple, model::Chain;
 end # function nn_comp_2_test
 
 """
-    get_curriculum_indices(feats, sigma=1)
+    get_curriculum_ind(TL_diff, sigma=1)
 
-Get indices for curriculum learning (to train the Tolles-Lawson section of
-the loss) and indices to train the neural network.
+Internal helper function to get indices for curriculum learning (to train
+the Tolles-Lawson section of the loss) and indices to train the neural network.
 
 **Arguments:**
 - `TL_diff`: difference of TL model to ground truth
@@ -545,27 +545,30 @@ the loss) and indices to train the neural network.
 - `curriculum_ind`: indices for curriculum learning
 - `nn_ind`:         indices for training the neural network
 """
-function get_curriculum_indices(TL_diff, sigma=1)
+function get_curriculum_ind(TL_diff, sigma=1)
      zeroed_diff = vec(detrend(TL_diff;mean_only=true))
      cutoff = sigma*std(zeroed_diff)
      # NN indices are those outside cutoff (outliers)
-     nn_inds = findall(v -> (v<-cutoff) || (cutoff < v),zeroed_diff)
-     curriculum_inds = collect(1:length(zeroed_diff))
+     nn_ind = findall(v -> (v<-cutoff) || (cutoff < v),zeroed_diff)
+     curriculum_ind = collect(1:length(zeroed_diff))
      # TL indices are those closer to mean
-     deleteat!(curriculum_inds, nn_inds)
+     deleteat!(curriculum_ind, nn_ind)
 
-    return (curriculum_inds, nn_inds)
-end # function get_curriculum_indices
+    return (curriculum_ind, nn_ind)
+end # function get_curriculum_ind
 
 """
     extract_TL_matrices(TL_coef, terms; Bt_scale=50000f0)
 
-**Arguments**
+Internal helper function to extract the matrix form of Tolles-Lawson
+coefficients from the vector form.
+
+**Arguments:**
 - `TL_coef`:  Tolles-Lawson coefficients (must include `:permanent` and `:induced`)
 - `terms`:    Tolles-Lawson terms used {`:permanent`,`:induced`,`:eddy`}
 - `Bt_scale`: (optional) scaling factor for induced and eddy current terms [nT]
 
-**Returns**
+**Returns:**
 - `TL_coef_p`: `3` x `1` vector of permanent field coefficients
 - `TL_coef_i`: `3` x `3` symmetric matrix of induced field coefficients, denormalized
 - `TL_coef_e`: `3` x `3` matrix of eddy current coefficients, denormalized
@@ -617,14 +620,17 @@ end # function extract_TL_matrices
 """
     extract_TL_vector(TL_coef_p, TL_coef_i, TL_coef_e, terms; Bt_scale=50000f0)
 
-**Arguments**
+Internal helper function to extract the vector form of Tolles-Lawson
+coefficients from the matrix form.
+
+**Arguments:**
 - `TL_coef_p`: `3` x `1` vector of permanent field coefficients
 - `TL_coef_i`: `3` x `3` symmetric matrix of induced field coefficients, denormalized
 - `TL_coef_e`: `3` x `3` matrix of eddy current coefficients, denormalized
 - `terms`:     Tolles-Lawson terms used {`:permanent`,`:induced`,`:eddy`}
 - `Bt_scale`:  (optional) scaling factor for induced and eddy current terms [nT]
 
-**Returns**
+**Returns:**
 - `TL_coef`:  Tolles-Lawson coefficients
 """
 function extract_TL_vector(TL_coef_p, TL_coef_i, TL_coef_e, terms; Bt_scale=50000f0)
@@ -660,7 +666,7 @@ end # function extract_TL_vector
     get_TL_aircraft_vector(B_vec, B_vec_dot, TL_coef_p, TL_coef_i, TL_coef_e;
                            return_parts::Bool=false)
 
-**Arguments**
+**Arguments:**
 - `B_vec`:        `3` x `N` matrix of vector magnetometer measurements
 - `B_vec_dot`:    `3` x `N` matrix of vector magnetometer measurement derivatives
 - `TL_coef_p`:    `3` x `1` vector of permanent field coefficients
@@ -668,7 +674,7 @@ end # function extract_TL_vector
 - `TL_coef_e`:    `3` x `3` matrix of eddy current coefficients, denormalized
 - `return_parts`: (optional) if true, also return `TL_perm`, `TL_induced`, and `TL_eddy`
 
-**Returns**
+**Returns:**
 - `TL_aircraft`: `3` x `N` matrix of TL aircraft vector field
 - `TL_perm`:     `3` x `N` if `return_parts = true`, matrix of TL permanent vector field
 - `TL_induced`:  `3` x `N` if `return_parts = true`, matrix of TL induced vector field
@@ -868,14 +874,14 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
         y_norm_val      = y_norm[p_val  ,:]
 
         if model_type in [:m3sc,:m3vc]
-            @info("Making curriculum")
+            @info("making curriculum")
             # calculate TL estimate in training data
             y_TL = get_scalar_TL(B_vec_train', B_vec_dot_train', B_unit_train', 
                                  TL_coef_p, TL_coef_i, TL_coef_e, y_type_aircraft)
             y_train   = y[p_train,:]
             y_TL_diff = y_train' - y_TL
 
-            (curriculum_ind,_) = get_curriculum_indices(y_TL_diff)
+            (curriculum_ind,_) = get_curriculum_ind(y_TL_diff)
             data_train   = Flux.DataLoader((B_vec_train[ curriculum_ind, :]',
                                            B_vec_dot_train[curriculum_ind, :]',
                                            B_unit_train[curriculum_ind, :]',
@@ -911,11 +917,12 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
     if model == Chain() # not re-training with known model
         m = get_nn_m(xS,yS;hidden=hidden,activation=activation)
     else # initial model already known
-        m = model
+        m = deepcopy(model)
     end
 
     ## setup optimizer and loss function
     if model_type in [:m3g]
+        #TODO change these constants to be globally initialized
         opt = Scheduler(Step(λ = η_adam, γ = 0.8, step_sizes = [epoch_adam ÷ 2,epoch_adam ÷ 5, epoch_adam ÷ 5]), Adam())
     else
         opt = Adam(η_adam)
@@ -1016,12 +1023,12 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
                                                         x_norm_test, B_vec_test,
                                                         B_vec_dot_test, B_unit_test))
 
-    @info("Epoch 0: loss = $best_loss")
+    @info("epoch 0: loss = $best_loss")
     has_nn = 1f0 # multiplier to keep/exclude NN contribution into y_hat calculation
     for i = 1:epoch_adam
         if model_type in [:m3tl,:m3s,:m3v] # train on NN model weights + TL coef
             Flux.train!(loss,Flux.params(m,TL_coef_p,TL_coef_i.data,TL_coef_e),data_train,opt)
-        elseif model_type in [:m3sc,:m3vc]
+        elseif model_type in [:m3sc,:m3vc] #TODO change these constants to be globally initialized
             if i < epoch_adam * (1. / 10.)
                 pms = Flux.params(TL_coef_p)
             elseif i < epoch_adam * (2. / 10.)
@@ -1048,7 +1055,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
                 m_store = deepcopy(m)
                 TL_coef_store = extract_TL_vector(TL_coef_p,TL_coef_i,TL_coef_e,terms_A;Bt_scale=Bt_scale)
             end
-            mod(i,5) == 0 && @info("Epoch $i: loss = $best_loss")
+            mod(i,5) == 0 && @info("epoch $i: loss = $best_loss")
         else
             test_error = test_error_nT(y_test, y_bias, y_scale, m, x_norm_test,
                                        B_vec_test, B_vec_dot_test, B_unit_test)
@@ -1057,7 +1064,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
                 m_store = deepcopy(m)
                 TL_coef_store = extract_TL_vector(TL_coef_p,TL_coef_i,TL_coef_e,terms_A;Bt_scale=Bt_scale)
             end
-            mod(i,5) == 0 && @info("Epoch $i: loss = $current_loss, test error = $(round(best_test_error,digits=2)) nT")
+            mod(i,5) == 0 && @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error,digits=2)) nT")
         end
         if mod(i,10) == 0
             y_hat = get_test_yhat(y_bias, y_scale, m, x_norm, B_vec, B_vec_dot, B_unit)
@@ -1190,7 +1197,7 @@ end # function nn_comp_3_test
 
 """
     plsr_fit(x, y, k::Int=size(x,2);
-             l_segs::Vector = [length(y)],
+             l_segs::Vector   = [length(y)],
              return_set::Bool = false,
              silent::Bool     = false)
 
@@ -1215,7 +1222,7 @@ regularization.
 - `coef_set`:   if `return_set = true`, set of coefficients (size `nx` x `ny` x `k`)
 """
 function plsr_fit(x, y, k::Int=size(x,2);   # N x nx , N x ny , k
-                  l_segs::Vector = [length(y)],
+                  l_segs::Vector   = [length(y)],
                   return_set::Bool = false,
                   silent::Bool     = false)
 
@@ -1649,7 +1656,6 @@ function comp_train(xyz::XYZ, ind, mapS::MapS=MapS(zeros(1,1),[0.0],[0.0],0.0);
                                     α_sgl       = α_sgl,
                                     λ_sgl       = λ_sgl,
                                     k_pca       = k_pca,
-                                    l_segs      = l_segs,
                                     A_test      = A_test,
                                     Bt_test     = Bt_test,
                                     B_dot_test  = B_dot_test,
@@ -1691,6 +1697,7 @@ function comp_train(xyz::XYZ, ind, mapS::MapS=MapS(zeros(1,1),[0.0],[0.0],0.0);
                                 α_sgl       = α_sgl,
                                 λ_sgl       = λ_sgl,
                                 k_pca       = k_pca,
+                                data_norms  = data_norms,
                                 model       = model,
                                 x_test      = x_test,
                                 y_test      = y_test,
@@ -1713,6 +1720,7 @@ function comp_train(xyz::XYZ, ind, mapS::MapS=MapS(zeros(1,1),[0.0],[0.0],0.0);
                                 α_sgl       = α_sgl,
                                 λ_sgl       = λ_sgl,
                                 k_pca       = k_pca,
+                                data_norms  = data_norms,
                                 model       = model,
                                 A_test      = A_test,
                                 x_test      = x_test,
@@ -1737,6 +1745,8 @@ function comp_train(xyz::XYZ, ind, mapS::MapS=MapS(zeros(1,1),[0.0],[0.0],0.0);
                                 α_sgl       = α_sgl,
                                 λ_sgl       = λ_sgl,
                                 k_pca       = k_pca,
+                                data_norms  = data_norms,
+                                model       = model,
                                 A_test      = A_test,
                                 Bt_test     = Bt_test,
                                 B_dot_test  = B_dot_test,
@@ -2024,7 +2034,6 @@ function comp_train(xyz_array::Vector{XYZ20{Int64,Float64}},
                                     α_sgl       = α_sgl,
                                     λ_sgl       = λ_sgl,
                                     k_pca       = k_pca,
-                                    l_segs      = l_segs,
                                     A_test      = A_test,
                                     Bt_test     = Bt_test,
                                     B_dot_test  = B_dot_test,
@@ -2066,6 +2075,7 @@ function comp_train(xyz_array::Vector{XYZ20{Int64,Float64}},
                                 α_sgl       = α_sgl,
                                 λ_sgl       = λ_sgl,
                                 k_pca       = k_pca,
+                                data_norms  = data_norms,
                                 model       = model,
                                 x_test      = x_test,
                                 y_test      = y_test,
@@ -2088,6 +2098,7 @@ function comp_train(xyz_array::Vector{XYZ20{Int64,Float64}},
                                 α_sgl       = α_sgl,
                                 λ_sgl       = λ_sgl,
                                 k_pca       = k_pca,
+                                data_norms  = data_norms,
                                 model       = model,
                                 A_test      = A_test,
                                 x_test      = x_test,
@@ -2112,6 +2123,8 @@ function comp_train(xyz_array::Vector{XYZ20{Int64,Float64}},
                                 α_sgl       = α_sgl,
                                 λ_sgl       = λ_sgl,
                                 k_pca       = k_pca,
+                                data_norms  = data_norms,
+                                model       = model,
                                 A_test      = A_test,
                                 Bt_test     = Bt_test,
                                 B_dot_test  = B_dot_test,
@@ -3029,7 +3042,7 @@ function comp_m3_test(lines, df_line::DataFrame,
     elseif model_type in [:m3v,:m3vc]
        y_NN = y_scale .* m(transpose(x_norm))  # vector-corrected 3xN, just rescale
     else
-        error("Unsupported model designation for Model 3 explainability")
+        error("unsupported model designation for Model 3 explainability")
     end
 
     # compute aircraft or Earth field target
@@ -3146,11 +3159,11 @@ function comp_train_test(lines_train, lines_test,
 end # function comp_train_test
 
 """
-    function print_time(t)
+    function print_time(t, digits::Int=1)
 
 Internal helper function to print time `t` in `sec` if <1 min, otherwise `min`.
 """
-function print_time(t, digits=1)
+function print_time(t, digits::Int=1)
     if t < 60
         @info("time: $(round(t   ,digits=digits)) sec")
     else
