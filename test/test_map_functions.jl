@@ -59,11 +59,14 @@ end
 add_igrf_date = get_years(2013,293)
 
 @testset "map_correct_igrf tests" begin
+    @test typeof(map_correct_igrf(mapS.map,mapS.alt,mapS.xx,mapS.yy;
+                                  add_igrf_date=add_igrf_date)) <: Matrix
     @test typeof(map_correct_igrf(mapS ;add_igrf_date=add_igrf_date)) <: MapS
     @test typeof(map_correct_igrf(mapSd;add_igrf_date=add_igrf_date)) <: MapSd
 end
 
 @testset "map_fill tests" begin
+    @test typeof(map_fill(mapS.map,mapS.xx,mapS.yy)) <: Matrix
     @test typeof(map_fill(mapS )) <: MapS
     @test typeof(map_fill(mapSd)) <: MapSd
 end
@@ -83,6 +86,7 @@ mapUTMd  = MapSd(mapS.map,[utm_temp[i].x for i = 1:length(mapS.xx)],
                         [utm_temp[i].y for i = 1:length(mapS.yy)],mapSd.alt)
 
 @testset "map_utm2lla tests" begin
+    @test typeof(map_utm2lla(mapUTM.map,mapUTM.xx,mapUTM.yy,mapUTM.alt)[1]) <: Matrix
     @test typeof(map_utm2lla(mapUTM )) <: MapS
     @test typeof(map_utm2lla(mapUTMd)) <: MapSd
 end

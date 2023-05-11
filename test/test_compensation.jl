@@ -90,16 +90,38 @@ x = [1:5;][:,:]
 y = [1:5;]
 
 @testset "comp_train tests" begin
-    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_1  ,xyz_test=xyz,ind_test=ind)[end-1]) < 1
-    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_2a ,xyz_test=xyz,ind_test=ind)[end-1]) < 1
-    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_2b ,xyz_test=xyz,ind_test=ind)[end-1]) < 1
-    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_2c ,xyz_test=xyz,ind_test=ind)[end-1]) < 1
-    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_2d ,xyz_test=xyz,ind_test=ind)[end-1]) < 1
-    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_3tl,xyz_test=xyz,ind_test=ind)[end-1]) < 1
-    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_3s ,xyz_test=xyz,ind_test=ind)[end-1]) < 1
-    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_3v ,xyz_test=xyz,ind_test=ind)[end-1]) < 1
-    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_3sc,xyz_test=xyz,ind_test=ind)[end-1]) < 50
-    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_3vc,xyz_test=xyz,ind_test=ind)[end-1]) < 50
+    @test std(comp_train(xyz,ind;comp_params=comp_params_1,
+                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_1,
+                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_2a,
+                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_2b,
+                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_2c,
+                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_2d,
+                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_3tl,
+                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_3s,
+                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_3v,
+                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_3sc,
+                         xyz_test=xyz,ind_test=ind)[end-1]) < 50
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_3vc,
+                         xyz_test=xyz,ind_test=ind)[end-1]) < 50
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_TL,
+                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_mod_TL,
+                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind],mapS;comp_params=comp_params_map_TL,
+                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_elasticnet,
+                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_plsr,
+                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
     @test isone(MagNav.plsr_fit(x,y;return_set=true)[:,:,1])
     @test std(MagNav.elasticnet_fit(x,y;λ=0.01)[end]) < 1
     @test_throws ErrorException comp_train(xyz,ind;
@@ -188,6 +210,9 @@ end
 
 @testset "comp_m3_test tests" begin
     @test_throws ErrorException comp_m3_test(line,df_line,df_flight,df,
+                                             NNCompParams(comp_params_3s,y_type=:e);
+                                             silent=true)[end-1]
+    @test_throws ErrorException comp_m3_test(line,df_line,df_flight,df,
                                              comp_params_3tl;silent=true)[end-1]
     @test std(comp_m3_test(line,df_line,df_flight,df,
                            comp_params_3s ;silent=true)[end-1]) < 1
@@ -262,18 +287,39 @@ comp_params_2c_drop = NNCompParams(comp_params_2c,drop_fi=true,
                       drop_fi_bson=drop_fi_bson,drop_fi_csv=drop_fi_csv)
 comp_params_2c_perm = NNCompParams(comp_params_2c,perm_fi=true,
                       perm_fi_csv=perm_fi_csv)
+comp_params_3s_drop = NNCompParams(comp_params_3s,drop_fi=true,
+                      drop_fi_bson=drop_fi_bson,drop_fi_csv=drop_fi_csv)
+comp_params_3s_perm = NNCompParams(comp_params_3s,perm_fi=true,
+                      perm_fi_csv=perm_fi_csv)
 
 @testset "comp_train_test tests" begin
-    for comp_params in [comp_params_1,comp_params_2a,comp_params_2b,
-                        comp_params_2c,comp_params_2d,comp_params_TL,
-                        comp_params_mod_TL,comp_params_map_TL,
-                        comp_params_elasticnet,comp_params_plsr,
-                        comp_params_1_drop,comp_params_2c_drop,
-                        comp_params_1_perm,comp_params_2c_perm]
+    for comp_params in [comp_params_1,
+                        comp_params_2a,
+                        comp_params_2b,
+                        comp_params_2c,
+                        comp_params_2d,
+                        comp_params_3tl,
+                        comp_params_3s,
+                        comp_params_3v,
+                        comp_params_3sc,
+                        comp_params_3vc,
+                        comp_params_TL,
+                        comp_params_mod_TL,
+                        comp_params_map_TL,
+                        comp_params_elasticnet,
+                        comp_params_plsr,
+                        comp_params_1_drop,
+                        comp_params_1_perm,
+                        comp_params_2c_drop,
+                        comp_params_2c_perm,
+                        comp_params_3s_drop,
+                        comp_params_3s_perm]
+        comp_params_ = deepcopy(comp_params)
         @test std(comp_train_test(xyz,xyz,ind,ind,mapS,mapS;
                                   comp_params=comp_params)[end-1]) ≈
               std(comp_train_test(line,line,df_line,df_flight,
                                   df_map,comp_params)[end-1])
+        @test MagNav.compare_fields(comp_params_,comp_params;silent=true) == 0 # no mutating
     end
 end
 
@@ -283,9 +329,11 @@ terms_pi3e3 = [:p,:i3,:e3]
 @testset "TL_coef extraction tests" begin
     for terms in [terms_pi,terms_pie,terms_pi5e8,terms_pi3e3]
         TL_coef_1 = 30000*rand(size(create_TL_A(xyz.flux_a,1:5;terms=terms),2))
-        (TL_coef_p_1,TL_coef_i_1,TL_coef_e_1) = MagNav.extract_TL_matrices(TL_coef_1,terms)
+        (TL_coef_p_1,TL_coef_i_1,TL_coef_e_1) = 
+            MagNav.extract_TL_matrices(TL_coef_1,terms)
         TL_coef_2 = MagNav.extract_TL_vector(TL_coef_p_1,TL_coef_i_1,TL_coef_e_1,terms)
-        (TL_coef_p_2,TL_coef_i_2,TL_coef_e_2) = MagNav.extract_TL_matrices(TL_coef_2,terms)
+        (TL_coef_p_2,TL_coef_i_2,TL_coef_e_2) = 
+            MagNav.extract_TL_matrices(TL_coef_2,terms)
         @test TL_coef_1   ≈ TL_coef_2
         @test TL_coef_p_1 ≈ TL_coef_p_2
         @test TL_coef_i_1 ≈ TL_coef_i_2
@@ -300,10 +348,9 @@ end
     @test typeof(MagNav.print_time(90)) == Nothing
 end
 
-rm(drop_fi_bson*"_1.bson")
-rm(drop_fi_bson*"_2.bson")
-rm(drop_fi_bson*"_3.bson")
-rm(drop_fi_bson*"_4.bson")
+for i = 1:10
+    rm(drop_fi_bson*"_$i.bson")
+end
 rm(drop_fi_csv)
 rm(perm_fi_csv)
 rm(map_h5)
