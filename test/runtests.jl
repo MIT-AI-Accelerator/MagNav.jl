@@ -5,7 +5,7 @@ using TestItemRunner
 
 @testitem "analysis_util   " begin include("test_analysis_util.jl") end
 @testitem "baseline_plots  " begin include("test_baseline_plots.jl") end
-# @testitem "compensation    " begin include("test_compensation.jl") end
+@testitem "compensation    " begin include("test_compensation.jl") end
 @testitem "create_XYZ0     " begin include("test_create_XYZ0.jl") end
 @testitem "dcm             " begin include("test_dcm.jl") end
 @testitem "ekf_&_crlb      " begin include("test_ekf_&_crlb.jl") end
