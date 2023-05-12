@@ -136,9 +136,10 @@ end # function dcm2euler
 """
     correct_Cnb(Cnb, tilt_err)
 
-Corrects a (Euler) roll-pitch-yaw (`X`-`Y`-`Z`) right-handed body to navigation 
-frame rotation DCM (direction cosine matrix) with [`X`,`Y`,`Z`] tilt angle 
-errors. The resulting DCM is `in error`, such as INS data.
+Internal helper function to correct a (Euler) roll-pitch-yaw (`X`-`Y`-`Z`)
+right-handed body to navigation frame rotation DCM (direction cosine matrix)
+with [`X`,`Y`,`Z`] tilt angle errors. The resulting DCM is `in error`, such
+as INS data.
 
 Reference: Titterton & Weston, Strapdown Inertial Navigation Technology, 2004,  
 eq. 10.10 (pg. 284) and eq. 12.6 (pg. 342).

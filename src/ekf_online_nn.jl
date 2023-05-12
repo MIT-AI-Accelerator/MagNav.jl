@@ -179,7 +179,6 @@ function ekf_online_nn(ins::INS, meas, itp_mapS, nn_x, m, y_norms, P0, Qd, R;
                        fogm_tau   = 600.0,
                        date       = get_years(2020,185),
                        core::Bool = false)
-
     ekf_online_nn(ins.lat,ins.lon,ins.alt,ins.vn,ins.ve,ins.vd,
                   ins.fn,ins.fe,ins.fd,ins.Cnb,meas,
                   ins.dt,itp_mapS,nn_x,m,y_norms,P0,Qd,R;
@@ -189,7 +188,6 @@ function ekf_online_nn(ins::INS, meas, itp_mapS, nn_x, m, y_norms, P0, Qd, R;
                   fogm_tau = fogm_tau,
                   date     = date,
                   core     = core)
-
 end # function ekf_online_nn
 
 # # old attempt

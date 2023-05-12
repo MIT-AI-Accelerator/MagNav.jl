@@ -175,7 +175,6 @@ function ekf(ins::INS, meas, itp_mapS;
              core::Bool = false,
              der_mapS   = map_itp(zeros(2,2),[-pi,pi],[-pi/2,pi/2]),
              map_alt    = 0)
-
     ekf(ins.lat,ins.lon,ins.alt,ins.vn,ins.ve,ins.vd,ins.fn,ins.fe,ins.fd,
         ins.Cnb,meas,ins.dt,itp_mapS;
         P0       = P0,
@@ -189,7 +188,6 @@ function ekf(ins::INS, meas, itp_mapS;
         core     = core,
         der_mapS = der_mapS,
         map_alt  = map_alt)
-
 end # function ekf
 
 """
@@ -231,7 +229,7 @@ Equations evaluated about true trajectory.
 - `core`:     (optional) if true, include core magnetic field in measurement
 
 **Returns:**
-- `P_out`: non-linear covariance matrix
+- `P`: non-linear covariance matrix
 """
 function crlb(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, dt, itp_mapS;
               P0         = create_P0(),
@@ -297,7 +295,7 @@ Equations evaluated about true trajectory.
 - `core`:     (optional) if true, include core magnetic field in measurement
 
 **Returns:**
-- `P_out`: non-linear covariance matrix
+- `P`: non-linear covariance matrix
 """
 function crlb(traj::Traj, itp_mapS;
               P0         = create_P0(),
@@ -309,7 +307,6 @@ function crlb(traj::Traj, itp_mapS;
               fogm_tau   = 600.0,
               date       = get_years(2020,185),
               core::Bool = false)
-
     crlb(traj.lat,traj.lon,traj.alt,traj.vn,traj.ve,traj.vd,
          traj.fn,traj.fe,traj.fd,traj.Cnb,traj.dt,itp_mapS;
          P0       = P0,
@@ -321,5 +318,4 @@ function crlb(traj::Traj, itp_mapS;
          fogm_tau = fogm_tau,
          date     = date,
          core     = core)
-
 end # function crlb

@@ -515,7 +515,7 @@ end # function get_ins
     get_ins(xyz::XYZ, ind=trues(xyz.traj.N);
             N_zero_ll::Int=0, t_zero_ll=0, err=0.0)
 
-Get inertial navigation system data at specific indicies.
+Get inertial navigation system data at specific indicies, possibly zeroed.
 
 **Arguments:**
 - `xyz`:       `XYZ` flight data struct

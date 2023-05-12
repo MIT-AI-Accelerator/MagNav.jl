@@ -119,11 +119,11 @@ Create kmz file of map for use with Google Earth. Generates an "icon" overlay,
 and is thus not meant for large maps (e.g., > 5 deg x 5 deg).
 
 **Arguments:**
-- `mapS`:      `MapS` or `MapSd` scalar magnetic anomaly map struct
-- `map_name`:  (optional) map name to save
-- `plot_alt`:  (optional) map altitude in Google Earth [m]
-- `opacity`:   (optional) map opacity {0:1}
-- `clims`:     (optional) map color scale limits
+- `mapS`:     `MapS` or `MapSd` scalar magnetic anomaly map struct
+- `map_name`: (optional) map name to save
+- `plot_alt`: (optional) map altitude in Google Earth [m]
+- `opacity`:  (optional) map opacity {0:1}
+- `clims`:    (optional) map color scale limits
 
 **Returns:**
 - `nothing`: kmz file `map_name`.kmz is created
@@ -160,7 +160,7 @@ Create kml file of flight path for use with Google Earth.
 - `width`:      (optional) line width
 - `color1`:     (optional) path color
 - `color2`:     (optional) below-path color
-- `points`      (optional) if true, create points instead of line
+- `points`:     (optional) if true, create points instead of line
 
 **Returns:**
 - `nothing`: kml file `path_name`.kml is created
@@ -309,7 +309,7 @@ Create kml file of flight path for use with Google Earth.
 - `width`:     (optional) line width
 - `color1`:    (optional) path color
 - `color2`:    (optional) below-path color
-- `points`     (optional) if true, create points instead of line
+- `points`:    (optional) if true, create points instead of line
 
 **Returns:**
 - `nothing`: kml file `path_name`.kml is created

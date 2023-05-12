@@ -38,7 +38,7 @@
                 xyz_h5::String = "xyz_data.h5")
 
 Create basic flight data. Assumes constant altitude (2D flight).
-May create a trajectory that passes over map regions without magnetic data.
+May create a trajectory that passes over map areas that are missing map data.
 No required arguments, though many are available to create custom data.
 
 **Trajectory Arguments:**
@@ -217,7 +217,7 @@ end # function create_XYZ0
 
 Create `Traj` trajectory struct with a straight or sinusoidal flight path at
 constant altitude (2D flight). May create a trajectory that passes over
-map regions without data if the map has data gaps (not completely filled).
+map areas that are missing map data if an artificially filled-in map is used.
 
 **Arguments:**
 - `mapS`:     (optional) `MapS` scalar magnetic anomaly map struct
@@ -779,7 +779,7 @@ function create_flux(lat, lon, mapV::MapV=get_map(emm720);
         (Bx[i],By[i],Bz[i]) = Cnb[:,:,i]' * [Bx[i],By[i],Bz[i]]
     end
 
-    return MagV(Bx,By,Bz,Bt)
+    return MagV(Bx, By, Bz, Bt)
 end # function create_flux
 
 """
@@ -854,13 +854,13 @@ end # function create_dcm
 Internal helper function to get the imputed Earth vector between two locations.
 
 **Arguments:**
-- `xyz`:        `XYZ` flight data struct
-- `ind`:        selected data indices
-- `itp_mapS`:   scalar map grid interpolation
-- `set_igrf`:   if true, set the `igrf` field in `xyz`
-- `TL_coef`:    Tolles-Lawson coefficients
-- `terms`:      (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`}
-- `Bt_scale`:   (optional) scaling factor for induced and eddy current terms [nT]
+- `xyz`:      `XYZ` flight data struct
+- `ind`:      selected data indices
+- `itp_mapS`: scalar map grid interpolation
+- `set_igrf`: if true, set the `igrf` field in `xyz`
+- `TL_coef`:  Tolles-Lawson coefficients
+- `terms`:    (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`}
+- `Bt_scale`: (optional) scaling factor for induced and eddy current terms [nT]
 
 **Returns:**
 - `TL_aircraft`: `3` x `N` matrix of TL aircraft vector field

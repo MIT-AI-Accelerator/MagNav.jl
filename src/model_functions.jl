@@ -14,7 +14,7 @@
               fogm_state::Bool = true,
               P0_TL            = [])
 
-Create P0, initial covariance matrix.
+Internal helper function to create P0, initial covariance matrix.
 
 **Arguments:**
 - `lat1`:           initial approximate latitude [rad]
@@ -88,22 +88,22 @@ end # function create_P0
 
 """
     create_Qd(dt=0.1;
-              VRW_sigma  = 0.000238,
-              ARW_sigma  = 0.000000581,
-              baro_sigma = 1.0,
-              acc_sigma  = 0.000245,
-              gyro_sigma = 0.00000000727,
-              fogm_sigma = 3.0,
-              vec_sigma  = 1000.0,
-              TL_sigma   = [],
-              baro_tau   = 3600.0,
-              acc_tau    = 3600.0,
-              gyro_tau   = 3600.0,
-              fogm_tau   = 600.0,
+              VRW_sigma        = 0.000238,
+              ARW_sigma        = 0.000000581,
+              baro_sigma       = 1.0,
+              acc_sigma        = 0.000245,
+              gyro_sigma       = 0.00000000727,
+              fogm_sigma       = 3.0,
+              vec_sigma        = 1000.0,
+              TL_sigma         = [],
+              baro_tau         = 3600.0,
+              acc_tau          = 3600.0,
+              gyro_tau         = 3600.0,
+              fogm_tau         = 600.0,
               vec_states::Bool = false,
               fogm_state::Bool = true)
 
-Create Qd, discrete time process/system noise matrix.
+Internal helper function to create Qd, discrete time process/system noise matrix.
 
 **Arguments:**
 - `dt`:         measurement time step [s]
@@ -126,18 +126,18 @@ Create Qd, discrete time process/system noise matrix.
 - `Qd`: discrete time process/system noise matrix
 """
 function create_Qd(dt=0.1;
-                   VRW_sigma  = 0.000238,
-                   ARW_sigma  = 0.000000581,
-                   baro_sigma = 1.0,
-                   acc_sigma  = 0.000245,
-                   gyro_sigma = 0.00000000727,
-                   fogm_sigma = 3.0,
-                   vec_sigma  = 1000.0,
-                   TL_sigma   = [],
-                   baro_tau   = 3600.0,
-                   acc_tau    = 3600.0,
-                   gyro_tau   = 3600.0,
-                   fogm_tau   = 600.0,
+                   VRW_sigma        = 0.000238,
+                   ARW_sigma        = 0.000000581,
+                   baro_sigma       = 1.0,
+                   acc_sigma        = 0.000245,
+                   gyro_sigma       = 0.00000000727,
+                   fogm_sigma       = 3.0,
+                   vec_sigma        = 1000.0,
+                   TL_sigma         = [],
+                   baro_tau         = 3600.0,
+                   acc_tau          = 3600.0,
+                   gyro_tau         = 3600.0,
+                   fogm_tau         = 600.0,
                    vec_states::Bool = false,
                    fogm_state::Bool = true)
 
@@ -295,15 +295,16 @@ end # function create_model
 
 """
     get_pinson(nx::Int, lat, vn, ve, vd, fn, fe, fd, Cnb;
-               baro_tau = 3600.0,
-               acc_tau  = 3600.0,
-               gyro_tau = 3600.0,
-               fogm_tau = 600.0,
+               baro_tau         = 3600.0,
+               acc_tau          = 3600.0,
+               gyro_tau         = 3600.0,
+               fogm_tau         = 600.0,
                vec_states::Bool = false,
                fogm_state::Bool = true,
                k1=3e-2, k2=3e-4, k3=1e-6)
 
-Get `nx` x `nx` Pinson dynamics matrix. States (errors) are:
+Internal helper function to get `nx` x `nx` Pinson dynamics matrix.
+States (errors) are:
 
 |**Num**|**State**|**Units**|**Description**
 |:--|:--|:--|:--
@@ -350,10 +351,10 @@ Get `nx` x `nx` Pinson dynamics matrix. States (errors) are:
 - `F`: `nx` x `nx` Pinson matrix
 """
 function get_pinson(nx::Int, lat, vn, ve, vd, fn, fe, fd, Cnb;
-                    baro_tau = 3600.0,
-                    acc_tau  = 3600.0,
-                    gyro_tau = 3600.0,
-                    fogm_tau = 600.0,
+                    baro_tau         = 3600.0,
+                    acc_tau          = 3600.0,
+                    gyro_tau         = 3600.0,
+                    fogm_tau         = 600.0,
                     vec_states::Bool = false,
                     fogm_state::Bool = true,
                     k1=3e-2, k2=3e-4, k3=1e-6)
@@ -456,7 +457,7 @@ end # function get_pinson
             vec_states::Bool = false,
             fogm_state::Bool = true)
 
-Get Pinson matrix exponential.
+Internal helper function to get Pinson matrix exponential.
 
 **Arguments:**
 - `nx`:         total state dimension
@@ -508,7 +509,7 @@ end # function get_Phi
           date       = get_years(2020,185),
           core::Bool = false)
 
-Get expected magnetic measurement Jacobian (gradient here) for EKF.
+Internal helper function to get expected magnetic measurement Jacobian (gradient here).
 
 **Arguments:**
 - `itp_mapS`: scalar map grid interpolation
@@ -526,7 +527,7 @@ function get_H(itp_mapS, x::Vector, lat, lon, alt;
                date       = get_years(2020,185),
                core::Bool = false)
     if core
-        return ([(igrf_grad(lat+x[1],lon+x[2],alt+x[3];date=date) + 
+        return ([(igrf_grad(lat+x[1],lon+x[2],alt+x[3];date=date) +
                  map_grad(itp_mapS,lat+x[1],lon+x[2])); zero(x)[3:end-1]; 1])
     else
         return ([map_grad(itp_mapS,lat+x[1],lon+x[2]) ; zero(x)[3:end-1]; 1])
@@ -538,8 +539,9 @@ end # function get_H
           date       = get_years(2020,185),
           core::Bool = false)
 
-Get expected magnetic measurement using magnetic anomaly map interpolation, 
-FOGM catch-all, and optionally IGRF for core magnetic field.
+Internal helper function to get expected magnetic measurement using magnetic
+anomaly map interpolation, FOGM catch-all, and optionally IGRF for core
+magnetic field.
 
 **Arguments:**
 - `itp_mapS`: scalar map grid interpolation
@@ -557,7 +559,7 @@ function get_h(itp_mapS, x::Array, lat, lon, alt;
                date       = get_years(2020,185),
                core::Bool = false)
     if core
-        return (itp_mapS.(lon .+ x[2,:], lat .+ x[1,:]) .+ x[end,:] .+ 
+        return (itp_mapS.(lon .+ x[2,:], lat .+ x[1,:]) .+ x[end,:] .+
                 norm.(igrf.(date,alt.+x[3,:],lat.+x[1,:],lon.+x[2,:],
                             Val(:geodetic))))
     else
@@ -570,9 +572,10 @@ end # function get_h
           date       = get_years(2020,185),
           core::Bool = false)
 
-Get expected magnetic measurement using magnetic anomaly map interpolation, 
-FOGM catch-all, and optionally IGRF for core magnetic field. 
-Includes vertical derivative information, currently only for ~constant HAE.
+Internal helper function to get expected magnetic measurement using magnetic
+anomaly map interpolation, FOGM catch-all, and optionally IGRF for core
+magnetic field. Includes vertical derivative information, currently only for
+~constant HAE.
 
 **Arguments:**
 - `itp_mapS`: scalar map grid interpolation
@@ -582,9 +585,8 @@ Includes vertical derivative information, currently only for ~constant HAE.
 - `lon`:      longitude [rad]
 - `alt`:      altitude [m]
 - `map_alt`:  map altitude [m]
-
-- `date`: (optional) measurement date for IGRF [yr]
-- `core`: (optional) if true, include core magnetic field in measurement
+- `date`:     (optional) measurement date for IGRF [yr]
+- `core`:     (optional) if true, include core magnetic field in measurement
 
 **Returns:**
 - `h`: expected magnetic measurement [nT]
@@ -593,12 +595,12 @@ function get_h(itp_mapS, der_mapS, x::Array, lat, lon, alt, map_alt;
                date       = get_years(2020,185),
                core::Bool = false)
     if core
-        return (itp_mapS.(lon.+x[2,:],lat.+x[1,:]) + x[end,:] + 
-                der_mapS.(lon.+x[2,:],lat.+x[1,:]).*(alt.+x[3,:].-map_alt) + 
+        return (itp_mapS.(lon.+x[2,:],lat.+x[1,:]) + x[end,:] +
+                der_mapS.(lon.+x[2,:],lat.+x[1,:]).*(alt.+x[3,:].-map_alt) +
                 norm.(igrf.(date,alt.+x[3,:],lat.+x[1,:],lon.+x[2,:],
                             Val(:geodetic))))
     else
-        return (itp_mapS.(lon.+x[2,:],lat.+x[1,:]) + x[end,:] + 
+        return (itp_mapS.(lon.+x[2,:],lat.+x[1,:]) + x[end,:] +
                 der_mapS.(lon.+x[2,:],lat.+x[1,:]).*(alt.+x[3,:].-map_alt))
     end
 end # function get_h
@@ -606,7 +608,7 @@ end # function get_h
 """
     map_grad(itp_mapS, lat, lon; δ=1.0f-8)
 
-Local map gradient.
+Internal helper function to get local map gradient.
 
 **Arguments:**
 - `itp_mapS`: scalar map grid interpolation
@@ -625,7 +627,7 @@ end # function map_grad
 """
     igrf_grad(lat, lon, alt; date=get_years(2020,185), δ=1.0f-8)
 
-Core magnetic field gradient using IGRF model.
+Internal helper function to get core magnetic field gradient using IGRF model.
 
 **Arguments:**
 - `lat`:  latitude [rad]
@@ -638,16 +640,16 @@ Core magnetic field gradient using IGRF model.
 - `igrf_grad`: local core magnetic field gradient: δmap/δlat, δmap/δlon [nT/rad]
 """
 function igrf_grad(lat, lon, alt; date=get_years(2020,185), δ=1.0f-8)
-    return ([(norm(igrf(date,alt,lat+δ,lon,Val(:geodetic))) - 
+    return ([(norm(igrf(date,alt,lat+δ,lon,Val(:geodetic))) -
               norm(igrf(date,alt,lat-δ,lon,Val(:geodetic)))) /2/δ,
-             (norm(igrf(date,alt,lat,lon+δ,Val(:geodetic))) - 
+             (norm(igrf(date,alt,lat,lon+δ,Val(:geodetic))) -
               norm(igrf(date,alt,lat,lon-δ,Val(:geodetic)))) /2/δ])
 end # function igrf_grad
 
 """
     fogm(sigma, tau, dt, N)
 
-First-order Gauss-Markov stochastic process. 
+First-order Gauss-Markov stochastic process.
 Represents unmeasureable time-correlated errors.
 
 **Arguments:**
@@ -677,8 +679,9 @@ end # function fogm
 """
     chol(M)
 
-Cholesky factorization of matrix `M` ignoring roundoff errors that cause the 
-matrix to be (slightly) non-symmetric or indefinite. The matrix is assumed 
-to be exactly Hermitian and only the entries in the upper triangle are used.
+Internal helper function to get the Cholesky factorization of matrix `M`, 
+ignoring roundoff errors that cause the matrix to be (slightly) non-symmetric
+or indefinite. The matrix is assumed to be exactly Hermitian and only the
+entries in the upper triangle are used.
 """
 chol(M) = cholesky(Hermitian(collect(M))).U

@@ -11,15 +11,15 @@ can be unstable and amplify high frequencies (i.e., noise).
 Reference: Blakely, Potential Theory in Gravity and Magnetic Applications, 
 2009, Chapter 12 & Appendix B (pg. 315-317 & 402).
 
-**Arguments**
+**Arguments:**
 - `map_map`: `ny` x `nx` 2D gridded map data
-- `dx:`      x-direction map sample interval [m]
+- `dx:`:     x-direction map sample interval [m]
 - `dy`:      y-direction map sample interval [m]
 - `dz`:      z-direction upward continuation distance [m]
 - `expand`:  (optional) if true, expand map temporarily to limit edge effects
 - `α`:       (optional) regularization parameter for downward continuation
 
-**Returns**
+**Returns:**
 - `map_map`: `ny` x `nx` 2D gridded map data, upward continued
 """
 function upward_fft(map_map, dx, dy, dz; expand::Bool=true, α=0)
@@ -45,13 +45,13 @@ end # function upward_fft
 """
     upward_fft(map_map::Union{MapS,MapV}, alt; expand::Bool=true, α=0)
 
-**Arguments**
+**Arguments:**
 - `map_map`: `MapS` scalar or `MapV` vector magnetic anomaly map struct
 - `alt`:     target upward continuation altitude [m]
 - `expand`:  (optional) if true, expand map temporarily to limit edge effects
 - `α`:       (optional) regularization parameter for downward continuation
 
-**Returns**
+**Returns:**
 - `map_map`: `MapS` scalar or `MapV` vector magnetic anomaly map struct, upward continued
 """
 function upward_fft(map_map::Union{MapS,MapV}, alt; expand::Bool=true, α=0)
@@ -122,7 +122,7 @@ end # function vector_fft
 """
     create_k(dx, dy, nx::Int, ny::Int)
 
-Create radial wavenumber (spatial frequency) grid.
+Internal helper function to create radial wavenumber (spatial frequency) grid.
 
 **Arguments:**
 - `dx`: x-direction map sample interval [m]
@@ -151,7 +151,7 @@ discrete Fourier transform. Map is “wrapped around” to make it periodic.
 Padding expands map to 7-smooth dimensions, allowing for a faster FFT 
 algorithm to be used during upward/downward continuation.
 
-**Arguments**
+**Arguments:**
 - `map_map`: `ny` x `nx` 2D gridded map data
 - `pad`:     minimum padding (grid cells) along map edges
 
@@ -277,15 +277,15 @@ Power spectral density of a potential field (i.e., magnetic anomaly field) map.
 Uses the Fast Fourier Transform to determine the spectral energy distribution 
 across the radial wavenumbers (spatial frequencies) in the Fourier transform.
 
-**Arguments**
+**Arguments:**
 - `map_map`: `ny` x `nx` 2D gridded map data
-- `dx`: x-direction map sample interval [m]
-- `dy`: y-direction map sample interval [m]
+- `dx`:      x-direction map sample interval [m]
+- `dy`:      y-direction map sample interval [m]
 
 **Returns:**
 - `map_psd`: `ny` x `nx` power spectral density of 2D gridded map data
-- `kx`: `ny` x `nx` x-direction radial wavenumber
-- `ky`: `ny` x `nx` y-direction radial wavenumber
+- `kx`:      `ny` x `nx` x-direction radial wavenumber
+- `ky`:      `ny` x `nx` y-direction radial wavenumber
 """
 function psd(map_map, dx, dy)
     (ny,nx)   = size(map_map)

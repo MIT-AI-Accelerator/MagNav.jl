@@ -156,7 +156,6 @@ function nekf(ins::INS, meas, itp_mapS,
               fogm_tau     = 600.0,
               date         = get_years(2020,185),
               core::Bool   = false)
-
     nekf(ins.lat,ins.lon,ins.alt,ins.vn,ins.ve,ins.vd,
          ins.fn,ins.fe,ins.fd,ins.Cnb,meas,ins.dt,itp_mapS,nn_x,m;
          P0       = P0,
@@ -168,7 +167,6 @@ function nekf(ins::INS, meas, itp_mapS,
          fogm_tau = fogm_tau,
          date     = date,
          core     = core)
-
 end # function nekf
 
 """
@@ -430,7 +428,6 @@ function nekf_train(ins::INS, meas, itp_mapS, nn_x::Matrix, nn_y::Matrix;
                     l_seq::Int           = 50,
                     date                 = get_years(2020,185),
                     core::Bool           = false)
-
     nekf_train(ins.lat,ins.lon,ins.alt,ins.vn,ins.ve,ins.vd,
                ins.fn,ins.fe,ins.fd,ins.Cnb,meas,ins.dt,itp_mapS,nn_x,nn_y;
                P0=P0,Qd=Qd,R=R,
@@ -444,7 +441,6 @@ function nekf_train(ins::INS, meas, itp_mapS, nn_x::Matrix, nn_y::Matrix;
                l_seq      = l_seq,
                date       = date,
                core       = core);
-
 end # function nekf_train
 
 """

@@ -180,7 +180,7 @@ measurements and a bandpass, low-pass or high-pass filter.
 - `pass2`:      (optional) second passband frequency [Hz]
 - `fs`:         (optional) sampling frequency [Hz]
 - `pole`:       (optional) number of poles for Butterworth filter
-- `trim`        (optional) number of elements to trim after filtering
+- `trim`:       (optional) number of elements to trim after filtering
 - `Bt_scale`:   (optional) scaling factor for induced and eddy current terms [nT]
 - `return_var`: (optional) if true, also return `B_var`
 
@@ -255,7 +255,7 @@ measurements and a bandpass, low-pass or high-pass filter.
 - `pass2`:      (optional) second passband frequency [Hz]
 - `fs`:         (optional) sampling frequency [Hz]
 - `pole`:       (optional) number of poles for Butterworth filter
-- `trim`        (optional) number of elements to trim after filtering
+- `trim`:       (optional) number of elements to trim after filtering
 - `Bt_scale`:   (optional) scaling factor for induced and eddy current terms [nT]
 - `return_var`: (optional) if true, also return `B_var`
 
@@ -286,8 +286,8 @@ end # function create_TL_coef
 Finite difference method (FDM) on vector of input data.
 
 **Arguments:**
-- `x`:       input data
-- `scheme`:  (optional) finite difference method scheme used
+- `x`:      input data
+- `scheme`: (optional) finite difference method scheme used
     - `backward`:  1st derivative 1st-order backward difference
     - `forward`:   1st derivative 1st-order forward  difference
     - `central`:   1st derivative 2nd-order central  difference

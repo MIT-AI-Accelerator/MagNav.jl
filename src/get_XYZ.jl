@@ -102,15 +102,13 @@ function get_XYZ20(xyz_h5::String; tt_sort::Bool=true, silent::Bool=false)
 end # function get_XYZ20
 
 """
-    get_XYZ20(flight::Symbol, xyz_160_h5::String, xyz_h5::String;
-              silent::Bool=false)
+    get_XYZ20(xyz_160_h5::String, xyz_h5::String; silent::Bool=false)
 
 Get 160 Hz (partial) `XYZ20` flight data from saved HDF5 file and 
 combine with 10 Hz `XYZ20` flight data from another saved HDF5 file. 
 Data is time sorted to ensure data is aligned.
 
 **Arguments:**
-- `flight`:     name of flight data
 - `xyz_160_h5`: path/name of HDF5 file containing flight data at 160 Hz
 - `xyz_h5`:     path/name of HDF5 file containing flight data at 10 Hz
 - `silent`:     (optional) if true, no print outs
@@ -289,8 +287,9 @@ end # function get_XYZ
 """
     read_check(xyz::HDF5.File, field::Symbol, N::Int=1, silent::Bool=false)
 
-Check for NaNs or missing data (returned as NaNs) in HDF5 file containing 
-flight data. Prints out warning for any field that contains NaNs.
+Internal helper function to check for NaNs or missing data (returned as NaNs)
+in HDF5 file containing flight data. Prints out warning for any field that
+contains NaNs.
 
 **Arguments:**
 - `xyz`:    opened HDF5 file with flight data
@@ -316,20 +315,21 @@ end # function read_check
 """
     xyz_reorient_vec!(xyz::Union{XYZ1,XYZ20,XYZ21})
 
-Reorient all vector magnetometer data to best align with the IGRF direction in
-the body frame. Operates in place on passed-in `XYZ` flight data.
+Internal helper function to reorient all vector magnetometer data to best
+align with the IGRF direction in the body frame. Operates in place on passed-in
+`XYZ` flight data.
 
 **Arguments:**
 - `xyz`: `XYZ` flight data struct
 
 **Returns:**
-- `xyz`: `XYZ` flight data struct with reoriented vector magnetometer data (mutated)
+- `nothing`: `xyz` is mutated with reoriented vector magnetometer data
 """
 function xyz_reorient_vec!(xyz::Union{XYZ1,XYZ20,XYZ21})
     for use_vec in field_check(xyz,MagV)
         flux = getfield(xyz,use_vec) # get vector magnetometer data
         if any(isnan,flux.t)
-            @info("Found NaNs, not reorienting $use_vec")
+            @info("found NaNs, not reorienting $use_vec")
         else
             # get start time of flight (seconds past midnight) and compute IGRF directions
             ind            = trues(length(flux.x)) # do for whole flight

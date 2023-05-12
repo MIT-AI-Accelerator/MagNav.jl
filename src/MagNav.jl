@@ -25,7 +25,6 @@ module MagNav
     using MLJLinearModels: ElasticNetRegression, fit
     using NearestNeighbors: knn, KDTree
     using Optim: only_fg!, optimize, LBFGS, Options
-    using ParameterSchedulers: Scheduler
     using Parameters: @unpack, @with_kw
     using Pkg.Artifacts: @artifact_str
     using Plots: mm, plot, plot!
@@ -1093,17 +1092,19 @@ module MagNav
     include("xyz2h5.jl")
 
     export
+    LinCompParams,NNCompParams,
     dn2dlat,de2dlon,dlat2dn,dlon2de,linreg,detrend,get_bpf,bpf_data,bpf_data!,
     get_x,get_y,get_Axy,get_nn_m,sparse_group_lasso,err_segs,
     norm_sets,denorm_sets,get_ind,chunk_data,predict_rnn_full,
     predict_rnn_windowed,krr,eval_shapley,plot_shapley,eval_gsa,
     get_igrf,project_body_field_to_2d_igrf,get_optimal_rotation_matrix,
     get_days_per_year,get_years,
-    plot_basic,plot_activation,plot_mag,plot_vec,plot_mag_c,
+    plot_basic,plot_activation,plot_mag,plot_mag_c,
     plot_PSD,plot_spectrogram,plot_frequency,plot_correlation,
+    comp_train,comp_test,comp_m2bc_test,comp_m3_test,comp_train_test,
     create_XYZ0,create_traj,create_ins,create_mag_c,corrupt_mag,create_flux,
     create_informed_xyz,
-    euler2dcm,dcm2euler,correct_Cnb,
+    euler2dcm,dcm2euler,
     ekf,crlb,
     ekf_online_nn,ekf_online_nn_setup,
     ekf_online,ekf_online_setup,
@@ -1113,19 +1114,15 @@ module MagNav
     get_XYZ20,get_XYZ21,get_XYZ,
     get_XYZ0,get_traj,get_ins,
     map2kmz,path2kml,
-    upward_fft,downward_L,vector_fft,create_k,psd,
-    map_interpolate,map_itp,map_get_gxf,map_gxf2h5,map_trim,
+    upward_fft,vector_fft,downward_L,psd,
+    map_interpolate,map_itp,map_get_gxf,map_trim,
     map_correct_igrf!,map_correct_igrf,map_fill!,map_fill,
-    map_chessboard!,map_chessboard,map_utm2lla!,map_utm2lla,
+    map_chessboard!,map_chessboard,map_utm2lla!,map_utm2lla,map_gxf2h5,
     plot_map!,plot_map,plot_path!,plot_path,plot_events!,map_check,
-    create_model,get_pinson,get_Phi,get_g,get_H,get_h,
-    map_grad,igrf_grad,fogm,chol,
+    create_model,fogm,
     mpf,
     nekf,nekf_train,
-    plsr_fit,elasticnet_fit,linear_test,
-    comp_train,comp_test,comp_m2bc_test,comp_m3_test,comp_train_test,
     create_TL_A,create_TL_coef,fdm,
-    xyz2h5,field_extrema,xyz_fields,
-    LinCompParams,NNCompParams
+    xyz2h5
 
 end # module MagNav

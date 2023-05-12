@@ -111,43 +111,43 @@ mapS = MagNav.MapS(map_map,map_xx,map_yy,map_alt)
 end
 
 @testset "get_pinson tests" begin
-    @test get_pinson(17,lat[1],vn,ve,vd,fn,fe,fd,Cnb;
-                     baro_tau   = baro_tau,
-                     acc_tau    = acc_tau,
-                     gyro_tau   = gyro_tau,
-                     fogm_tau   = fogm_tau,
-                     vec_states = false,
-                     fogm_state = false) ≈ pinson_data["P17"]
-    @test get_pinson(17+1,lat[1],vn,ve,vd,fn,fe,fd,Cnb;
-                     baro_tau   = baro_tau,
-                     acc_tau    = acc_tau,
-                     gyro_tau   = gyro_tau,
-                     fogm_tau   = fogm_tau,
-                     vec_states = false,
-                     fogm_state = true) ≈ pinson_data["P18"]
-    @test_nowarn get_pinson(17+3,lat[1],vn,ve,vd,fn,fe,fd,Cnb;
-                            vec_states=true,fogm_state=false)
+    @test MagNav.get_pinson(17,lat[1],vn,ve,vd,fn,fe,fd,Cnb;
+                            baro_tau   = baro_tau,
+                            acc_tau    = acc_tau,
+                            gyro_tau   = gyro_tau,
+                            fogm_tau   = fogm_tau,
+                            vec_states = false,
+                            fogm_state = false) ≈ pinson_data["P17"]
+    @test MagNav.get_pinson(17+1,lat[1],vn,ve,vd,fn,fe,fd,Cnb;
+                            baro_tau   = baro_tau,
+                            acc_tau    = acc_tau,
+                            gyro_tau   = gyro_tau,
+                            fogm_tau   = fogm_tau,
+                            vec_states = false,
+                            fogm_state = true) ≈ pinson_data["P18"]
+    @test_nowarn MagNav.get_pinson(17+3,lat[1],vn,ve,vd,fn,fe,fd,Cnb;
+                                   vec_states=true,fogm_state=false)
 end
 
 @testset "get_Phi tests" begin
-    @test get_Phi(18,lat[1],vn,ve,vd,fn,fe,fd,Cnb,
-                  baro_tau,acc_tau,gyro_tau,fogm_tau,dt) ≈ pinson_data["Phi"]
+    @test MagNav.get_Phi(18,lat[1],vn,ve,vd,fn,fe,fd,Cnb,baro_tau,acc_tau,
+                         gyro_tau,fogm_tau,dt) ≈ pinson_data["Phi"]
 end
 
 @testset "get_H tests" begin
-    @test get_H(itp_mapS,x,lat,lon,alt;core=false) ≈ grid_data["H"]
+    @test MagNav.get_H(itp_mapS,x,lat,lon,alt;core=false) ≈ grid_data["H"]
 end
 
 @testset "get_h tests" begin
-    @test get_h(itp_mapS,x,lat,lon,alt;core=false)[1] ≈ grid_data["h"]
-    @test get_h(itp_mapS,[xn;0;xl[2:end]],lat,lon,alt;
+    @test MagNav.get_h(itp_mapS,x,lat,lon,alt;core=false)[1] ≈ grid_data["h"]
+    @test MagNav.get_h(itp_mapS,[xn;0;xl[2:end]],lat,lon,alt;
                 core=false)[1] ≈ grid_data["hRBPF"]
-    @test_nowarn get_h(itp_mapS,der_mapS,x,lat,lon,alt,map_alt;core=false)
-    @test_nowarn get_h(itp_mapS,der_mapS,x,lat,lon,alt,map_alt;core=true)
+    @test_nowarn MagNav.get_h(itp_mapS,der_mapS,x,lat,lon,alt,map_alt;core=false)
+    @test_nowarn MagNav.get_h(itp_mapS,der_mapS,x,lat,lon,alt,map_alt;core=true)
 end
 
 @testset "map_grad tests" begin
-    @test map_grad(itp_mapS,lat,lon) ≈ reverse(vec(grid_data["grad"]))
+    @test MagNav.map_grad(itp_mapS,lat,lon) ≈ reverse(vec(grid_data["grad"]))
 end
 
 @testset "fogm tests" begin

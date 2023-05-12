@@ -14,7 +14,7 @@
 - `lab`:  (optional) data (legend) label
 
 **Returns:**
-- `p1`: plot with `y` vs `tt`
+- `p1`: plot of `y` vs `tt`
 """
 function plot_basic(tt::Vector, y::Vector;
                     ind          = trues(length(tt)),
@@ -38,7 +38,7 @@ Plot activation function(s) or their derivative(s).
     - `σ`     = sigmoid (logistic function)
     - `swish` = self-gated
     - `tanh`  = hyperbolic tan
-- `plot_deriv`: (optional) if true, plot activation function derivatives
+- `plot_deriv`: (optional) if true, plot activation function(s) derivative(s)
 - `save_plot`:  (optional) if true, plot will be saved
 - `file_name`:  (optional) plot file name to save
 
@@ -263,7 +263,7 @@ Plot compensated magnetometer(s) data from a given flight test. Assumes `mag_1`
 - `pass2`:         (optional) filter second passband frequency [Hz]
 - `fs`:            (optional) filter sampling frequency [Hz]
 - `use_mags`:      (optional) scalar or vector (fluxgate) magnetometers to plot {`:all_mags`, or `:mag_1_uc`, etc.}
-    - `:all_mags`  = all uncompensated scalar magnetometer fields, e.g., `:mag_1_uc`, etc.
+    - `:all_mags` = all uncompensated scalar magnetometer fields, e.g., `:mag_1_uc`, etc.
 - `use_vec`:       (optional) vector magnetometer (fluxgate) to use for Tolles-Lawson `A` matrix {`:flux_a`, etc.}
 - `plot_diff`:     (optional) if true, plot difference between `provided` compensated data & compensated mags `as done here`
 - `plot_mag_1_uc`: (optional) if true, plot mag_1_uc (uncompensated mag_1)
@@ -385,10 +385,11 @@ end # function plot_mag_c
 
 Plot the Welch power spectral density (PSD) for signal `x`.
 
-**Arguments**
-- `x`: input data
+**Arguments:**
+- `x`:         input data
 - `fs`:        (optional) sampling frequency [Hz]
 - `window`:    (optional) type of window used
+- `dpi`:       (optional) dots per inch (image resolution)
 - `show_plot`: (optional) if true, plot will be shown
 - `save_plot`: (optional) if true, plot will be saved
 - `file_name`: (optional) plot file name to save
@@ -424,10 +425,11 @@ end # function plot_PSD
 
 Create a spectrogram for signal `x`.
 
-**Arguments**
-- `x`: input data
+**Arguments:**
+- `x`:         input data
 - `fs`:        (optional) sampling frequency [Hz]
 - `window`:    (optional) type of window used
+- `dpi`:       (optional) dots per inch (image resolution)
 - `show_plot`: (optional) if true, plot will be shown
 - `save_plot`: (optional) if true, plot will be saved
 - `file_name`: (optional) plot file name to save
@@ -474,6 +476,7 @@ Plot frequency data, either Welch power spectral density (PSD) or spectrogram.
 - `freq_type`:    (optional) frequency plot type {`:PSD`,`:spec`}
 - `detrend_data`: (optional) if true, plot data will be detrended
 - `window`:       (optional) type of window used
+- `dpi`:          (optional) dots per inch (image resolution)
 - `show_plot`:    (optional) if true, plot will be shown
 - `save_plot`:    (optional) if true, plot will be saved
 - `file_name`:    (optional) plot file name to save
@@ -511,49 +514,6 @@ function plot_frequency(xyz::XYZ;
 end # function plot_frequency
 
 """
-    plot_correlation(xyz::XYZ,
-                     xfield::Symbol  = :mag_1_c,
-                     yfield::Symbol  = :mag_1_uc,
-                     ind             = trues(xyz.traj.N);
-                     lim             = 0,
-                     dpi::Int        = 200,
-                     show_plot::Bool = true,
-                     save_plot::Bool = false,
-                     silent::Bool    = true)
-
-Plot the correlation between two features.
-
-**Arguments:**
-- `xyz`:       `XYZ` flight data struct
-- `xfield`:    field name of x-axis feature
-- `yfield`:    field name of y-axis feature
-- `ind`:       (optional) selected data indices
-- `lim`:       (optional) lower limit on the Pearson correlation coefficient (do not plot otherwise)
-- `show_plot`: (optional) if true, plot will be shown
-- `save_plot`: (optional) if true, plot will be saved
-- `silent`:    (optional) if true, no print outs
-
-**Returns:**
-- `p1`: plot of correlation between two features
-"""
-function plot_correlation(xyz::XYZ,
-                          xfield::Symbol  = :mag_1_c,
-                          yfield::Symbol  = :mag_1_uc,
-                          ind             = trues(xyz.traj.N);
-                          lim             = 0,
-                          dpi::Int        = 200,
-                          show_plot::Bool = true,
-                          save_plot::Bool = false,
-                          silent::Bool    = true)
-
-    x  = getfield(xyz,xfield)[ind]
-    y  = getfield(xyz,yfield)[ind]
-    p1 = plot_correlation(x,y,xfield,yfield;lim,dpi,show_plot,save_plot,silent)
-
-    return (p1)
-end # function plot_correlation
-
-"""
     plot_correlation(x::Vector, y::Vector,
                      xfield::Symbol  = :feature_1,
                      yfield::Symbol  = :feature_2;
@@ -566,10 +526,18 @@ end # function plot_correlation
 Plot the correlation between two features.
 
 **Arguments:**
-- `x`: x-axis data
-- `y`: y-axis data
-- `xfield`: field name of x-axis feature
-- `yfield`: field name of y-axis feature
+- `x`:         x-axis data
+- `y`:         y-axis data
+- `xfield`:    field name of x-axis feature
+- `yfield`:    field name of y-axis feature
+- `lim`:       (optional) lower limit on the Pearson correlation coefficient (do not plot otherwise)
+- `dpi`:       (optional) dots per inch (image resolution)
+- `show_plot`: (optional) if true, plot will be shown
+- `save_plot`: (optional) if true, plot will be saved
+- `silent`:    (optional) if true, no print outs
+
+**Returns:**
+- `p1`: plot of correlation between `xfield` & `yfield`
 """
 function plot_correlation(x::Vector, y::Vector,
                           xfield::Symbol  = :feature_1,
@@ -595,4 +563,45 @@ function plot_correlation(x::Vector, y::Vector,
         return (p1)
     end
 
+end # function plot_correlation
+
+"""
+    plot_correlation(xyz::XYZ,
+                     xfield::Symbol  = :mag_1_c,
+                     yfield::Symbol  = :mag_1_uc,
+                     ind             = trues(xyz.traj.N);
+                     lim             = 0,
+                     dpi::Int        = 200,
+                     show_plot::Bool = true,
+                     save_plot::Bool = false,
+                     silent::Bool    = true)
+
+Plot the correlation between two features.
+
+**Arguments:**
+- `xyz`:       `XYZ` flight data struct
+- `xfield`:    field name of x-axis feature
+- `yfield`:    field name of y-axis feature
+- `ind`:       (optional) selected data indices
+- `lim`:       (optional) lower limit on the Pearson correlation coefficient (do not plot otherwise)
+- `dpi`:       (optional) dots per inch (image resolution)
+- `show_plot`: (optional) if true, plot will be shown
+- `save_plot`: (optional) if true, plot will be saved
+- `silent`:    (optional) if true, no print outs
+
+**Returns:**
+- `p1`: plot of correlation between `xfield` & `yfield`
+"""
+function plot_correlation(xyz::XYZ,
+                          xfield::Symbol  = :mag_1_c,
+                          yfield::Symbol  = :mag_1_uc,
+                          ind             = trues(xyz.traj.N);
+                          lim             = 0,
+                          dpi::Int        = 200,
+                          show_plot::Bool = true,
+                          save_plot::Bool = false,
+                          silent::Bool    = true)
+    x = getfield(xyz,xfield)[ind]
+    y = getfield(xyz,yfield)[ind]
+    plot_correlation(x,y,xfield,yfield;lim,dpi,show_plot,save_plot,silent)
 end # function plot_correlation

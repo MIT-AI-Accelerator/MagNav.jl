@@ -188,7 +188,6 @@ function ekf_online(ins::INS, meas, flux::MagV, itp_mapS, x0_TL, P0, Qd, R;
                     core::Bool = false,
                     terms      = [:permanent,:induced,:eddy,:bias],
                     Bt_scale   = 50000)
-
     ekf_online(ins.lat,ins.lon,ins.alt,ins.vn,ins.ve,ins.vd,ins.fn,ins.fe,ins.fd,
                ins.Cnb,meas,flux.x,flux.y,flux.z,ins.dt,itp_mapS,x0_TL,P0,Qd,R;
                baro_tau = baro_tau,
@@ -199,7 +198,6 @@ function ekf_online(ins::INS, meas, flux::MagV, itp_mapS, x0_TL, P0, Qd, R;
                core     = core,
                terms    = terms,
                Bt_scale = Bt_scale)
-
 end # function ekf_online
 
 """
@@ -228,7 +226,7 @@ Setup for extended Kalman filter (EKF) with online learning of Tolles-Lawson coe
 - `pass2`:    (optional) second passband frequency [Hz]
 - `fs`:       (optional) sampling frequency [Hz]
 - `pole`:     (optional) number of poles for Butterworth filter
-- `trim`      (optional) number of elements to trim after filtering
+- `trim`:     (optional) number of elements to trim after filtering
 - `N_sigma`:  (optional) number of Tolles-Lawson coefficient sets to use to create `TL_sigma`
 - `Bt_scale`: (optional) scaling factor for induced and eddy current terms [nT]
 
