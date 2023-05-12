@@ -888,8 +888,8 @@ function calculate_imputed_TL_earth(xyz::Union{XYZ1,XYZ20,XYZ21}, ind,
     B_earth_dot = [fdm(B_earth[1,:]) fdm(B_earth[2,:]) fdm(B_earth[3,:])]'
 
     # Earth-only contribution to aircraft field
-    (TL_coef_p,TL_coef_i,TL_coef_e) = extract_TL_matrices(TL_coef,terms;Bt_scale=Bt_scale)
-    TL_aircraft = get_TL_aircraft_vector(B_earth,B_earth_dot,TL_coef_p,TL_coef_i,TL_coef_e)
+    (TL_coef_p,TL_coef_i,TL_coef_e) = TL_vec2mat(TL_coef,terms;Bt_scale=Bt_scale)
+    TL_aircraft = get_TL_aircraft_vec(B_earth,B_earth_dot,TL_coef_p,TL_coef_i,TL_coef_e)
 
     return (TL_aircraft, B_earth, map_val)
 end # function calculate_imputed_TL_earth
