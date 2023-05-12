@@ -1,6 +1,6 @@
 using MagNav, Test, MAT
 using DataFrames, Flux, LinearAlgebra, SatelliteToolbox, Statistics
-using MagNav: project_vector_to_2d, unpack_data_norms
+using MagNav: project_vec_to_2d, unpack_data_norms
 
 test_file = joinpath(@__DIR__,"test_data/test_data_params.mat")
 params    = matopen(test_file,"r") do file
@@ -267,11 +267,11 @@ vec_body = randn(3)
 igrf_in  = vec_in ./ norm(vec_in)
 dcm      = xyz.ins.Cnb[:,:,1]
 
-@testset "project_vector_to_2d tests" begin
-    @test_throws AssertionError project_vector_to_2d(vec_in,[1,0,0],[1,0,0])
-    @test_throws AssertionError project_vector_to_2d(vec_in,[1,1,0],[0,1,0])
-    @test_throws AssertionError project_vector_to_2d(vec_in,[1,0,0],[1,1,0])
-    @test_nowarn project_vector_to_2d(vec_in,[1,0,0],[0,1,0])
+@testset "project_vec_to_2d tests" begin
+    @test_throws AssertionError project_vec_to_2d(vec_in,[1,0,0],[1,0,0])
+    @test_throws AssertionError project_vec_to_2d(vec_in,[1,1,0],[0,1,0])
+    @test_throws AssertionError project_vec_to_2d(vec_in,[1,0,0],[1,1,0])
+    @test_nowarn project_vec_to_2d(vec_in,[1,0,0],[0,1,0])
 end
 
 @testset "project_body_field_to_2d_igrf tests" begin

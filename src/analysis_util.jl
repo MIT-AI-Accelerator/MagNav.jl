@@ -1791,7 +1791,7 @@ function get_igrf(xyz::Union{XYZ1,XYZ20,XYZ21}, ind=trues(xyz.traj.N);
 end # function get_igrf
 
 """
-    project_vector_to_2d(vec_in, uvec_x, uvec_y)
+    project_vec_to_2d(vec_in, uvec_x, uvec_y)
 
 Internal helper function to project a 3D vector into 2D given two orthogonal
 3D unit vectors.
@@ -1804,12 +1804,12 @@ Internal helper function to project a 3D vector into 2D given two orthogonal
 **Returns:**
 - `v_out`: 2D vector representing the 3D projection onto the plane
 """
-function project_vector_to_2d(vec_in, uvec_x, uvec_y)
+function project_vec_to_2d(vec_in, uvec_x, uvec_y)
     @assert abs(dot(uvec_x, uvec_y)) <= 1e-7 "Projected vectors must be orthogonal: ", dot(uvec_x, uvec_y)
     @assert norm(uvec_x) ≈ 1 "Unit vector norm = $(norm(uvec_x)) ≠ 1"
     @assert norm(uvec_y) ≈ 1 "Unit vector norm = $(norm(uvec_y)) ≠ 1"
     [dot(vec_in,uvec_x), dot(vec_in,uvec_y)]
-end # function project_vector_to_2d
+end # function project_vec_to_2d
 
 """
     project_body_field_to_2d_igrf(vec_body, igrf_in, dcm)
@@ -1838,7 +1838,7 @@ function project_body_field_to_2d_igrf(vec_body, igrf_in, dcm)
     # transform aircraft vector from body to navigation frame
     vec_nav = dcm*vec_body
 
-    v_out = project_vector_to_2d(vec_nav, igrf_east, igrf_north)
+    v_out = project_vec_to_2d(vec_nav, igrf_east, igrf_north)
     return (v_out)
 end # function project_body_field_to_2d_igrf
 

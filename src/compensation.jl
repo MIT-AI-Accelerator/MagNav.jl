@@ -558,7 +558,7 @@ function get_curriculum_ind(TL_diff, sigma=1)
 end # function get_curriculum_ind
 
 """
-    extract_TL_matrices(TL_coef, terms; Bt_scale=50000f0)
+    TL_vec2mat(TL_coef, terms; Bt_scale=50000f0)
 
 Internal helper function to extract the matrix form of Tolles-Lawson
 coefficients from the vector form.
@@ -573,7 +573,7 @@ coefficients from the vector form.
 - `TL_coef_i`: `3` x `3` symmetric matrix of induced field coefficients, denormalized
 - `TL_coef_e`: `3` x `3` matrix of eddy current coefficients, denormalized
 """
-function extract_TL_matrices(TL_coef, terms; Bt_scale=50000f0)
+function TL_vec2mat(TL_coef, terms; Bt_scale=50000f0)
     @assert any([:permanent,:p,:permanent3,:p3] .∈ (terms,)) "permanent terms are required"
     @assert any([:induced,:i,:induced6,:i6,:induced5,:i5,:induced3,:i3] .∈ (terms,)) "induced terms are required"
     @assert !any([:fdm,:f,:d,:fdm3,:f3,:d3,:bias,:b] .∈ (terms,)) "derivative and bias terms may not be used"
@@ -615,10 +615,10 @@ function extract_TL_matrices(TL_coef, terms; Bt_scale=50000f0)
     end
 
     return (TL_coef_p, TL_coef_i, TL_coef_e)
-end # function extract_TL_matrices
+end # function TL_vec2mat
 
 """
-    extract_TL_vector(TL_coef_p, TL_coef_i, TL_coef_e, terms; Bt_scale=50000f0)
+    TL_mat2vec(TL_coef_p, TL_coef_i, TL_coef_e, terms; Bt_scale=50000f0)
 
 Internal helper function to extract the vector form of Tolles-Lawson
 coefficients from the matrix form.
@@ -633,7 +633,7 @@ coefficients from the matrix form.
 **Returns:**
 - `TL_coef`:  Tolles-Lawson coefficients
 """
-function extract_TL_vector(TL_coef_p, TL_coef_i, TL_coef_e, terms; Bt_scale=50000f0)
+function TL_mat2vec(TL_coef_p, TL_coef_i, TL_coef_e, terms; Bt_scale=50000f0)
 
     TL_coef_p = vec(TL_coef_p)
 
@@ -660,11 +660,11 @@ function extract_TL_vector(TL_coef_p, TL_coef_i, TL_coef_e, terms; Bt_scale=5000
     TL_coef = [TL_coef_p; TL_coef_i; TL_coef_e]
 
     return (TL_coef)
-end # function extract_TL_vector
+end # function TL_mat2vec
 
 """
-    get_TL_aircraft_vector(B_vec, B_vec_dot, TL_coef_p, TL_coef_i, TL_coef_e;
-                           return_parts::Bool=false)
+    get_TL_aircraft_vec(B_vec, B_vec_dot, TL_coef_p, TL_coef_i, TL_coef_e;
+                        return_parts::Bool=false)
 
 **Arguments:**
 - `B_vec`:        `3` x `N` matrix of vector magnetometer measurements
@@ -680,10 +680,10 @@ end # function extract_TL_vector
 - `TL_induced`:  `3` x `N` if `return_parts = true`, matrix of TL induced vector field
 - `TL_eddy`:     `3` x `N` if `return_parts = true`, matrix of TL eddy current vector field
 """
-function get_TL_aircraft_vector(B_vec, B_vec_dot, TL_coef_p, TL_coef_i, TL_coef_e;
-                                return_parts::Bool=false)
+function get_TL_aircraft_vec(B_vec, B_vec_dot, TL_coef_p, TL_coef_i, TL_coef_e;
+                             return_parts::Bool=false)
 
-    TL_perm    = TL_coef_p .* ones(size(B_vec))
+    TL_perm    = TL_coef_p .* one.(B_vec)
     TL_induced = TL_coef_i * B_vec
 
     if length(TL_coef_e) > 0
@@ -695,11 +695,11 @@ function get_TL_aircraft_vector(B_vec, B_vec_dot, TL_coef_p, TL_coef_i, TL_coef_
     end
 
     if return_parts
-        return (TL_aircraft, TL_perm, TL_induced, TL_eddy) # (3,batch_size)
+        return (TL_aircraft, TL_perm, TL_induced, TL_eddy)
     else
-        return (TL_aircraft) # (3,batch_size)
+        return (TL_aircraft)
     end
-end # function get_TL_aircraft_vector
+end # function get_TL_aircraft_vec
 
 """
     nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
@@ -806,7 +806,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
 
     # assume all terms are stored, but they may be zero if not trained
     Bt_scale = 50000f0
-    (TL_coef_p,TL_coef_i,TL_coef_e) = extract_TL_matrices(TL_coef,terms_A;Bt_scale=Bt_scale)
+    (TL_coef_p,TL_coef_i,TL_coef_e) = TL_vec2mat(TL_coef,terms_A;Bt_scale=Bt_scale)
 
     B_unit    = A[:,1:3]     # normalized vector magnetometer reading
     B_vec     = B_unit .* Bt # vector magnetometer to be used in TL
@@ -817,7 +817,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
 
     # compute scalar correction to aircraft or Earth field target
     function get_scalar_TL(B_vec, B_vec_dot, B_unit, TL_coef_p, TL_coef_i, TL_coef_e, y_type_aircraft)
-        TL_aircraft = get_TL_aircraft_vector(B_vec, B_vec_dot, TL_coef_p, TL_coef_i, TL_coef_e)
+        TL_aircraft = get_TL_aircraft_vec(B_vec, B_vec_dot, TL_coef_p, TL_coef_i, TL_coef_e)
         if y_type_aircraft # need the amount to subtract from scalar mag
             yhat = sum(TL_aircraft .* B_unit, dims=1) # dot product
             #println("Aircraft correction=", yhat)
@@ -925,8 +925,8 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
     opt = Adam(η_adam)
 
     # compute TL vector, then add NN(x) correction to that
-    function get_vector_corrected_TL(B_vec_in, B_vec_dot_in, B_unit_in, x_in, has_nn::Float32=1f0)
-        y_TL = get_TL_aircraft_vector(B_vec_in, B_vec_dot_in, TL_coef_p, TL_coef_i, TL_coef_e)
+    function get_vec_corrected_TL(B_vec_in, B_vec_dot_in, B_unit_in, x_in, has_nn::Float32=1f0)
+        y_TL = get_TL_aircraft_vec(B_vec_in, B_vec_dot_in, TL_coef_p, TL_coef_i, TL_coef_e)
         y_NN = has_nn .* m(x_in)
         y_NN_scaled    = y_scale .* y_NN # scaling factor keeps NN output near TL
         aircraft_field = y_TL + y_NN_scaled
@@ -940,7 +940,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
             #println("|Be|=", yhat)
         end
         return (yhat)
-    end # function get_vector_corrected_TL
+    end # function get_vec_corrected_TL
 
     function loss_m3tl(B_vec_l,B_vec_dot_l,B_unit_l,_,y_l)
         y_TL = get_scalar_TL(B_vec_l, B_vec_dot_l, B_unit_l, TL_coef_p, TL_coef_i, TL_coef_e, y_type_aircraft)
@@ -956,7 +956,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
     end # function loss_m3s
 
     function loss_m3v(B_vec_l,B_vec_dot_l,B_unit_l,x_l,y_l;has_nn=1f0)
-        yhat = get_vector_corrected_TL(B_vec_l, B_vec_dot_l, B_unit_l, x_l, has_nn)
+        yhat = get_vec_corrected_TL(B_vec_l, B_vec_dot_l, B_unit_l, x_l, has_nn)
         yhat_norm = (yhat .- y_bias)./y_scale
         return (Flux.mse(vec(yhat_norm),vec(y_l)))
     end # function loss_m3v
@@ -999,8 +999,8 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
             y_hat_test = denorm_sets(y_bias,y_scale, (y_TL_norm + y_NN))
         elseif model_type in [:m3v,:m3vc]
             has_nn     = 1f0
-            y_hat_test = vec(get_vector_corrected_TL(transpose(B_vec_test), transpose(B_vec_dot_test),
-                                                     transpose(B_unit_test), transpose(x_norm_test), has_nn))
+            y_hat_test = vec(get_vec_corrected_TL(transpose(B_vec_test), transpose(B_vec_dot_test),
+                                                  transpose(B_unit_test), transpose(x_norm_test), has_nn))
         end
         return (y_hat_test)
     end # function get_test_yhat
@@ -1013,7 +1013,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
 
     # train NN with ADAM optimizer
     m_store = deepcopy(m)
-    TL_coef_store = extract_TL_vector(TL_coef_p,TL_coef_i,TL_coef_e,terms_A;Bt_scale=Bt_scale)
+    TL_coef_store = TL_mat2vec(TL_coef_p,TL_coef_i,TL_coef_e,terms_A;Bt_scale=Bt_scale)
     best_loss = loss_all(data_val)
     isempty(x_test) || (best_test_error = test_error_nT(y_test, y_bias, y_scale, m,
                                                         x_norm_test, B_vec_test,
@@ -1049,7 +1049,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
             if current_loss < best_loss
                 best_loss = current_loss
                 m_store = deepcopy(m)
-                TL_coef_store = extract_TL_vector(TL_coef_p,TL_coef_i,TL_coef_e,terms_A;Bt_scale=Bt_scale)
+                TL_coef_store = TL_mat2vec(TL_coef_p,TL_coef_i,TL_coef_e,terms_A;Bt_scale=Bt_scale)
             end
             mod(i,5) == 0 && @info("epoch $i: loss = $best_loss")
         else
@@ -1058,7 +1058,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
             if test_error < best_test_error
                 best_test_error = test_error
                 m_store = deepcopy(m)
-                TL_coef_store = extract_TL_vector(TL_coef_p,TL_coef_i,TL_coef_e,terms_A;Bt_scale=Bt_scale)
+                TL_coef_store = TL_mat2vec(TL_coef_p,TL_coef_i,TL_coef_e,terms_A;Bt_scale=Bt_scale)
             end
             mod(i,5) == 0 && @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error,digits=2)) nT")
         end
@@ -1125,7 +1125,7 @@ function nn_comp_3_test(A, Bt, B_dot, x, y, data_norms::Tuple, model::Chain;
 
     # assume all terms are stored, but they may be zero if not trained
     Bt_scale = 50000f0
-    (TL_coef_p,TL_coef_i,TL_coef_e) = extract_TL_matrices(TL_coef,terms_A;Bt_scale=Bt_scale)
+    (TL_coef_p,TL_coef_i,TL_coef_e) = TL_vec2mat(TL_coef,terms_A;Bt_scale=Bt_scale)
 
     B_unit    = A[:,1:3]     # normalized vector magnetometer reading
     B_vec     = B_unit .* Bt # vector magnetometer to be used in TL
@@ -1141,7 +1141,7 @@ function nn_comp_3_test(A, Bt, B_dot, x, y, data_norms::Tuple, model::Chain;
 
     # compute scalar correction to aircraft or Earth field target
     function get_scalar_TL(B_vec, B_vec_dot, B_unit, TL_coef_p, TL_coef_i, TL_coef_e, y_type_aircraft)
-        TL_aircraft = get_TL_aircraft_vector(B_vec, B_vec_dot, TL_coef_p, TL_coef_i, TL_coef_e)
+        TL_aircraft = get_TL_aircraft_vec(B_vec, B_vec_dot, TL_coef_p, TL_coef_i, TL_coef_e)
         if y_type_aircraft # need the amount to subtract from scalar mag
             yhat = sum(TL_aircraft .* B_unit, dims=1) # dot product
             #println("Aircraft correction=", yhat)
@@ -1155,8 +1155,8 @@ function nn_comp_3_test(A, Bt, B_dot, x, y, data_norms::Tuple, model::Chain;
     end # function get_scalar_TL
 
     # compute TL vector, then add NN(x) correction to that
-    function get_vector_corrected_TL(B_vec_in, B_vec_dot_in, B_unit_in, x_in, has_nn::Float32=1f0)
-        y_TL = get_TL_aircraft_vector(B_vec_in, B_vec_dot_in, TL_coef_p, TL_coef_i, TL_coef_e)
+    function get_vec_corrected_TL(B_vec_in, B_vec_dot_in, B_unit_in, x_in, has_nn::Float32=1f0)
+        y_TL = get_TL_aircraft_vec(B_vec_in, B_vec_dot_in, TL_coef_p, TL_coef_i, TL_coef_e)
         y_NN = has_nn .* m(x_in)
         y_NN_scaled    = y_scale .* y_NN # scaling factor keeps NN output near TL
         aircraft_field = y_TL + y_NN_scaled
@@ -1170,7 +1170,7 @@ function nn_comp_3_test(A, Bt, B_dot, x, y, data_norms::Tuple, model::Chain;
             #println("|Be|=", yhat)
         end
         return (yhat)
-    end # function get_vector_corrected_TL
+    end # function get_vec_corrected_TL
 
     # get results
     if model_type in [:m3tl]
@@ -1182,8 +1182,8 @@ function nn_comp_3_test(A, Bt, B_dot, x, y, data_norms::Tuple, model::Chain;
         y_hat     = denorm_sets(y_bias,y_scale, (y_TL_norm + y_NN))
     elseif model_type in [:m3v,:m3vc]
         has_nn    = 1f0
-        y_hat     = vec(get_vector_corrected_TL(transpose(B_vec), transpose(B_vec_dot),
-                                                transpose(B_unit), transpose(x_norm), has_nn))
+        y_hat     = vec(get_vec_corrected_TL(transpose(B_vec), transpose(B_vec_dot),
+                                             transpose(B_unit), transpose(x_norm), has_nn))
     end
     err = err_segs(y_hat,y,l_segs;silent=silent)
     @info("test  error: $(round(std(err),digits=2)) nT")
@@ -3006,7 +3006,7 @@ function comp_m3_test(lines, df_line::DataFrame,
 
     # assume all terms are stored, but they may be zero if not trained
     Bt_scale = 50000f0
-    (TL_coef_p,TL_coef_i,TL_coef_e) = extract_TL_matrices(TL_coef,terms_A;Bt_scale=Bt_scale)
+    (TL_coef_p,TL_coef_i,TL_coef_e) = TL_vec2mat(TL_coef,terms_A;Bt_scale=Bt_scale)
 
     B_unit    = A[:,1:3]     # normalized vector magnetometer reading
     B_vec     = B_unit .* Bt # vector magnetometer to be used in TL
@@ -3026,8 +3026,8 @@ function comp_m3_test(lines, df_line::DataFrame,
 
     # calculate TL vector field
     (TL_aircraft,TL_perm,TL_induced,TL_eddy) =
-        get_TL_aircraft_vector(B_vec,B_vec_dot,TL_coef_p,TL_coef_i,TL_coef_e;
-                               return_parts=true)
+        get_TL_aircraft_vec(B_vec,B_vec_dot,TL_coef_p,TL_coef_i,TL_coef_e;
+                            return_parts=true)
 
     # compute neural network correction
     y_NN = zeros(size(B_vec))

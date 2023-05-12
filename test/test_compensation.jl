@@ -39,7 +39,7 @@ terms_pi    = [:p,:i]
 terms_pie   = [:p,:i,:e]
 TL_coef_pie = zeros(18)
 batchsize   = 5
-epoch_adam  = 10
+epoch_adam  = 11
 
 comp_params_1   = NNCompParams(model_type=:m1  ,terms=terms_p,
                                terms_A=terms_pie,TL_coef=TL_coef_pie,
@@ -130,7 +130,7 @@ y = [1:5;]
                          xyz_test=xyz,ind_test=ind)[end-1]) < 1
     @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_plsr,
                          xyz_test=xyz,ind_test=ind)[end-1]) < 1
-    @test std(comp_train(xyz,ind;comp_params=comp_params_1_drop,
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_1_drop,
                          xyz_test=xyz,ind_test=ind)[end-1]) < 1
     @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_2c_drop,
                          xyz_test=xyz,ind_test=ind)[end-1]) < 1
@@ -297,24 +297,26 @@ comp_params_2d  = NNCompParams(model_type  = :m2d,
                                k_pca       = k_pca,
                                frac_train  = frac_train)
 
+k_pca_big = 100
+
 comp_params_3tl = NNCompParams(comp_params_3tl,
-                               k_pca       = k_pca,
+                               k_pca       = k_pca_big,
                                frac_train  = frac_train)
 
 comp_params_3s  = NNCompParams(comp_params_3s,
-                               k_pca       = k_pca,
+                               k_pca       = k_pca_big,
                                frac_train  = frac_train)
 
 comp_params_3v  = NNCompParams(comp_params_3v,
-                               k_pca       = k_pca,
+                               k_pca       = k_pca_big,
                                frac_train  = frac_train)
 
 comp_params_3sc = NNCompParams(comp_params_3sc,
-                               k_pca       = k_pca,
+                               k_pca       = k_pca_big,
                                frac_train  = frac_train)
 
 comp_params_3vc = NNCompParams(comp_params_3vc,
-                               k_pca       = k_pca,
+                               k_pca       = k_pca_big,
                                frac_train  = frac_train)
 
 perm_fi_csv = joinpath(@__DIR__,"perm_fi.csv")
@@ -368,17 +370,19 @@ terms_pi3e3 = [:p,:i3,:e3]
 @testset "TL_coef extraction tests" begin
     for terms in [terms_pi,terms_pie,terms_pi5e8,terms_pi3e3]
         TL_coef_1 = 30000*rand(size(create_TL_A(xyz.flux_a,1:5;terms=terms),2))
-        (TL_coef_p_1,TL_coef_i_1,TL_coef_e_1) = 
-            MagNav.extract_TL_matrices(TL_coef_1,terms)
-        TL_coef_2 = MagNav.extract_TL_vector(TL_coef_p_1,TL_coef_i_1,TL_coef_e_1,terms)
-        (TL_coef_p_2,TL_coef_i_2,TL_coef_e_2) = 
-            MagNav.extract_TL_matrices(TL_coef_2,terms)
+        (TL_coef_p_1,TL_coef_i_1,TL_coef_e_1) = MagNav.TL_vec2mat(TL_coef_1,terms)
+        TL_coef_2 = MagNav.TL_mat2vec(TL_coef_p_1,TL_coef_i_1,TL_coef_e_1,terms)
+        (TL_coef_p_2,TL_coef_i_2,TL_coef_e_2) = MagNav.TL_vec2mat(TL_coef_2,terms)
         @test TL_coef_1   ≈ TL_coef_2
         @test TL_coef_p_1 ≈ TL_coef_p_2
         @test TL_coef_i_1 ≈ TL_coef_i_2
         if any([:eddy,:e,:eddy9,:e9,:eddy8,:e8,:eddy3,:e3] .∈ (terms,))
             @test TL_coef_e_1 ≈ TL_coef_e_2
         end
+        B_vec = B_vec_dot = ones(3,1)
+        TL_aircraft = MagNav.get_TL_aircraft_vec(B_vec,B_vec_dot,TL_coef_p_1,
+                                                 TL_coef_i_1,TL_coef_e_1)
+        @test typeof(TL_aircraft) <: Matrix
     end
 end
 
