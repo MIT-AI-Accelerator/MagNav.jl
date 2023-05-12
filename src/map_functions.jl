@@ -1,9 +1,7 @@
 """
     map_interpolate(map_map, map_xx, map_yy, type::Symbol = :cubic)
 
-Create map grid interpolation, equivalent of griddedInterpolant in MATLAB. 
-Uses the Interpolations package rather than Dierckx or GridInterpolations, as 
-Interpolations was found to be fastest for MagNav use cases.
+Create map grid interpolation, equivalent of griddedInterpolant in MATLAB.
 
 **Arguments:**
 - `map_map`: `ny` x `nx` 2D gridded map data
@@ -15,6 +13,9 @@ Interpolations was found to be fastest for MagNav use cases.
 - `itp_map`: map grid interpolation
 """
 function map_interpolate(map_map, map_xx, map_yy, type::Symbol = :cubic)
+
+    # uses the Interpolations package rather than Dierckx or GridInterpolations,
+    # as Interpolations was found to be fastest for MagNav use cases.
 
     if type == :linear
         spline_type = BSpline(Linear())
@@ -41,8 +42,8 @@ Optionally return vertical derivative grid interpolation, which is calculated
 using finite differences between the map and a slightly upward continued map.
 
 **Arguments:**
-- `mapS`: `MapS` scalar magnetic anomaly map struct
-- `type`: (optional) type of interpolation {:linear,:quad,:cubic}
+- `mapS`:              `MapS` scalar magnetic anomaly map struct
+- `type`:              (optional) type of interpolation {:linear,:quad,:cubic}
 - `return_vert_deriv`: (optional) if true, also return `der_map`
 
 **Returns:**
@@ -775,15 +776,15 @@ Reference: Cordell, Phillips, & Godson, U.S. Geological Survey Potential-Field
 Software Version 2.0, 1992.
 
 **Arguments:**
-- `map_map`:  `ny` x `nx` 2D gridded target (e.g., magnetic) map data on [m] grid
-- `map_alt`:  `ny` x `nx` 2D gridded altitude map data [m]
-- `map_xx`:   `nx` x-direction map coordinates [m]
-- `map_yy`:   `ny` y-direction map coordinates [m]
-- `alt`:      final map altitude after upward continuation [m]
-- `down_cont`:(optional) if true, downward continue if needed, only used if `up_cont = true`
-- `dz`:       (optional) upward continuation step size [m]
-- `down_max`: (optional) maximum downward continuation distance [m]
-- `α`:        (optional) regularization parameter for downward continuation
+- `map_map`:   `ny` x `nx` 2D gridded target (e.g., magnetic) map data on [m] grid
+- `map_alt`:   `ny` x `nx` 2D gridded altitude map data [m]
+- `map_xx`:    `nx` x-direction map coordinates [m]
+- `map_yy`:    `ny` y-direction map coordinates [m]
+- `alt`:       final map altitude after upward continuation [m]
+- `down_cont`: (optional) if true, downward continue if needed, only used if `up_cont = true`
+- `dz`:        (optional) upward continuation step size [m]
+- `down_max`:  (optional) maximum downward continuation distance [m]
+- `α`:         (optional) regularization parameter for downward continuation
 
 **Returns:**
 - `nothing`: `map_map` is mutated with upward continued map data
@@ -863,12 +864,12 @@ Reference: Cordell, Phillips, & Godson, U.S. Geological Survey Potential-Field
 Software Version 2.0, 1992.
 
 **Arguments:**
-- `mapSd`:   `MapSd` scalar magnetic anomaly map struct
-- `alt`:      final map altitude after upward continuation [m]
-- `down_cont`:(optional) if true, downward continue if needed
-- `dz`:       (optional) upward continuation step size [m]
-- `down_max`: (optional) maximum downward continuation distance [m]
-- `α`:        (optional) regularization parameter for downward continuation
+- `mapSd`:     `MapSd` scalar magnetic anomaly map struct
+- `alt`:       final map altitude after upward continuation [m]
+- `down_cont`: (optional) if true, downward continue if needed
+- `dz`:        (optional) upward continuation step size [m]
+- `down_max`:  (optional) maximum downward continuation distance [m]
+- `α`:         (optional) regularization parameter for downward continuation
 
 **Returns:**
 - `mapS`: `MapS` scalar magnetic anomaly map struct
@@ -893,7 +894,7 @@ function map_chessboard(mapSd::MapSd, alt::Real;
                     dz        = dz,
                     down_max  = down_max,
                     α         = α)
-    return MapS(mapSd.map,mapSd.xx,mapSd.yy,alt)
+    return MapS(mapSd.map, mapSd.xx, mapSd.yy, alt)
 end # function map_chessboard
 
 """
@@ -1197,9 +1198,9 @@ function map_gxf2h5(map_gxf::String, alt_gxf::String, alt::Real;
     end
 
     if up_cont
-        return MapS(map_map,map_xx,map_yy,convert(eltype(map_map),alt))
+        return MapS(map_map, map_xx, map_yy, convert(eltype(map_map), alt))
     else
-        return MapSd(map_map,map_xx,map_yy,map_alt)
+        return MapSd(map_map, map_xx, map_yy, map_alt)
     end
 end # function map_gxf2h5
 
@@ -1254,7 +1255,7 @@ function map_gxf2h5(map_gxf::String, alt::Real;
         save_map(map_map,map_xx,map_yy,alt,map_h5;map_units=:utm)
     end
 
-    return MapS(map_map,map_xx,map_yy,convert(eltype(map_map),alt))
+    return MapS(map_map, map_xx, map_yy, convert(eltype(map_map), alt))
 end # function map_gxf2h5
 
 """
@@ -1481,7 +1482,7 @@ Plot map.
 - `b_e`:        (optional) plotting backend
 
 **Returns:**
-- `p1`: plot with map
+- `p1`: plot of map
 """
 function plot_map(map_map::Matrix,
                   map_xx::Vector     = [],
@@ -1544,7 +1545,7 @@ Plot map.
 - `b_e`:        (optional) plotting backend
 
 **Returns:**
-- `p1`: plot with map
+- `p1`: plot of map
 """
 function plot_map(mapS::Union{MapS,MapSd};
                   clims::Tuple       = (0,0),
@@ -1577,7 +1578,7 @@ end # function plot_map
 """
     map_cs(map_color::Symbol=:usgs)
 
-Select map color scale. Default is from the USGS: 
+Internal helper function to select map color scale. Default is from the USGS:
 https://mrdata.usgs.gov/magnetic/namag.png
 
 **Arguments:**
@@ -1607,8 +1608,8 @@ end # function map_cs
 """
     map_clims(c, map_map)
 
-Adjust color scale for histogram equalization (maximum contrast) and set 
-contour limits based on map data.
+Internal helper function to adjust color scale for histogram equalization
+(maximum contrast) and set contour limits based on map data.
 
 **Arguments:**
 - `c`:       original color scale
@@ -1644,7 +1645,7 @@ end # function map_clims
 Plot flight path on an existing plot.
 
 **Arguments:**
-- `p1`:         existing plot
+- `p1`:         existing plot (e.g., map)
 - `lat`:        latitude  [rad]
 - `lon`:        longitude [rad]
 - `lab`:        (optional) data (legend) label
@@ -1703,7 +1704,7 @@ end # function plot_path!
 Plot flight path on an existing plot.
 
 **Arguments:**
-- `p1`:         existing plot
+- `p1`:         existing plot (e.g., map)
 - `path`:       `Path` struct, i.e., `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
 - `ind`:        (optional) selected data indices
 - `lab`:        (optional) data (legend) label
@@ -1758,7 +1759,7 @@ Plot flight path.
 - `Nmax`:       (optional) maximum number of data points plotted, only used if `fewer_pts = true`
 
 **Returns:**
-- `p1`: plot with flight path
+- `p1`: plot of flight path
 """
 function plot_path(lat, lon;
                    lab = "",
@@ -1806,7 +1807,7 @@ Plot flight path.
 - `Nmax`:       (optional) maximum number of data points plotted, only used if `fewer_pts = true`
 
 **Returns:**
-- `p1`: plot with flight path
+- `p1`: plot of flight path
 """
 function plot_path(path::Path, ind=trues(path.N);
                    lab = "",
@@ -1835,7 +1836,7 @@ end # function plot_path
 Plot in-flight event on existing plot.
 
 **Arguments:**
-- `p1`:      existing plot
+- `p1`:      existing plot (e.g., time series of magnetometer measurements)
 - `t`:       time of in-flight event
 - `lab`:     (optional) in-flight event (legend) label
 - `ylim`:    (optional) 2-element y limits for in-flight event
@@ -1861,7 +1862,7 @@ end # function plot_events
 Plot in-flight event(s) on existing plot.
 
 **Arguments:**
-- `p1`:       existing plot
+- `p1`:       existing plot (e.g., time series of magnetometer measurements)
 - `flight`:   name of flight data
 - `df_event`: lookup table (DataFrame) of in-flight events
 - `show_lab`: (optional) if true, show in-flight event (legend) label(s)

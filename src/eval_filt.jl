@@ -171,7 +171,7 @@ end # function run_filt
     run_filt(traj::Traj, ins::INS, meas, itp_mapS,
              filt_type::Vector{Symbol}; ...)
 
-Run multiple filter models and print results (nothing returned.)
+Run multiple filter models and print results (nothing returned).
 
 **Arguments:**
 - `filt_type`: multiple filter types, e.g., [`:ekf`,`:ekf_online_nn`]
@@ -198,7 +198,7 @@ function run_filt(traj::Traj, ins::INS, meas, itp_mapS,
                   x0_TL      = ones(eltype(P0),19))
 
     for i in eachindex(filt_type)
-        @info ("running $(filt_type[i]) filter")
+        @info("running $(filt_type[i]) filter")
         run_filt(traj,ins,meas,itp_mapS,filt_type[i];
                  P0          = P0,
                  Qd          = Qd,
@@ -242,7 +242,7 @@ Extract CRLB, INS, and filter results.
 """
 function eval_results(traj::Traj, ins::INS, filt_res::FILTres, crlb_P::Array)
     return (eval_crlb(traj,crlb_P),
-            eval_ins(traj,ins),
+            eval_ins( traj,ins),
             eval_filt(traj,ins,filt_res))
 end # function eval_results
 
@@ -437,7 +437,7 @@ end # function eval_filt
 Plot flights paths on an existing plot and latitude & longitude vs time.
 
 **Arguments:**
-- `p1`:        existing plot
+- `p1`:        existing plot (e.g., map)
 - `traj`:      `Traj` trajectory struct
 - `ins`:       `INS` inertial navigation system struct
 - `filt_out`:  `FILTout` filter extracted output struct
@@ -906,7 +906,7 @@ function chisq_cdf(x, k::Int=1)
 end # function chisq_cdf
 
 """
-    chisq_q(P, k::Int=1)
+    chisq_q(P=0.95, k::Int=1)
 
 Quantile function (inverse CDF) of the chi-square distribution.
 
@@ -924,10 +924,11 @@ end # function chisq_q
 """
     points_ellipse(P; clip=Inf, n::Int=61)
 
-Create `x` and `y` confidence ellipse points for a 2x2 covariance matrix.
+Internal helper function to create `x` and `y` confidence ellipse points for a
+`2`x`2` covariance matrix.
 
 **Arguments:**
-- `P`:    2x2 covariance matrix
+- `P`:    `2`x`2` covariance matrix
 - `clip`: (optional) clipping radius
 - `n`:    (optional) number of confidence ellipse points
 
@@ -967,12 +968,12 @@ end # function points_ellipse
                   ce_color::Symbol = :black,
                   b_e              = gr())
 
-Plot a confidence ellipse for a 2x2 covariance matrix (2 degrees of freedom).
-Visualization of a 2D confidence interval.
+Internal helper function to plot a confidence ellipse for a `2`x`2` covariance
+matrix (2 degrees of freedom). Visualization of a 2D confidence interval.
 
 **Arguments:**
-- `p1`:         starting plot (e.g., map)
-- `P`:          2x2 covariance matrix
+- `p1`:         existing plot (e.g., map)
+- `P`:          `2`x`2` covariance matrix
 - `μ`:          (optional) confidence ellipse center (in same units as `P`)
 - `conf`:       (optional) percentile {0:1}
 - `clip`:       (optional) clipping radius (in same units as `P`)
@@ -986,7 +987,7 @@ Visualization of a 2D confidence interval.
 - `b_e`:        (optional) plotting backend
 
 **Returns:**
-- `nothing`: map is plotted on `p1`
+- `nothing`: confidence ellipse is plotted on `p1`
 """
 function conf_ellipse!(p1, P;
                        μ                = zeros(2),
@@ -1049,11 +1050,11 @@ end # function conf_ellipse!
                  ce_color::Symbol = :black,
                  b_e              = gr())
 
-Plot a confidence ellipse for a 2x2 covariance matrix (2 degrees of freedom).
-Visualization of a 2D confidence interval.
+Internal helper function to plot a confidence ellipse for a `2`x`2` covariance
+matrix (2 degrees of freedom). Visualization of a 2D confidence interval.
 
 **Arguments:**
-- `P`:          2x2 covariance matrix
+- `P`:          `2`x`2` covariance matrix
 - `μ`:          (optional) confidence ellipse center (in same units as `P`)
 - `conf`:       (optional) percentile {0:1}
 - `clip`:       (optional) clipping radius (in same units as `P`)
@@ -1067,7 +1068,7 @@ Visualization of a 2D confidence interval.
 - `b_e`:        (optional) plotting backend
 
 **Returns:**
-- `p1`: confidence ellipse plot
+- `p1`: plot of confidence ellipse
 """
 function conf_ellipse(P;
                       μ                = zeros(2),
@@ -1097,22 +1098,22 @@ function conf_ellipse(P;
                   bg_color   = bg_color,
                   ce_color   = ce_color,
                   b_e        = b_e)
-
     return (p1)
 end # function conf_ellipse
 
 """
     units_ellipse(P; conf_units::Symbol=:m, lat1=deg2rad(45))
 
-Convert (position) confidence ellipse units for a 2x2 covariance matrix.
+Internal helper function to convert (position) confidence ellipse units for a
+`2`x`2` covariance matrix.
 
 **Arguments:**
-- `P`:          2x2 covariance matrix [rad]
+- `P`:          `2`x`2` covariance matrix [rad]
 - `conf_units`: (optional) confidence ellipse units {`:m`,`:ft`,`:deg`,`:rad`}
 - `lat1`:       (optional) nominal latitude [rad], only used if `conf_units = :m` or `:ft`
 
 **Returns:**
-- `P`: 2x2 covariance matrix with converted units
+- `P`: `2`x`2` covariance matrix with converted units
 """
 function units_ellipse(P; conf_units::Symbol=:m, lat1=deg2rad(45))
     @assert size(P,1) == 2 "P is size $(size(P)) ≂̸ (2,2)"
@@ -1136,7 +1137,8 @@ end # function units_ellipse
 """
     units_ellipse(filt_res::FILTres, filt_out::FILTout; conf_units::Symbol=:m)
 
-Convert (position) confidence ellipse units for a 2x2 covariance matrix.
+Internal helper function to convert (position) confidence ellipse units for a
+`2`x`2` covariance matrix.
 
 **Arguments:**
 - `filt_res`:   `FILTres` filter results struct
@@ -1144,7 +1146,7 @@ Convert (position) confidence ellipse units for a 2x2 covariance matrix.
 - `conf_units`: (optional) confidence ellipse units {`:m`,`:ft`,`:deg`,`:rad`}
 
 **Returns:**
-- `P`: 2x2 covariance matrix with converted units
+- `P`: `2`x`2` covariance matrix with converted units
 """
 function units_ellipse(filt_res::FILTres, filt_out::FILTout; conf_units::Symbol=:m)
     units_ellipse(deepcopy(filt_res.P[1:2,1:2,:]);
@@ -1172,21 +1174,21 @@ end # function units_ellipse
                 ce_color::Symbol   = :black,
                 b_e                = gr())
 
-Create a (position) confidence ellipse gif for a 2x2 (xN) covariance matrix.
+Create a (position) confidence ellipse gif for a `2`x`2` (x`N`) covariance matrix.
 
 **Arguments:**
-- `P`:          2x2 (xN) covariance matrix
+- `P`:          `2`x`2` (x`N`) covariance matrix
 - `gif_name`:   (optional) map name to save
 - `lat1`:       (optional) nominal latitude [rad], only used if `conf_units = :m` or `:ft`
 - `dt`:         (optional) measurement time step [s]
 - `di`:         (optional) gif measurement interval (e.g., `di = 10` uses every 10th measurement)
 - `speedup`:    (optional) gif speedup (e.g., `speedup = 60` is 60x speed)
 - `conf_units`: (optional) confidence ellipse units {`:m`,`:ft`,`:deg`,`:rad`}
-- `μ`:          (optional) confidence ellipse center (in `conf_units`)
+- `μ`:          (optional) confidence ellipse center [`conf_units`]
 - `conf`:       (optional) percentile {0:1}
-- `clip`:       (optional) clipping radius (in `conf_units`)
+- `clip`:       (optional) clipping radius [`conf_units`]
 - `n`:          (optional) number of confidence ellipse points
-- `lim`:        (optional) `x` and `y` plotting limits (in `conf_units`)
+- `lim`:        (optional) `x` and `y` plotting limits [`conf_units`]
 - `margin`:     (optional) margin around plot [mm]
 - `axis`:       (optional) if true, show axes
 - `plot_eigax`: (optional) if true, show major and minor axes
@@ -1264,7 +1266,7 @@ end # function gif_ellipse
                 dpi::Int           = 200,
                 b_e                = gr())
 
-Create a (position) confidence ellipse gif for a 2x2 (xN) covariance matrix.
+Create a (position) confidence ellipse gif for a `2`x`2` (x`N`) covariance matrix.
 
 **Arguments:**
 - `filt_res`:   `FILTres` filter results struct
@@ -1275,11 +1277,11 @@ Create a (position) confidence ellipse gif for a 2x2 (xN) covariance matrix.
 - `di`:         (optional) gif measurement interval (e.g., `di = 10` uses every 10th measurement)
 - `speedup`:    (optional) gif speedup (e.g., `speedup = 60` is 60x speed)
 - `conf_units`: (optional) confidence ellipse units {`:m`,`:ft`,`:deg`,`:rad`}
-- `μ`:          (optional) confidence ellipse center (in `conf_units`)
+- `μ`:          (optional) confidence ellipse center [`conf_units`]
 - `conf`:       (optional) percentile {0:1}
-- `clip`:       (optional) clipping radius (in `conf_units`)
+- `clip`:       (optional) clipping radius [`conf_units`]
 - `n`:          (optional) number of confidence ellipse points
-- `lim`:        (optional) `x` and `y` plotting limits (in `conf_units`)
+- `lim`:        (optional) `x` and `y` plotting limits [`conf_units`]
 - `margin`:     (optional) margin around plot [mm]
 - `axis`:       (optional) if true, show axes
 - `plot_eigax`: (optional) if true, show major and minor axes

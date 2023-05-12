@@ -226,7 +226,6 @@ function mpf(ins::INS, meas, itp_mapS;
              fogm_tau   = 600.0,
              date       = get_years(2020,185),
              core::Bool = false)
-
     mpf(ins.lat,ins.lon,ins.alt,ins.vn,ins.ve,ins.vd,ins.fn,ins.fe,ins.fd,
         ins.Cnb,meas,ins.dt,itp_mapS;
         P0       = P0,
@@ -240,7 +239,6 @@ function mpf(ins::INS, meas, itp_mapS;
         fogm_tau = fogm_tau,
         date     = date,
         core     = core)
-
 end # function mpf
 
 function sys_resample(q)

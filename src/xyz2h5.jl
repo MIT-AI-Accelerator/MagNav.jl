@@ -154,7 +154,7 @@ end # function xyz2h5
 """
     par(val::SubString{String})
 
-Return `*` as `NaN`, otherwise parse as Float64.
+Internal helper function to return `*` as `NaN`, otherwise parse as Float64.
 
 **Arguments:**
 - `val`: substring
@@ -291,7 +291,7 @@ Print all data fields and types for a given struct.
 - `s`: struct
 
 **Returns:**
-- `nothing`: all data fields and types in struct `s` are printed out
+- `nothing`: all data fields and types in `s` are printed out
 """
 function print_fields(s)
     for field in fieldnames(typeof(s))
@@ -340,13 +340,13 @@ function compare_fields(s1, s2; silent::Bool=false)
                 m1 = getfield(s1,field)
                 m2 = getfield(s2,field)
                 if length(m1) != length(m2)
-                    println("size of $field is different")
+                    println("size of $field field is different")
                     N_dif += 1
                 else
                     for i in eachindex(m1)
                         for f in [:weight,:bias,:σ]
                             if getfield(m1[i],f) != getfield(m2[i],f)
-                                println("$field field $f is different")
+                                println("layer $i $f field in $field is different")
                                 N_dif += 1
                             end
                         end
@@ -354,7 +354,7 @@ function compare_fields(s1, s2; silent::Bool=false)
                 end
             else
                 if getfield(s1,field) != getfield(s2,field)
-                    println("non-numeric field $field is different")
+                    println("non-numeric $field field is different")
                     N_dif += 1
                 end
             end
@@ -371,7 +371,7 @@ end # function compare_fields
 """
     field_check(s, t)
 
-Find data fields of a specified type in given struct.
+Internal helper function to find data fields of a specified type in given struct.
 
 **Arguments:**
 - `s`: struct
@@ -388,7 +388,7 @@ end # function field_check
 """
     field_check(s, field::Symbol)
 
-Check if a specified data field is in a given struct.
+Internal helper function to check if a specified data field is in a given struct.
 
 **Arguments:**
 - `s`:     struct
@@ -399,13 +399,14 @@ Check if a specified data field is in a given struct.
 """
 function field_check(s, field::Symbol)
     t = typeof(s)
-    @assert field in fieldnames(t) "field $field not in $t"
+    @assert field in fieldnames(t) "$field field not in $t type"
 end # function field_check
 
 """
     field_check(s, field::Symbol, t)
 
-Check if a specified data field is in a given struct and of a given type.
+Internal helper function to check if a specified data field is in a given
+struct and of a given type.
 
 **Arguments:**
 - `s`:     struct
@@ -423,7 +424,7 @@ end # function field_check
 """
     field_extrema(xyz::XYZ, field::Symbol, val)
 
-Determine time extrema for specific value of data field.
+Internal helper function to determine time extrema for specific value of data field.
 
 **Arguments:**
 - `xyz`:   `XYZ` flight data struct
@@ -431,7 +432,7 @@ Determine time extrema for specific value of data field.
 - `val`:   specific value of `field`
 
 **Returns:**
-- `field_extrema`: time extrema for given field
+- `t_extrema`: time extrema for given field
 """
 function field_extrema(xyz::XYZ, field::Symbol, val)
     if sum(getfield(xyz,field).==val) > 0
@@ -444,7 +445,7 @@ end # function field_extrema
 """
     xyz_fields(flight::Symbol)
 
-Get field names for given SGL flight.
+Internal helper function to get field names for given SGL flight.
 - Valid for SGL flights:
     - `:Flt1001`
     - `:Flt1001_160Hz`

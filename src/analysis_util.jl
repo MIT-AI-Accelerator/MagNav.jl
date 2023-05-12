@@ -201,7 +201,7 @@ Bandpass (or low-pass or high-pass) filter vector or columns of matrix.
 - `bpf`: (optional) filter object
 
 **Returns:**
-- `x_f`: vector or matrix of filtered data (mutated)
+- `nothing`: `x` is mutated with filtered data
 """
 function bpf_data!(x; bpf=get_bpf())
     x .= bpf_data(x;bpf=bpf)
@@ -374,7 +374,7 @@ function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
         elseif f in fields
             u = getfield(xyz,f)[ind]
         else
-            error("$f is not a valid feature")
+            error("$f feature is invalid, remove")
         end
 
         nf = size(u,2)
@@ -382,7 +382,7 @@ function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
         w  = nf > 1 ? [Symbol(f,"_",i) for i = 1:nf] : f
 
         if isnan(sum(u))
-            error("$f contains NaNs, remove from features_setup")
+            error("$f feature contains NaNs, remove")
         else
             x        = [x         u]
             no_norm  = [no_norm;  v]
@@ -928,8 +928,8 @@ end # function get_Axy
 Get neural network model. Valid for 0-3 hidden layers.
 
 **Arguments:**
-- `xS`: size of input layer
-- `yS`: size of output layer
+- `xS`:         size (length) of input layer
+- `yS`:         size (length) of output layer
 - `hidden`:     (optional) hidden layers & nodes, e.g., `[8,8]` for 2 hidden layers, 8 nodes each
 - `activation`: (optional) activation function
     - `relu`  = rectified linear unit
@@ -981,6 +981,28 @@ function get_nn_m(xS::Int=10, yS::Int=1;
 end # function get_nn_m
 
 """
+    sparse_group_lasso(weights::Params, α=1)
+
+Internal helper function to get the sparse group Lasso term for sparse-input
+regularization, which is the combined L1 & L2 norm of the first-layer neural
+network weights corresponding to each input feature.
+
+Reference: Feng & Simon, Sparse-Input Neural Networks for High-dimensional
+Nonparametric Regression and Classification, 2017. (pg. 4)
+
+**Arguments:**
+- `weights`: neural network model weights
+- `α`:       (optional) Lasso (`α=0`) vs group Lasso (`α=1`) balancing parameter {0:1}
+
+**Returns:**
+- `w_norm`: sparse group Lasso term
+"""
+function sparse_group_lasso(weights::Params, α=1)
+    return ([(1-α)*norm(weights[1][:,i],1) +
+                α *norm(weights[1][:,i],2) for i in axes(weights[1],2)])
+end # function sparse_group_lasso
+
+"""
     sparse_group_lasso(m, α=1)
 
 **Arguments:**
@@ -995,32 +1017,9 @@ function sparse_group_lasso(m, α=1)
 end # function sparse_group_lasso
 
 """
-    sparse_group_lasso(weights::Params, α=1)
-
-Internal helper function to get the sparse group Lasso term for sparse-input
-regularization, which is the combined L1 & L2 norm of the first-layer neural
-network weights corresponding to each input feature.
-
-Reference: Feng & Simon, Sparse-Input Neural Networks for High-dimensional
-Nonparametric Regression and Classification, 2017. (pg. 4)
-
-**Arguments:**
-- `weights`: neural network model weights
-- `α`: (optional) Lasso (`α=0`) vs group Lasso (`α=1`) balancing parameter {0:1}
-
-**Returns:**
-- `w_norm`: sparse group Lasso term
-"""
-function sparse_group_lasso(weights::Params, α=1)
-    return ([(1-α)*norm(weights[1][:,i],1) +
-                α *norm(weights[1][:,i],2) for i in axes(weights[1],2)])
-end # function sparse_group_lasso
-
-"""
     err_segs(y_hat, y, l_segs; silent::Bool=true)
 
-Internal helper function to remove mean error from multiple individual flight
-lines within a larger dataset.
+Remove mean error from multiple individual flight lines within larger dataset.
 
 **Arguments:**
 - `y_hat`:  predicted data
@@ -1049,7 +1048,7 @@ end # function err_segs
 Normalize (or standardize) features (columns) of training data.
 
 **Arguments:**
-- `train`: training data
+- `train`:     training data
 - `norm_type`: (optional) normalization type:
     - `:standardize` = Z-score normalization
     - `:normalize`   = min-max normalization
@@ -1104,8 +1103,8 @@ end # function norm_sets
 Normalize (or standardize) features (columns) of training and testing data.
 
 **Arguments:**
-- `train`: training data
-- `test`:  testing data
+- `train`:     training data
+- `test`:      testing data
 - `norm_type`: (optional) normalization type:
     - `:standardize` = Z-score normalization
     - `:normalize`   = min-max normalization
@@ -1145,9 +1144,9 @@ Normalize (or standardize) features (columns) of training, validation, and
 testing data.
 
 **Arguments:**
-- `train`: training data
-- `val`:   validation data
-- `test`:  testing data
+- `train`:     training data
+- `val`:       validation data
+- `test`:      testing data
 - `norm_type`: (optional) normalization type:
     - `:standardize` = Z-score normalization
     - `:normalize`   = min-max normalization
@@ -1274,7 +1273,7 @@ function unpack_data_norms(data_norms::Tuple)
     else
         error("length of data_norms = $(length(data_norms)) < 4")
     end
-    return (A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale)
+    return (A_bias, A_scale, v_scale, x_bias, x_scale, y_bias, y_scale)
 end # function unpack_data_norms
 
 """
@@ -1595,7 +1594,7 @@ function krr(x_train, y_train, x_test, y_test;
 
     # w = x_train' * ((K + λ*I) \ y_train)
     # return (w)
-    return (y_train_hat,y_test_hat)
+    return (y_train_hat, y_test_hat)
 end # function krr
 
 """
@@ -1609,7 +1608,7 @@ of predictions.
 - `x`: input data DataFrame
 
 **Returns:**
-- `y_hat`: 1-column DataFrame of predictions from `m`
+- `y_hat`: 1-column DataFrame of predictions from `m` using `x`
 """
 function predict_shapley(m, x::DataFrame)
     DataFrame(y_hat=vec(m(collect(Matrix(x)'))))
@@ -1707,9 +1706,10 @@ end # function plot_shapley
     eval_gsa(m, x, N::Int=min(10000,size(x,1)))
 
 Global sensitivity analysis (GSA) with the Morris Method.
-Reference: https://mitmath.github.io/18337/lecture17/global_sensitivity
 
-Reference: https://gsa.sciml.ai/stable/methods/morris/
+Reference: https://book.sciml.ai/notes/17-Global_Sensitivity_Analysis/
+
+Reference: https://docs.sciml.ai/GlobalSensitivity/stable/methods/morris/
 
 **Arguments:**
 - `m`: neural network model
@@ -1793,7 +1793,8 @@ end # function get_igrf
 """
     project_vector_to_2d(vec_in, uvec_x, uvec_y)
 
-Internal helper function to project a 3D vector into 2D given two orthogonal 3D unit vectors.
+Internal helper function to project a 3D vector into 2D given two orthogonal
+3D unit vectors.
 
 **Arguments:**
 - `vec_in`: 3D vector desired to be projected onto a 2D plane
@@ -1886,7 +1887,7 @@ end # function get_optimal_rotation_matrix
 """
     get_days_per_year(year)
 
-Internal helper function to get days per year based on (rounded down) year.
+Get days per year based on (rounded down) year.
 
 **Arguments:**
 - `year`: year (rounded down)
@@ -1901,7 +1902,7 @@ end # function get_days_per_year
 """
     get_years(year, doy=0)
 
-Internal helper function to get years from year and day of year.
+Get years from year and day of year.
 
 **Arguments:**
 - `year`: year

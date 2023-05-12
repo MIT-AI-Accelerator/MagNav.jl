@@ -15,7 +15,7 @@ dx = map_data["dx"]
 dy = map_data["dy"]
 dz = map_data["dz"]
 
-(k,kx,ky) = create_k(dx,dy,nx,ny)
+(k,kx,ky) = MagNav.create_k(dx,dy,nx,ny)
 
 mapS = get_map(MagNav.emag2)
 mapS = map_trim(mapS,traj)
