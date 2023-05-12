@@ -781,6 +781,14 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
 
     @assert epoch_lbfgs == 0 "LBFGS not implemented for model 3"
 
+    if y_type in [:c,:d]
+        y_type_aircraft = true
+    elseif y_type in [:a,:b]
+        y_type_aircraft = false
+    else
+        error("unsupported y_type in nn_comp_3_train, $y_type")
+    end
+
     # convert to Float32 for ~50% speedup
     A          = convert.(Float32,A)
     Bt         = convert.(Float32,Bt)    # magnitude of total field measurements
@@ -806,14 +814,6 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
     isempty(A_test)     || (B_unit_test    = A_test[:,1:3])
     isempty(Bt_test)    || (B_vec_test     = B_unit_test .* Bt_test)
     isempty(B_dot_test) || (B_vec_dot_test = B_dot_test)
-
-    if y_type in [:c,:d]
-        y_type_aircraft = true
-    elseif y_type in [:a,:b]
-        y_type_aircraft = false
-    else
-        error("unsupported y_type in nn_comp_3_train, $y_type")
-    end
 
     # compute scalar correction to aircraft or Earth field target
     function get_scalar_TL(B_vec, B_vec_dot, B_unit, TL_coef_p, TL_coef_i, TL_coef_e, y_type_aircraft)
@@ -896,14 +896,15 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
                                            B_unit_train',x_norm_train',y_norm_train'),
                                            shuffle=true,batchsize=batchsize)
         end
-        data_val   = Flux.DataLoader((B_vec_val',B_vec_dot_val',
-                                     B_unit_val',x_norm_val',y_norm_val'),
-                                     shuffle=true,batchsize=batchsize)
+        data_val = Flux.DataLoader((B_vec_val',B_vec_dot_val',
+                                   B_unit_val',x_norm_val',y_norm_val'),
+                                   shuffle=true,batchsize=batchsize)
     else
-        data_train = Flux.DataLoader((B_vec',B_vec_dot',
+        data_train   = Flux.DataLoader((B_vec',B_vec_dot',
                                      B_unit',x_norm',y_norm'),
                                      shuffle=true,batchsize=batchsize)
-        data_val   = data_train
+        data_train_2 = data_train
+        data_val     = data_train
     end
 
     # setup NN
@@ -921,12 +922,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
     end
 
     ## setup optimizer and loss function
-    if model_type in [:m3g]
-        #TODO change these constants to be globally initialized
-        opt = Scheduler(Step(λ = η_adam, γ = 0.8, step_sizes = [epoch_adam ÷ 2,epoch_adam ÷ 5, epoch_adam ÷ 5]), Adam())
-    else
-        opt = Adam(η_adam)
-    end
+    opt = Adam(η_adam)
 
     # compute TL vector, then add NN(x) correction to that
     function get_vector_corrected_TL(B_vec_in, B_vec_dot_in, B_unit_in, x_in, has_nn::Float32=1f0)
@@ -1028,7 +1024,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
     for i = 1:epoch_adam
         if model_type in [:m3tl,:m3s,:m3v] # train on NN model weights + TL coef
             Flux.train!(loss,Flux.params(m,TL_coef_p,TL_coef_i.data,TL_coef_e),data_train,opt)
-        elseif model_type in [:m3sc,:m3vc] #TODO change these constants to be globally initialized
+        elseif model_type in [:m3sc,:m3vc]
             if i < epoch_adam * (1. / 10.)
                 pms = Flux.params(TL_coef_p)
             elseif i < epoch_adam * (2. / 10.)
@@ -1111,6 +1107,14 @@ function nn_comp_3_test(A, Bt, B_dot, x, y, data_norms::Tuple, model::Chain;
                         l_segs::Vector     = [length(y)],
                         silent::Bool       = false)
 
+    if y_type in [:c,:d]
+        y_type_aircraft = true
+    elseif y_type in [:a,:b]
+        y_type_aircraft = false
+    else
+        error("unsupported y_type in nn_comp_3_test, $y_type")
+    end
+
     # convert to Float32 for consistency with nn_comp_3_train
     A       = convert.(Float32,A)
     Bt      = convert.(Float32,Bt)    # magnitude of total field measurements
@@ -1130,14 +1134,6 @@ function nn_comp_3_test(A, Bt, B_dot, x, y, data_norms::Tuple, model::Chain;
     # unpack data normalizations
     (_,_,v_scale,x_bias,x_scale,y_bias,y_scale) = unpack_data_norms(data_norms)
     x_norm = ((x .- x_bias) ./ x_scale) * v_scale
-
-    if y_type in [:c,:d]
-        y_type_aircraft = true
-    elseif y_type in [:a,:b]
-        y_type_aircraft = false
-    else
-        error("unsupported y_type in nn_comp_3_test, $y_type")
-    end
 
     # set to test mode in case model uses batchnorm or dropout
     m = model
@@ -2992,6 +2988,14 @@ function comp_m3_test(lines, df_line::DataFrame,
                                                  return_B         = true,
                                                  silent           = silent)
 
+    if y_type in [:c,:d]
+        y_type_aircraft = true
+    elseif y_type in [:a,:b]
+        y_type_aircraft = false
+    else
+        error("unsupported y_type in comp_m3_test, $y_type")
+    end
+
     # convert to Float32 for consistency with nn_comp_3_train
     A       = convert.(Float32,A)
     Bt      = convert.(Float32,Bt)    # magnitude of total field measurements
@@ -3015,14 +3019,6 @@ function comp_m3_test(lines, df_line::DataFrame,
     # unpack data normalizations
     (_,_,v_scale,x_bias,x_scale,y_bias,y_scale) = unpack_data_norms(data_norms)
     x_norm = ((x .- x_bias) ./ x_scale) * v_scale
-
-    if y_type in [:c,:d]
-        y_type_aircraft = true
-    elseif y_type in [:a,:b]
-        y_type_aircraft = false
-    else
-        error("unsupported y_type in comp_m3_test, $y_type")
-    end
 
     # set to test mode in case model uses batchnorm or dropout
     m = model

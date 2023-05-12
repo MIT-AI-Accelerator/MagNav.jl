@@ -25,7 +25,6 @@ module MagNav
     using MLJLinearModels: ElasticNetRegression, fit
     using NearestNeighbors: knn, KDTree
     using Optim: only_fg!, optimize, LBFGS, Options
-    using ParameterSchedulers: Scheduler
     using Parameters: @unpack, @with_kw
     using Pkg.Artifacts: @artifact_str
     using Plots: mm, plot, plot!
