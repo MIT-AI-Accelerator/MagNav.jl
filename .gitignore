@@ -6,4 +6,5 @@ docs/build/
 maps/
 settings.json
 LocalPreferences.toml
+Overrides.toml
 *.bak
