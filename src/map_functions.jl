@@ -1904,7 +1904,11 @@ Check if latitude and longitude points are on given map.
 - `bool`: if true, all `lat` and `lon` points are on `map_map`
 """
 function map_check(map_map::Map, lat, lon)
-    itp_map = map_itp(map_map)
+    if typeof(map_map) <: MapV
+        itp_map = map_itp(map_map,:X,:linear)
+    else
+        itp_map = map_itp(map_map,:linear)
+    end
     N   = length(lat)
     val = trues(N)
     for i = 1:N
