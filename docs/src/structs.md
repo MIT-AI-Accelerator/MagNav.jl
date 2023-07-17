@@ -19,10 +19,6 @@ MagNav.MapSd
 MagNav.MapV
 ```
 
-```@docs
-MagNav.MapVd
-```
-
 ## Vector Magnetometer
 ```@docs
 MagNav.MagV

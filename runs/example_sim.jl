@@ -6,7 +6,7 @@ include("common_setup.jl"); # load common-use packages, DataFrames, and Dicts
 seed!(2) # for reproducibility
 t    = 1800; # selected flight time [s]
 mapS = get_map(MagNav.namad); # load built-in NAMAD map
-xyz  = create_XYZ0(mapS;alt=mapS.alt,t=t,n_waves=2); # create flight data
+xyz  = create_XYZ0(mapS;alt=mapS.alt,t=t,N_waves=2); # create flight data
 traj = xyz.traj; # get trajectory (GPS) struct
 ins  = xyz.ins;  # get INS struct
 mapS = map_trim(mapS,traj;pad=10); # trim map for given trajectory (with padding)
