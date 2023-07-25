@@ -27,7 +27,7 @@ Run navigation filter and optionally compute Cramér–Rao lower bound (CRLB).
 - `traj`:      `Traj` trajectory struct
 - `ins`:       `INS` inertial navigation system struct
 - `meas`:      scalar magnetometer measurement [nT]
-- `itp_mapS`:  scalar map grid interpolation
+- `itp_mapS`:  scalar map interpolation function
 - `filt_type`: (optional) filter type {`:ekf`,`:mpf`}
 - `P0`:        (optional) initial covariance matrix
 - `Qd`:        (optional) discrete time process/system noise matrix
@@ -430,7 +430,7 @@ end # function eval_filt
     plot_filt!(p1, traj::Traj, ins::INS, filt_out::FILTout;
                vel_plot::Bool  = false,
                dpi::Int        = 200,
-               fewer_pts::Bool = true,
+               Nmax::Int       = 5000,
                show_plot::Bool = true,
                save_plot::Bool = false)
 
@@ -443,7 +443,7 @@ Plot flights paths on an existing plot and latitude & longitude vs time.
 - `filt_out`:  `FILTout` filter extracted output struct
 - `vel_plot`:  (optional) if true, plot velocities
 - `dpi`:       (optional) dots per inch (image resolution)
-- `fewer_pts`: (optional) if true, reduce number of data points plotted
+- `Nmax`:      (optional) maximum number of data points plotted
 - `show_plot`: (optional) if true, show plot
 - `save_plot`: (optional) if true, plots will be saved with default file names
 
@@ -457,11 +457,11 @@ Plot flights paths on an existing plot and latitude & longitude vs time.
 function plot_filt!(p1, traj::Traj, ins::INS, filt_out::FILTout;
                     vel_plot::Bool  = false,
                     dpi::Int        = 200,
-                    fewer_pts::Bool = true,
+                    Nmax::Int       = 5000,
                     show_plot::Bool = true,
                     save_plot::Bool = false)
 
-    i    = fewer_pts ? (1:10:traj.N) : (1:traj.N)
+    i    = downsample(1:traj.N,Nmax)
     tt   = (traj.tt[i] .- traj.tt[i][1]) / 60
     lon  = rad2deg.([traj.lon;ins.lon;filt_out.lon])
     lat  = rad2deg.([traj.lat;ins.lat;filt_out.lat])
@@ -474,28 +474,28 @@ function plot_filt!(p1, traj::Traj, ins::INS, filt_out::FILTout;
     plot!(p1,rad2deg.(filt_out.lon[i]),rad2deg.(filt_out.lat[i]),lab="filter")
     plot!(p1,xlim=xlim,ylim=ylim)
     show_plot && display(p1)
-    save_plot && png(p1,"flight_path")
+    save_plot && png(p1,"flight_path.png")
 
     p2 = plot(xlab="time [min]",ylab="latitude [deg]",dpi=dpi)
     plot!(p2,tt,rad2deg.(traj.lat[i])    ,lab="gps")
     plot!(p2,tt,rad2deg.(ins.lat[i])     ,lab="ins")
     plot!(p2,tt,rad2deg.(filt_out.lat[i]),lab="filter")
     show_plot && display(p2)
-    save_plot && png(p2,"latitude")
+    save_plot && png(p2,"latitude.png")
 
     p3 = plot(xlab="time [min]",ylab="longitude [deg]",dpi=dpi)
     plot!(p3,tt,rad2deg.(traj.lon[i])    ,lab="gps")
     plot!(p3,tt,rad2deg.(ins.lon[i])     ,lab="ins")
     plot!(p3,tt,rad2deg.(filt_out.lon[i]),lab="filter")
     show_plot && display(p3)
-    save_plot && png(p3,"longitude")
+    save_plot && png(p3,"longitude.png")
 
     # p4 = plot(xlab="time [min]",ylab="altitude [m]",dpi=dpi)
     # plot!(p4,tt,traj.alt[i]    ,lab="gps")
     # plot!(p4,tt,ins.alt[i]     ,lab="ins")
     # plot!(p4,tt,filt_out.alt[i],lab="filter")
     # show_plot && display(p4)
-    # save_plot && png(p4,"altitude")
+    # save_plot && png(p4,"altitude.png")
 
     if vel_plot
         p5 = plot(xlab="time [min]",ylab="north velocity [m/s]",dpi=dpi)
@@ -503,14 +503,14 @@ function plot_filt!(p1, traj::Traj, ins::INS, filt_out::FILTout;
         plot!(p5,tt,ins.vn[i]     ,lab="ins")
         plot!(p5,tt,filt_out.vn[i],lab="filter")
         show_plot && display(p5)
-        save_plot && png(p5,"north_velocity")
+        save_plot && png(p5,"north_velocity.png")
 
         p6 = plot(xlab="time [min]",ylab="east velocity [m/s]",dpi=dpi)
         plot!(p6,tt,traj.ve[i]    ,lab="gps")
         plot!(p6,tt,ins.ve[i]     ,lab="ins")
         plot!(p6,tt,filt_out.ve[i],lab="filter")
         show_plot && display(p6)
-        save_plot && png(p6,"east_velocity")
+        save_plot && png(p6,"east_velocity.png")
     end
 
     # p7 = plot(xlab="time [min]",ylab="down velocity [m/s]",dpi=dpi)
@@ -518,38 +518,38 @@ function plot_filt!(p1, traj::Traj, ins::INS, filt_out::FILTout;
     # plot!(p7,tt,ins.vd[i]     ,lab="ins")
     # plot!(p7,tt,filt_out.vd[i],lab="filter")
     # show_plot && display(p7)
-    # save_plot && png(p7,"down_velocity")
+    # save_plot && png(p7,"down_velocity.png")
 
     # p8 = plot(xlab="time [min]",ylab="tilt [deg]",dpi=dpi)
     # plot!(p8,tt,rad2deg.(filt_out.tn[i]),lab="north")
     # plot!(p8,tt,rad2deg.(filt_out.te[i]),lab="east")
     # plot!(p8,tt,rad2deg.(filt_out.td[i]),lab="down")
     # show_plot && display(p8)
-    # save_plot && png(p8,"tilt")
+    # save_plot && png(p8,"tilt.png")
 
     # p9 = plot(xlab="time [min]",ylab="barometer aiding altitude [m]",dpi=dpi)
     # plot!(p9,tt,filt_out.ha[i])
     # show_plot && display(p9)
-    # save_plot && png(p9,"barometer_aiding_altitude")
+    # save_plot && png(p9,"barometer_aiding_altitude.png")
 
     # p10 = plot(xlab="time [min]",ylab="barometer aiding vertical accel [m/s^2]",dpi=dpi)
     # plot!(p10,tt,filt_out.ah[i])
     # show_plot && display(p10)
-    # save_plot && png(p10,"barometer_aiding_vertical_accel")
+    # save_plot && png(p10,"barometer_aiding_vertical_accel.png")
 
     # p11 = plot(xlab="time [min]",ylab="accelerometer bias [m/s^2]",dpi=dpi)
     # plot!(p11,tt,filt_out.ax[i],lab="x")
     # plot!(p11,tt,filt_out.ay[i],lab="y")
     # plot!(p11,tt,filt_out.az[i],lab="z")
     # show_plot && display(p11)
-    # save_plot && png(p11,"accelerometer_bias")
+    # save_plot && png(p11,"accelerometer_bias.png")
 
     # p12 = plot(xlab="time [min]",ylab="gyroscope bias [rad/s]",dpi=dpi)
     # plot!(p12,tt,filt_out.gx[i],lab="x")
     # plot!(p12,tt,filt_out.gy[i],lab="y")
     # plot!(p12,tt,filt_out.gz[i],lab="z")
     # show_plot && display(p12)
-    # save_plot && png(p12,"gyroscope_bias")
+    # save_plot && png(p12,"gyroscope_bias.png")
 
     vel_plot ? (return (p1, p2, p3, p5, p6)) : (return (p1, p2, p3))
 end # function plot_filt!
@@ -558,7 +558,7 @@ end # function plot_filt!
     plot_filt(traj::Traj, ins::INS, filt_out::FILTout;
               vel_plot::Bool  = false,
               dpi::Int        = 200,
-              fewer_pts::Bool = true,
+              Nmax::Int       = 5000,
               show_plot::Bool = true,
               save_plot::Bool = false)
 
@@ -570,7 +570,7 @@ Plot flights paths and latitude & longitude vs time.
 - `filt_out`:  `FILTout` filter extracted output struct
 - `vel_plot`:  (optional) if true, plot velocities
 - `dpi`:       (optional) dots per inch (image resolution)
-- `fewer_pts`: (optional) if true, reduce number of data points plotted
+- `Nmax`:      (optional) maximum number of data points plotted
 - `show_plot`: (optional) if true, show plot
 - `save_plot`: (optional) if true, plots will be saved with default file names
 
@@ -584,14 +584,14 @@ Plot flights paths and latitude & longitude vs time.
 function plot_filt(traj::Traj, ins::INS, filt_out::FILTout;
                    vel_plot::Bool  = false,
                    dpi::Int        = 200,
-                   fewer_pts::Bool = true,
+                   Nmax::Int       = 5000,
                    show_plot::Bool = true,
                    save_plot::Bool = false)
     p1 = plot()
     plot_filt!(p1,traj,ins,filt_out;
                vel_plot  = vel_plot,
                dpi       = dpi,
-               fewer_pts = fewer_pts,
+               Nmax      = Nmax,
                show_plot = show_plot,
                save_plot = save_plot)
 end # function plot_filt
@@ -600,7 +600,7 @@ end # function plot_filt
     plot_filt_err(traj::Traj, filt_out::FILTout, crlb_out::CRLBout;
                   vel_plot::Bool  = false,
                   dpi::Int        = 200,
-                  fewer_pts::Bool = true,
+                  Nmax::Int       = 5000,
                   show_plot::Bool = true,
                   save_plot::Bool = false)
 
@@ -612,7 +612,7 @@ Plot northing and easting errors vs time.
 - `crlb_out`:  `CRLBout` Cramér–Rao lower bound extracted output struct
 - `vel_plot`:  (optional) if true, plot velocity errors
 - `dpi`:       (optional) dots per inch (image resolution)
-- `fewer_pts`: (optional) if true, reduce number of data points plotted
+- `Nmax`:      (optional) maximum number of data points plotted
 - `show_plot`: (optional) if true, show plot
 - `save_plot`: (optional) if true, plots will be saved with default file names
 
@@ -625,11 +625,11 @@ Plot northing and easting errors vs time.
 function plot_filt_err(traj::Traj, filt_out::FILTout, crlb_out::CRLBout;
                        vel_plot::Bool  = false,
                        dpi::Int        = 200,
-                       fewer_pts::Bool = true,
+                       Nmax::Int       = 5000,
                        show_plot::Bool = true,
                        save_plot::Bool = false)
 
-    i  = fewer_pts ? (1:10:traj.N) : (1:traj.N)
+    i  = downsample(1:traj.N,Nmax)
     tt = (traj.tt[i] .- traj.tt[i][1]) / 60
 
     p2 = plot(xlab="time [min]",ylab="northing error [m]",dpi=dpi)
@@ -639,7 +639,7 @@ function plot_filt_err(traj::Traj, filt_out::FILTout, crlb_out::CRLBout;
     plot!(p2,tt, crlb_out.n_std[i],lab="CRLB 1-σ",color=:red,ls=:dash)
     plot!(p2,tt,-crlb_out.n_std[i],lab=false,color=:red,ls=:dash)
     show_plot && display(p2)
-    save_plot && png(p2,"northing_error")
+    save_plot && png(p2,"northing_error.png")
 
     p3 = plot(xlab="time [min]",ylab="easting error [m]",dpi=dpi)
     plot!(p3,tt, filt_out.e_err[i],lab="filter error",color=:black,lw=2)
@@ -648,7 +648,7 @@ function plot_filt_err(traj::Traj, filt_out::FILTout, crlb_out::CRLBout;
     plot!(p3,tt, crlb_out.e_std[i],lab="CRLB 1-σ",color=:red,ls=:dash)
     plot!(p3,tt,-crlb_out.e_std[i],lab=false,color=:red,ls=:dash)
     show_plot && display(p3)
-    save_plot && png(p3,"easting_error")
+    save_plot && png(p3,"easting_error.png")
 
     # p4 = plot(xlab="time [min]",ylab="altitude error [m]",dpi=dpi)
     # plot!(p4,tt, filt_out.alt_err[i],lab="filter error",color=:black,lw=2)
@@ -657,7 +657,7 @@ function plot_filt_err(traj::Traj, filt_out::FILTout, crlb_out::CRLBout;
     # # plot!(p4,tt, crlb_out.alt_std[i],lab="CRLB 1-σ",color=:red,ls=:dash)
     # # plot!(p4,tt,-crlb_out.alt_std[i],lab=false,color=:red,ls=:dash)
     # show_plot && display(p4)
-    # save_plot && png(p4,"altitude_error")
+    # save_plot && png(p4,"altitude_error.png")
 
     if vel_plot
 
@@ -666,14 +666,14 @@ function plot_filt_err(traj::Traj, filt_out::FILTout, crlb_out::CRLBout;
         plot!(p5,tt, filt_out.vn_std[i],lab="filter 1-σ",color=:black)
         plot!(p5,tt,-filt_out.vn_std[i],lab=false,color=:black)
         show_plot && display(p5)
-        save_plot && png(p5,"north_velocity_error")
+        save_plot && png(p5,"north_velocity_error.png")
 
         p6 = plot(xlab="time [min]",ylab="east velocity error [m/s]",dpi=dpi) # , ylim=(-10,10))
         plot!(p6,tt, filt_out.ve_err[i],lab="filter error")
         plot!(p6,tt, filt_out.ve_std[i],lab="filter 1-σ",color=:black)
         plot!(p6,tt,-filt_out.ve_std[i],lab=false,color=:black)
         show_plot && display(p6)
-        save_plot && png(p6,"east_velocity_error")
+        save_plot && png(p6,"east_velocity_error.png")
 
     end
 
@@ -682,54 +682,54 @@ function plot_filt_err(traj::Traj, filt_out::FILTout, crlb_out::CRLBout;
     # plot!(p7,tt, filt_out.vd_std[i],lab="filter 1-σ",color=:black)
     # plot!(p7,tt,-filt_out.vd_std[i],lab=false,color=:black)
     # show_plot && display(p7)
-    # save_plot && png(p7,"down_velocity_error")
+    # save_plot && png(p7,"down_velocity_error.png")
 
     # p8 = plot(xlab="time [min]",ylab="north tilt error [deg]",dpi=dpi)
     # plot!(p8,tt, rad2deg.(filt_out.tn_err[i]),lab="filter error")
     # plot!(p8,tt, rad2deg.(filt_out.tn_std[i]),lab="filter 1-σ",color=:black)
     # plot!(p8,tt,-rad2deg.(filt_out.tn_std[i]),lab=false,color=:black)
     # show_plot && display(p8)
-    # save_plot && png(p8,"north_tilt_error")
+    # save_plot && png(p8,"north_tilt_error.png")
 
     # p9 = plot(xlab="time [min]",ylab="east tilt error [deg]",dpi=dpi)
     # plot!(p9,tt, rad2deg.(filt_out.te_err[i]),lab="filter error")
     # plot!(p9,tt, rad2deg.(filt_out.te_std[i]),lab="filter 1-σ",color=:black)
     # plot!(p9,tt,-rad2deg.(filt_out.te_std[i]),lab=false,color=:black)
     # show_plot && display(p9)
-    # save_plot && png(p9,"east_tilt_error")
+    # save_plot && png(p9,"east_tilt_error.png")
 
     # p10 = plot(xlab="time [min]",ylab="down tilt error [deg]",dpi=dpi)
     # plot!(p10,tt, rad2deg.(filt_out.td_err[i]),lab="filter error")
     # plot!(p10,tt, rad2deg.(filt_out.td_std[i]),lab="filter 1-σ",color=:black)
     # plot!(p10,tt,-rad2deg.(filt_out.td_std[i]),lab=false,color=:black)
     # show_plot && display(p10)
-    # save_plot && png(p10,"down_tilt_error")
+    # save_plot && png(p10,"down_tilt_error.png")
 
     # p11 = plot(xlab="time [min]",ylab="barometer aiding altitude σ [m]",dpi=dpi)
     # plot!(p11,tt, filt_out.ha_std[i],lab="filter 1-σ",color=:black)
     # plot!(p11,tt,-filt_out.ha_std[i],lab=false,color=:black)
     # show_plot && display(p11)
-    # save_plot && png(p11,"barometer_aiding_altitude_σ")
+    # save_plot && png(p11,"barometer_aiding_altitude_σ.png")
 
     # p12 = plot(xlab="time [min]",ylab="barometer aiding vertical accel σ [m/s^2]",dpi=dpi)
     # plot!(p12,tt, filt_out.ah_std[i],lab="filter 1-σ",color=:black)
     # plot!(p12,tt,-filt_out.ah_std[i],lab=false,color=:black)
     # show_plot && display(p12)
-    # save_plot && png(p12,"barometer_aiding_vertical_accel_σ")
+    # save_plot && png(p12,"barometer_aiding_vertical_accel_σ.png")
 
     # p13 = plot(xlab="time [min]",ylab="accelerometer bias σ [m/s^2]",dpi=dpi)
     # plot!(p13,tt,filt_out.ax_std[i],lab="x")
     # plot!(p13,tt,filt_out.ay_std[i],lab="y")
     # plot!(p13,tt,filt_out.az_std[i],lab="z")
     # show_plot && display(p13)
-    # save_plot && png(p13,"accelerometer_bias_σ")
+    # save_plot && png(p13,"accelerometer_bias_σ.png")
 
     # p14 = plot(xlab="time [min]",ylab="gyroscope bias σ [rad/s]",dpi=dpi)
     # plot!(p14,tt,filt_out.gx_std[i],lab="x")
     # plot!(p14,tt,filt_out.gy_std[i],lab="y")
     # plot!(p14,tt,filt_out.gz_std[i],lab="z")
     # show_plot && display(p14)
-    # save_plot && png(p14,"gyroscope_bias_σ")
+    # save_plot && png(p14,"gyroscope_bias_σ.png")
 
     vel_plot ? (return (p2, p3, p5, p6)) : (return (p2, p3))
 end # function plot_filt_err
@@ -739,8 +739,8 @@ end # function plot_filt_err
                  lab::String        = "magnetometer",
                  order::Symbol      = :magmap,
                  dpi::Int           = 200,
+                 Nmax::Int          = 5000,
                  detrend_data::Bool = true,
-                 fewer_pts::Bool    = true,
                  save_plot::Bool    = false)
 
 Plot scalar magnetometer measurements vs map values.
@@ -748,30 +748,42 @@ Plot scalar magnetometer measurements vs map values.
 **Arguments:**
 - `path`:         `Path` struct, i.e., `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
 - `mag`:          scalar magnetometer measurements [nT]
-- `itp_mapS`:     scalar map grid interpolation
+- `itp_mapS`:     scalar map interpolation function
 - `lab`:          (optional) magnetometer data (legend) label
 - `order`:        (optional) plotting order {`:magmap`,`:mapmag`}
 - `dpi`:          (optional) dots per inch (image resolution)
+- `Nmax`:         (optional) maximum number of data points plotted
 - `detrend_data`: (optional) if true, plot data will be detrended
-- `fewer_pts`:    (optional) if true, reduce number of data points plotted
-- `save_plot`:    (optional) if true, plots will be saved with default file names
+- `save_plot`:    (optional) if true, `p1` will be saved with default file names
 
 **Returns:**
 - `p1`: scalar magnetometer measurements vs map values
 """
 function plot_mag_map(path::Path, mag, itp_mapS;
                       lab::String        = "magnetometer",
-                      detrend_data::Bool = true,
                       order::Symbol      = :magmap,
                       dpi::Int           = 200,
-                      fewer_pts::Bool    = true,
+                      Nmax::Int          = 5000,
+                      detrend_data::Bool = true,
                       save_plot::Bool    = false)
 
-    i  = fewer_pts ? (1:10:path.N) : (1:path.N)
+    i  = downsample(1:path.N,Nmax)
     tt = (path.tt[i] .- path.tt[i][1]) / 60
 
-    mag_val = detrend_data ? detrend(mag[i]) : mag[i]
-    map_val = itp_mapS.(path.lon[i],path.lat[i])
+    # custom itp_mapS from map cache, using median path position
+    if typeof(itp_mapS) == Map_Cache # not the most accurate, but it runs
+        itp_mapS = get_cached_map(itp_mapS,median(path.lat[i]),
+                                           median(path.lon[i]),
+                                           median(path.alt[i]))
+    end
+
+    if length(size(itp_mapS)) == 2
+        map_val = itp_mapS.(path.lon[i],path.lat[i])
+    elseif length(size(itp_mapS)) == 3
+        map_val = itp_mapS.(path.lon[i],path.lat[i],path.alt[i])
+    end
+
+    mag_val = detrend_data ? detrend(mag[i] ) : mag[i]
     map_val = detrend_data ? detrend(map_val) : map_val
 
     p1 = plot(xlab="time [min]",ylab="magnetic field [nT]",dpi=dpi)
@@ -785,7 +797,7 @@ function plot_mag_map(path::Path, mag, itp_mapS;
         error("order $order not defined")
     end
 
-    save_plot && png(p1,"mag_vs_map")
+    save_plot && png(p1,"mag_vs_map.png")
 
     return (p1)
 end # function plot_mag_map
@@ -794,8 +806,8 @@ end # function plot_mag_map
     plot_mag_map_err(path::Path, mag, itp_mapS;
                      lab::String        = "",
                      dpi::Int           = 200,
+                     Nmax::Int          = 5000,
                      detrend_data::Bool = true,
-                     fewer_pts::Bool    = true,
                      save_plot::Bool    = false)
 
 Plot scalar magnetometer measurement vs map value errors.
@@ -803,12 +815,12 @@ Plot scalar magnetometer measurement vs map value errors.
 **Arguments:**
 - `path`:         `Path` struct, i.e., `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
 - `mag`:          scalar magnetometer measurements [nT]
-- `itp_mapS`:     scalar map grid interpolation
+- `itp_mapS`:     scalar map interpolation function
 - `lab`:          (optional) data (legend) label
 - `dpi`:          (optional) dots per inch (image resolution)
+- `Nmax`:         (optional) maximum number of data points plotted
 - `detrend_data`: (optional) if true, plot data will be detrended
-- `fewer_pts`:    (optional) if true, reduce number of data points plotted
-- `save_plot`:    (optional) if true, plots will be saved with default file names
+- `save_plot`:    (optional) if true, `p1` will be saved with default file names
 
 **Returns:**
 - `p1`: scalar magnetometer measurement vs map value errors
@@ -816,11 +828,11 @@ Plot scalar magnetometer measurement vs map value errors.
 function plot_mag_map_err(path::Path, mag, itp_mapS;
                           lab::String        = "",
                           dpi::Int           = 200,
+                          Nmax::Int          = 5000,
                           detrend_data::Bool = true,
-                          fewer_pts::Bool    = true,
                           save_plot::Bool    = false)
 
-    i  = fewer_pts ? (1:10:path.N) : (1:path.N)
+    i  = downsample(1:path.N,Nmax)
     tt = (path.tt[i] .- path.tt[i][1]) / 60
 
     l  = detrend_data ? "detrended " : ""
@@ -828,45 +840,81 @@ function plot_mag_map_err(path::Path, mag, itp_mapS;
 
     f = detrend_data ? detrend : x -> x
 
-    plot!(p1,tt,f(mag[i] - itp_mapS.(path.lon[i],path.lat[i])),lab=lab)
+    # custom itp_mapS from map cache, using median path position
+    if typeof(itp_mapS) == Map_Cache # not the most accurate, but it runs
+        itp_mapS = get_cached_map(itp_mapS,median(path.lat[i]),
+                                           median(path.lon[i]),
+                                           median(path.alt[i]))
+    end
 
-    save_plot && png(p1,"mag_map_err")
+    if length(size(itp_mapS)) == 2
+        map_val = itp_mapS.(path.lon[i],path.lat[i])
+    elseif length(size(itp_mapS)) == 3
+        map_val = itp_mapS.(path.lon[i],path.lat[i],path.alt[i])
+    end
 
-	err = round(std(mag[i]-itp_mapS.(path.lon[i],path.lat[i])),digits=2)
+    plot!(p1,tt,f(mag[i] - map_val),lab=lab)
+
+    save_plot && png(p1,"mag_map_err.png")
+
+	err = round(std(mag[i] - map_val),digits=2)
     @info("mag-map error standard deviation = $err nT")
 
     return (p1)
 end # function plot_mag_map_err
 
 """
+    get_autocor(x::Vector, dt=0.1, dt_max=300.0)
+
+Get autocorrelation of data (e.g., actual - expected measurements).
+
+**Arguments:**
+- `x`:      input data
+- `dt`:     (optional) measurement time step [s]
+- `dt_max`: (optional) maximum time step to evaluate [s]
+
+**Returns:**
+- `sigma`: standard deviation
+- `tau`:   autocorrelation decay to e^-1 of `x` [s]
+"""
+function get_autocor(x::Vector, dt=0.1, dt_max=300.0)
+    sigma = round(Int,std(x))
+    dts   = 0:dt:dt_max
+    lags  = round.(Int,dts/dt)
+    x_ac  = autocor(x,lags)
+    i     = findfirst(x_ac .< exp(-1))
+    tau   = i !== nothing ? round(Int,dts[i]) : dt_max
+    return (sigma, tau)
+end # function get_autocor
+
+"""
     plot_autocor(x::Vector, dt=0.1, dt_max=300.0; show_plot::Bool=false)
 
-Plot autocorrelation of data (e.g., actual - expected measurements). Prints out 
+Plot autocorrelation of data (e.g., actual - expected measurements). Prints out
 `σ` = standard deviation & `τ` = autocorrelation decay to e^-1 of `x`.
 
 **Arguments:**
 - `x`:         input data
 - `dt`:        (optional) measurement time step [s]
 - `dt_max`:    (optional) maximum time step to evaluate [s]
-- `show_plot`: (optional) if true, plot will be shown
+- `show_plot`: (optional) if true, `p1` will be shown
 
 **Returns:**
-- `p1`: if `show_plot = true`, plot of autocorrelation of `x`
+- `p1`: plot of autocorrelation of `x`
 """
 function plot_autocor(x::Vector, dt=0.1, dt_max=300.0; show_plot::Bool=false)
-    # 1002.17: σ = 5, τ ≈ 45
 
-    @info("σ ≈ $(round(Int,std(x)))")
+    (sigma,tau) = get_autocor(x,dt,dt_max) # 1002.17: σ = 5, τ ≈ 45
+
+    @info("σ ≈ $sigma")
+    @info("τ ≈ $tau")
+    tau == dt_max && @info("τ not in range")
 
     dts  = 0:dt:dt_max
     lags = round.(Int,dts/dt)
     x_ac = autocor(x,lags)
     p1   = plot(dts,x_ac,lab=false);
     show_plot && display(p1)
-
-    i = findfirst(x_ac .< exp(-1))
-    s = i !== nothing ? "≈ $(round(Int,dts[i]))" : "not in range"
-    @info("τ $s")
 
     return (p1)
 end # function plot_autocor
@@ -978,8 +1026,9 @@ matrix (2 degrees of freedom). Visualization of a 2D confidence interval.
 - `conf`:       (optional) percentile {0:1}
 - `clip`:       (optional) clipping radius (in same units as `P`)
 - `n`:          (optional) number of confidence ellipse points
-- `lim`:        (optional) `x` and `y` plotting limits (in same units as `P`)
+- `lim`:        (optional) `x` & `y` plotting limits (in same units as `P`)
 - `margin`:     (optional) margin around plot [mm]
+- `lab`:        (optional) axis labels
 - `axis`:       (optional) if true, show axes
 - `plot_eigax`: (optional) if true, show major and minor axes
 - `bg_color`:   (optional) background color
@@ -1059,8 +1108,9 @@ matrix (2 degrees of freedom). Visualization of a 2D confidence interval.
 - `conf`:       (optional) percentile {0:1}
 - `clip`:       (optional) clipping radius (in same units as `P`)
 - `n`:          (optional) number of confidence ellipse points
-- `lim`:        (optional) `x` and `y` plotting limits (in same units as `P`)
+- `lim`:        (optional) `x` & `y` plotting limits (in same units as `P`)
 - `margin`:     (optional) margin around plot [mm]
+- `lab`:        (optional) axis labels
 - `axis`:       (optional) if true, show axes
 - `plot_eigax`: (optional) if true, show major and minor axes
 - `bg_color`:   (optional) background color
@@ -1188,7 +1238,7 @@ Create a (position) confidence ellipse gif for a `2`x`2` (x`N`) covariance matri
 - `conf`:       (optional) percentile {0:1}
 - `clip`:       (optional) clipping radius [`conf_units`]
 - `n`:          (optional) number of confidence ellipse points
-- `lim`:        (optional) `x` and `y` plotting limits [`conf_units`]
+- `lim`:        (optional) `x` & `y` plotting limits [`conf_units`]
 - `margin`:     (optional) margin around plot [mm]
 - `axis`:       (optional) if true, show axes
 - `plot_eigax`: (optional) if true, show major and minor axes
@@ -1246,7 +1296,7 @@ end # function gif_ellipse
     gif_ellipse(filt_res::FILTres,
                 filt_out::FILTout,
                 gif_name::String   = "conf_ellipse",
-                map_map::Map       = MapS(zeros(1,1),[0.0],[0.0],0.0);
+                map_map::Map       = mapS_null;
                 dt                 = 0.1,
                 di::Int            = 10,
                 speedup::Int       = 60,
@@ -1256,6 +1306,7 @@ end # function gif_ellipse
                 clip               = Inf,
                 n::Int             = 61,
                 lim                = 500,
+                dpi::Int           = 200,
                 margin::Int        = 2,
                 axis::Bool         = true,
                 plot_eigax::Bool   = false,
@@ -1263,7 +1314,6 @@ end # function gif_ellipse
                 ce_color::Symbol   = :black,
                 map_color::Symbol  = :usgs,
                 clims::Tuple       = (0,0),
-                dpi::Int           = 200,
                 b_e                = gr())
 
 Create a (position) confidence ellipse gif for a `2`x`2` (x`N`) covariance matrix.
@@ -1281,7 +1331,8 @@ Create a (position) confidence ellipse gif for a `2`x`2` (x`N`) covariance matri
 - `conf`:       (optional) percentile {0:1}
 - `clip`:       (optional) clipping radius [`conf_units`]
 - `n`:          (optional) number of confidence ellipse points
-- `lim`:        (optional) `x` and `y` plotting limits [`conf_units`]
+- `lim`:        (optional) `x` & `y` plotting limits [`conf_units`]
+- `dpi`:        (optional) dots per inch (image resolution)
 - `margin`:     (optional) margin around plot [mm]
 - `axis`:       (optional) if true, show axes
 - `plot_eigax`: (optional) if true, show major and minor axes
@@ -1289,7 +1340,6 @@ Create a (position) confidence ellipse gif for a `2`x`2` (x`N`) covariance matri
 - `ce_color`:   (optional) confidence ellipse color
 - `map_color`:  (optional) filled contour color scheme {`:usgs`,`:gray`,`:gray1`,`:gray2`,`:plasma`,`:magma`}
 - `clims`:      (optional) map color scale limits
-- `dpi`:        (optional) dots per inch (image resolution)
 - `b_e`:        (optional) plotting backend
 
 **Returns:**
@@ -1298,7 +1348,7 @@ Create a (position) confidence ellipse gif for a `2`x`2` (x`N`) covariance matri
 function gif_ellipse(filt_res::FILTres,
                      filt_out::FILTout,
                      gif_name::String   = "conf_ellipse",
-                     map_map::Map       = MapS(zeros(1,1),[0.0],[0.0],0.0);
+                     map_map::Map       = mapS_null;
                      dt                 = 0.1,
                      di::Int            = 10,
                      speedup::Int       = 60,
@@ -1308,6 +1358,7 @@ function gif_ellipse(filt_res::FILTres,
                      clip               = Inf,
                      n::Int             = 61,
                      lim                = 500,
+                     dpi::Int           = 200,
                      margin::Int        = 2,
                      axis::Bool         = true,
                      plot_eigax::Bool   = false,
@@ -1315,15 +1366,14 @@ function gif_ellipse(filt_res::FILTres,
                      ce_color::Symbol   = :black,
                      map_color::Symbol  = :usgs,
                      clims::Tuple       = (0,0),
-                     dpi::Int           = 200,
                      b_e                = gr())
 
-    dlat = abs(map_map.yy[end]-map_map.yy[1])/(length(map_map.yy)-1)
-    dlon = abs(map_map.xx[end]-map_map.xx[1])/(length(map_map.xx)-1)
+    dlat = get_step(map_map.yy)
+    dlon = get_step(map_map.xx)
     dn   = dlat2dn(dlat,mean(map_map.yy))
     de   = dlon2de(dlon,mean(map_map.yy))
 
-    if (dlon != Inf) & (dlat != Inf) & !isnan(dlon) & !isnan(dlat) & (clims == (0,0))
+    if (dlon != 0) & (dlat != 0) & !isnan(dlon) & !isnan(dlat) & (clims == (0,0))
         num = ceil(Int,1.5*lim/minimum([dn,de]))
         y1  = findmin(abs.(map_map.yy.-minimum(filt_out.lat)))[2]
         y2  = findmin(abs.(map_map.yy.-maximum(filt_out.lat)))[2]
@@ -1331,7 +1381,7 @@ function gif_ellipse(filt_res::FILTres,
         x2  = findmin(abs.(map_map.xx.-maximum(filt_out.lon)))[2]
         (y1,y2)   = sort([y1,y2])
         (x1,x2)   = sort([x1,x2])
-        (_,clims) = map_clims(map_cs(map_color),map_map.map[y1:y2,x1:x2])
+        (_,clims) = map_clims(map_cs(map_color),map_map.map[y1:y2,x1:x2,1])
     end
 
     P  = units_ellipse(filt_res,filt_out;conf_units=conf_units)
@@ -1339,15 +1389,15 @@ function gif_ellipse(filt_res::FILTres,
 
     for i = 1:di:size(P,3)
 
-        if (dlon != Inf) & (dlat != Inf) & !isnan(dlon) & !isnan(dlat)
+        if (dlon != 0) & (dlat != 0) & !isnan(dlon) & !isnan(dlat)
             xi   = findmin(abs.(map_map.xx.-filt_out.lon[i]))[2]
             yi   = findmin(abs.(map_map.yy.-filt_out.lat[i]))[2]
             xind = max(xi-num,1):min(xi+num,length(map_map.xx))
             yind = max(yi-num,1):min(yi+num,length(map_map.yy))
-            p1   = plot_map(map_map.map[yind,xind],
+            p1   = plot_map(map_map.map[yind,xind,1],
                             map_map.xx[xind],map_map.yy[yind];
-                            clims=clims,dpi=dpi,margin=margin,
-                            legend=false,axis=false,fewer_pts=false,
+                            clims=clims,dpi=dpi,margin=margin,Nmax=10^10,
+                            legend=false,axis=false,
                             map_color=map_color,bg_color=bg_color,
                             map_units=:rad,plot_units=conf_units,b_e=b_e);
         else

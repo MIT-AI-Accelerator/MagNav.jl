@@ -147,7 +147,7 @@ end
 end
 
 @testset "map_grad tests" begin
-    @test MagNav.map_grad(itp_mapS,lat,lon) ≈ reverse(vec(grid_data["grad"]))
+    @test MagNav.map_grad(itp_mapS,lat,lon,alt)[1:2] ≈ reverse(vec(grid_data["grad"]))
 end
 
 @testset "fogm tests" begin

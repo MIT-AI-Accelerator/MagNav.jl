@@ -208,6 +208,25 @@ function bpf_data!(x; bpf=get_bpf())
 end # function bpf_data!
 
 """
+    downsample(x, Nmax::Int=1000)
+
+Downsample data `x` to `Nmax` (or fewer) data points.
+
+**Arguments:**
+- `x`:    vector or matrix of input data
+- `Nmax`: (optional) maximum number of data points
+
+**Returns:**
+- `x`: vector or matrix of downsampled data
+"""
+function downsample(x, Nmax::Int=1000)
+    N = size(x,1)
+    N > Nmax && (x = x[1:ceil(Int,N/Nmax):N,:])
+    size(x,2) == 1 && (x = vec(x))
+    return (x)
+end # function downsample
+
+"""
     get_x(xyz::XYZ, ind = trues(xyz.traj.N),
           features_setup::Vector{Symbol}   = [:mag_1_uc,:TL_A_flux_a];
           features_no_norm::Vector{Symbol} = Symbol[],
@@ -278,7 +297,7 @@ function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
     end
 
     # 4th derivative central difference
-    # Reference: Loughlin Tuck, Characterization and compensation of magnetic 
+    # Reference: Loughlin Tuck, Characterization and compensation of magnetic
     # interference resulting from unmanned aircraft systems, 2019. (pg. 28)
     for mag in mags_all
         lab = Symbol(mag,"_dot4")
@@ -394,7 +413,7 @@ function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
 end # function get_x
 
 """
-    get_x(xyz::Vector{XYZ}, ind,
+    get_x(xyz_vec::Vector{XYZ}, ind_vec,
           features_setup::Vector{Symbol}   = [:mag_1_uc,:TL_A_flux_a];
           features_no_norm::Vector{Symbol} = Symbol[],
           terms             = [:permanent,:induced,:eddy],
@@ -405,8 +424,8 @@ end # function get_x
 Get `x` matrix from multiple `XYZ` flight data structs.
 
 **Arguments:**
-- `xyz`:              vector of `XYZ` flight data structs
-- `ind`:              vector of selected data indices
+- `xyz_vec`:          vector of `XYZ` flight data structs
+- `ind_vec`:          vector of selected data indices
 - `features_setup`:   list of features to include
 - `features_no_norm`: (optional) list of features to not normalize
 - `terms`:            (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
@@ -419,7 +438,7 @@ Get `x` matrix from multiple `XYZ` flight data structs.
 - `no_norm`:  indices of features to not be normalized
 - `features`: full list of features (including components of TL `A`, etc.)
 """
-function get_x(xyz::Vector, ind::Vector,
+function get_x(xyz_vec::Vector, ind_vec::Vector,
                features_setup::Vector{Symbol}   = [:mag_1_uc,:TL_A_flux_a];
                features_no_norm::Vector{Symbol} = Symbol[],
                terms             = [:permanent,:induced,:eddy],
@@ -427,26 +446,20 @@ function get_x(xyz::Vector, ind::Vector,
                sub_igrf::Bool    = false,
                bpf_mag::Bool     = false)
 
-    x        = nothing
-    no_norm  = nothing
-    features = nothing
+    (x,no_norm,features) = get_x(xyz_vec[1],ind_vec[1],features_setup;
+                                 features_no_norm = features_no_norm,
+                                 terms            = terms,
+                                 sub_diurnal      = sub_diurnal,
+                                 sub_igrf         = sub_igrf,
+                                 bpf_mag          = bpf_mag)
 
-    for i in eachindex(xyz)
-        if i == 1
-            (x,no_norm,features) = get_x(xyz[i],ind[i],features_setup;
-                                         features_no_norm = features_no_norm,
-                                         terms            = terms,
-                                         sub_diurnal      = sub_diurnal,
-                                         sub_igrf         = sub_igrf,
-                                         bpf_mag          = bpf_mag)
-        else
-            x = vcat(x,get_x(xyz[i],ind[i],features_setup;
-                             features_no_norm = features_no_norm,
-                             terms            = terms,
-                             sub_diurnal      = sub_diurnal,
-                             sub_igrf         = sub_igrf,
-                             bpf_mag          = bpf_mag)[1])
-        end
+    for (xyz,ind) in zip(xyz_vec[2:end],ind_vec[2:end])
+        x = vcat(x,get_x(xyz,ind,features_setup;
+                         features_no_norm = features_no_norm,
+                         terms            = terms,
+                         sub_diurnal      = sub_diurnal,
+                         sub_igrf         = sub_igrf,
+                         bpf_mag          = bpf_mag)[1])
     end
 
     return (x, no_norm, features)
@@ -468,7 +481,7 @@ Get `x` matrix for multiple lines, possibly multiple flights.
 **Arguments:**
 - `lines`:            selected line number(s)
 - `df_line`:          lookup table (DataFrame) of `lines`
-- `df_flight`:        lookup table (DataFrame) of flight files
+- `df_flight`:        lookup table (DataFrame) of flight data HDF5 files
 - `features_setup`:   list of features to include
 - `features_no_norm`: (optional) list of features to not normalize
 - `terms`:            (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
@@ -559,7 +572,7 @@ Get `y` target vector.
 **Arguments:**
 - `xyz`:     `XYZ` flight data struct
 - `ind`:     selected data indices
-- `map_val`: (optional) magnetic anomaly map value, only used for `y_type = :b`
+- `map_val`: (optional) scalar magnetic anomaly map values, only used for `y_type = :b`
 - `y_type`:  (optional) `y` target type
     - `:a` = anomaly field  #1, compensated tail stinger total field scalar magnetometer measurements
     - `:b` = anomaly field  #2, interpolated `magnetic anomaly map` values
@@ -633,8 +646,8 @@ Get `y` target vector for multiple lines, possibly multiple flights.
 **Arguments:**
 - `lines`:     selected line number(s)
 - `df_line`:   lookup table (DataFrame) of `lines`
-- `df_flight`: lookup table (DataFrame) of flight files
-- `df_map`:    lookup table (DataFrame) of map files
+- `df_flight`: lookup table (DataFrame) of flight data HDF5 files
+- `df_map`:    lookup table (DataFrame) of map data HDF5 files
 - `y_type`:    (optional) `y` target type
     - `:a` = anomaly field  #1, compensated tail stinger total field scalar magnetometer measurements
     - `:b` = anomaly field  #2, interpolated `magnetic anomaly map` values
@@ -689,11 +702,7 @@ function get_y(lines, df_line::DataFrame, df_flight::DataFrame,
         # map values along trajectory (if needed)
         if y_type in [:b,:c]
             map_name = df_line.map_name[df_line.line .== line][1]
-            mapS     = get_map(map_name,df_map)
-            traj_alt = median(xyz.traj.alt[ind])
-            mapS.alt > 0 && (mapS = upward_fft(mapS,traj_alt;α=200))
-            itp_mapS = map_itp(mapS)
-            map_val  = itp_mapS.(xyz.traj.lon[ind],xyz.traj.lat[ind])
+            map_val  = get_map_val(get_map(map_name,df_map),xyz.traj,ind;α=200)
         else
             map_val  = -1
         end
@@ -746,8 +755,8 @@ used to create the "external" Tolles-Lawson `A` matrix.
 **Arguments:**
 - `lines`:            selected line number(s)
 - `df_line`:          lookup table (DataFrame) of `lines`
-- `df_flight`:        lookup table (DataFrame) of flight files
-- `df_map`:           lookup table (DataFrame) of map files
+- `df_flight`:        lookup table (DataFrame) of flight data HDF5 files
+- `df_map`:           lookup table (DataFrame) of map data HDF5 files
 - `features_setup`:   list of features to include
 - `features_no_norm`: (optional) list of features to not normalize
 - `y_type`:           (optional) `y` target type
@@ -766,9 +775,9 @@ used to create the "external" Tolles-Lawson `A` matrix.
 - `bpf_mag`:      (optional) if true, bpf scalar magnetometer measurements in `x` matrix
 - `reorient_vec`: (optional) if true, align vector magnetometer with body frame
 - `l_seq`:        (optional) trim data by `mod(N,l_seq)`, `-1` to ignore
-- `mod_TL`:       (optional) if true, create modified  "external" Tolles-Lawson `A` matrix with `use_mag` 
-- `map_TL`:       (optional) if true, create map-based "external" Tolles-Lawson `A` matrix 
-- `return_B`:     (optional) if true, also return `Bt` and `B_dot`
+- `mod_TL`:       (optional) if true, create modified  "external" Tolles-Lawson `A` matrix with `use_mag`
+- `map_TL`:       (optional) if true, create map-based "external" Tolles-Lawson `A` matrix
+- `return_B`:     (optional) if true, also return `Bt` & `B_dot`
 - `silent`:       (optional) if true, no print outs
 
 **Returns:**
@@ -860,16 +869,12 @@ function get_Axy(lines, df_line::DataFrame,
         # map values along trajectory (if needed)
         if y_type in [:b,:c]
             map_name = df_line.map_name[df_line.line .== line][1]
-            mapS     = get_map(map_name,df_map)
-            traj_alt = median(xyz.traj.alt[ind])
-            mapS.alt > 0 && (mapS = upward_fft(mapS,traj_alt;α=200))
-            itp_mapS = map_itp(mapS)
-            map_val  = itp_mapS.(xyz.traj.lon[ind],xyz.traj.lat[ind])
+            map_val  = get_map_val(get_map(map_name,df_map),xyz.traj,ind;α=200)
         else
             map_val  = -1
         end
 
-        # `A` matrix for selected vector magnetometer and `B` measurements
+        # `A` matrix for selected vector magnetometer & `B` measurements
         field_check(xyz,use_vec,MagV)
         if mod_TL
             (A_,Bt_,B_dot_) = create_TL_A(getfield(xyz,use_vec),ind;
@@ -930,7 +935,7 @@ Get neural network model. Valid for 0-3 hidden layers.
 **Arguments:**
 - `xS`:         size (length) of input layer
 - `yS`:         size (length) of output layer
-- `hidden`:     (optional) hidden layers & nodes, e.g., `[8,8]` for 2 hidden layers, 8 nodes each
+- `hidden`:     (optional) hidden layers & nodes (e.g., `[8,8]` for 2 hidden layers, 8 nodes each)
 - `activation`: (optional) activation function
     - `relu`  = rectified linear unit
     - `σ`     = sigmoid (logistic function)
@@ -1283,7 +1288,7 @@ end # function unpack_data_norms
             tt_lim = (),
             splits = (1))
 
-Get BitArray of indices for further analysis from specified indices (subset),
+Get BitVector of indices for further analysis from specified indices (subset),
 line number(s), and/or time range. Any or all of these may be used.
 
 **Arguments:**
@@ -1295,7 +1300,7 @@ line number(s), and/or time range. Any or all of these may be used.
 - `splits`: (optional) data splits, must sum to 1
 
 **Returns:**
-- `ind`: BitArray (or tuple of BitArray) of selected data indices
+- `ind`: BitVector (or tuple of BitVector) of selected data indices
 """
 function get_ind(tt::Vector, line::Vector;
                  ind    = trues(length(tt)),
@@ -1356,7 +1361,7 @@ end # function get_ind
             tt_lim = extrema(xyz.traj.tt),
             splits = (1))
 
-Get BitArray of indices for further analysis from specified indices (subset),
+Get BitVector of indices for further analysis from specified indices (subset),
 line number(s), and/or time range. Any or all of these may be used.
 
 **Arguments:**
@@ -1367,7 +1372,7 @@ line number(s), and/or time range. Any or all of these may be used.
 - `splits`: (optional) data splits, must sum to 1
 
 **Returns:**
-- `ind`: BitArray (or tuple of BitArray) of selected data indices
+- `ind`: BitVector (or tuple of BitVector) of selected data indices
 """
 function get_ind(xyz::XYZ;
                  ind    = trues(xyz.traj.N),
@@ -1388,7 +1393,7 @@ end # function get_ind
             splits     = (1),
             l_seq::Int = -1)
 
-Get BitArray of indices for further analysis via DataFrame lookup.
+Get BitVector of indices for further analysis via DataFrame lookup.
 
 **Arguments:**
 - `xyz`:     `XYZ` flight data struct
@@ -1398,7 +1403,7 @@ Get BitArray of indices for further analysis via DataFrame lookup.
 - `l_seq`:   (optional) trim data by `mod(N,l_seq)`, `-1` to ignore
 
 **Returns:**
-- `ind`: BitArray (or tuple of BitArray) of selected data indices
+- `ind`: BitVector (or tuple of BitVector) of selected data indices
 """
 function get_ind(xyz::XYZ, line::Real, df_line::DataFrame;
                  splits     = (1),
@@ -1435,7 +1440,7 @@ end # function get_ind
             splits     = (1),
             l_seq::Int = -1)
 
-Get BitArray of selected data indices for further analysis via DataFrame lookup.
+Get BitVector of selected data indices for further analysis via DataFrame lookup.
 
 **Arguments:**
 - `xyz`:     `XYZ` flight data struct
@@ -1445,7 +1450,7 @@ Get BitArray of selected data indices for further analysis via DataFrame lookup.
 - `l_seq`:   (optional) trim data by `mod(N,l_seq)`, `-1` to ignore
 
 **Returns:**
-- `ind`: BitArray (or tuple of BitArray) of selected data indices
+- `ind`: BitVector (or tuple of BitVector) of selected data indices
 """
 function get_ind(xyz::XYZ, lines, df_line::DataFrame;
                  splits     = (1),
@@ -1759,8 +1764,8 @@ function get_igrf(xyz::Union{XYZ1,XYZ20,XYZ21}, ind=trues(xyz.traj.N);
     date_start = get_years.(xyz.year[ind],xyz.doy[ind].-1)
     seconds_per_year = 60 * 60 * 24 * get_days_per_year.(date_start)
 
-    @assert frame in [:body,:nav] "Must choose `:body` or `:nav` reference frame"
-    @assert all(1900 .<= date_start .<= 2030)  "Start date must be in valid IGRF date range"
+    @assert frame in [:body,:nav] "must choose `:body` or `:nav` reference frame"
+    @assert all(1900 .<= date_start .<= 2030)  "start date must be in valid IGRF date range"
 
     N   = length(xyz.traj.lat[ind])
     tt  = date_start + xyz.traj.tt[ind] ./ seconds_per_year # [yr]
@@ -1775,7 +1780,7 @@ function get_igrf(xyz::Union{XYZ1,XYZ20,XYZ21}, ind=trues(xyz.traj.N);
     igrf_vec = [igrf(tt[i], alt[i], lat[i], lon[i], Val(:geodetic)) for i = 1:N]
     if check_xyz
         igrf_error = round(rms(norm.(igrf_vec) - xyz.igrf[ind]),digits=2)
-        @assert igrf_error < 1 "Large IGRF discrepancy of $igrf_error nT, check `igrf`, `year`, and `doy` fields in `xyz`"
+        @assert igrf_error < 1 "large IGRF discrepancy of $igrf_error nT, check `igrf`, `year`, & `doy` fields in `xyz`"
     end
 
     # normalize (or not) and rotate (or not)
@@ -1789,6 +1794,8 @@ function get_igrf(xyz::Union{XYZ1,XYZ20,XYZ21}, ind=trues(xyz.traj.N);
         return (igrf_vec_body)
     end
 end # function get_igrf
+
+get_IGRF = get_igrf
 
 """
     project_vec_to_2d(vec_in, uvec_x, uvec_y)
@@ -1805,9 +1812,9 @@ Internal helper function to project a 3D vector into 2D given two orthogonal
 - `v_out`: 2D vector representing the 3D projection onto the plane
 """
 function project_vec_to_2d(vec_in, uvec_x, uvec_y)
-    @assert abs(dot(uvec_x, uvec_y)) <= 1e-7 "Projected vectors must be orthogonal: ", dot(uvec_x, uvec_y)
-    @assert norm(uvec_x) ≈ 1 "Unit vector norm = $(norm(uvec_x)) ≠ 1"
-    @assert norm(uvec_y) ≈ 1 "Unit vector norm = $(norm(uvec_y)) ≠ 1"
+    @assert abs(dot(uvec_x, uvec_y)) <= 1e-7 "projected vectors must be orthogonal: ", dot(uvec_x, uvec_y)
+    @assert norm(uvec_x) ≈ 1 "unit vector norm = $(norm(uvec_x)) ≠ 1"
+    @assert norm(uvec_y) ≈ 1 "unit vector norm = $(norm(uvec_y)) ≠ 1"
     [dot(vec_in,uvec_x), dot(vec_in,uvec_y)]
 end # function project_vec_to_2d
 
@@ -1831,14 +1838,14 @@ direction to the Earth field (roughly to the east).
 """
 function project_body_field_to_2d_igrf(vec_body, igrf_in, dcm)
     # assume igrf_in is "north" in navigation frame and rotate about Z axis to get "east"
-    igrf_north     = igrf_in  # components are actually [north, east, down]
+    igrf_north     = igrf_in  # components are [north, east, down]
     igrf_tan_earth = cross(igrf_north, [0.0, 0.0, -1.0]) # cross product with "up" direction
     igrf_east      = normalize(igrf_tan_earth)
 
     # transform aircraft vector from body to navigation frame
     vec_nav = dcm*vec_body
 
-    v_out = project_vec_to_2d(vec_nav, igrf_east, igrf_north)
+    v_out = project_vec_to_2d(vec_nav, igrf_north, igrf_east)
     return (v_out)
 end # function project_body_field_to_2d_igrf
 
@@ -1879,8 +1886,8 @@ function get_optimal_rotation_matrix(v1s, v2s)
     d = sign(det(V*transpose(U)))
     R = V*diagm([1.0,1.0,d])*transpose(U)
 
-    @assert det(R) ≈ 1 "Rotation matrix shouldn't scale"
-    @assert R*R' ≈ diagm([1.0,1.0,1.0]) "Rotation matrix transpose should be its inverse"
+    @assert det(R) ≈ 1 "rotation matrix shouldn't scale"
+    @assert R*R' ≈ diagm([1.0,1.0,1.0]) "rotation matrix transpose should be its inverse"
     return (R)
 end # function get_optimal_rotation_matrix
 
@@ -1930,3 +1937,217 @@ Internal helper function to get expanded limits (extrema) of data.
 function get_lim(x, frac=0)
     extrema(x) .+ (-frac,frac) .* (extrema(x)[2] - extrema(x)[1])
 end # function get_lim
+
+"""
+    expand_range(x::Vector, x_lim::Tuple = get_lim(x),
+                 extra_step::Bool = false)
+
+Internal helper function to expand range of data that has constant step size.
+
+**Arguments:**
+- `x`:          data
+- `x_lim`:      (optional) limits `(x_min,x_max)` to which `x` is expanded
+- `extra_step`: (optional) if true, expand range by extra step on each end
+
+**Returns:**
+- `x`:     data, expanded
+- `x_ind`: data indices within `x` that contain original data
+"""
+function expand_range(x::Vector, x_lim::Tuple = get_lim(x),
+                      extra_step::Bool = false)
+    dx = get_step(x)
+    i_min = 0
+    (x_min,x_max) = extrema(x)
+    while minimum(x_lim) < x_min
+        i_min += 1
+        x_min -= dx
+    end
+    while x_max < maximum(x_lim)
+        x_max += dx
+    end
+    if extra_step
+        i_min += 1
+        x_min -= dx
+        x_max += dx
+    end
+    return ([x_min:dx:x_max;], i_min.+(1:length(x)))
+end # function expand_range
+
+"""
+    filter_events!(df_event::DataFrame, flight::Symbol, keyword::String = "";
+                   tt_lim = extrema(df_event.tt[df_event.flight .== flight]))
+
+Filter a DataFrame of in-flight events to only contain relevent events.
+
+**Arguments:**
+- `df_event`: lookup table (DataFrame) of in-flight events, must contain `flight`, `tt`, & `event` columns
+- `flight`:   flight name (e.g., `:Flt1001`)
+- `keyword`:  (optional) keyword to search within events, case insensitive
+- `tt_lim`:   (optional) 2-element (inclusive) start and stop time limits, in seconds past midnight. Defaults to use full time range
+
+**Returns:**
+- `nothing`: `df_event` is filtered
+"""
+function filter_events!(df_event::DataFrame, flight::Symbol, keyword::String = "";
+                        tt_lim = extrema(df_event.tt[df_event.flight .== flight]))
+    (t_start,t_end) = tt_lim
+    filter!(:flight => f -> (f == flight), df_event)
+    filter!(:tt     => t -> (t_start <= t <= t_end), df_event)
+    filter!(:event  => e -> occursin(keyword,lowercase(e)), df_event)
+end # function filter_events!
+
+"""
+    filter_events(df_event::DataFrame, flight::Symbol, keyword::String = "";
+                  tt_lim = extrema(df_event.tt[df_event.flight .== flight]))
+
+Filter a DataFrame of in-flight events to only contain relevent events.
+
+**Arguments:**
+- `df_event`: lookup table (DataFrame) of in-flight events, must contain `flight`, `tt`, & `event` columns
+- `flight`:   flight name (e.g., `:Flt1001`)
+- `keyword`:  (optional) keyword to search within events, case insensitive
+- `tt_lim`:   (optional) 2-element (inclusive) start and stop time limits, in seconds past midnight. Defaults to use full time range
+
+**Returns:**
+- `df_event`: lookup table (DataFrame) of in-flight events, filtered
+"""
+function filter_events(df_event::DataFrame, flight::Symbol, keyword::String = "";
+                       tt_lim = extrema(df_event.tt[df_event.flight .== flight]))
+    df_event = deepcopy(df_event)
+    filter_events!(df_event,flight,keyword;tt_lim=tt_lim)
+    return (df_event)
+end # function filter_events
+
+"""
+    gif_animation_m3(TL_perm, TL_induced, TL_eddy, TL_aircraft, B_unit, y_NN, y, y_hat, xyz, filt_out;
+                     ind=trues(xyz.traj.N), tlims=(0.0,), skip_every=5, save_plot=false, gif_file="comp_xai.gif")
+
+After calling `comp_m3_test` to generate the individual model components, this function makes
+an animated GIF of the model components and the true and estimated scalar magnetic field.
+
+**Arguments**
+- `TL_perm::Matrix`: Permanent magnetic vector field vs time
+- `TL_induced::Matrix`: Induced vector field vs time
+- `TL_eddy::Matrix`: Eddy magnetic field vs time.
+- `TL_aircraft::Matrix`: Total magnetic field of aircraft due to Tolles-Lawson
+- `B_unit::Adjoint`: Normalized magnetic field vector, as measured.
+- `y_NN::Matrix`: Neural network output from Model 3
+- `y::Vector`: True scalar magnetic field.
+- `y_hat::Vector`: Estimated scalar magnetic field (TL + NN) from Model 3
+- `xyz::Union{XYZ1,XYZ20,XYZ21}`: XYZ object containing the magnetic field data.
+- `filt_out::MagNav.FILTout`: Filter output.
+- `ind`: Indices of the magnetic field data to plot, default=trues(xyz.traj.N)
+- `tlims::Tuple{Number,Number}`: Time limits for the plot, minutes (default is 0.0 to whole line)
+- `skip_every::Int`: Number of time steps to skip between frames (default: `5`).
+- `save_plot::Bool`: Whether to save the plot as a GIF file (default: `false`).
+- `gif_file::String`: Name of the GIF file to save (default: `"comp_xai.gif"`).
+
+**Returns**
+- `Plots.AnimatedGif`: GIF animation.
+
+**Example**
+```julia
+gif_animation_m3(TL_perm, TL_induced, TL_eddy, TL_aircraft, B_unit, y_NN, y, y_hat, xyz, filt_out;
+             ind, tlims=(0.0,10.0), skip_every=5, save_plot=false, gif_file="comp_xai.gif")
+```
+"""
+function gif_animation_m3(TL_perm::Matrix,
+    TL_induced::Matrix,
+    TL_eddy::Matrix,
+    TL_aircraft::Matrix,
+    B_unit::Adjoint,
+    y_NN::Matrix,
+    y::Vector,
+    y_hat::Vector,
+    xyz::Union{XYZ1,XYZ20,XYZ21},
+    filt_out::MagNav.FILTout;
+    ind=trues(xyz.traj.N),
+    tlims::Tuple{Number,Number}=(0.0, (xyz.traj.tt[ind][end]-xyz.traj.tt[ind][1])/60.0),
+    skip_every::Int=5,
+    save_plot::Bool=false,
+    gif_file::String="comp_xai.gif")
+
+    @assert size(TL_perm)[2] == size(TL_induced)[2] == size(TL_eddy)[2] == size(TL_aircraft)[2] == size(B_unit)[2]
+    @assert size(y_NN)[2] == length(y) == length(y_hat) == length(xyz.traj.tt[ind]) == length(filt_out.tt)
+    @assert skip_every > 0 && skip_every < length(xyz.traj.tt)
+
+    traj = get_traj(xyz, ind);
+    # Get lat/longitude for plotting
+    filt_lat = rad2deg.(filt_out.lat)
+    filt_lon = rad2deg.(filt_out.lon)
+    gps_lat = rad2deg.(traj.lat);
+    gps_lon = rad2deg.(traj.lon);
+
+    xlim = MagNav.get_lim(gps_lon,0.2);
+    ylim = MagNav.get_lim(gps_lat,0.2);
+    ves = traj.ve;
+    vns = traj.vn;
+    directions = atand.(vns,ves);
+
+    # Convert fields to 2D "compass" projections
+    igrf_nav  = get_igrf(xyz,ind;frame=:nav,norm_igrf=true);
+    # Compute the dot product component of each field
+    NN_component = vec(sum(y_NN .* B_unit, dims=1))
+    TL_component = vec(sum(TL_aircraft .* B_unit, dims=1))
+
+    # Note that we can project onto the 3D IGRF vector to get the full picture, although for this flight,
+    # most of the 3D vector is in the "down" direction, which makes the 2D plane tilt down towards the
+    # North pole. A remedy is to drop the Z-dimension and treat it like a compass, which is shown here.
+    igrf_nav_2D = reduce(hcat, igrf_nav);
+    igrf_nav_2D[3,:] .= 0.0;
+    normalize!.(eachcol(igrf_nav_2D));
+
+    dcms = xyz.ins.Cnb[:,:,ind]
+    aircraft_2D_NN = project_body_field_to_2d_igrf.(eachcol(y_NN),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
+    aircraft_2D_TL = project_body_field_to_2d_igrf.(eachcol(TL_aircraft),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
+
+    perm_field_2D =  project_body_field_to_2d_igrf.(eachcol(TL_perm),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
+    induced_field_2D =  project_body_field_to_2d_igrf.(eachcol(TL_induced),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
+    eddy_field_2D =  project_body_field_to_2d_igrf.(eachcol(TL_eddy),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
+
+    aircraft_2D_NN = reduce(hcat, aircraft_2D_NN);
+    aircraft_2D_TL = reduce(hcat, aircraft_2D_TL);
+    perm_field_2D  = reduce(hcat,perm_field_2D);
+    induced_field_2D  = reduce(hcat,induced_field_2D);
+    eddy_field_2D  = reduce(hcat,eddy_field_2D);
+
+    tts = (traj.tt .- traj.tt[1])./60;
+    ## Create the gif
+    l= @layout[
+           a{0.6w} [b;c] ]
+
+    i_start = findfirst(tts .>= tlims[1])
+    i_end   = findlast(tts .<= tlims[2])
+
+    p = plot(layout=l, size=(800,500),margin=5Plots.mm)
+    anim = Animation();
+    for i ∈ i_start:skip_every:i_end
+           # Move a vertical line across the sensor data
+           p = plot(layout=l, size=(800,500),margin=5Plots.mm)
+           plot!(p[1],tts, y, label="True Compensation", color=:gray, style=:dash)
+           plot!(p[1],tts, y_hat, label="Model 3 Compensation", color=:black)
+           plot!(p[1],tts, TL_component, label="TL component", color=:blue)
+           plot!(p[1],tts, NN_component, label="NN component",ylabel="nT", xlabel="Time,min", xlims=tlims,color=:red)
+
+           plot!(p[1], [tts[i]], linetype=:vline, color=:black, label="", legend=:bottomleft)
+
+           # Draw the compass plot for each field
+           plot!(p[2],[0.0,aircraft_2D_TL[2,i]], [0.0,aircraft_2D_TL[1,i]],arrow=true, label="TL", xlabel="nT, East", ylabel="nT, North", color=:blue)
+           plot!(p[2],[0.0,aircraft_2D_NN[2,i]], [0.0,aircraft_2D_NN[1,i]],arrow=true, label="NN", color=:red)
+           plot!(p[2],[0.0,perm_field_2D[2,i]], [0.0,perm_field_2D[1,i]],arrow=true, label="Perm.")
+           plot!(p[2],[0.0,induced_field_2D[2,i]], [0.0,induced_field_2D[1,i]],arrow=true, label="Ind.")
+           plot!(p[2],[0.0,eddy_field_2D[2,i]], [0.0,eddy_field_2D[1,i]],arrow=true, label="Eddy",xlim=(-2500,2500),ylim=(-2500,2500), legend=:topright)
+
+           # Plot the plane on the map
+           plot!(p[3],gps_lon[1:i], gps_lat[1:i],xlim=xlim,ylim=ylim,label="GPS",xlabel="Longitude", ylabel="Latitude")
+           #plot!(p[3],ins_lon[1:i], ins_lat[1:i],xlim=xlim,ylim=ylim,label="INS",xlabel="Longitude", ylabel="Latitude")
+           plot!(p[3],filt_lon[1:i], filt_lat[1:i],xlim=xlim,ylim=ylim,label="EKF",xlabel="Longitude", ylabel="Latitude", xrotation=18)
+           annotate!(gps_lon[i], gps_lat[i], Plots.text("✈", 20, rotation=directions[i]), subplot=3)
+
+           frame(anim, p)
+    end
+
+    # Show or save the plot
+    g = save_plot ? gif(anim, gif_file, fps=15) : gif(anim, fps=15)
+    return g
+end

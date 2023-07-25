@@ -98,16 +98,16 @@ filt_res_2 = mpf(ins,mag_1_c,itp_mapS;
     @test filt_res_1.P[:,:,end] ≈ filt_res_2.P[:,:,end]
     @test mpf(ins_lat,ins_lon,ins_alt,ins_vn,ins_ve,ins_vd,
               ins_fn,ins_fe,ins_fd,ins_Cnb,mag_1_c,dt,itp_mapS;
-              num_part=100,thresh=0.5).c ≈ true
-    @test mpf(ins,mag_1_c,itp_mapS;num_part=100,thresh=0.5).c ≈ true
-    @test mpf(ins,zero(mag_1_c),itp_mapS;num_part=100,thresh=0.5).c ≈ false
+              num_part=100,thresh=0.5).c == true
+    @test mpf(ins,mag_1_c,itp_mapS;num_part=100,thresh=0.5).c == true
+    @test mpf(ins,zero(mag_1_c),itp_mapS;num_part=100,thresh=0.5).c == false
 end
 
 @testset "mpf helper tests" begin
-    @test MagNav.sys_resample([0,1,0]) ≈ [2,2,2]
-    @test MagNav.sys_resample([0.3,0.3,0.3])[end] ≈ 3
+    @test MagNav.sys_resample([0,1,0])                          ≈ [2,2,2]
+    @test MagNav.sys_resample([0.3,0.3,0.3])[end]               ≈ 3
     @test MagNav.part_cov([0,1,0],zeros(3,3),ones(3))           ≈ ones(3,3)
     @test MagNav.part_cov([0,1,0],zeros(3,3),ones(3),ones(3,3)) ≈ 2*ones(3,3)
-    @test MagNav.filter_exit([0][:,:],[0][:,:],0,true)                ≈ zeros(2,2,1)
-    @test MagNav.filter_exit([1][:,:],[1][:,:],1,false)[:, :, 1]      ≈ [1 0; 0 1]
+    @test MagNav.filter_exit([0][:,:],[0][:,:],0,true)          ≈ zeros(2,2,1)
+    @test MagNav.filter_exit([1][:,:],[1][:,:],1,false)[:,:,1]  ≈ [1 0; 0 1]
 end

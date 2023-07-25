@@ -79,7 +79,7 @@ comp_params_elasticnet = LinCompParams(model_type=:elasticnet,y_type=:a)
 comp_params_plsr       = LinCompParams(model_type=:plsr,y_type=:a,k_plsr=1)
 
 drop_fi_bson        = joinpath(@__DIR__,"drop_fi")
-drop_fi_csv         = joinpath(@__DIR__,"drop_fi.csv")
+drop_fi_csv         = joinpath(@__DIR__,"drop_fi")
 comp_params_1_drop  = NNCompParams(comp_params_1,drop_fi=true,
                       drop_fi_bson=drop_fi_bson,drop_fi_csv=drop_fi_csv)
 comp_params_2c_drop = NNCompParams(comp_params_2c,drop_fi=true,
@@ -140,7 +140,7 @@ y = [1:5;]
     @test std(MagNav.elasticnet_fit(x,y;λ=0.01)[end]) < 1
     @test_throws ErrorException comp_train([xyz,xyz],[ind,ind];
                                            comp_params=comp_params_nn_bad)
-    @test_throws ErrorException comp_train([xyz,xyz],[ind,ind];
+    @test_throws AssertionError comp_train([xyz,xyz],[ind,ind];
                                            comp_params=comp_params_m3_bad)
     @test_throws ErrorException comp_train([xyz,xyz],[ind,ind];
                                            comp_params=comp_params_lin_bad)
@@ -148,7 +148,7 @@ y = [1:5;]
                                            comp_params=comp_params_nn_bad_drop)
     @test_throws ErrorException comp_train(xyz,ind;
                                            comp_params=comp_params_nn_bad)
-    @test_throws ErrorException comp_train(xyz,ind;
+    @test_throws AssertionError comp_train(xyz,ind;
                                            comp_params=comp_params_m3_bad)
     @test_throws ErrorException comp_train(xyz,ind;
                                            comp_params=comp_params_lin_bad)
@@ -156,7 +156,7 @@ y = [1:5;]
                                            comp_params=comp_params_nn_bad_drop)
     @test_throws ErrorException comp_train(line,df_line,df_flight,df,
                                            comp_params_nn_bad)
-    @test_throws ErrorException comp_train(line,df_line,df_flight,df,
+    @test_throws AssertionError comp_train(line,df_line,df_flight,df,
                                            comp_params_m3_bad)
     @test_throws ErrorException comp_train(line,df_line,df_flight,df,
                                            comp_params_lin_bad)
@@ -230,9 +230,9 @@ end
 end
 
 @testset "comp_m3_test tests" begin
-    @test_throws ErrorException comp_m3_test(line,df_line,df_flight,df,
+    @test_throws AssertionError comp_m3_test(line,df_line,df_flight,df,
                                              comp_params_m3_bad;silent=true)[end-1]
-    @test_throws ErrorException comp_m3_test(line,df_line,df_flight,df,
+    @test_throws AssertionError comp_m3_test(line,df_line,df_flight,df,
                                              comp_params_3tl;silent=true)[end-1]
     @test std(comp_m3_test(line,df_line,df_flight,df,
                            comp_params_3s ;silent=true)[end-1]) < 1
@@ -319,7 +319,7 @@ comp_params_3vc = NNCompParams(comp_params_3vc,
                                k_pca       = k_pca_big,
                                frac_train  = frac_train)
 
-perm_fi_csv = joinpath(@__DIR__,"perm_fi.csv")
+perm_fi_csv = joinpath(@__DIR__,"perm_fi")
 comp_params_1_drop  = NNCompParams(comp_params_1,drop_fi=true,
                       drop_fi_bson=drop_fi_bson,drop_fi_csv=drop_fi_csv)
 comp_params_1_perm  = NNCompParams(comp_params_1,perm_fi=true,
@@ -391,9 +391,11 @@ end
     @test typeof(MagNav.print_time(90)) == Nothing
 end
 
-for i = 1:10
-    rm(drop_fi_bson*"_$i.bson")
-end
+drop_fi_bson = MagNav.remove_extension(drop_fi_bson,".bson")
+drop_fi_csv  = MagNav.add_extension(drop_fi_csv,".csv")
+perm_fi_csv  = MagNav.add_extension(perm_fi_csv,".csv")
+
+[rm(drop_fi_bson*"_$i.bson") for i = 1:10]
 rm(drop_fi_csv)
 rm(perm_fi_csv)
 rm(map_h5)

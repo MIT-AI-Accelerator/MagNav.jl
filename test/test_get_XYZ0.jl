@@ -23,13 +23,19 @@ write_field(xyz_h5,:ins_lon,rad2deg.(ins.lon))
 write_field(xyz_h5,:ins_alt,ins.alt)
 write_field(xyz_h5,:mag_1_uc,xyz.mag_1_uc)
 
-@testset "get_XYZ0 tests" begin
+@testset "get_xyz tests" begin
     @test_nowarn get_XYZ0(traj_file,:traj,:none,
                           flight = 1,
                           line   = 1,
                           dt     = 1,
                           silent = true)
+    @test_nowarn get_XYZ1(traj_file,:traj,:none,
+                          flight = 1,
+                          line   = 1,
+                          dt     = 1,
+                          silent = true)
     @test typeof(get_XYZ0(xyz_h5;silent=true)) <: MagNav.XYZ0
+    @test typeof(get_XYZ1(xyz_h5;silent=true)) <: MagNav.XYZ1
     delete_field(xyz_h5,:tt)
     delete_field(xyz_h5,:ins_tt)
     delete_field(xyz_h5,:mag_1_uc)
@@ -69,4 +75,5 @@ end
 
 @testset "get_flux tests" begin
     @test_nowarn flux_a(ind)
+    @test_nowarn get_flux(traj_file,:flux_a,:traj)
 end

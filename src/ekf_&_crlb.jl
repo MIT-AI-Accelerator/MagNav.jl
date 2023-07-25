@@ -27,7 +27,7 @@ Extended Kalman filter (EKF) for airborne magnetic anomaly navigation.
 - `Cnb`:      direction cosine matrix (body to navigation) [-]
 - `meas`:     scalar magnetometer measurement [nT]
 - `dt`:       measurement time step [s]
-- `itp_mapS`: scalar map grid interpolation
+- `itp_mapS`: scalar map interpolation function
 - `P0`:       (optional) initial covariance matrix
 - `Qd`:       (optional) discrete time process/system noise matrix
 - `R`:        (optional) measurement (white) noise variance
@@ -73,8 +73,13 @@ function ekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS;
 
     x = zeros(nx) # state estimate
     P = P0        # covariance matrix
+    map_cache = (typeof(itp_mapS) == Map_Cache) ? itp_mapS : nothing
 
     for t = 1:N
+        # custom itp_mapS from map cache, if available
+        if typeof(map_cache) == Map_Cache
+            itp_mapS = get_cached_map(map_cache,lat[t],lon[t],alt[t];silent=true)
+        end
 
         # Pinson matrix exponential
         Phi = get_Phi(nx,lat[t],vn[t],ve[t],vd[t],fn[t],fe[t],fd[t],Cnb[:,:,t],
@@ -125,7 +130,7 @@ function ekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS;
         P = Phi*P*Phi' + Qd     # P_t|t-1 [nx x nx]
     end
 
-    return FILTres(x_out, P_out, r_out, false)
+    return FILTres(x_out, P_out, r_out, true)
 end # function ekf
 
 """
@@ -147,7 +152,7 @@ Extended Kalman filter (EKF) for airborne magnetic anomaly navigation.
 **Arguments:**
 - `ins`:      `INS` inertial navigation system struct
 - `meas`:     scalar magnetometer measurement [nT]
-- `itp_mapS`: scalar map grid interpolation
+- `itp_mapS`: scalar map interpolation function
 - `P0`:       (optional) initial covariance matrix
 - `Qd`:       (optional) discrete time process/system noise matrix
 - `R`:        (optional) measurement (white) noise variance
@@ -191,6 +196,86 @@ function ekf(ins::INS, meas, itp_mapS;
 end # function ekf
 
 """
+    (ekf_rt::EKF_RT)(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, t,
+                     itp_mapS; der_mapS=nothing, map_alt=-1, dt=0.1)
+
+Real-time (RT) extended Kalman filter (EKF) for airborne magnetic anomaly
+navigation. Receives individual samples and updates time, covariance matrix,
+state vector, and measurement residual within `ekf_rt` struct.
+
+**Arguments:**
+- `ekf_rt`:   `EKF_RT` real-time extended Kalman filter struct
+- `lat`:      latitude  [rad]
+- `lon`:      longitude [rad]
+- `alt`:      altitude  [m]
+- `vn`:       north velocity [m/s]
+- `ve`:       east  velocity [m/s]
+- `vd`:       down  velocity [m/s]
+- `fn`:       north specific force [m/s^2]
+- `fe`:       east  specific force [m/s^2]
+- `fd`:       down  specific force [m/s^2]
+- `Cnb`:      direction cosine matrix (body to navigation) [-]
+- `meas`:     scalar magnetometer measurement [nT]
+- `t`:        time [s]
+- `itp_mapS`: scalar map interpolation function
+- `der_mapS`: (optional) scalar map vertical derivative grid interpolation
+- `map_alt`:  (optional) map altitude [m]
+- `dt`:       (optional) measurement time step [s], only used if `ekf_rt.t < 0`
+
+**Returns:**
+- `filt_res`: `FILTres` filter results struct,
+- `ekf_rt`:   `t`, `P`, `x`, and `r` fields are mutated
+"""
+function (ekf_rt::EKF_RT)(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, t,
+                          itp_mapS; der_mapS=nothing, map_alt=-1, dt=0.1)
+
+    o = ekf_rt
+
+    @assert o.ny == size(meas,2) "measurement dimension is inconsistent"
+
+    dt = o.t < 0 ? dt : (t - o.t)
+
+    Phi = get_Phi(o.nx,lat,vn,ve,vd,fn,fe,fd,Cnb,
+                  o.baro_tau,o.acc_tau,o.gyro_tau,o.fogm_tau,dt)
+
+    # get map interpolation function from map cache (based on location)
+    if typeof(itp_mapS) == Map_Cache
+        itp_mapS = get_cached_map(itp_mapS,lat,lon,alt)
+        der_mapS = nothing
+    end
+
+    if (map_alt > 0) & (der_mapS !== nothing)
+        resid = meas .- get_h(itp_mapS,der_mapS,o.x,lat,lon,alt,map_alt;
+                              date=o.date,core=o.core)
+    else
+        resid = meas .- get_h(itp_mapS,o.x,lat,lon,alt;
+                              date=o.date,core=o.core)
+    end
+
+    o.t = t
+    o.r = resid
+
+    H = repeat(get_H(itp_mapS,o.x,lat,lon,alt,date=o.date,core=o.core)',o.ny,1)
+
+    S = H*o.P*H' .+ o.R
+
+    K = (o.P*H') / S
+
+    o.x = o.x + K*resid
+    o.P = (I - K*H) * o.P
+
+    # state, covariance, and residual store, matching ekf()
+    x_out = reshape(o.x,(size(o.x)...,1))
+    P_out = reshape(o.P,(size(o.P)...,1))
+    r_out = reshape(o.r,(size(o.r)...,1))
+
+    o.x = Phi*o.x
+    o.P = Phi*o.P*Phi' + o.Qd
+
+    return FILTres(x_out, P_out, r_out, true)
+end # function EKF_RT
+
+"""
     crlb(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, dt, itp_mapS;
          P0         = create_P0(),
          Qd         = create_Qd(),
@@ -202,7 +287,7 @@ end # function ekf
          date       = get_years(2020,185),
          core::Bool = false)
 
-Cramér–Rao lower bound (CRLB) computed with classic Kalman Filter. 
+Cramér–Rao lower bound (CRLB) computed with classic Kalman Filter.
 Equations evaluated about true trajectory.
 
 **Arguments:**
@@ -217,7 +302,7 @@ Equations evaluated about true trajectory.
 - `fd`:       down  specific force [m/s^2]
 - `Cnb`:      direction cosine matrix (body to navigation) [-]
 - `dt`:       measurement time step [s]
-- `itp_mapS`: scalar map grid interpolation
+- `itp_mapS`: scalar map interpolation function
 - `P0`:       (optional) initial covariance matrix
 - `Qd`:       (optional) discrete time process/system noise matrix
 - `R`:        (optional) measurement (white) noise variance
@@ -248,8 +333,13 @@ function crlb(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, dt, itp_mapS;
     P     = P0 # covariance matrix
 
     length(R) == 2 && (R = mean(R))
+    map_cache = (typeof(itp_mapS) == Map_Cache) ? itp_mapS : nothing
 
     for t = 1:N
+        # custom itp_mapS from map cache, if available
+        if typeof(map_cache) == Map_Cache
+            itp_mapS = get_cached_map(map_cache,lat[t],lon[t],alt[t];silent=true)
+        end
         # Pinson matrix exponential
         Phi = get_Phi(nx,lat[t],vn[t],ve[t],vd[t],fn[t],fe[t],fd[t],Cnb[:,:,t],
                       baro_tau,acc_tau,gyro_tau,fogm_tau,dt)
@@ -278,12 +368,12 @@ end # function crlb
          date       = get_years(2020,185),
          core::Bool = false)
 
-Cramér–Rao lower bound (CRLB) computed with classic Kalman Filter. 
+Cramér–Rao lower bound (CRLB) computed with classic Kalman Filter.
 Equations evaluated about true trajectory.
 
 **Arguments:**
 - `traj`:     `Traj` trajectory struct
-- `itp_mapS`: scalar map grid interpolation
+- `itp_mapS`: scalar map interpolation function
 - `P0`:       (optional) initial covariance matrix
 - `Qd`:       (optional) discrete time process/system noise matrix
 - `R`:        (optional) measurement (white) noise variance

@@ -24,7 +24,7 @@ Extended Kalman filter (EKF) with online learning of neural network weights.
 - `Cnb`:      direction cosine matrix (body to navigation) [-]
 - `meas`:     scalar magnetometer measurement [nT]
 - `dt`:       measurement time step [s]
-- `itp_mapS`: scalar map grid interpolation
+- `itp_mapS`: scalar map interpolation function
 - `nn_x`:     `x` matrix for neural network
 - `m`:        neural network model, does not work with skip connections
 - `y_norms`:  Tuple of `y` normalizations, i.e., `(y_bias,y_scale)`
@@ -67,7 +67,13 @@ function ekf_online_nn(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
     (w0_nn,re) = destructure(m)
     x[end-nx_nn:end-1] .= w0_nn
 
+    map_cache = (typeof(itp_mapS) == Map_Cache) ? itp_mapS : nothing
+
     for t = 1:N
+        # custom itp_mapS from map cache, if available
+        if typeof(map_cache) == Map_Cache
+            itp_mapS = get_cached_map(map_cache,lat[t],lon[t],alt[t];silent=true)
+        end
 
         # Pinson matrix exponential
         Phi = get_Phi(nx,lat[t],vn[t],ve[t],vd[t],fn[t],fe[t],fd[t],Cnb[:,:,t],
@@ -75,7 +81,7 @@ function ekf_online_nn(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
 
         # measurement residual [ny]
         m     = re(x[end-nx_nn:end-1])
-        resid = meas[t,:] .- (m(nn_x[t,:]).*y_scale.+y_bias) .- 
+        resid = meas[t,:] .- (m(nn_x[t,:]).*y_scale.+y_bias) .-
                 get_h(itp_mapS,x,lat[t],lon[t],alt[t];date=date,core=core)
 
         # measurement Jacobian (repeated gradient here) [ny x nx]
@@ -104,7 +110,7 @@ function ekf_online_nn(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
         P = Phi*P*Phi' + Qd     # P_t|t-1 [nx x nx]
     end
 
-    return FILTres(x_out, P_out, r_out, false)
+    return FILTres(x_out, P_out, r_out, true)
 end # function ekf_online_nn
 
 """
@@ -155,7 +161,7 @@ Extended Kalman filter (EKF) with online learning of neural network weights.
 **Arguments:**
 - `ins`:      `INS` inertial navigation system struct
 - `meas`:     scalar magnetometer measurement [nT]
-- `itp_mapS`: scalar map grid interpolation
+- `itp_mapS`: scalar map interpolation function
 - `nn_x`:     `x` matrix for neural network
 - `m`:        neural network model, does not work with skip connections
 - `y_norms`:  Tuple of `y` normalizations, i.e., `(y_bias,y_scale)`
@@ -198,7 +204,7 @@ end # function ekf_online_nn
 #     m    = deepcopy(m) # don't modify original NN model
 #     w_nn = destructure(m)[1] # weights
 #     opt  = Adam() # optimizer
-#     loss(x,y) = Flux.mse(m(x),y) # mean squared error
+#     loss(x,y) = mse(m(x),y) # mean squared error
 
 #     N        = length(y)
 #     N_sigma  = min(N,N_sigma)

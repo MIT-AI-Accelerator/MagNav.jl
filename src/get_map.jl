@@ -1,16 +1,18 @@
 """
     get_map(map_file::String=namad; map_units::Symbol=:deg)
 
-Get map data from saved file. Map files are typically saved with `:deg` units.
+Get map data from saved file. Maps are typically saved in `:deg` units.
 
 **Arguments:**
-- `map_file`:  path/name of magnetic anomaly map HDF5 or MAT file
+- `map_file`:  path/name of map data HDF5 or MAT file (`.h5` or `.mat` extension)
 - `map_units`: (optional) map xx/yy units used in HDF5 file {`:deg`,`:rad`}
 
 **Returns:**
-- `mapS` or `mapV`: `MapS` scalar or `MapV` vector magnetic anomaly map struct
+- `map_map`: `Map` magnetic anomaly map struct
 """
 function get_map(map_file::String=namad; map_units::Symbol=:deg)
+
+    @assert any(occursin.([".h5",".mat"],map_file)) "$map_file map data file must have .h5 or .mat extension"
 
     map_vec = false
 
@@ -18,18 +20,18 @@ function get_map(map_file::String=namad; map_units::Symbol=:deg)
 
             map_data = h5open(map_file,"r") # read-only
 
-            map_xx   = read_check(map_data,:xx)
-            map_yy   = read_check(map_data,:yy)
-            map_alt  = read_check(map_data,:alt)
-
-            if haskey(map_data,"mapX") # vector magnetic anomaly map
+            if haskey(map_data,"mapX") # vector map
                 map_vec  = true
                 map_mapX = read_check(map_data,:mapX)
                 map_mapY = read_check(map_data,:mapY)
                 map_mapZ = read_check(map_data,:mapZ)
-            elseif haskey(map_data,"map") # scalar magnetic anomaly map
+            elseif haskey(map_data,"map") # scalar map
                 map_map  = read_check(map_data,:map)
             end
+
+            map_xx   = read_check(map_data,:xx)
+            map_yy   = read_check(map_data,:yy)
+            map_alt  = read_check(map_data,:alt)
 
             close(map_data)
 
@@ -39,21 +41,19 @@ function get_map(map_file::String=namad; map_units::Symbol=:deg)
             read(file,"map_data")
         end
 
-        map_xx  = map_data["xx"]
-        map_yy  = map_data["yy"]
-        map_alt = map_data["alt"]
-
-        if haskey(map_data,"mapX") # vector magnetic anomaly map
+        if haskey(map_data,"mapX") # vector map
             map_vec  = true
             map_mapX = map_data["mapX"]
             map_mapY = map_data["mapY"]
             map_mapZ = map_data["mapZ"]
-        elseif haskey(map_data,"map") # scalar magnetic anomaly map
+        elseif haskey(map_data,"map") # scalar map
             map_map  = map_data["map"]
         end
 
-    else
-        error("$map_file map file is invalid")
+        map_xx  = map_data["xx"]
+        map_yy  = map_data["yy"]
+        map_alt = map_data["alt"]
+
     end
 
     map_xx = vec(map_xx)
@@ -66,31 +66,25 @@ function get_map(map_file::String=namad; map_units::Symbol=:deg)
         @info("$map_units map xx/yy units not defined")
     end
 
-    if length(map_alt) == 1 # not drape map
-        map_d   = false
-        map_alt = map_alt[1]
-    else # drape map
-        map_d   = true
-    end
-
     if map_vec
         if ((length(map_yy),length(map_xx)) == size(map_mapX)) & 
            ((length(map_yy),length(map_xx)) == size(map_mapY)) & 
            ((length(map_yy),length(map_xx)) == size(map_mapZ))
-            if map_d
-                error("map altitude is not scalar")
-            else
-                return MapV( map_mapX,map_mapY,map_mapZ,map_xx,map_yy,map_alt)
-            end
+           length(map_alt) == 1 && (map_alt = map_alt[1])
+            return MapV(map_mapX,map_mapY,map_mapZ,map_xx,map_yy,map_alt)
         else
             error("map dimensions are inconsistent")
         end
     else
         if (length(map_yy),length(map_xx)) == size(map_map)
-            if map_d
-                return MapSd(map_map,map_xx,map_yy,map_alt)
+            if size(map_alt) == size(map_map) # drape map
+                return MapSd( map_map,map_xx,map_yy,map_alt)
+            elseif length(map_alt) > 1 # 3D map
+                @assert length(map_alt) == size(map_map,3) "number of map altitude levels is inconsistent"
+                return MapS3D(map_map,map_xx,map_yy,map_alt)
             else
-                return MapS( map_map,map_xx,map_yy,map_alt)
+                map_alt = map_alt[1]
+                return MapS(  map_map,map_xx,map_yy,map_alt)
             end
         else
             error("map dimensions are inconsistent")
@@ -102,40 +96,45 @@ end # function get_map
 """
     get_map(map_name::Symbol, df_map::DataFrame; map_units::Symbol=:deg)
 
-Get map data from saved file via DataFrame lookup. 
-Map files are typically saved with `:deg` units.
+Get map data from saved file via DataFrame lookup.
+Maps are typically saved in `:deg` units.
 
 **Arguments:**
 - `map_name`:  name of magnetic anomaly map
-- `df_map`:    lookup table (DataFrame) of map files
+- `df_map`:    lookup table (DataFrame) of map data HDF5 files
 - `map_units`: (optional) map xx/yy units used in HDF5 file {`:deg`,`:rad`}
 
 **Returns:**
-- `mapS` or `mapV`: `MapS` scalar or `MapV` vector magnetic anomaly map struct
+- `map_map`: `Map` magnetic anomaly map struct
 """
 function get_map(map_name::Symbol, df_map::DataFrame; map_units::Symbol=:deg)
     get_map(df_map.map_h5[df_map.map_name .== map_name][1]; map_units=map_units)
 end # function get_map
 
 """
-    save_map(map_map, map_xx, map_yy, map_alt, map_h5::String="map.h5";
+    save_map(map_map, map_xx, map_yy, map_alt, map_h5::String="map_data.h5";
              map_units::Symbol=:deg)
 
-Save map data to HDF5 file. Map files are typically saved with `:deg` units.
+Save map data to HDF5 file. Maps are typically saved in `:deg` units.
 
 **Arguments:**
-- `map_map`:  `ny` x `nx` 2D gridded map data
-- `map_xx`:   `nx` x-direction (longitude) map coordinates [rad] or [m]
-- `map_yy`:   `ny` y-direction (latitude)  map coordinates [rad] or [m]
-- `map_alt`:   map altitude or `ny` x `nx` 2D gridded altitude map data [m]
-- `map_h5`:    (optional) map path/name to save
-- `map_units`: (optional) map xx/yy units to use in HDF5 file {`:deg`,`:rad`,`:utm`}
+- `map_map`:  `ny` x `nx` (x `nz`) 2D or 3D gridded map data
+- `map_xx`:   `nx` map x-direction (longitude) coordinates [rad] or [m]
+- `map_yy`:   `ny` map y-direction (latitude)  coordinates [rad] or [m]
+- `map_alt`:   map altitude(s) or `ny` x `nx` 2D gridded altitude map data [m]
+- `map_h5`:    (optional) path/name of map data HDF5 file to save (`.h5` extension optional)
+- `map_units`: (optional) map xx/yy units to use in `map_h5` {`:deg`,`:rad`,`:utm`}
 
 **Returns:**
-- `nothing`: HDF5 file `map_h5` is created
+- `nothing`: `map_h5` is created
 """
-function save_map(map_map, map_xx, map_yy, map_alt, map_h5::String="map.h5";
+function save_map(map_map, map_xx, map_yy, map_alt, map_h5::String="map_data.h5";
                   map_units::Symbol=:deg)
+
+    map_h5 = add_extension(map_h5,".h5")
+
+    map_xx = vec(map_xx)
+    map_yy = vec(map_yy)
 
     if map_units == :deg
         map_xx = rad2deg.(map_xx)
@@ -149,29 +148,184 @@ function save_map(map_map, map_xx, map_yy, map_alt, map_h5::String="map.h5";
     end
 
     h5open(map_h5,"w") do file # read-write, destroy existing contents
+        if length(map_map) == 3 # vector map
+            write(file,"mapX",map_map[1])
+            write(file,"mapY",map_map[2])
+            write(file,"mapZ",map_map[3])
+        else # scalar map
+            write(file,"map",map_map)
+        end
         write(file,"xx" ,map_xx)
         write(file,"yy" ,map_yy)
         write(file,"alt",map_alt)
-        write(file,"map",map_map)
     end
 
 end # function save_map
 
 """
-    save_map(mapS::Union{MapS,MapSd}, map_h5::String="map.h5";
+    save_map(map_map::Map, map_h5::String="map_data.h5";
              map_units::Symbol=:deg)
 
-Save map data to HDF5 file. Map files are typically saved with `:deg` units.
+Save map data to HDF5 file. Maps are typically saved in `:deg` units.
 
 **Arguments:**
-- `mapS`:      `MapS` or `MapSd` scalar magnetic anomaly map struct
-- `map_h5`:    (optional) map path/name to save
-- `map_units`: (optional) map xx/yy units to use in HDF5 file {`:deg`,`:rad`,`:utm`}
+- `map_map`:   `Map` magnetic anomaly map struct
+- `map_h5`:    (optional) path/name of map data HDF5 file to save (`.h5` extension optional)
+- `map_units`: (optional) map xx/yy units to use in `map_h5` {`:deg`,`:rad`,`:utm`}
 
 **Returns:**
-- `nothing`: HDF5 file `map_h5` is created
+- `nothing`: `map_h5` is created
 """
-function save_map(mapS::Union{MapS,MapSd}, map_h5::String="map.h5";
+function save_map(map_map::Map, map_h5::String="map_data.h5";
                   map_units::Symbol=:deg)
-    save_map(mapS.map,mapS.xx,mapS.yy,mapS.alt,map_h5;map_units=map_units)
+    if typeof(Map) <: MapV # vector map
+        save_map((map_map.mapX,map_map.mapY,map_map.mapZ),
+                 map_map.xx,map_map.yy,map_map.alt,map_h5;map_units=map_units)
+    else # scalar map
+        save_map(map_map.map,
+                 map_map.xx,map_map.yy,map_map.alt,map_h5;map_units=map_units)
+    end
 end # function save_map
+
+"""
+    get_comp_params(comp_params_bson::String, silent::Bool=false)
+
+Get aeromagnetic compensation parameters from saved file.
+
+**Arguments:**
+- `comp_params_bson`: path/name of aeromagnetic compensation parameters BSON file (`.bson` extension optional)
+- `silent`:           (optional) if true, no print outs
+
+**Returns:**
+- `comp_params`: `CompParams` aeromagnetic compensation parameters struct, either:
+    - `NNCompParams`:  neural network-based aeromagnetic compensation parameters struct
+    - `LinCompParams`: linear aeromagnetic compensation parameters struct
+"""
+function get_comp_params(comp_params_bson::String, silent::Bool=false)
+
+    comp_params_bson = add_extension(comp_params_bson,".bson")
+
+    # load in fields of comp_params
+    d = load(comp_params_bson)
+    model_type  = :model_type in keys(d) ? d[:model_type] : nothing
+    comp_params = nothing
+
+    # get default field values (in case not in saved comp_params)
+    if model_type in [:m1,:m2a,:m2b,:m2c,:m2d,:m3tl,:m3s,:m3v,:m3sc,:m3vc]
+        comp_params_default = NNCompParams()
+        silent || @info("loading individual model $model_type NN compensation parameters")
+    elseif model_type in [:TL,:mod_TL,:map_TL,:elasticnet,:plsr]
+        comp_params_default = LinCompParams()
+        silent || @info("loading individual model $model_type linear compensation parameters")
+    else
+        try
+            comp_params = d[:comp_params]
+            comp_params_default = nothing
+            silent || @info("loading full compensation parameters struct")
+        catch _
+            error("$comp_params_bson compensation parameters BSON file is invalid")
+        end
+    end
+
+    # use default value if field is not in saved comp_params
+    for field in fieldnames(typeof(comp_params_default))
+        if !(field in keys(d))
+            @info("using default for $field field")
+            d[field] = getfield(comp_params_default,field)
+        end
+    end
+
+    if typeof(comp_params_default) <: MagNav.NNCompParams
+        @unpack version, features_setup, features_no_norm, model_type, y_type,
+        use_mag, use_vec, data_norms, model, terms, terms_A, sub_diurnal,
+        sub_igrf, bpf_mag, reorient_vec, norm_type_A, norm_type_x, norm_type_y,
+        TL_coef, η_adam, epoch_adam, epoch_lbfgs, hidden, activation,
+        batchsize, frac_train, α_sgl, λ_sgl, k_pca,
+        drop_fi, drop_fi_bson, drop_fi_csv, perm_fi, perm_fi_csv = d
+        comp_params = NNCompParams(version          = version,
+                                   features_setup   = features_setup,
+                                   features_no_norm = features_no_norm,
+                                   model_type       = model_type,
+                                   y_type           = y_type,
+                                   use_mag          = use_mag,
+                                   use_vec          = use_vec,
+                                   data_norms       = data_norms,
+                                   model            = model,
+                                   terms            = terms,
+                                   terms_A          = terms_A,
+                                   sub_diurnal      = sub_diurnal,
+                                   sub_igrf         = sub_igrf,
+                                   bpf_mag          = bpf_mag,
+                                   reorient_vec     = reorient_vec,
+                                   norm_type_A      = norm_type_A,
+                                   norm_type_x      = norm_type_x,
+                                   norm_type_y      = norm_type_y,
+                                   TL_coef          = TL_coef,
+                                   η_adam           = η_adam,
+                                   epoch_adam       = epoch_adam,
+                                   epoch_lbfgs      = epoch_lbfgs,
+                                   hidden           = hidden,
+                                   activation       = activation,
+                                   batchsize        = batchsize,
+                                   frac_train       = frac_train,
+                                   α_sgl            = α_sgl,
+                                   λ_sgl            = λ_sgl,
+                                   k_pca            = k_pca,
+                                   drop_fi          = drop_fi,
+                                   drop_fi_bson     = drop_fi_bson,
+                                   drop_fi_csv      = drop_fi_csv,
+                                   perm_fi          = perm_fi,
+                                   perm_fi_csv      = perm_fi_csv)
+    elseif typeof(comp_params_default) <: MagNav.LinCompParams
+        @unpack version, features_setup, features_no_norm, model_type, y_type,
+        use_mag, use_vec, data_norms, model, terms, terms_A, sub_diurnal,
+        sub_igrf, bpf_mag, reorient_vec, norm_type_A, norm_type_x, norm_type_y,
+        k_plsr, λ_TL = d
+        comp_params = LinCompParams(version          = version,
+                                    features_setup   = features_setup,
+                                    features_no_norm = features_no_norm,
+                                    model_type       = model_type,
+                                    y_type           = y_type,
+                                    use_mag          = use_mag,
+                                    use_vec          = use_vec,
+                                    data_norms       = data_norms,
+                                    model            = model,
+                                    terms            = terms,
+                                    terms_A          = terms_A,
+                                    sub_diurnal      = sub_diurnal,
+                                    sub_igrf         = sub_igrf,
+                                    bpf_mag          = bpf_mag,
+                                    reorient_vec     = reorient_vec,
+                                    norm_type_A      = norm_type_A,
+                                    norm_type_x      = norm_type_x,
+                                    norm_type_y      = norm_type_y,
+                                    k_plsr           = k_plsr,
+                                    λ_TL             = λ_TL)
+    end
+
+    return (comp_params)
+end # function get_comp_params
+
+"""
+    save_comp_params(comp_params::MagNav.CompParams, comp_params_bson::String="comp_params.bson")
+
+Get aeromagnetic compensation parameters from saved file.
+
+**Arguments:**
+- `comp_params`: `CompParams` aeromagnetic compensation parameters struct, either:
+    - `NNCompParams`:  neural network-based aeromagnetic compensation parameters struct
+    - `LinCompParams`: linear aeromagnetic compensation parameters struct
+- `comp_params_bson`: (optional) path/name of aeromagnetic compensation parameters BSON file to save (`.bson` extension optional)
+
+**Returns:**
+- `nothing`: `comp_params_bson` is created
+"""
+function save_comp_params(comp_params::MagNav.CompParams, comp_params_bson::String="comp_params.bson")
+    comp_params_bson = add_extension(comp_params_bson,".bson")
+    d = Dict{Symbol,Any}()
+    # push!(d,:comp_params => comp_params) # do NOT do this, version issue
+    for field in fieldnames(typeof(comp_params))
+        push!(d,field => getfield(comp_params,field))
+    end
+    bson(comp_params_bson,d)
+end # function save_comp_params
