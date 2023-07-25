@@ -33,7 +33,7 @@ The filter also assumes NON-correlated measurements to speed up computation.
 - `Cnb`:      direction cosine matrix (body to navigation) [-]
 - `meas`:     scalar magnetometer measurement [nT]
 - `dt`:       measurement time step [s]
-- `itp_mapS`: scalar map grid interpolation
+- `itp_mapS`: scalar map interpolation function
 - `P0`:       (optional) initial covariance matrix
 - `Qd`:       (optional) discrete time process/system noise matrix
 - `R`:        (optional) measurement (white) noise variance
@@ -87,7 +87,14 @@ function mpf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS;
     # initialize particle weights
     q = ones(eltype(xn),np)/np # np
 
+    map_cache = (typeof(itp_mapS) == Map_Cache) ? itp_mapS : nothing
+
     for t = 1:N
+        # custom itp_mapS from map cache, if available
+        if typeof(map_cache) == Map_Cache
+            itp_mapS = get_cached_map(map_cache,lat[t],lon[t],alt[t];silent=true)
+        end
+
         # Pinson matrix exponential (dynamics matrix)
         Phi  = get_Phi(nx,lat[t],vn[t],ve[t],vd[t],fn[t],fe[t],fd[t],Cnb[:,:,t],
                        baro_tau,acc_tau,gyro_tau,fogm_tau,dt) # 18 x 18
@@ -198,7 +205,7 @@ The filter also assumes NON-correlated measurements to speed up computation.
 **Arguments:**
 - `ins`:      `INS` inertial navigation system struct
 - `meas`:     scalar magnetometer measurement [nT]
-- `itp_mapS`: scalar map grid interpolation
+- `itp_mapS`: scalar map interpolation function
 - `P0`:       (optional) initial covariance matrix
 - `Qd`:       (optional) discrete time process/system noise matrix
 - `R`:        (optional) measurement (white) noise variance
@@ -273,6 +280,6 @@ function filter_exit(Pl_out, Pn_out, t, converge::Bool=true)
     P_out = zeros(nx,nx,N) # covariance matrix
     P_out[1:nxn,1:nxn,:]         = Pn_out # non-linear portion
     P_out[nxn+1:end,nxn+1:end,:] = Pl_out # linear portion
-    converge || @info("filter diverged, particle weights ~0 at t = $t")
+    converge || @info("filter diverged, particle weights ~0 at time step $t")
     return (P_out)
 end # function filter_exit

@@ -3,7 +3,7 @@ cd(@__DIR__)
 include("common_setup.jl"); # load common-use packages, DataFrames, and Dicts
 
 ##* flight, map, and INS data section ========================================
-seed!(2) # for reproducibility
+seed!(2); # for reproducibility
 t    = 1800; # selected flight time [s]
 mapS = get_map(MagNav.namad); # load built-in NAMAD map
 xyz  = create_XYZ0(mapS;alt=mapS.alt,t=t,N_waves=2); # create flight data

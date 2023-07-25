@@ -1,5 +1,5 @@
 """
-    xyz2h5(xyz_file::String, xyz_h5::String, flight::Symbol;
+    xyz2h5(xyz_xyz::String, xyz_h5::String, flight::Symbol;
            lines::Vector        = [()],
            lines_type::Symbol   = :exclude,
            tt_sort::Bool        = true,
@@ -22,28 +22,31 @@ Convert SGL flight data file from .xyz to HDF5.
     - `:Flt1009`
     - `:Flt2001_2017`
 
-May take 1+ hr for 1+ GB flight data files. For reference, a 1.23 GB flight 
-data file took 46.8 min to process using a 64 GB MacBook Pro.
+May take 1+ hr for 1+ GB files. For reference, a 1.23 GB file took 46.8 min to
+process using a 64 GB MacBook Pro.
 
 **Arguments:**
-- `xyz_file`:       path/name of .xyz file containing flight data
-- `xyz_h5`:         path/name of HDF5 file to save with flight data
-- `flight`:         SGL flight (e.g., `:Flt1001`)
-- `lines`:          (optional) selected line number(s) to ONLY include or exclude, must be a vector of 3-element (`line`, `start_time`, `stop_time`) Tuple(s)
+- `xyz_xyz`:        path/name of flight data .xyz file (`.xyz` extension optional)
+- `xyz_h5`:         path/name of flight data HDF5 file to save (`.h5` extension optional)
+- `flight`:         flight name (e.g., `:Flt1001`)
+- `lines`:          (optional) selected line number(s) to ONLY include or exclude, must be a vector of 3-element (`line`,`start_time`,`stop_time`) Tuple(s)
 - `lines_type`:     (optional) whether to ONLY `:include` (i.e., to generate testing data) or `:exclude` (i.e., to generate training data) `lines`
 - `tt_sort`:        (optional) if true, sort data by time (instead of line)
 - `downsample_160`: (optional) if true, downsample 160 Hz data to 10 Hz (only for 160 Hz data files)
-- `return_data`:    (optional) if true, return `data` instead of writing `xyz_h5` HDF5 file 
+- `return_data`:    (optional) if true, return `data` instead of creating `xyz_h5`
 
 **Returns:**
 - `data`: if `return_data = true`, internal data matrix
 """
-function xyz2h5(xyz_file::String, xyz_h5::String, flight::Symbol;
+function xyz2h5(xyz_xyz::String, xyz_h5::String, flight::Symbol;
                 lines::Vector        = [()],
                 lines_type::Symbol   = :exclude,
                 tt_sort::Bool        = true,
                 downsample_160::Bool = true,
                 return_data::Bool    = false)
+
+    xyz_xyz = add_extension(xyz_xyz,".xyz")
+    xyz_h5  = add_extension(xyz_h5 ,".h5")
 
     fields   = xyz_fields(flight) # list of data field names
     Nf       = length(fields)     # number of data fields (columns)
@@ -51,12 +54,12 @@ function xyz2h5(xyz_file::String, xyz_h5::String, flight::Symbol;
     ind_line = findfirst(fields .== :line) # line index (column)
 
     # find valid data rows (correct number of columns)
-    ind = [(length(split(line)) == Nf) for line in eachline(xyz_file)]
+    ind = [(length(split(line)) == Nf) for line in eachline(xyz_xyz)]
 
     # if 160 Hz data, find valid 10 Hz data rows (tt is multiple of 0.1)
     # probably better ways to do this, but it works ok
     if downsample_160 & (flight in [:Flt1001_160Hz,:Flt1002_160Hz])
-        for (i,line) in enumerate(eachline(xyz_file))
+        for (i,line) in enumerate(eachline(xyz_xyz))
             ind[i] && (ind[i] = (par(split(line)[ind_tt])+1e-6) % 0.1 < 1e-3)
         end
     end
@@ -64,10 +67,10 @@ function xyz2h5(xyz_file::String, xyz_h5::String, flight::Symbol;
     Nd   = sum(ind)     # number of valid data rows
     data = zeros(Nd,Nf) # initialize data matrix
 
-    @info("reading in file: $xyz_file")
+    @info("reading in file: $xyz_xyz")
 
     # go through valid data rows and extract data
-    for (i,line) in enumerate(eachline(xyz_file))
+    for (i,line) in enumerate(eachline(xyz_xyz))
         if ind[i]
             j = cumsum(ind[1:i])[i]
             data[j,:] = par.(split(line))
@@ -154,7 +157,7 @@ end # function xyz2h5
 """
     par(val::SubString{String})
 
-Internal helper function to return `*` as `NaN`, otherwise parse as Float64.
+Internal helper function to return `*` as `NaN`, otherwise parse as `Float64`.
 
 **Arguments:**
 - `val`: substring
@@ -167,118 +170,164 @@ function par(val::SubString{String})
 end # function par
 
 """
-    delete_field(file_h5::String, field)
+    remove_extension(data_file::String, extension::String)
+
+Internal helper function to remove extension from path/name of data file. Checks
+if `data_file` contains (case insensitive) `extension`, and if so, removes it.
+
+**Arguments:**
+- `data_file`: path/name of data file
+- `extension`: extension to remove
+
+**Returns:**
+- `data_file`: path/name of data file, without `extension`
+"""
+function remove_extension(data_file::String, extension::String)
+    f = data_file
+    e = extension
+    l = length(e)
+    f = lowercase(f[end-l+1:end]) == lowercase(e) ? f[1:end-l] : f
+end # function remove_extension
+
+"""
+    add_extension(data_file::String, extension::String)
+
+Internal helper function to add extension to path/name of data file. Checks
+if `data_file` contains (case insensitive) `extension`, and if not, adds it.
+
+**Arguments:**
+- `data_file`: path/name of data file
+- `extension`: extension to add
+
+**Returns:**
+- `data_file`: path/name of data file, with `extension`
+"""
+function add_extension(data_file::String, extension::String)
+    f = data_file
+    e = extension
+    l = length(e)
+    f = lowercase(f[end-l+1:end]) == lowercase(e) ? f : f*e
+end # function add_extension
+
+"""
+    delete_field(data_h5::String, field)
 
 Delete a data field from an HDF5 file.
 
 **Arguments:**
-- `file_h5`: path/name of HDF5 file containing data
-- `field`:   data field in `file_h5` to delete
+- `data_h5`: path/name of data HDF5 file (`.h5` extension optional)
+- `field`:   data field in `data_h5` to delete
 
 **Returns:**
-- `nothing`: `field` is deleted in `file_h5`
+- `nothing`: `field` is deleted in `data_h5`
 """
-function delete_field(file_h5::String, field)
+function delete_field(data_h5::String, field)
+    data_h5 = add_extension(data_h5,".h5")
     field = string.(field)
-    file  = h5open(file_h5,"r+") # read-write, preserve existing contents
+    file  = h5open(data_h5,"r+") # read-write, preserve existing contents
     delete_object(file,field)
     close(file)
 end # function delete_field
 
 """
-    write_field(file_h5::String, field, data)
+    write_field(data_h5::String, field, data)
 
 Write (add) a new data field and data in an HDF5 file.
 
 **Arguments:**
-- `file_h5`: path/name of HDF5 file containing data
-- `field`:   data field in `file_h5` to write
+- `data_h5`: path/name of data HDF5 file (`.h5` extension optional)
+- `field`:   data field in `data_h5` to write
 - `data`:    data to write
 
 **Returns:**
-- `nothing`: `field` with `data` is written in `file_h5`
+- `nothing`: `field` with `data` is written in `data_h5`
 """
-function write_field(file_h5::String, field, data)
+function write_field(data_h5::String, field, data)
+    data_h5 = add_extension(data_h5,".h5")
     field = string.(field)
-    h5open(file_h5,"cw") do file # read-write, create file if not existing, preserve existing contents
+    h5open(data_h5,"cw") do file # read-write, create file if not existing, preserve existing contents
         write(file,field,data)
     end
 end # function write_field
 
 """
-    overwrite_field(file_h5::String, field, data)
+    overwrite_field(data_h5::String, field, data)
 
 Overwrite a data field and data in an HDF5 file.
 
 **Arguments:**
-- `file_h5`: path/name of HDF5 file containing data
-- `field`:   data field in `file_h5` to overwrite
+- `data_h5`: path/name of data HDF5 file (`.h5` extension optional)
+- `field`:   data field in `data_h5` to overwrite
 - `data`:    data to write
 
 **Returns:**
-- `nothing`: `field` with `data` is written in `file_h5`
+- `nothing`: `field` with `data` is written in `data_h5`
 """
-function overwrite_field(file_h5::String, field, data)
+function overwrite_field(data_h5::String, field, data)
+    data_h5 = add_extension(data_h5,".h5")
     field = string.(field)
-    delete_field(file_h5,field)
-    write_field(file_h5,field,data)
+    delete_field(data_h5,field)
+    write_field(data_h5,field,data)
 end # function overwrite_field
 
 """
-    read_field(file_h5::String, field)
+    read_field(data_h5::String, field)
 
 Read data for a data field in an HDF5 file.
 
 **Arguments:**
-- `file_h5`: path/name of HDF5 file containing data
-- `field`:   data field in `file_h5` to read
+- `data_h5`: path/name of data HDF5 file (`.h5` extension optional)
+- `field`:   data field in `data_h5` to read
 
 **Returns:**
-- `data`: data for `data field` in `file_h5`
+- `data`: data for `data field` in `data_h5`
 """
-function read_field(file_h5::String, field)
+function read_field(data_h5::String, field)
+    data_h5 = add_extension(data_h5,".h5")
     field = string.(field)
-    h5open(file_h5,"r") do file # read-only
+    h5open(data_h5,"r") do file # read-only
         read(file,field)
     end
 end # function read_field
 
 """
-    rename_field(file_h5::String, field_old, field_new)
+    rename_field(data_h5::String, field_old, field_new)
 
 Rename data field in an HDF5 file.
 
 **Arguments:**
-- `file_h5`:   path/name of HDF5 file containing data
-- `field_old`: old data field in `file_h5`
-- `field_new`: new data field in `file_h5`
+- `data_h5`:   path/name of data HDF5 file (`.h5` extension optional)
+- `field_old`: old data field in `data_h5`
+- `field_new`: new data field in `data_h5`
 
 **Returns:**
-- `nothing`: `field_old` is renamed `field_new` in `file_h5`
+- `nothing`: `field_old` is renamed `field_new` in `data_h5`
 """
-function rename_field(file_h5::String, field_old, field_new)
+function rename_field(data_h5::String, field_old, field_new)
+    data_h5 = add_extension(data_h5,".h5")
     field_old = string.(field_old)
     field_new = string.(field_new)
-    data = read_field(file_h5,field_old)
-    delete_field(file_h5,field_old)
-    write_field(file_h5,field_new,data)
+    data = read_field(data_h5,field_old)
+    delete_field(data_h5,field_old)
+    write_field(data_h5,field_new,data)
 end # function rename_field
 
 """
-    clear_fields(file_h5::String)
+    clear_fields(data_h5::String)
 
 Clear all data fields and data in an HDF5 file.
 
 **Arguments:**
-- `file_h5`: path/name of HDF5 file containing data
+- `data_h5`: path/name of data HDF5 file (`.h5` extension optional)
 
 **Returns:**
-- `nothing`: all data fields and data cleared in `file_h5`
+- `nothing`: all data fields and data cleared in `data_h5`
 """
-function clear_fields(file_h5::String)
-    file = h5open(file_h5,"cw") # read-write, create file if not existing, preserve existing contents
+function clear_fields(data_h5::String)
+    data_h5 = add_extension(data_h5,".h5")
+    file = h5open(data_h5,"cw") # read-write, create file if not existing, preserve existing contents
     close(file)
-    file = h5open(file_h5,"w") # read-write, destroy existing contents
+    file = h5open(data_h5,"w") # read-write, destroy existing contents
     close(file)
 end # function clear_fields
 
@@ -325,27 +374,31 @@ function compare_fields(s1, s2; silent::Bool=false)
     @assert t1 == t2 "$t1 & $t2 types do no match"
     N_dif = 0;
     for field in fieldnames(t1)
-        t = typeof(getfield(s1,field))
+        t  = typeof(getfield(s1,field))
+        f1 = getfield(s1,field)
+        f2 = getfield(s2,field)
         if parentmodule(t) == MagNav
-            N_dif_add = compare_fields(getfield(s1,field),getfield(s2,field);
-                                       silent=true)
+            N_dif_add = compare_fields(f1,f2;silent=true)
             N_dif_add == 0 || println("($field is above)")
             N_dif += N_dif_add
         else
-            if eltype(getfield(s1,field)) <: Number
-                dif = sum(abs.(getfield(s1,field) - getfield(s2,field)))
-                dif ≈ 0 || println("$field  ",dif)
-                dif ≈ 0 || (N_dif += 1)
-            elseif typeof(getfield(s1,field)) <: Chain
-                m1 = getfield(s1,field)
-                m2 = getfield(s2,field)
-                if length(m1) != length(m2)
+            if eltype(f1) <: Number
+                if size(f1) != size(f2)
                     println("size of $field field is different")
                     N_dif += 1
                 else
-                    for i in eachindex(m1)
+                    dif = sum(abs.(f1 - f2))
+                    dif ≈ 0 || println("$field  ",dif)
+                    dif ≈ 0 || (N_dif += 1)
+                end
+            elseif typeof(f1) <: Chain
+                if length(f1) != length(f2)
+                    println("size of $field field is different")
+                    N_dif += 1
+                else
+                    for i in eachindex(f1)
                         for f in [:weight,:bias,:σ]
-                            if getfield(m1[i],f) != getfield(m2[i],f)
+                            if getfield(f1[i],f) != getfield(f2[i],f)
                                 println("layer $i $f field in $field is different")
                                 N_dif += 1
                             end
@@ -353,7 +406,7 @@ function compare_fields(s1, s2; silent::Bool=false)
                     end
                 end
             else
-                if getfield(s1,field) != getfield(s2,field)
+                if f1 != f2
                     println("non-numeric $field field is different")
                     N_dif += 1
                 end
@@ -472,7 +525,7 @@ Internal helper function to get field names for given SGL flight.
     - `:Flt2017`
 
 **Arguments:**
-- `flight`: SGL flight (e.g., `:Flt1001`)
+- `flight`: flight name (e.g., `:Flt1001`)
 
 **Returns:**
 - `fields`: list of data field names (Symbols)
@@ -480,9 +533,9 @@ Internal helper function to get field names for given SGL flight.
 function xyz_fields(flight::Symbol)
 
     # get csv files containing fields from sgl_flight_data_fields artifact
-    fields20  = string(sgl_fields(),"/fields_sgl_2020.csv")
-    fields21  = string(sgl_fields(),"/fields_sgl_2021.csv")
-    fields160 = string(sgl_fields(),"/fields_sgl_160.csv" )
+    fields20  = sgl_fields()*"/fields_sgl_2020.csv"
+    fields21  = sgl_fields()*"/fields_sgl_2021.csv"
+    fields160 = sgl_fields()*"/fields_sgl_160.csv" 
 
     d = Dict{Symbol,Any}()
     push!(d, :fields20  => Symbol.(vec(readdlm(fields20 ,','))))

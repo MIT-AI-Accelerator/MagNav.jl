@@ -27,10 +27,11 @@ mapSd = MapSd(mapS.map,mapS.xx,mapS.yy,mapS.alt*one.(mapS.map))
     @test_nowarn map_interpolate(mapS,:quad)
     @test_nowarn map_interpolate(mapS,:cubic)
     @test_throws ErrorException map_interpolate(mapS,:test)
-    @test_nowarn map_interpolate(mapV,:X)
-    @test_nowarn map_interpolate(mapV,:Y)
-    @test_nowarn map_interpolate(mapV,:Z)
+    @test_nowarn map_interpolate(mapV,:X,:linear)
+    @test_nowarn map_interpolate(mapV,:Y,:quad)
+    @test_nowarn map_interpolate(mapV,:Z,:cubic)
     @test_throws ErrorException map_interpolate(mapV,:test)
+    @test_throws ErrorException map_interpolate(mapV,:X,:test)
 end
 
 @testset "map_get_gxf tests" begin
@@ -80,10 +81,10 @@ end
 
 lla2utm  = UTMZfromLLA(WGS84)
 utm_temp = lla2utm.(LLA.(rad2deg.(mapS.yy),rad2deg.(mapS.xx),mapS.alt))
-mapUTM   = MapS( mapS.map,[utm_temp[i].x for i = 1:length(mapS.xx)],
-                        [utm_temp[i].y for i = 1:length(mapS.yy)],mapS.alt)
-mapUTMd  = MapSd(mapS.map,[utm_temp[i].x for i = 1:length(mapS.xx)],
-                        [utm_temp[i].y for i = 1:length(mapS.yy)],mapSd.alt)
+mapUTM   = MapS( mapS.map,[utm_temp[i].x for i in eachindex(mapS.xx)],
+                          [utm_temp[i].y for i in eachindex(mapS.yy)],mapS.alt)
+mapUTMd  = MapSd(mapS.map,[utm_temp[i].x for i in eachindex(mapS.xx)],
+                          [utm_temp[i].y for i in eachindex(mapS.yy)],mapSd.alt)
 
 @testset "map_utm2lla tests" begin
     @test typeof(map_utm2lla(mapUTM.map,mapUTM.xx,mapUTM.yy,mapUTM.alt)[1]) <: Matrix
@@ -131,19 +132,19 @@ p1 = plot_path(traj;show_plot=false);
 
 @testset "plot_path tests" begin
     @test_nowarn plot_path!(p1,traj;show_plot=false,path_color=:black)
-    @test typeof(plot_path(traj;fewer_pts=true,show_plot=false,Nmax=50)) <: Plots.Plot
+    @test typeof(plot_path(traj;Nmax=50,show_plot=false)) <: Plots.Plot
 end
 
 p1 = plot_basic(traj.tt,traj.lat);
-df_event = DataFrame(flight=:test,tt=49.5,event="test")
+df_event = DataFrame(flight=:test,tt=49.5*60,event="test")
 
 @testset "plot_events! tests" begin
-    @test_nowarn plot_events!(p1,df_event.tt[1],df_event.event[1];t_units=:min)
-    @test_nowarn plot_events!(p1,df_event.flight[1],df_event)
+    @test_nowarn plot_events!(p1,df_event.tt[1]/60,df_event.event[1])
+    @test_nowarn plot_events!(p1,df_event,df_event.flight[1])
 end
 
 @testset "map_check tests" begin
-    @test map_check(mapS,traj) ≈ true
-    @test map_check(mapV,traj) ≈ true
-    @test all(map_check([mapS,mapV],traj)) ≈ true
+    @test map_check(mapS,traj) == true
+    @test map_check(mapV,traj) == true
+    @test all(map_check([mapS,mapV],traj)) == true
 end

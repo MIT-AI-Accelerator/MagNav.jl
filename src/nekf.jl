@@ -28,7 +28,7 @@ for airborne magnetic anomaly navigation.
 - `Cnb`:      direction cosine matrix (body to navigation) [-]
 - `meas`:     scalar magnetometer measurement [nT]
 - `dt`:       measurement time step [s]
-- `itp_mapS`: scalar map grid interpolation
+- `itp_mapS`: scalar map interpolation function
 - `nn_x`:     `x` matrix for neural network
 - `m`:        neural network model
 - `P0`:       (optional) initial covariance matrix
@@ -67,8 +67,13 @@ function nekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS,
 
     x = zeros(nx) # state estimate
     P = P0        # covariance matrix
+    map_cache = (typeof(itp_mapS) == Map_Cache) ? itp_mapS : nothing
 
     for t = 1:N
+        # custom itp_mapS from map cache, if available
+        if typeof(map_cache) == Map_Cache
+            itp_mapS = get_cached_map(map_cache,lat[t],lon[t],alt[t];silent=true)
+        end
 
         # Pinson matrix exponential
         Phi = get_Phi(nx,lat[t],vn[t],ve[t],vd[t],fn[t],fe[t],fd[t],Cnb[:,:,t],
@@ -105,7 +110,7 @@ function nekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS,
     nn_samp = [m(x_seqs[t])[1] for t in 1:round(Int,N/5):N]
     println("sample NN output: ",round.(nn_samp,digits=5))
 
-    return FILTres(x_out, P_out, r_out, false)
+    return FILTres(x_out, P_out, r_out, true)
 end # function nekf
 
 """
@@ -128,7 +133,7 @@ for airborne magnetic anomaly navigation.
 **Arguments:**
 - `ins`:      `INS` inertial navigation system struct
 - `meas`:     scalar magnetometer measurement [nT]
-- `itp_mapS`: scalar map grid interpolation
+- `itp_mapS`: scalar map interpolation function
 - `nn_x`:     `x` matrix for neural network
 - `m`:        neural network model
 - `P0`:       (optional) initial covariance matrix
@@ -188,7 +193,7 @@ time step with a pre-computed `Phi` dynamics matrix.
 - `lon`:      longitude [rad]
 - `alt`:      altitude  [m]
 - `meas`:     scalar magnetometer measurement [nT]
-- `itp_mapS`: scalar map grid interpolation
+- `itp_mapS`: scalar map interpolation function
 - `nn_x`:     `x` matrix for neural network
 - `m`:        neural network model
 - `P`:        non-linear covariance matrix
@@ -213,6 +218,11 @@ function ekf_single(lat, lon, alt, Phi, meas, itp_mapS,
                     core::Bool   = false)
 
     ny = length(meas)
+
+    # get map interpolation function from map cache (based on location)
+    if typeof(itp_mapS) == Map_Cache
+        itp_mapS = get_cached_map(itp_mapS,lat,lon,alt)
+    end
 
     # measurement residual [ny]
     resid = meas .- get_h(itp_mapS,x,lat,lon,alt;date=date,core=core)
@@ -270,7 +280,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
 - `Cnb`:        direction cosine matrix (body to navigation) [-]
 - `meas`:       scalar magnetometer measurement [nT]
 - `dt`:         measurement time step [s]
-- `itp_mapS`:   scalar map grid interpolation
+- `itp_mapS`:   scalar map interpolation function
 - `nn_x`:       `x` matrix for neural network
 - `nn_y`:       `y` target for neural network (`[latitude longitude]`)
 - `P0`:         (optional) initial covariance matrix
@@ -281,7 +291,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
 - `gyro_tau`:   (optional) gyroscope time constant [s]
 - `fogm_tau`:   (optional) FOGM catch-all time constant [s]
 - `epoch_adam`: (optional) number of epochs for Adam optimizer
-- `hidden`:     (optional) hidden layers & nodes, e.g., `[8,8]` for 2 hidden layers, 8 nodes each
+- `hidden`:     (optional) hidden layers & nodes (e.g., `[8,8]` for 2 hidden layers, 8 nodes each)
 - `activation`: (optional) activation function
     - `relu`  = rectified linear unit
     - `σ`     = sigmoid (logistic function)
@@ -389,7 +399,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
 **Arguments:**
 - `ins`:        `INS` inertial navigation system struct
 - `meas`:       scalar magnetometer measurement [nT]
-- `itp_mapS`:   scalar map grid interpolation
+- `itp_mapS`:   scalar map interpolation function
 - `nn_x`:       `x` matrix for neural network
 - `nn_y`:       `y` target for neural network (`[latitude longitude]`)
 - `P0`:         (optional) initial covariance matrix
@@ -400,7 +410,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
 - `gyro_tau`:   (optional) gyroscope time constant [s]
 - `fogm_tau`:   (optional) FOGM catch-all time constant [s]
 - `epoch_adam`: (optional) number of epochs for Adam optimizer
-- `hidden`:     (optional) hidden layers & nodes, e.g., `[8,8]` for 2 hidden layers, 8 nodes each
+- `hidden`:     (optional) hidden layers & nodes (e.g., `[8,8]` for 2 hidden layers, 8 nodes each)
 - `activation`: (optional) activation function
     - `relu`  = rectified linear unit
     - `σ`     = sigmoid (logistic function)
@@ -466,7 +476,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
 - `xyz`:        `XYZ` flight data struct
 - `ind`:        selected data indices
 - `meas`:       scalar magnetometer measurement [nT]
-- `itp_mapS`:   scalar map grid interpolation
+- `itp_mapS`:   scalar map interpolation function
 - `x`:          input data
 - `P0`:         (optional) initial covariance matrix
 - `Qd`:         (optional) discrete time process/system noise matrix
@@ -476,7 +486,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
 - `gyro_tau`:   (optional) gyroscope time constant [s]
 - `fogm_tau`:   (optional) FOGM catch-all time constant [s]
 - `epoch_adam`: (optional) number of epochs for Adam optimizer
-- `hidden`:     (optional) hidden layers & nodes, e.g., `[8,8]` for 2 hidden layers, 8 nodes each
+- `hidden`:     (optional) hidden layers & nodes (e.g., `[8,8]` for 2 hidden layers, 8 nodes each)
 - `activation`: (optional) activation function
     - `relu`  = rectified linear unit
     - `σ`     = sigmoid (logistic function)

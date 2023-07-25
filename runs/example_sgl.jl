@@ -32,18 +32,18 @@ use_mags  = [:mag_1_uc,:mag_4_uc,:mag_5_uc]
 b1 = plot_mag(xyz;ind,show_plot,save_plot,
               use_mags=use_mags,
               detrend_data=true,
-              file_name="scalar_mags");
+              plot_png="scalar_mags.png");
 
 ## vector magnetometer (fluxgate)
 b2 = plot_mag(xyz;ind,show_plot,save_plot,
               use_mags=[:flux_b],
               detrend_data=true,
-              file_name="vector_mag_b");
+              plot_png="vector_mag_b.png");
 
 ## mag_1 compensation (provided)
 b3 = plot_mag(xyz;ind,show_plot,save_plot,
               use_mags=[:comp_mags],
-              file_name="scalar_mags_comp");
+              plot_png="scalar_mags_comp.png");
 
 ## scalar magnetometer compensations (using Tolles-Lawson)
 b4 = plot_mag_c(xyz,xyz;ind=ind,ind_comp=TL_ind,show_plot,save_plot,
@@ -51,20 +51,20 @@ b4 = plot_mag_c(xyz,xyz;ind=ind,ind_comp=TL_ind,show_plot,save_plot,
                 use_vec=:flux_b,
                 detrend_data=true,
                 plot_diff=true,
-                file_name="scalar_mags_comp");
+                plot_png="scalar_mags_comp.png");
 
 #* plot frequency domain data ================================================
 ## Welch power spectral density (PSD)
 b5 = plot_frequency(xyz;ind,show_plot,save_plot,
                     field=:mag_1_uc,
                     freq_type=:PSD,
-                    file_name="mag_1_uc_PSD");
+                    plot_png="mag_1_uc_PSD.png");
 
 ## spectrogram
 b6 = plot_frequency(xyz;ind,show_plot,save_plot,
                     field=:mag_1_uc,
                     freq_type=:spec,
-                    file_name="mag_1_uc_spec");
+                    plot_png="mag_1_uc_spec.png");
 
 ## create Tolles-Lawson coefficients -----------------------------------------
 λ       = 0.025
@@ -96,9 +96,13 @@ mag_5_c = mag_5_uc - detrend(A*TL_b_5;mean_only=true);
 traj = get_traj(xyz,ind); # get trajectory (gps) struct
 ins  = get_ins(xyz,ind;N_zero_ll=1); # get INS struct
 mapS = get_map(map_name,df_map); # load map data
-mapS.alt > 0 && (mapS = upward_fft(mapS,mean(traj.alt))); #* do not do with drape map
+all(mapS.alt .> 0) && (mapS = upward_fft(mapS,mean(traj.alt))); #* do not do with drape map
 itp_mapS = map_interpolate(mapS); # get interpolation
 map_val  = itp_mapS.(traj.lon,traj.lat) + (xyz.diurnal + xyz.igrf)[ind];
+
+# mapS3D = upward_fft(mapS,300:100:500;α=200)
+# itp_mapS3D = map_interpolate(mapS3D); # get interpolation
+# map_val_3D = itp_mapS3D.(traj.lon,traj.lat,traj.alt) + (xyz.diurnal + xyz.igrf)[ind];
 
 println("mag 1: ",round(std(map_val-mag_1_c),digits=2))
 println("mag 2: ",round(std(map_val-mag_2_c),digits=2))
@@ -123,8 +127,8 @@ mag_use = mag_1_c; # selected magnetometer #* modify here to see what happens
 #* type "?" then "crlb_out" or "ins_out" or "filt_out" in REPL to see fields
 
 #* plotting section ==========================================================
-t0 = traj.tt[1];
-tt = (traj.tt.-t0)/60; # [min]
+t0 = traj.tt[1]/60;    # [min]
+tt = traj.tt/60 .- t0; # [min]
 
 ## comparison of magnetometers after compensation ----------------------------
 p1 = plot(xlab="time [min]",ylab="magnetic field [nT]",legend=:topleft,dpi=300)
@@ -159,5 +163,5 @@ p7 = plot(xlab="time [min]",ylab="magnetic field [nT]",dpi=200)
 plot!(p7,tt,mag_1_uc,lab="mag_1_uc")
 plot!(p7,tt,mag_3_uc,lab="mag_3_uc")
 plot!(p7,tt,mag_5_uc,lab="mag_5_uc")
-plot_events!(p7,flight,df_event;t0=t0)
+plot_events!(p7,df_event,flight;t0=t0)
 display(p7)

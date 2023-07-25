@@ -13,32 +13,32 @@
 Extended Kalman filter (EKF) with online learning of Tolles-Lawson coefficients.
 
 **Arguments:**
-- `lat`:      latitude  [rad]
-- `lon`:      longitude [rad]
-- `alt`:      altitude  [m]
-- `vn`:       north velocity [m/s]
-- `ve`:       east  velocity [m/s]
-- `vd`:       down  velocity [m/s]
-- `fn`:       north specific force [m/s^2]
-- `fe`:       east  specific force [m/s^2]
-- `fd`:       down  specific force [m/s^2]
-- `Cnb`:      direction cosine matrix (body to navigation) [-]
-- `meas`:     scalar magnetometer measurement [nT]
-- `Bx,By,Bz`: vector magnetometer measurements [nT]
-- `dt`:       measurement time step [s]
-- `itp_mapS`: scalar map grid interpolation
-- `x0_TL`:    initial Tolles-Lawson coefficient states
-- `P0`:       initial covariance matrix
-- `Qd`:       discrete time process/system noise matrix
-- `R`:        measurement (white) noise variance
-- `baro_tau`: (optional) barometer time constant [s]
-- `acc_tau`:  (optional) accelerometer time constant [s]
-- `gyro_tau`: (optional) gyroscope time constant [s]
-- `fogm_tau`: (optional) FOGM catch-all time constant [s]
-- `date`:     (optional) measurement date for IGRF [yr]
-- `core`:     (optional) if true, include core magnetic field in measurement
-- `terms`:    (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
-- `Bt_scale`: (optional) scaling factor for induced and eddy current terms [nT]
+- `lat`:          latitude  [rad]
+- `lon`:          longitude [rad]
+- `alt`:          altitude  [m]
+- `vn`:           north velocity [m/s]
+- `ve`:           east  velocity [m/s]
+- `vd`:           down  velocity [m/s]
+- `fn`:           north specific force [m/s^2]
+- `fe`:           east  specific force [m/s^2]
+- `fd`:           down  specific force [m/s^2]
+- `Cnb`:          direction cosine matrix (body to navigation) [-]
+- `meas`:         scalar magnetometer measurement [nT]
+- `Bx`,`By`,`Bz`: vector magnetometer measurements [nT]
+- `dt`:           measurement time step [s]
+- `itp_mapS`:     scalar map interpolation function
+- `x0_TL`:        initial Tolles-Lawson coefficient states
+- `P0`:           initial covariance matrix
+- `Qd`:           discrete time process/system noise matrix
+- `R`:            measurement (white) noise variance
+- `baro_tau`:     (optional) barometer time constant [s]
+- `acc_tau`:      (optional) accelerometer time constant [s]
+- `gyro_tau`:     (optional) gyroscope time constant [s]
+- `fogm_tau`:     (optional) FOGM catch-all time constant [s]
+- `date`:         (optional) measurement date for IGRF [yr]
+- `core`:         (optional) if true, include core magnetic field in measurement
+- `terms`:        (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
+- `Bt_scale`:     (optional) scaling factor for induced and eddy current terms [nT]
 
 **Returns:**
 - `filt_res`: `FILTres` filter results struct
@@ -81,7 +81,13 @@ function ekf_online(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
 
     vec_states = nx_vec > 0 ? true : false
 
+    map_cache = (typeof(itp_mapS) == Map_Cache) ? itp_mapS : nothing
+
     for t = 1:N
+        # custom itp_mapS from map cache, if available
+        if typeof(map_cache) == Map_Cache
+            itp_mapS = get_cached_map(map_cache,lat[t],lon[t],alt[t];silent=true)
+        end
 
         # overwrite vector magnetometer measurements
         nx_vec == 3 && (x[end-3:end-1] = [Bx[t],By[t],Bz[t]])
@@ -106,14 +112,14 @@ function ekf_online(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
             #                                    terms,Bt_scale,x_TL),By[ind])[2]
             # HBz = ForwardDiff.gradient(Bz -> f(Bx[ind],By[ind],Bz,meas[ind],
             #                                    terms,Bt_scale,x_TL),Bz[ind])[2]
-            HBx = x_TL[1] / meas[t,1] + 
-                  (2*A[t,1]*x_TL[4] + A[t,2]*x_TL[5] + A[t,3]*x_TL[6]) / Bt_scale + 
+            HBx = x_TL[1] / meas[t,1] +
+                  (2*A[t,1]*x_TL[4] + A[t,2]*x_TL[5] + A[t,3]*x_TL[6]) / Bt_scale +
                   (A[t,10:12]'*x_TL[10:12]) / A[t,4] * A[t,1] / Bt_scale
-            HBy = x_TL[2] / meas[t,1] + 
-                  (A[t,1]*x_TL[5] + 2*A[t,2]*x_TL[7] + A[t,3]*x_TL[8]) / Bt_scale + 
+            HBy = x_TL[2] / meas[t,1] +
+                  (A[t,1]*x_TL[5] + 2*A[t,2]*x_TL[7] + A[t,3]*x_TL[8]) / Bt_scale +
                   (A[t,10:12]'*x_TL[13:15]) / A[t,4] * A[t,1] / Bt_scale
-            HBz = x_TL[3] / meas[t,1] + 
-                  (A[t,1]*x_TL[6] + A[t,2]*x_TL[8] + 2*A[t,3]*x_TL[9]) / Bt_scale + 
+            HBz = x_TL[3] / meas[t,1] +
+                  (A[t,1]*x_TL[6] + A[t,2]*x_TL[8] + 2*A[t,3]*x_TL[9]) / Bt_scale +
                   (A[t,10:12]'*x_TL[16:18]) / A[t,4] * A[t,1] / Bt_scale
             H1  = [Hll[1:2]; zeros(nx-3-nx_vec-nx_TL); A[t,:]; HBx; HBy; HBz; 1]
         else
@@ -142,7 +148,7 @@ function ekf_online(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
         P = Phi*P*Phi' + Qd     # P_t|t-1 [nx x nx]
     end
 
-    return FILTres(x_out, P_out, r_out, false)
+    return FILTres(x_out, P_out, r_out, true)
 end # function ekf_online
 
 """
@@ -162,7 +168,7 @@ Extended Kalman filter (EKF) with online learning of Tolles-Lawson coefficients.
 - `ins`:      `INS` inertial navigation system struct
 - `meas`:     scalar magnetometer measurement [nT]
 - `flux`:     `MagV` vector magnetometer measurement struct
-- `itp_mapS`: scalar map grid interpolation
+- `itp_mapS`: scalar map interpolation function
 - `x0_TL`:    initial Tolles-Lawson coefficient states
 - `P0`:       initial covariance matrix
 - `Qd`:       discrete time process/system noise matrix

@@ -512,11 +512,11 @@ end # function get_Phi
 Internal helper function to get expected magnetic measurement Jacobian (gradient here).
 
 **Arguments:**
-- `itp_mapS`: scalar map grid interpolation
+- `itp_mapS`: scalar map interpolation function
 - `x`:        states [lat, lon, ... S]
-- `lat`:      latitude [rad]
+- `lat`:      latitude  [rad]
 - `lon`:      longitude [rad]
-- `alt`:      altitude [m]
+- `alt`:      altitude  [m]
 - `date`:     (optional) measurement date for IGRF [yr]
 - `core`:     (optional) if true, include core magnetic field in measurement
 
@@ -528,9 +528,9 @@ function get_H(itp_mapS, x::Vector, lat, lon, alt;
                core::Bool = false)
     if core
         return ([(igrf_grad(lat+x[1],lon+x[2],alt+x[3];date=date) +
-                 map_grad(itp_mapS,lat+x[1],lon+x[2])); zero(x)[3:end-1]; 1])
+                 map_grad(itp_mapS,lat+x[1],lon+x[2],alt+x[3])); zero(x)[4:end-1]; 1])
     else
-        return ([map_grad(itp_mapS,lat+x[1],lon+x[2]) ; zero(x)[3:end-1]; 1])
+        return ([map_grad(itp_mapS,lat+x[1],lon+x[2],alt+x[3]) ; zero(x)[4:end-1]; 1])
     end
 end # function get_H
 
@@ -540,15 +540,15 @@ end # function get_H
           core::Bool = false)
 
 Internal helper function to get expected magnetic measurement using magnetic
-anomaly map interpolation, FOGM catch-all, and optionally IGRF for core
-magnetic field.
+anomaly map interpolation function, FOGM catch-all, and optionally IGRF for
+core magnetic field.
 
 **Arguments:**
-- `itp_mapS`: scalar map grid interpolation
+- `itp_mapS`: scalar map interpolation function
 - `x`:        states [lat, lon, ... S]
-- `lat`:      latitude [rad]
+- `lat`:      latitude  [rad]
 - `lon`:      longitude [rad]
-- `alt`:      altitude [m]
+- `alt`:      altitude  [m]
 - `date`:     (optional) measurement date for IGRF [yr]
 - `core`:     (optional) if true, include core magnetic field in measurement
 
@@ -558,13 +558,20 @@ magnetic field.
 function get_h(itp_mapS, x::Array, lat, lon, alt;
                date       = get_years(2020,185),
                core::Bool = false)
-    if core
-        return (itp_mapS.(lon .+ x[2,:], lat .+ x[1,:]) .+ x[end,:] .+
-                norm.(igrf.(date,alt.+x[3,:],lat.+x[1,:],lon.+x[2,:],
-                            Val(:geodetic))))
-    else
-        return (itp_mapS.(lon .+ x[2,:], lat .+ x[1,:]) .+ x[end,:])
+
+    if length(size(itp_mapS)) == 2
+        map_val = itp_mapS.(lon.+x[2,:],lat.+x[1,:])
+    elseif length(size(itp_mapS)) == 3
+        map_val = itp_mapS.(lon.+x[2,:],lat.+x[1,:],alt.+x[3,:])
     end
+
+    if core
+        return (map_val .+ x[end,:] .+ norm.(igrf.(date,alt.+x[3,:],lat.+x[1,:],
+                                                   lon.+x[2,:],Val(:geodetic))))
+    else
+        return (map_val .+ x[end,:])
+    end
+
 end # function get_h
 
 """
@@ -573,17 +580,17 @@ end # function get_h
           core::Bool = false)
 
 Internal helper function to get expected magnetic measurement using magnetic
-anomaly map interpolation, FOGM catch-all, and optionally IGRF for core
-magnetic field. Includes vertical derivative information, currently only for
-~constant HAE.
+anomaly map interpolation function, FOGM catch-all, and optionally IGRF for
+core magnetic field. Includes vertical derivative information, currently only
+for ~constant HAE.
 
 **Arguments:**
-- `itp_mapS`: scalar map grid interpolation
+- `itp_mapS`: scalar map interpolation function
 - `der_mapS`: scalar map vertical derivative grid interpolation
 - `x`:        states [lat, lon, ... S]
-- `lat`:      latitude [rad]
+- `lat`:      latitude  [rad]
 - `lon`:      longitude [rad]
-- `alt`:      altitude [m]
+- `alt`:      altitude  [m]
 - `map_alt`:  map altitude [m]
 - `date`:     (optional) measurement date for IGRF [yr]
 - `core`:     (optional) if true, include core magnetic field in measurement
@@ -594,34 +601,51 @@ magnetic field. Includes vertical derivative information, currently only for
 function get_h(itp_mapS, der_mapS, x::Array, lat, lon, alt, map_alt;
                date       = get_years(2020,185),
                core::Bool = false)
-    if core
-        return (itp_mapS.(lon.+x[2,:],lat.+x[1,:]) + x[end,:] +
-                der_mapS.(lon.+x[2,:],lat.+x[1,:]).*(alt.+x[3,:].-map_alt) +
-                norm.(igrf.(date,alt.+x[3,:],lat.+x[1,:],lon.+x[2,:],
-                            Val(:geodetic))))
-    else
-        return (itp_mapS.(lon.+x[2,:],lat.+x[1,:]) + x[end,:] +
-                der_mapS.(lon.+x[2,:],lat.+x[1,:]).*(alt.+x[3,:].-map_alt))
+
+    if length(size(itp_mapS)) == 2
+        map_val = itp_mapS.(lon.+x[2,:],lat.+x[1,:])
+        der_val = der_mapS.(lon.+x[2,:],lat.+x[1,:])
+    elseif length(size(itp_mapS)) == 3
+        map_val = itp_mapS.(lon.+x[2,:],lat.+x[1,:],alt.+x[3,:])
+        der_val = der_mapS.(lon.+x[2,:],lat.+x[1,:],alt.+x[3,:])
     end
+
+    if core
+        return (map_val .+ x[end,:] .+ der_val .* (alt.+x[3,:] .- map_alt) .+
+                norm.(igrf.(date,alt.+x[3,:],lat.+x[1,:],lon.+x[2,:],Val(:geodetic))))
+    else
+        return (map_val .+ x[end,:] .+ der_val .* (alt.+x[3,:] .- map_alt))
+    end
+
 end # function get_h
 
 """
-    map_grad(itp_mapS, lat, lon; δ=1.0f-8)
+    map_grad(itp_mapS, lat, lon, alt; δ=1.0f-8)
 
 Internal helper function to get local map gradient.
 
 **Arguments:**
-- `itp_mapS`: scalar map grid interpolation
-- `lat`:      latitude [rad]
+- `itp_mapS`: scalar map interpolation function
+- `lat`:      latitude  [rad]
 - `lon`:      longitude [rad]
-- `δ`:        (optional) finite difference map sample interval
+- `alt`:      altitude  [m]
+- `δ`:        (optional) finite difference map step size [rad]
 
 **Returns:**
-- `map_grad`: local map gradient: δmap/δlat, δmap/δlon [nT/rad]
+- `mapS_grad`: local scalar map gradient: δmap/δlat [nT/rad], δmap/δlon [nT/rad], δmap/δalt [nT/m]
 """
-function map_grad(itp_mapS, lat, lon; δ=1.0f-8)
-    return ([(itp_mapS(lon,lat+δ) - itp_mapS(lon,lat-δ)) /2/δ,
-             (itp_mapS(lon+δ,lat) - itp_mapS(lon-δ,lat)) /2/δ])
+function map_grad(itp_mapS, lat, lon, alt; δ=1.0f-8)
+    dlat = dlon = δ
+    dalt = dlat2dn(δ,lat)
+    if length(size(itp_mapS)) == 2
+        return ([(itp_mapS(lon,lat+dlat) - itp_mapS(lon,lat-dlat)) /2/dlat,
+                 (itp_mapS(lon+dlon,lat) - itp_mapS(lon-dlon,lat)) /2/dlon,
+                 zero(lat)])
+    elseif length(size(itp_mapS)) == 3
+        return ([(itp_mapS(lon,lat+dlat,alt) - itp_mapS(lon,lat-dlat,alt)) /2/dlat,
+                 (itp_mapS(lon+dlon,lat,alt) - itp_mapS(lon-dlon,lat,alt)) /2/dlon,
+                 (itp_mapS(lon,lat,alt+dalt) - itp_mapS(lon,lat,alt-dalt)) /2/dalt])
+    end
 end # function map_grad
 
 """
@@ -630,20 +654,24 @@ end # function map_grad
 Internal helper function to get core magnetic field gradient using IGRF model.
 
 **Arguments:**
-- `lat`:  latitude [rad]
+- `lat`:  latitude  [rad]
 - `lon`:  longitude [rad]
-- `alt`:  altitude [m]
+- `alt`:  altitude  [m]
 - `date`: (optional) measurement date for IGRF [yr]
-- `δ`:    (optional) finite difference map sample interval
+- `δ`:    (optional) finite difference map step size [rad]
 
 **Returns:**
-- `igrf_grad`: local core magnetic field gradient: δmap/δlat, δmap/δlon [nT/rad]
+- `core_grad`: local core magnetic field gradient: δmap/δlat [nT/rad], δmap/δlon [nT/rad], δmap/δalt [nT/m]
 """
 function igrf_grad(lat, lon, alt; date=get_years(2020,185), δ=1.0f-8)
-    return ([(norm(igrf(date,alt,lat+δ,lon,Val(:geodetic))) -
-              norm(igrf(date,alt,lat-δ,lon,Val(:geodetic)))) /2/δ,
-             (norm(igrf(date,alt,lat,lon+δ,Val(:geodetic))) -
-              norm(igrf(date,alt,lat,lon-δ,Val(:geodetic)))) /2/δ])
+    dlat = dlon = δ
+    dalt = dlat2dn(δ,lat)
+    return ([(norm(igrf(date,alt,lat+dlat,lon,Val(:geodetic))) -
+              norm(igrf(date,alt,lat-dlat,lon,Val(:geodetic)))) /2/dlat,
+             (norm(igrf(date,alt,lat,lon+dlon,Val(:geodetic))) -
+              norm(igrf(date,alt,lat,lon-dlon,Val(:geodetic)))) /2/dlon,
+             (norm(igrf(date,alt+dalt,lat,lon,Val(:geodetic))) -
+              norm(igrf(date,alt-dalt,lat,lon,Val(:geodetic)))) /2/dalt])
 end # function igrf_grad
 
 """

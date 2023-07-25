@@ -39,21 +39,24 @@ map_map = map_map[ind,ind]
 map_xx  = map_xx[ind]
 map_yy  = map_yy[ind]
 
-map_name  = joinpath(@__DIR__,"test")
-path_name = joinpath(@__DIR__,"test")
+map_kmz  = joinpath(@__DIR__,"test")
+path_kml = joinpath(@__DIR__,"test")
 
 @testset "map2kmz tests" begin
-    @test_nowarn map2kmz(map_map,map_xx,map_yy,map_name)
-    @test_nowarn map2kmz(map_map,map_xx,map_yy,map_name;map_units=:deg)
-    @test_throws ErrorException map2kmz(map_map,map_xx,map_yy,map_name;map_units=:test)
-    @test_nowarn map2kmz(mapS,map_name;plot_alt=mapS.alt)
+    @test_nowarn map2kmz(map_map,map_xx,map_yy,map_kmz)
+    @test_nowarn map2kmz(map_map,map_xx,map_yy,map_kmz;map_units=:deg)
+    @test_throws ErrorException map2kmz(map_map,map_xx,map_yy,map_kmz;map_units=:test)
+    @test_nowarn map2kmz(mapS,map_kmz;plot_alt=mapS.alt)
 end
 
 @testset "path2kml tests" begin
-    @test_nowarn path2kml(lat,lon,alt,path_name)
-    @test_throws ErrorException path2kml(lat,lon,alt,path_name;path_units=:test)
-    @test_nowarn path2kml(traj(ind),path_name;points=true)
+    @test_nowarn path2kml(lat,lon,alt,path_kml)
+    @test_throws ErrorException path2kml(lat,lon,alt,path_kml;path_units=:test)
+    @test_nowarn path2kml(traj(ind),path_kml;points=true)
 end
 
-rm(map_name*".kmz")
-rm(path_name*".kml")
+map_kmz  = MagNav.add_extension(map_kmz ,".kmz")
+path_kml = MagNav.add_extension(path_kml,".kml")
+
+rm(map_kmz)
+rm(path_kml)

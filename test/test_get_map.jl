@@ -45,16 +45,16 @@ map_data  = matopen(test_data_map_drpS,"w") do file
     write(file,"map_data",map_data_drpS)
 end
 
-data_dir           = MagNav.ottawa_area_maps()
-Eastern_395_h5     = string(data_dir,"/Eastern_395.h5")
-Eastern_drape_h5   = string(data_dir,"/Eastern_drape.h5")
-Eastern_plot_h5    = string(data_dir,"/Eastern_plot.h5")
-HighAlt_5181_h5    = string(data_dir,"/HighAlt_5181.h5")
-Perth_800_h5       = string(data_dir,"/Perth_800.h5")
-Renfrew_395_h5     = string(data_dir,"/Renfrew_395.h5")
-Renfrew_555_h5     = string(data_dir,"/Renfrew_555.h5")
-Renfrew_drape_h5   = string(data_dir,"/Renfrew_drape.h5")
-Renfrew_plot_h5    = string(data_dir,"/Renfrew_plot.h5")
+data_dir         = MagNav.ottawa_area_maps()
+Eastern_395_h5   = data_dir*"/Eastern_395.h5"
+Eastern_drape_h5 = data_dir*"/Eastern_drape.h5"
+Eastern_plot_h5  = data_dir*"/Eastern_plot.h5"
+HighAlt_5181_h5  = data_dir*"/HighAlt_5181.h5"
+Perth_800_h5     = data_dir*"/Perth_800.h5"
+Renfrew_395_h5   = data_dir*"/Renfrew_395.h5"
+Renfrew_555_h5   = data_dir*"/Renfrew_555.h5"
+Renfrew_drape_h5 = data_dir*"/Renfrew_drape.h5"
+Renfrew_plot_h5  = data_dir*"/Renfrew_plot.h5"
 
 # emag2, emm720, & namad all tested elsewhere
 map_files = [test_data_map,test_data_map_drpS,
@@ -75,7 +75,7 @@ df_map    = DataFrame(map_h5=map_files,map_name=map_names)
         @test_nowarn get_map(map_name,df_map)
     end
     @test typeof(get_map(test_data_map;map_units=:utm)) <: MagNav.MapS
-    @test_throws ErrorException get_map("test")
+    @test_throws AssertionError get_map("test")
     @test_throws ErrorException get_map(test_data_map_badS)
     @test_throws ErrorException get_map(test_data_map_badV)
 end

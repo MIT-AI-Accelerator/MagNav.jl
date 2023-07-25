@@ -1,29 +1,29 @@
 """
     map2kmz(map_map::Matrix, map_xx::Vector, map_yy::Vector,
-            map_name::String  = "map";
+            map_kmz::String   = "map.kmz";
             map_units::Symbol = :rad,
             plot_alt          = 0,
             opacity           = 0.75,
             clims::Tuple      = (0,0))
 
-Create kmz file of map for use with Google Earth. Generates an "icon" overlay, 
+Create KMZ file of map for use with Google Earth. Generates an "icon" overlay, 
 and is thus not meant for large maps (e.g., > 5 deg x 5 deg).
 
 **Arguments:**
 - `map_map`:   `ny` x `nx` 2D gridded map data
-- `map_xx`:    `nx` x-direction (longitude) map coordinates [rad] or [deg]
-- `map_yy`:    `ny` y-direction (latitude)  map coordinates [rad] or [deg]
-- `map_name`:  (optional) map name to save
+- `map_xx`:    `nx` map x-direction (longitude) coordinates [rad] or [deg]
+- `map_yy`:    `ny` map y-direction (latitude)  coordinates [rad] or [deg]
+- `map_kmz`:   (optional) path/name of map KMZ file to save (`.kmz` extension optional)
 - `map_units`: (optional) map xx/yy units {`:rad`,`:deg`}
 - `plot_alt`:  (optional) map altitude in Google Earth [m]
 - `opacity`:   (optional) map opacity {0:1}
 - `clims`:     (optional) map color scale limits
 
 **Returns:**
-- `nothing`: kmz file `map_name`.kmz is created
+- `nothing`: `map_kmz` is created
 """
 function map2kmz(map_map::Matrix, map_xx::Vector, map_yy::Vector,
-                 map_name::String  = "map";
+                 map_kmz::String   = "map.kmz";
                  map_units::Symbol = :rad,
                  plot_alt          = 0,
                  opacity           = 0.75,
@@ -43,23 +43,24 @@ function map2kmz(map_map::Matrix, map_xx::Vector, map_yy::Vector,
         error("$map_units map xx/yy units not defined")
     end
 
-    map_kml   = string(map_name,".kml")
-    map_kmz   = string(map_name,".kmz")
-    map_png   = string(map_name,".png")
-    map_trans = string(string(round(Int,opacity*255),base=16),"ffffff") # ABGR
+    map_kmz   = add_extension(map_kmz,".kmz")
+    map_name  = remove_extension(map_kmz,".kmz")
+    map_kml   = map_name*".kml"
+    map_png   = map_name*".png"
+    map_trans = string(round(Int,opacity*255),base=16)*"ffffff" # ABGR
 
     p1  = plot_map(map_map;
                    clims     = clims,
                    dpi       = 200,
                    margin    = -2, # includes 2mm otherwise
+                   Nmax      = 10^10,
                    legend    = false,
                    axis      = false,
-                   fewer_pts = false,
                    bg_color  = :transparent)
 
     plot!(p1,size=min.(size(map_map),10000))
 
-    png(p1,map_name)
+    png(p1,map_png)
 
     open(map_kml,"w") do file
         println(file,
@@ -110,30 +111,30 @@ end # function map2kmz
 
 """
     map2kmz(mapS::Union{MapS,MapSd},
-            map_name::String = "map";
+            map_kmz::String  = "map.kmz";
             plot_alt         = 0,
             opacity          = 0.75,
             clims::Tuple     = (0,0))
 
-Create kmz file of map for use with Google Earth. Generates an "icon" overlay, 
+Create KMZ file of map for use with Google Earth. Generates an "icon" overlay, 
 and is thus not meant for large maps (e.g., > 5 deg x 5 deg).
 
 **Arguments:**
 - `mapS`:     `MapS` or `MapSd` scalar magnetic anomaly map struct
-- `map_name`: (optional) map name to save
+- `map_kmz`:  (optional) path/name of map KMZ file to save (`.kmz` extension optional)
 - `plot_alt`: (optional) map altitude in Google Earth [m]
 - `opacity`:  (optional) map opacity {0:1}
 - `clims`:    (optional) map color scale limits
 
 **Returns:**
-- `nothing`: kmz file `map_name`.kmz is created
+- `nothing`: `map_kmz` is created
 """
 function map2kmz(mapS::Union{MapS,MapSd},
-                 map_name::String = "map";
+                 map_kmz::String = "map.kmz";
                  plot_alt         = 0,
                  opacity          = 0.75,
                  clims::Tuple     = (0,0))
-    map2kmz(mapS.map,mapS.xx,mapS.yy,map_name;
+    map2kmz(mapS.map,mapS.xx,mapS.yy,map_kmz;
             map_units = :rad,
             plot_alt  = plot_alt,
             opacity   = opacity,
@@ -142,20 +143,20 @@ end # function map2kmz
 
 """
     path2kml(lat::Vector, lon::Vector, alt::Vector,
-             path_name::String  = "path";
+             path_kml::String   = "path.kml";
              path_units::Symbol = :rad,
              width::Int         = 3,
              color1::String     = "ff000000",
              color2::String     = "80000000",
              points::Bool       = false)
 
-Create kml file of flight path for use with Google Earth.
+Create KML file of flight path for use with Google Earth.
 
 **Arguments:**
 - `lat`:        latitude  [rad] or [deg]
 - `lon`:        longitude [rad] or [deg]
 - `alt`:        altitude  [m]
-- `path_name`:  (optional) flight path name
+- `path_kml`:   (optional) path/name of flight path KML file to save (`.kml` extension optional)
 - `path_units`: (optional) `lat`/`lon` units {`:rad`,`:deg`}
 - `width`:      (optional) line width
 - `color1`:     (optional) path color
@@ -163,10 +164,10 @@ Create kml file of flight path for use with Google Earth.
 - `points`:     (optional) if true, create points instead of line
 
 **Returns:**
-- `nothing`: kml file `path_name`.kml is created
+- `nothing`: `path_kml` is created
 """
 function path2kml(lat::Vector, lon::Vector, alt::Vector,
-                  path_name::String  = "path";
+                  path_kml::String   = "path.kml";
                   path_units::Symbol = :rad,
                   width::Int         = 3,
                   color1::String     = "ff000000",
@@ -189,7 +190,7 @@ function path2kml(lat::Vector, lon::Vector, alt::Vector,
         error("$path_units lat/lon units not defined")
     end
 
-    path_kml = string(path_name,".kml")
+    path_kml = add_extension(path_kml,".kml")
 
     if points
         open(path_kml,"w") do file
@@ -295,27 +296,27 @@ end # function path2kml
 
 """
     path2kml(path::Path,
-             path_name::String = "path";
+             path_kml::String = "path.kml";
              width::Int        = 3,
              color1::String    = "",
              color2::String    = "00ffffff",
              points::Bool      = false)
 
-Create kml file of flight path for use with Google Earth.
+Create KML file of flight path for use with Google Earth.
 
 **Arguments:**
 - `path`:      `Path` struct, i.e., `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
-- `path_name`: (optional) flight path name
+- `path_kml`:  (optional) path/name of flight path KML file to save (`.kml` extension optional)
 - `width`:     (optional) line width
 - `color1`:    (optional) path color
 - `color2`:    (optional) below-path color
 - `points`:    (optional) if true, create points instead of line
 
 **Returns:**
-- `nothing`: kml file `path_name`.kml is created
+- `nothing`: `path_kml` is created
 """
 function path2kml(path::Path,
-                  path_name::String = "path";
+                  path_kml::String = "path.kml";
                   width::Int        = 3,
                   color1::String    = "",
                   color2::String    = "00ffffff",
@@ -330,7 +331,7 @@ function path2kml(path::Path,
     color1 in ["black","k"] && (color1 = "ff000000")
     color2 in ["black","k"] && (color2 = "80000000")
 
-    path2kml(path.lat,path.lon,path.alt,path_name;
+    path2kml(path.lat,path.lon,path.alt,path_kml;
              path_units = :rad,
              width      = width,
              color1     = color1,

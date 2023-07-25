@@ -21,14 +21,14 @@ function plot_basic(tt::Vector, y::Vector;
                     xlab::String = "time [min]",
                     ylab::String = "",
                     lab::String  = "")
-    plot((tt[ind].-tt[ind][1])/60, y[ind], xlab=xlab, ylab=ylab, lab=lab)
+    plot((tt[ind] .- tt[ind][1])/60, y[ind], xlab=xlab, ylab=ylab, lab=lab)
 end # function plot_basic
 
 """
     plot_activation(activation = [:relu,:σ,:swish,:tanh];
                     plot_deriv::Bool  = false,
                     save_plot::Bool   = false,
-                    file_name::String = "act_func")
+                    plot_png::String  = "act_func.png")
 
 Plot activation function(s) or their derivative(s).
 
@@ -39,8 +39,8 @@ Plot activation function(s) or their derivative(s).
     - `swish` = self-gated
     - `tanh`  = hyperbolic tan
 - `plot_deriv`: (optional) if true, plot activation function(s) derivative(s)
-- `save_plot`:  (optional) if true, plot will be saved
-- `file_name`:  (optional) plot file name to save
+- `save_plot`:  (optional) if true, `p1` will be saved
+- `plot_png`:   (optional) plot file name to save (`.png` extension optional)
 
 **Returns:**
 - `p1`: plot of activation function(s) or their derivative(s)
@@ -48,7 +48,7 @@ Plot activation function(s) or their derivative(s).
 function plot_activation(activation = [:relu,:σ,:swish,:tanh];
                          plot_deriv::Bool  = false,
                          save_plot::Bool   = false,
-                         file_name::String = "act_func")
+                         plot_png::String  = "act_func.png")
 
     save_plot ? dpi = 500 : dpi = 200
 
@@ -80,7 +80,7 @@ function plot_activation(activation = [:relu,:σ,:swish,:tanh];
         :tanh  in activation && plot!(p1,x,d_tanh ,lab="tanh"   ,lw=2,ls=:dot)
     end
 
-    save_plot && png(p1,file_name)
+    save_plot && png(p1,plot_png)
 
     return (p1)
 end # function plot_activation
@@ -95,7 +95,7 @@ end # function plot_activation
              dpi::Int                  = 200,
              show_plot::Bool           = true,
              save_plot::Bool           = false,
-             file_name::String         = "scalar_mags")
+             plot_png::String          = "scalar_mags.png")
 
 Plot scalar or vector (fluxgate) magnetometer data from a given flight test.
 
@@ -104,14 +104,14 @@ Plot scalar or vector (fluxgate) magnetometer data from a given flight test.
 - `ind`:          (optional) selected data indices
 - `detrend_data`: (optional) if true, plot data will be detrended
 - `use_mags`:     (optional) scalar or vector (fluxgate) magnetometers to plot {`:all_mags`, `:comp_mags` or `:mag_1_c`, `:mag_1_uc`, `:flux_a`, etc.}
-    - `:all_mags`  = all provided scalar magnetometer fields, e.g., `:mag_1_c`, `:mag_1_uc`, etc.
+    - `:all_mags`  = all provided scalar magnetometer fields (e.g., `:mag_1_c`, `:mag_1_uc`, etc.)
     - `:comp_mags` = provided compensation(s) between `:mag_1_uc` & `:mag_1_c`, etc.
 - `vec_terms`:    (optional) vector magnetometer (fluxgate) terms to plot {`:all` or `:x`,`:y`,`:z`,`:t`}
 - `ylim`:         (optional) 2-element y limits for plotting
 - `dpi`:          (optional) dots per inch (image resolution)
-- `show_plot`:    (optional) if true, plot will be shown
-- `save_plot`:    (optional) if true, plot will be saved
-- `file_name`:    (optional) plot file name to save
+- `show_plot`:    (optional) if true, `p1` will be shown
+- `save_plot`:    (optional) if true, `p1` will be saved
+- `plot_png`:     (optional) plot file name to save (`.png` extension optional)
 
 **Returns:**
 - `p1`: plot of scalar or vector (fluxgate) magnetometer data
@@ -125,7 +125,7 @@ function plot_mag(xyz::XYZ;
                   dpi::Int                  = 200,
                   show_plot::Bool           = true,
                   save_plot::Bool           = false,
-                  file_name::String         = "scalar_mags")
+                  plot_png::String          = "scalar_mags.png")
 
     tt = (xyz.traj.tt[ind] .- xyz.traj.tt[ind][1]) / 60
     xlab = "time [min]"
@@ -222,7 +222,7 @@ function plot_mag(xyz::XYZ;
     end
 
     show_plot && display(p1)
-    save_plot && png(file_name)
+    save_plot && png(p1,plot_png)
 
     return (p1)
 end # function plot_mag
@@ -246,7 +246,7 @@ end # function plot_mag
                dpi::Int                 = 200,
                show_plot::Bool          = true,
                save_plot::Bool          = false,
-               file_name::String        = "scalar_mags_comp")
+               plot_png::String         = "scalar_mags_comp.png")
 
 Plot compensated magnetometer(s) data from a given flight test. Assumes `mag_1` 
 (i.e., `:mag_1_uc` & `:mag_1_c`) is the best magnetometer (i.e., stinger).
@@ -263,16 +263,16 @@ Plot compensated magnetometer(s) data from a given flight test. Assumes `mag_1`
 - `pass2`:         (optional) filter second passband frequency [Hz]
 - `fs`:            (optional) filter sampling frequency [Hz]
 - `use_mags`:      (optional) scalar or vector (fluxgate) magnetometers to plot {`:all_mags`, or `:mag_1_uc`, etc.}
-    - `:all_mags` = all uncompensated scalar magnetometer fields, e.g., `:mag_1_uc`, etc.
+    - `:all_mags` = all uncompensated scalar magnetometer fields (e.g., `:mag_1_uc`, etc.)
 - `use_vec`:       (optional) vector magnetometer (fluxgate) to use for Tolles-Lawson `A` matrix {`:flux_a`, etc.}
-- `plot_diff`:     (optional) if true, plot difference between `provided` compensated data & compensated mags `as done here`
+- `plot_diff`:     (optional) if true, plot difference between `provided` compensated data & compensated mags `as performed here`
 - `plot_mag_1_uc`: (optional) if true, plot mag_1_uc (uncompensated mag_1)
 - `plot_mag_1_c`:  (optional) if true, plot mag_1_c (compensated mag_1)
 - `ylim`:          (optional) 2-element y limits for plotting
 - `dpi`:           (optional) dots per inch (image resolution)
-- `show_plot`:     (optional) if true, plot will be shown
-- `save_plot`:     (optional) if true, plot will be saved
-- `file_name`:     (optional) plot file name to save
+- `show_plot`:     (optional) if true, `p1` will be shown
+- `save_plot`:     (optional) if true, `p1` will be saved
+- `plot_png`:      (optional) plot file name to save (`.png` extension optional)
 
 **Returns:**
 - `p1`: plot of compensated magnetometer data
@@ -295,7 +295,7 @@ function plot_mag_c(xyz::XYZ,xyz_comp::XYZ;
                     ylim                     = (),
                     show_plot::Bool          = true,
                     save_plot::Bool          = false,
-                    file_name::String        = "scalar_mags_comp")
+                    plot_png::String         = "scalar_mags_comp.png")
 
     field_check(xyz,use_vec,MagV)
     A = create_TL_A(getfield(xyz,use_vec),terms=terms)[ind,:]
@@ -347,13 +347,13 @@ function plot_mag_c(xyz::XYZ,xyz_comp::XYZ;
                                  pass1=pass1,pass2=pass2,fs=fs)
 
         mag_c     = mag_uc - detrend(A*TL_coef;mean_only=true)
-        mean_diff = mean(mag_c-xyz.mag_1_c[ind])
+        mean_diff = mean(mag_c - xyz.mag_1_c[ind])
         detrend_data && (mag_c  = detrend(mag_c ))
         detrend_data && (mag_uc = detrend(mag_uc))
 
         lab = "$use_mag"[1:end-3]*"_c"
-        lab = plot_diff ? "Δ $lab"      : lab
-        val = plot_diff ? mag_c-mag_1_c : mag_c
+        lab = plot_diff ? "Δ $lab"        : lab
+        val = plot_diff ? mag_c - mag_1_c : mag_c
         plot!(p1,tt[1:end-1],val[1:end-1],lab=lab,color=color)
         
         if plot_diff
@@ -370,7 +370,7 @@ function plot_mag_c(xyz::XYZ,xyz_comp::XYZ;
     end
 
     show_plot && display(p1)
-    save_plot && png(file_name)
+    save_plot && png(p1,plot_png)
 
     return (p1)
 end # function plot_mag_c
@@ -381,7 +381,7 @@ end # function plot_mag_c
              dpi::Int          = 200,
              show_plot::Bool   = true,
              save_plot::Bool   = false,
-             file_name::String = "PSD")
+             plot_png::String  = "PSD.png")
 
 Plot the Welch power spectral density (PSD) for signal `x`.
 
@@ -390,9 +390,9 @@ Plot the Welch power spectral density (PSD) for signal `x`.
 - `fs`:        (optional) sampling frequency [Hz]
 - `window`:    (optional) type of window used
 - `dpi`:       (optional) dots per inch (image resolution)
-- `show_plot`: (optional) if true, plot will be shown
-- `save_plot`: (optional) if true, plot will be saved
-- `file_name`: (optional) plot file name to save
+- `show_plot`: (optional) if true, `p1` will be shown
+- `save_plot`: (optional) if true, `p1` will be saved
+- `plot_png`:  (optional) plot file name to save (`.png` extension optional)
 
 **Returns:**
 - `p1`: plot of Welch power spectral density (PSD)
@@ -402,7 +402,7 @@ function plot_PSD(x::Vector, fs=10;
                   dpi::Int          = 200,
                   show_plot::Bool   = true,
                   save_plot::Bool   = false,
-                  file_name::String = "PSD")
+                  plot_png::String  = "PSD.png")
 
     psd_welch = welch_pgram(x,fs=fs,window=window)
 
@@ -410,7 +410,7 @@ function plot_PSD(x::Vector, fs=10;
               xlab="frequency [Hz]",ylab="power/frequency [dB/Hz]")
 
     show_plot && display(p1)
-    save_plot && png(file_name)
+    save_plot && png(p1,plot_png)
 
     return (p1)
 end # function plot_PSD
@@ -421,7 +421,7 @@ end # function plot_PSD
                      dpi::Int          = 200,
                      show_plot::Bool   = true,
                      save_plot::Bool   = false,
-                     file_name::String = "spectrogram")
+                     plot_png::String  = "spectrogram.png")
 
 Create a spectrogram for signal `x`.
 
@@ -430,9 +430,9 @@ Create a spectrogram for signal `x`.
 - `fs`:        (optional) sampling frequency [Hz]
 - `window`:    (optional) type of window used
 - `dpi`:       (optional) dots per inch (image resolution)
-- `show_plot`: (optional) if true, plot will be shown
-- `save_plot`: (optional) if true, plot will be saved
-- `file_name`: (optional) plot file name to save
+- `show_plot`: (optional) if true, `p1` will be shown
+- `save_plot`: (optional) if true, `p1` will be saved
+- `plot_png`:  (optional) plot file name to save (`.png` extension optional)
 
 **Returns:**
 - `p1`: plot of spectrogram
@@ -442,7 +442,7 @@ function plot_spectrogram(x::Vector, fs=10;
                           dpi::Int          = 200,
                           show_plot::Bool   = true,
                           save_plot::Bool   = false,
-                          file_name::String = "spectrogram")
+                          plot_png::String  = "spectrogram.png")
 
     spec = spectrogram(x;fs=fs,window=window)
 
@@ -450,7 +450,7 @@ function plot_spectrogram(x::Vector, fs=10;
                  xguide="time [s]",yguide="frequency [Hz]")
 
     show_plot && display(p1)
-    save_plot && png(file_name)
+    save_plot && png(p1,plot_png)
 
     return (p1)
 end # function plot_spectrogram
@@ -465,7 +465,7 @@ end # function plot_spectrogram
                    dpi::Int           = 200,
                    show_plot::Bool    = true,
                    save_plot::Bool    = false,
-                   file_name::String  = "PSD")
+                   plot_png::String   = "PSD.png")
 
 Plot frequency data, either Welch power spectral density (PSD) or spectrogram.
 
@@ -477,9 +477,9 @@ Plot frequency data, either Welch power spectral density (PSD) or spectrogram.
 - `detrend_data`: (optional) if true, plot data will be detrended
 - `window`:       (optional) type of window used
 - `dpi`:          (optional) dots per inch (image resolution)
-- `show_plot`:    (optional) if true, plot will be shown
-- `save_plot`:    (optional) if true, plot will be saved
-- `file_name`:    (optional) plot file name to save
+- `show_plot`:    (optional) if true, `p1` will be shown
+- `save_plot`:    (optional) if true, `p1` will be saved
+- `plot_png`:     (optional) plot file name to save (`.png` extension optional)
 
 **Returns:**
 - `p1`: plot of Welch power spectral density (PSD) or spectrogram
@@ -493,7 +493,7 @@ function plot_frequency(xyz::XYZ;
                         dpi::Int           = 200,
                         show_plot::Bool    = true,
                         save_plot::Bool    = false,
-                        file_name::String  = "PSD")
+                        plot_png::String   = "PSD.png")
 
     x = getfield(xyz,field)[ind]
 
@@ -508,7 +508,7 @@ function plot_frequency(xyz::XYZ;
            dpi       = dpi,
            show_plot = show_plot,
            save_plot = save_plot,
-           file_name = file_name)
+           plot_png  = plot_png)
 
     return (p1)
 end # function plot_frequency
@@ -532,8 +532,8 @@ Plot the correlation between two features.
 - `yfield`:    field name of y-axis feature
 - `lim`:       (optional) lower limit on the Pearson correlation coefficient (do not plot otherwise)
 - `dpi`:       (optional) dots per inch (image resolution)
-- `show_plot`: (optional) if true, plot will be shown
-- `save_plot`: (optional) if true, plot will be saved
+- `show_plot`: (optional) if true, `p1` will be shown
+- `save_plot`: (optional) if true, `p1` will be saved
 - `silent`:    (optional) if true, no print outs
 
 **Returns:**
@@ -557,7 +557,7 @@ function plot_correlation(x::Vector, y::Vector,
         title = xlab*" & "*ylab
         p1 = scatter(x,y,lab=false,dpi=dpi,xlab=xlab,ylab=ylab,title=title;ms=2)
         show_plot && display(p1)
-        save_plot && png(title)
+        save_plot && png(p1,title)
         silent || println(xfield," & ",yfield)
         silent || println("correlation & slope: $(round.([xyc,xys],digits=5))")
         return (p1)
@@ -585,8 +585,8 @@ Plot the correlation between two features.
 - `ind`:       (optional) selected data indices
 - `lim`:       (optional) lower limit on the Pearson correlation coefficient (do not plot otherwise)
 - `dpi`:       (optional) dots per inch (image resolution)
-- `show_plot`: (optional) if true, plot will be shown
-- `save_plot`: (optional) if true, plot will be saved
+- `show_plot`: (optional) if true, `p1` will be shown
+- `save_plot`: (optional) if true, `p1` will be saved
 - `silent`:    (optional) if true, no print outs
 
 **Returns:**

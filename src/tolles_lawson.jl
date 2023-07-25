@@ -9,11 +9,11 @@ Create Tolles-Lawson `A` matrix using vector magnetometer measurements.
 Optionally returns the magnitude and derivatives of total field.
 
 **Arguments:**
-- `Bx,By,Bz`: vector magnetometer measurements [nT]
-- `Bt`:       (optional) magnitude of vector magnetometer measurements or scalar magnetometer measurements for modified Tolles-Lawson [nT]
-- `terms`:    (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
-- `Bt_scale`: (optional) scaling factor for induced and eddy current terms [nT]
-- `return_B`: (optional) if true, also return `Bt` and `B_dot`
+- `Bx`,`By`,`Bz`: vector magnetometer measurements [nT]
+- `Bt`:           (optional) magnitude of vector magnetometer measurements or scalar magnetometer measurements for modified Tolles-Lawson [nT]
+- `terms`:        (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
+- `Bt_scale`:     (optional) scaling factor for induced and eddy current terms [nT]
+- `return_B`:     (optional) if true, also return `Bt` & `B_dot`
 
 **Returns:**
 - `A`:     Tolles-Lawson `A` matrix
@@ -137,7 +137,7 @@ Optionally returns the magnitude and derivatives of total field.
 - `Bt`:       (optional) magnitude of vector magnetometer measurements or scalar magnetometer measurements for modified Tolles-Lawson [nT]
 - `terms`:    (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
 - `Bt_scale`: (optional) scaling factor for induced and eddy current terms [nT]
-- `return_B`: (optional) if true, also return `Bt` and `B_dot`
+- `return_B`: (optional) if true, also return `Bt` & `B_dot`
 
 **Returns:**
 - `A`:     Tolles-Lawson `A` matrix
@@ -171,18 +171,18 @@ Create Tolles-Lawson coefficients using vector and scalar magnetometer
 measurements and a bandpass, low-pass or high-pass filter.
 
 **Arguments:**
-- `Bx,By,Bz`:   vector magnetometer measurements [nT]
-- `B`:          scalar magnetometer measurements [nT]
-- `Bt`:         (optional) magnitude of vector magnetometer measurements or scalar magnetometer measurements for modified Tolles-Lawson [nT]
-- `λ`:          (optional) ridge parameter
-- `terms`:      (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
-- `pass1`:      (optional) first passband frequency [Hz]
-- `pass2`:      (optional) second passband frequency [Hz]
-- `fs`:         (optional) sampling frequency [Hz]
-- `pole`:       (optional) number of poles for Butterworth filter
-- `trim`:       (optional) number of elements to trim after filtering
-- `Bt_scale`:   (optional) scaling factor for induced and eddy current terms [nT]
-- `return_var`: (optional) if true, also return `B_var`
+- `Bx`,`By`,`Bz`: vector magnetometer measurements [nT]
+- `B`:            scalar magnetometer measurements [nT]
+- `Bt`:           (optional) magnitude of vector magnetometer measurements or scalar magnetometer measurements for modified Tolles-Lawson [nT]
+- `λ`:            (optional) ridge parameter
+- `terms`:        (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
+- `pass1`:        (optional) first passband frequency [Hz]
+- `pass2`:        (optional) second passband frequency [Hz]
+- `fs`:           (optional) sampling frequency [Hz]
+- `pole`:         (optional) number of poles for Butterworth filter
+- `trim`:         (optional) number of elements to trim after filtering
+- `Bt_scale`:     (optional) scaling factor for induced and eddy current terms [nT]
+- `return_var`:   (optional) if true, also return `B_var`
 
 **Returns:**
 - `coef`:  Tolles-Lawson coefficients
