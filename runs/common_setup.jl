@@ -1,4 +1,5 @@
 ##* load MagNav & other packages commonly used in REPL =======================
+#*  adjust the environment activation location & install packages as needed
 using Pkg; Pkg.activate("../"); Pkg.instantiate()
 using Revise
 using MagNav
@@ -25,7 +26,7 @@ df_flight[!,:xyz_h5]   = convert.(String,df_flight[!,:xyz_h5])
 #* and make sure the file locations match up with the xyz_h5 column
 for (i,flight) in enumerate(df_flight.flight)
     if df_flight.xyz_type[i] == :XYZ20
-        df_flight.xyz_h5[i] = string(MagNav.sgl_2020_train(),"/$(flight)_train.h5")
+        df_flight.xyz_h5[i] = MagNav.sgl_2020_train()*"/$(flight)_train.h5"
     end
 end
 
@@ -37,7 +38,7 @@ df_map[!,:map_h5]   = convert.(String,df_map[!,:map_h5])
 #* to store/load the maps locally, uncomment the for loop below
 #* and make sure the file locations match up with the map_h5 column
 for (i,map_name) in enumerate(df_map.map_name)
-    df_map.map_h5[i] = string(MagNav.ottawa_area_maps(),"/$map_name.h5")
+    df_map.map_h5[i] = MagNav.ottawa_area_maps()*"/$map_name.h5"
 end
 
 ## all lines
