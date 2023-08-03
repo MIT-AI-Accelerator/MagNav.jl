@@ -84,6 +84,7 @@ fogm_data_XO = [-0.00573724460026025
 
 mapS = MagNav.MapS(map_map,map_xx,map_yy,map_alt)
 (itp_mapS,der_mapS) = map_interpolate(mapS,:linear;return_vert_deriv=true) # linear to match MATLAB
+itp_mapS3D = map_interpolate(upward_fft(mapS,[mapS.alt,mapS.alt+5]),:linear)
 
 (P0,Qd,R) = create_model(dt,lat[1];
                          init_pos_sigma = init_pos_sigma,
@@ -136,18 +137,21 @@ end
 
 @testset "get_H tests" begin
     @test MagNav.get_H(itp_mapS,x,lat,lon,alt;core=false) ≈ grid_data["H"]
+    @test_nowarn MagNav.get_H(itp_mapS3D,x,lat,lon,alt)
 end
 
 @testset "get_h tests" begin
     @test MagNav.get_h(itp_mapS,x,lat,lon,alt;core=false)[1] ≈ grid_data["h"]
     @test MagNav.get_h(itp_mapS,[xn;0;xl[2:end]],lat,lon,alt;
                 core=false)[1] ≈ grid_data["hRBPF"]
+    @test_nowarn MagNav.get_h(itp_mapS3D,x,lat,lon,alt)
     @test_nowarn MagNav.get_h(itp_mapS,der_mapS,x,lat,lon,alt,map_alt;core=false)
     @test_nowarn MagNav.get_h(itp_mapS,der_mapS,x,lat,lon,alt,map_alt;core=true)
 end
 
 @testset "map_grad tests" begin
     @test MagNav.map_grad(itp_mapS,lat,lon,alt)[1:2] ≈ reverse(vec(grid_data["grad"]))
+    @test_nowarn MagNav.map_grad(itp_mapS3D,lat,lon,alt)
 end
 
 @testset "fogm tests" begin

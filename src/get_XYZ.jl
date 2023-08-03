@@ -1209,6 +1209,8 @@ function get_XYZ(flight::Symbol, df_flight::DataFrame; tt_sort::Bool=true,
     return (xyz)
 end # function get_XYZ
 
+get_xyz = get_XYZ
+
 """
     read_check(xyz::HDF5.File, field::Symbol, N::Int=1, silent::Bool=false)
 

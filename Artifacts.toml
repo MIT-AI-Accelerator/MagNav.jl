@@ -8,7 +8,7 @@ lazy = true
 
 [EMM720_World]
 git-tree-sha1 = "a6974631e103f52b9c73cb303c480fe0a3f679c5"
-lazy = true
+lazy = false
 
     [[EMM720_World.download]]
     sha256 = "38d7ae8d1ab08e7a7366db73a5981690cfb99b00054da616b65c773545a713e7"
@@ -16,35 +16,27 @@ lazy = true
 
 [NAMAD_305]
 git-tree-sha1 = "814e1f622f6b6d80b8e098931b309759ce00543c"
-lazy = true
+lazy = false
 
     [[NAMAD_305.download]]
     sha256 = "8abe7156b3873dd191faa1898364f4604778ea89cbbc1ca9ced36795fbc4cf8b"
     url = "https://www.dropbox.com/s/8j34yrncscdx267/NAMAD_305_v1.tar.gz"
 
-[color_scale_usgs]
-git-tree-sha1 = "c5c40cc4466c735d56fae919f25b8afd041d9507"
-lazy = true
-
-    [[color_scale_usgs.download]]
-    sha256 = "fd2c45d2d1f1f30b8e5e22326aa5ad8b3130dd10fe3014161336e65a6e5a2f10"
-    url = "https://www.dropbox.com/s/qut264xs2vq9jfu/color_scale_usgs_v1.tar.gz"
-
-[icon_circle]
-git-tree-sha1 = "85f92c044d691e15289f71883e1c2990cfe25fca"
-lazy = true
-
-    [[icon_circle.download]]
-    sha256 = "cc239976b26f08b220384b6ba90e23322c5ef45e95be04895fc64e0c1d1f9454"
-    url = "https://www.dropbox.com/s/2oy55okzl4awfyx/icon_circle_v1.tar.gz"
-
 [ottawa_area_maps]
-git-tree-sha1 = "c6359e53cc368d06e387d81b9726dba26dd1a4be"
+git-tree-sha1 = "bf360d29207d6468a8cf783269191bda2cf1f679"
 lazy = true
 
     [[ottawa_area_maps.download]]
-    sha256 = "50816ba0f6feacc5ec784ad4eaf1e568d75b0c5dd51b940e08ca7f58a93aaa19"
-    url = "https://www.dropbox.com/s/ql3m59eajuhugbi/ottawa_area_maps_v1.tar.gz"
+    sha256 = "16b24621e535b2c9ed0f161cf45e605fb5029883c28d7ca6fa3815d548606c2c"
+    url = "https://www.dropbox.com/scl/fi/466coruraj5um9qilrvpq/ottawa_area_maps_v2.tar.gz?rlkey=74fh2ekf39z3xrj9jbo2zoso9"
+
+[ottawa_area_maps_gxf]
+git-tree-sha1 = "cc4f60945a2da360aae2e2d52f85d9fa552caf72"
+lazy = true
+
+    [[ottawa_area_maps_gxf.download]]
+    sha256 = "a3416e090270dd5f93f3717a833029195dc4f86c49f823cc6a0b85aa60f40d05"
+    url = "https://www.dropbox.com/scl/fi/1f8kmj17uo0nmy7xc0k6m/ottawa_area_maps_gxf_v1.tar.gz?rlkey=bfs5x64sjy668p7pkuomly0k8"
 
 [sgl_2020_train]
 git-tree-sha1 = "c3f3d3462514a6c52576cf8017a650ea9d10e64b"
@@ -56,8 +48,16 @@ lazy = true
 
 [sgl_fields]
 git-tree-sha1 = "1d46dc48ad1026df78a42a24d743de6796aa52d8"
-lazy = true
+lazy = false
 
     [[sgl_fields.download]]
     sha256 = "48457ec7c58d83e028000487181c546955664583388fe91424acc09563723fdf"
     url = "https://www.dropbox.com/s/kuiri47pobzhp73/sgl_fields_v2.tar.gz"
+
+[util_files]
+git-tree-sha1 = "f12e9f7dd097517a8d310b696f61c5cc8128136d"
+lazy = false
+
+    [[util_files.download]]
+    sha256 = "77dc8ee85a7d407815891f3b565ebf23b69a71a7bbc5ffb8e05838c5e457a5dc"
+    url = "https://www.dropbox.com/scl/fi/zrn41h02ujl565lwsg67d/util_files_v1.tar.gz?rlkey=pi3frej6tyl1sokf5fg4eu8km"

@@ -6,8 +6,8 @@ flight   = :Flt1007
 line     = 1007.06
 xyz_type = :XYZ20
 map_name = :Renfrew_395
-xyz_h5   = string(MagNav.sgl_2020_train(),"/$(flight)_train.h5")
-map_h5   = string(MagNav.ottawa_area_maps(),"/$(map_name).h5")
+xyz_h5   = MagNav.sgl_2020_train()*"/$(flight)_train.h5"
+map_h5   = MagNav.ottawa_area_maps()*"/$(map_name).h5"
 
 xyz = get_XYZ20(xyz_h5;tt_sort=true,silent=true)
 ind = xyz.line .== line

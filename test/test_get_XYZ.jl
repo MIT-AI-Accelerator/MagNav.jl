@@ -4,7 +4,7 @@ xyz_dir   = MagNav.sgl_2020_train()
 flights   = [:Flt1002,:Flt1003,:Flt1004,:Flt1005,:Flt1006,:Flt1007]
 xyz_types = [:XYZ20,:XYZ20,:XYZ20,:XYZ20,:XYZ20,:XYZ20]
 xyz_sets  = [1,1,1,1,1,1]
-xyz_files = [string(xyz_dir,"/$(f)_train.h5") for f in flights]
+xyz_files = [xyz_dir*"/$(f)_train.h5" for f in flights]
 df_flight = DataFrame(flight   = flights,
                       xyz_type = xyz_types,
                       xyz_set  = xyz_sets,

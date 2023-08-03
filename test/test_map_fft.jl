@@ -17,8 +17,9 @@ dz = map_data["dz"]
 
 (k,kx,ky) = MagNav.create_k(dx,dy,nx,ny)
 
-mapS = get_map(MagNav.emag2)
-mapS = map_trim(mapS,traj)
+mapS   = get_map(MagNav.emag2)
+mapS   = map_trim(mapS,traj)
+mapS3D = upward_fft(mapS,[mapS.alt,mapS.alt+dz])
 
 mapV = get_map(MagNav.emm720)
 mapV = map_trim(mapV,traj)
@@ -28,6 +29,8 @@ mapV = map_trim(mapV,traj)
     @test_nowarn upward_fft(map_map,dx,dy,dz;expand=true)
     @test_nowarn upward_fft(mapS,mapS.alt+dz;expand=false)
     @test_nowarn upward_fft(mapS,mapS.alt+dz;expand=true)
+    @test_nowarn upward_fft(mapS,[mapS.alt,mapS.alt+dz])
+    @test_nowarn upward_fft(mapS3D,mapS.alt+2*dz)
     @test_nowarn upward_fft(mapV,mapV.alt+dz;expand=false)
     @test_nowarn upward_fft(mapV,mapV.alt+dz;expand=true)
     @test upward_fft(mapS,mapS.alt-dz).map ≈ mapS.map
@@ -50,4 +53,5 @@ end
 
 @testset "psd tests" begin
     @test_nowarn psd(map_map,dx,dy)
+    @test_nowarn psd(mapS)
 end

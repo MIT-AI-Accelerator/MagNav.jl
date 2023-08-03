@@ -3374,7 +3374,7 @@ function comp_m3_test(lines, df_line::DataFrame,
         y_nn = zero.(TL_aircraft) # not NN-corrected [3xN]
     end
     vec_aircraft = TL_aircraft + y_nn # [3xN]
-    model_type in [:m3s,:m3sc] && (vec_aircraft += y_bias .* B_unit) # assume same direction [3xN]
+    # model_type in [:m3s,:m3sc] && (vec_aircraft += y_bias .* B_unit) # assume same direction [3xN]
 
     # compute aircraft field correction or Earth field target
     y_hat = nn_comp_3_fwd(B_unit',B_vec',B_vec_dot',x_norm,y_bias,y_scale,m,

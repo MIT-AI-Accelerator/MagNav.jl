@@ -1,5 +1,5 @@
 using MagNav, Test, MAT
-using DataFrames, Flux, LinearAlgebra, SatelliteToolbox, Statistics
+using DataFrames, Flux, LinearAlgebra, Plots, SatelliteToolbox, Statistics
 using MagNav: project_vec_to_2d, unpack_data_norms
 
 test_file = joinpath(@__DIR__,"test_data/test_data_params.mat")
@@ -45,8 +45,8 @@ end
 end
 
 @testset "linreg tests" begin
-    @test TL_a_1           ≈ vec(TL_data["TL_a_1"])
-    @test linreg([3,6,9])  ≈ [0,3]
+    @test TL_a_1          ≈ vec(TL_data["TL_a_1"])
+    @test linreg([3,6,9]) ≈ [0,3]
 end
 
 @testset "detrend tests" begin
@@ -77,8 +77,8 @@ end
 flight   = :Flt1003
 xyz_type = :XYZ20
 map_name = :Eastern_395
-xyz_h5   = string(MagNav.sgl_2020_train(),"/$(flight)_train.h5")
-map_h5   = string(MagNav.ottawa_area_maps(),"/$(map_name).h5")
+xyz_h5   = MagNav.sgl_2020_train()*"/$(flight)_train.h5"
+map_h5   = MagNav.ottawa_area_maps()*"/$(map_name).h5"
 xyz      = get_XYZ20(xyz_h5;tt_sort=true,silent=true)
 
 tt    = xyz.traj.tt
@@ -310,3 +310,33 @@ end
     @test_throws AssertionError get_optimal_rotation_matrix([1 0 0],[1 0])
     @test_nowarn get_optimal_rotation_matrix(vec_in',vec_body')
 end
+
+x = [-1,0,1]
+x_lim = (-2.0,2)
+
+@testset "expand_range tests" begin
+    @test MagNav.expand_range(x,x_lim,true)[1] == -3:3
+    @test MagNav.expand_range(x,x_lim,false)[2] == 2:4
+end
+
+(B_unit,Bt,B_vec_dot) = create_TL_A(xyz.flux_a,ind;terms=[:p],return_B=true)
+B_vec = B_unit .* Bt
+(TL_coef_p,TL_coef_i,TL_coef_e) = MagNav.TL_vec2mat(TL_a_1,[:p,:i,:e])
+(TL_aircraft,TL_perm,TL_induced,TL_eddy) =
+     MagNav.get_TL_aircraft_vec(B_vec',B_vec_dot',TL_coef_p,TL_coef_i,TL_coef_e;
+                                return_parts=true)
+y_nn = zeros(3,50)
+y = y_hat = zeros(50)
+
+mag_gif = joinpath(@__DIR__,"comp_xai")
+
+@testset "gif_animation_m3 tests" begin
+    ENV["GKSwstype"] = "100"
+    @test typeof(gif_animation_m3(TL_perm, TL_induced, TL_eddy,
+                 TL_aircraft, B_unit', y_nn,
+				 y, y_hat, xyz.ins.lat[ind], xyz.ins.lon[ind], xyz;
+                 ind=ind, save_plot=true, mag_gif=mag_gif)) <: Plots.AnimatedGif
+end
+
+mag_gif = MagNav.add_extension(mag_gif,".gif")
+rm(mag_gif)

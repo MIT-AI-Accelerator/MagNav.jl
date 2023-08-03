@@ -14,6 +14,15 @@
 
 MagNav.jl contains a full suite of tools for airborne Magnetic anomaly Navigation (MagNav), including flight path & INS data import or simulation, mapping, aeromagnetic compensation, and navigation. Julia source code files are in the [`src`](src) folder and examples are in the [`runs`](runs) folder. This package was developed as part of the [DAF-MIT Artificial Intelligence Accelerator](https://aia.mit.edu/). More information on this effort, including a list of relevant publications, is provided on the [challenge problem website](https://magnav.mit.edu/). The package has been tested on the long-term support (LTS) and latest stable versions of Julia, which may be downloaded from [here](https://julialang.org/downloads/).
 
+The package may be downloaded directly or installed using:
+
+```julia
+] add MagNav
+```
+
+NOTE: If any artifacts produce a hash mismatch error while downloading, simply navigate to the 
+`.julia/artifacts` folder and manually set the appropriate artifact folder name, e.g., `bf360d29207d6468a8cf783269191bda2cf1f679` for the ottawa_area_maps artifact.
+
 ## Data
 
 Publicly available flight data can be automatically downloaded within the package itself. This dataset can also be directly downloaded from [here](https://doi.org/10.5281/zenodo.4271803). See the [datasheet](readmes/datasheet_sgl_2020_train.pdf) for high-level information about this dataset. Details of the flight data are described in the readme files within the [`readmes`](readmes) folder.

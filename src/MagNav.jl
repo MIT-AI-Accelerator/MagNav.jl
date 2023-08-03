@@ -89,14 +89,14 @@ module MagNav
 
     Reference: https://mrdata.usgs.gov/magnetic/namag.png
     """
-    const usgs = joinpath(artifact"color_scale_usgs","color_scale_usgs.csv")
+    const usgs = joinpath(artifact"util_files","util_files","color_scale_usgs.csv")
 
     """
         const icon_circle
 
     Point icon for optional use in path2kml(;points=true)
     """
-    const icon_circle = joinpath(artifact"icon_circle","icon_circle.dae")
+    const icon_circle = joinpath(artifact"util_files","util_files","icon_circle.dae")
 
     """
         sgl_fields()
@@ -168,6 +168,15 @@ module MagNav
     maps may be used without navigating into any filled-in (artificial) areas.
     """
     ottawa_area_maps() = joinpath(artifact"ottawa_area_maps","ottawa_area_maps")
+
+    """
+        ottawa_area_maps_gxf()
+
+    GXF versions of small magnetic anomaly maps near Ottawa, Ontario, Canada, contains:
+    - `HighAlt_Mag.gxf`: High Altitude mini-survey (within Renfrew)
+    - `Perth_Mag.gxf`:   Perth mini-survey (within Eastern Ontario)
+    """
+    ottawa_area_maps_gxf() = joinpath(artifact"ottawa_area_maps_gxf","ottawa_area_maps_gxf")
 
     """
         Map{T2 <: AbstractFloat}
