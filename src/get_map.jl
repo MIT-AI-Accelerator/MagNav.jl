@@ -66,6 +66,8 @@ function get_map(map_file::String=namad; map_units::Symbol=:deg)
         @info("$map_units map xx/yy units not defined")
     end
 
+    map_alt = convert.(eltype(map_xx),map_alt)
+
     if map_vec
         if ((length(map_yy),length(map_xx)) == size(map_mapX)) & 
            ((length(map_yy),length(map_xx)) == size(map_mapY)) & 
@@ -113,23 +115,29 @@ end # function get_map
 
 """
     save_map(map_map, map_xx, map_yy, map_alt, map_h5::String="map_data.h5";
-             map_units::Symbol=:deg)
+             map_units::Symbol   = :deg,
+             map_mask::BitMatrix = falses(1,1),
+             map_border::Matrix  = zeros(1,1))
 
 Save map data to HDF5 file. Maps are typically saved in `:deg` units.
 
 **Arguments:**
-- `map_map`:  `ny` x `nx` (x `nz`) 2D or 3D gridded map data
-- `map_xx`:   `nx` map x-direction (longitude) coordinates [rad] or [m]
-- `map_yy`:   `ny` map y-direction (latitude)  coordinates [rad] or [m]
-- `map_alt`:   map altitude(s) or `ny` x `nx` 2D gridded altitude map data [m]
-- `map_h5`:    (optional) path/name of map data HDF5 file to save (`.h5` extension optional)
-- `map_units`: (optional) map xx/yy units to use in `map_h5` {`:deg`,`:rad`,`:utm`}
+- `map_map`:   `ny` x `nx` (x `nz`) 2D or 3D gridded map data
+- `map_xx`:    `nx` map x-direction (longitude) coordinates [rad] or [m]
+- `map_yy`:    `ny` map y-direction (latitude)  coordinates [rad] or [m]
+- `map_alt`:    map altitude(s) or `ny` x `nx` 2D gridded altitude map data [m]
+- `map_h5`:     (optional) path/name of map data HDF5 file to save (`.h5` extension optional)
+- `map_units`:  (optional) map xx/yy units to use in `map_h5` {`:deg`,`:rad`,`:utm`}
+- `map_mask`:   (optional) mask for valid (not filled-in) map area
+- `map_border`: (optional) border for valid (not filled-in) map area
 
 **Returns:**
 - `nothing`: `map_h5` is created
 """
 function save_map(map_map, map_xx, map_yy, map_alt, map_h5::String="map_data.h5";
-                  map_units::Symbol=:deg)
+                  map_units::Symbol   = :deg,
+                  map_mask::BitMatrix = falses(1,1),
+                  map_border::Matrix  = zeros(1,1))
 
     map_h5 = add_extension(map_h5,".h5")
 
@@ -137,9 +145,13 @@ function save_map(map_map, map_xx, map_yy, map_alt, map_h5::String="map_data.h5"
     map_yy = vec(map_yy)
 
     if map_units == :deg
-        map_xx = rad2deg.(map_xx)
-        map_yy = rad2deg.(map_yy)
+        map_xx     = rad2deg.(map_xx)
+        map_yy     = rad2deg.(map_yy)
+        map_border = rad2deg.(map_border)
     end
+
+    map_alt  = convert.(eltype(map_xx),map_alt)
+    map_mask = convert.(Int8,map_mask)
 
     if map_units in [:deg,:rad,:utm]
         @info("saving map with $map_units map xx/yy units")
@@ -158,32 +170,42 @@ function save_map(map_map, map_xx, map_yy, map_alt, map_h5::String="map_data.h5"
         write(file,"xx" ,map_xx)
         write(file,"yy" ,map_yy)
         write(file,"alt",map_alt)
+        sum(map_mask  ) != 0 ? write(file,"mask"  ,map_mask)   : nothing
+        sum(map_border) != 0 ? write(file,"border",map_border) : nothing
     end
 
 end # function save_map
 
 """
     save_map(map_map::Map, map_h5::String="map_data.h5";
-             map_units::Symbol=:deg)
+             map_units::Symbol   = :deg,
+             map_mask::BitMatrix = falses(1,1),
+             map_border::Matrix  = zeros(1,1))
 
 Save map data to HDF5 file. Maps are typically saved in `:deg` units.
 
 **Arguments:**
-- `map_map`:   `Map` magnetic anomaly map struct
-- `map_h5`:    (optional) path/name of map data HDF5 file to save (`.h5` extension optional)
-- `map_units`: (optional) map xx/yy units to use in `map_h5` {`:deg`,`:rad`,`:utm`}
+- `map_map`:    `Map` magnetic anomaly map struct
+- `map_h5`:     (optional) path/name of map data HDF5 file to save (`.h5` extension optional)
+- `map_units`:  (optional) map xx/yy units to use in `map_h5` {`:deg`,`:rad`,`:utm`}
+- `map_mask`:   (optional) mask for valid (not filled-in) map area
+- `map_border`: (optional) border for valid (not filled-in) map area
 
 **Returns:**
 - `nothing`: `map_h5` is created
 """
 function save_map(map_map::Map, map_h5::String="map_data.h5";
-                  map_units::Symbol=:deg)
+                  map_units::Symbol   = :deg,
+                  map_mask::BitMatrix = falses(1,1),
+                  map_border::Matrix  = zeros(1,1))
     if typeof(Map) <: MapV # vector map
         save_map((map_map.mapX,map_map.mapY,map_map.mapZ),
-                 map_map.xx,map_map.yy,map_map.alt,map_h5;map_units=map_units)
+                 map_map.xx,map_map.yy,map_map.alt,map_h5;
+                 map_units=map_units,map_mask=map_mask,map_border=map_border)
     else # scalar map
         save_map(map_map.map,
-                 map_map.xx,map_map.yy,map_map.alt,map_h5;map_units=map_units)
+                 map_map.xx,map_map.yy,map_map.alt,map_h5;
+                 map_units=map_units,map_mask=map_mask,map_border=map_border)
     end
 end # function save_map
 

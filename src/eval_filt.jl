@@ -1206,67 +1206,68 @@ end # function units_ellipse
 
 """
     gif_ellipse(P,
-                gif_name::String   = "conf_ellipse",
-                lat1               = deg2rad(45);
-                dt                 = 0.1,
-                di::Int            = 10,
-                speedup::Int       = 60,
-                conf_units::Symbol = :m,
-                μ                  = zeros(2),
-                conf               = 0.95,
-                clip               = Inf,
-                n::Int             = 61,
-                lim                = 500,
-                margin::Int        = 2,
-                axis::Bool         = true,
-                plot_eigax::Bool   = false,
-                bg_color::Symbol   = :white,
-                ce_color::Symbol   = :black,
-                b_e                = gr())
+                ellipse_gif::String = "conf_ellipse.gif",
+                lat1                = deg2rad(45);
+                dt                  = 0.1,
+                di::Int             = 10,
+                speedup::Int        = 60,
+                conf_units::Symbol  = :m,
+                μ                   = zeros(2),
+                conf                = 0.95,
+                clip                = Inf,
+                n::Int              = 61,
+                lim                 = 500,
+                margin::Int         = 2,
+                axis::Bool          = true,
+                plot_eigax::Bool    = false,
+                bg_color::Symbol    = :white,
+                ce_color::Symbol    = :black,
+                b_e                 = gr())
 
-Create a (position) confidence ellipse gif for a `2`x`2` (x`N`) covariance matrix.
+Create a (position) confidence ellipse GIF animation for a `2`x`2` (x`N`)
+covariance matrix.
 
 **Arguments:**
-- `P`:          `2`x`2` (x`N`) covariance matrix
-- `gif_name`:   (optional) map name to save
-- `lat1`:       (optional) nominal latitude [rad], only used if `conf_units = :m` or `:ft`
-- `dt`:         (optional) measurement time step [s]
-- `di`:         (optional) gif measurement interval (e.g., `di = 10` uses every 10th measurement)
-- `speedup`:    (optional) gif speedup (e.g., `speedup = 60` is 60x speed)
-- `conf_units`: (optional) confidence ellipse units {`:m`,`:ft`,`:deg`,`:rad`}
-- `μ`:          (optional) confidence ellipse center [`conf_units`]
-- `conf`:       (optional) percentile {0:1}
-- `clip`:       (optional) clipping radius [`conf_units`]
-- `n`:          (optional) number of confidence ellipse points
-- `lim`:        (optional) `x` & `y` plotting limits [`conf_units`]
-- `margin`:     (optional) margin around plot [mm]
-- `axis`:       (optional) if true, show axes
-- `plot_eigax`: (optional) if true, show major and minor axes
-- `bg_color`:   (optional) background color
-- `ce_color`:   (optional) confidence ellipse color
-- `b_e`:        (optional) plotting backend
+- `P`:           `2`x`2` (x`N`) covariance matrix
+- `ellipse_gif`: (optional) path/name of confidence ellipse GIF file to save (`.gif` extension optional)
+- `lat1`:        (optional) nominal latitude [rad], only used if `conf_units = :m` or `:ft`
+- `dt`:          (optional) measurement time step [s]
+- `di`:          (optional) GIF measurement interval (e.g., `di = 10` uses every 10th measurement)
+- `speedup`:     (optional) GIF speedup (e.g., `speedup = 60` is 60x speed)
+- `conf_units`:  (optional) confidence ellipse units {`:m`,`:ft`,`:deg`,`:rad`}
+- `μ`:           (optional) confidence ellipse center [`conf_units`]
+- `conf`:        (optional) percentile {0:1}
+- `clip`:        (optional) clipping radius [`conf_units`]
+- `n`:           (optional) number of confidence ellipse points
+- `lim`:         (optional) `x` & `y` plotting limits [`conf_units`]
+- `margin`:      (optional) margin around plot [mm]
+- `axis`:        (optional) if true, show axes
+- `plot_eigax`:  (optional) if true, show major and minor axes
+- `bg_color`:    (optional) background color
+- `ce_color`:    (optional) confidence ellipse color
+- `b_e`:         (optional) plotting backend
 
 **Returns:**
-- `g1`: confidence ellipse gif
+- `g1`: confidence ellipse GIF animation
 """
 function gif_ellipse(P,
-                     gif_name::String   = "conf_ellipse",
-                     lat1               = deg2rad(45);
-                     dt                 = 0.1,
-                     di::Int            = 10,
-                     speedup::Int       = 60,
-                     conf_units::Symbol = :m,
-                     μ                  = zeros(2),
-                     conf               = 0.95,
-                     clip               = Inf,
-                     n::Int             = 61,
-                     lim                = 500,
-                     margin::Int        = 2,
-                     axis::Bool         = true,
-                     plot_eigax::Bool   = false,
-                     bg_color::Symbol   = :white,
-                     ce_color::Symbol   = :black,
-                     b_e                = gr())
+                     ellipse_gif::String = "conf_ellipse.gif",
+                     lat1                = deg2rad(45);
+                     dt                  = 0.1,
+                     di::Int             = 10,
+                     speedup::Int        = 60,
+                     conf_units::Symbol  = :m,
+                     μ                   = zeros(2),
+                     conf                = 0.95,
+                     clip                = Inf,
+                     n::Int              = 61,
+                     lim                 = 500,
+                     margin::Int         = 2,
+                     axis::Bool          = true,
+                     plot_eigax::Bool    = false,
+                     bg_color::Symbol    = :white,
+                     ce_color::Symbol    = :black,
+                     b_e                 = gr())
 
     P  = units_ellipse(P;conf_units=conf_units,lat1=lat1)
     a1 = Animation()
@@ -1287,7 +1288,8 @@ function gif_ellipse(P,
         frame(a1,p1);
     end
 
-    g1 = gif(a1,"$gif_name.gif";fps=1/dt/di*speedup);
+    ellipse_gif = add_extension(ellipse_gif,".gif")
+    g1 = gif(a1,ellipse_gif;fps=1/dt/di*speedup);
 
     return (g1)
 end # function gif_ellipse
@@ -1295,78 +1297,79 @@ end # function gif_ellipse
 """
     gif_ellipse(filt_res::FILTres,
                 filt_out::FILTout,
-                gif_name::String   = "conf_ellipse",
-                map_map::Map       = mapS_null;
-                dt                 = 0.1,
-                di::Int            = 10,
-                speedup::Int       = 60,
-                conf_units::Symbol = :m,
-                μ                  = zeros(2),
-                conf               = 0.95,
-                clip               = Inf,
-                n::Int             = 61,
-                lim                = 500,
-                dpi::Int           = 200,
-                margin::Int        = 2,
-                axis::Bool         = true,
-                plot_eigax::Bool   = false,
-                bg_color::Symbol   = :white,
-                ce_color::Symbol   = :black,
-                map_color::Symbol  = :usgs,
-                clims::Tuple       = (0,0),
-                b_e                = gr())
+                ellipse_gif::String = "conf_ellipse.gif",
+                map_map::Map        = mapS_null;
+                dt                  = 0.1,
+                di::Int             = 10,
+                speedup::Int        = 60,
+                conf_units::Symbol  = :m,
+                μ                   = zeros(2),
+                conf                = 0.95,
+                clip                = Inf,
+                n::Int              = 61,
+                lim                 = 500,
+                dpi::Int            = 200,
+                margin::Int         = 2,
+                axis::Bool          = true,
+                plot_eigax::Bool    = false,
+                bg_color::Symbol    = :white,
+                ce_color::Symbol    = :black,
+                map_color::Symbol   = :usgs,
+                clims::Tuple        = (0,0),
+                b_e                 = gr())
 
-Create a (position) confidence ellipse gif for a `2`x`2` (x`N`) covariance matrix.
+Create a (position) confidence ellipse GIF animation for a `2`x`2` (x`N`)
+covariance matrix.
 
 **Arguments:**
-- `filt_res`:   `FILTres` filter results struct
-- `filt_out`:   `FILTout` filter extracted output struct
-- `gif_name`:   (optional) map name to save
-- `map_map`:    (optional) `Map` magnetic anomaly map struct
-- `dt`:         (optional) measurement time step [s]
-- `di`:         (optional) gif measurement interval (e.g., `di = 10` uses every 10th measurement)
-- `speedup`:    (optional) gif speedup (e.g., `speedup = 60` is 60x speed)
-- `conf_units`: (optional) confidence ellipse units {`:m`,`:ft`,`:deg`,`:rad`}
-- `μ`:          (optional) confidence ellipse center [`conf_units`]
-- `conf`:       (optional) percentile {0:1}
-- `clip`:       (optional) clipping radius [`conf_units`]
-- `n`:          (optional) number of confidence ellipse points
-- `lim`:        (optional) `x` & `y` plotting limits [`conf_units`]
-- `dpi`:        (optional) dots per inch (image resolution)
-- `margin`:     (optional) margin around plot [mm]
-- `axis`:       (optional) if true, show axes
-- `plot_eigax`: (optional) if true, show major and minor axes
-- `bg_color`:   (optional) background color
-- `ce_color`:   (optional) confidence ellipse color
-- `map_color`:  (optional) filled contour color scheme {`:usgs`,`:gray`,`:gray1`,`:gray2`,`:plasma`,`:magma`}
-- `clims`:      (optional) map color scale limits
-- `b_e`:        (optional) plotting backend
+- `filt_res`:    `FILTres` filter results struct
+- `filt_out`:    `FILTout` filter extracted output struct
+- `ellipse_gif`: (optional) path/name of confidence ellipse GIF file to save (`.gif` extension optional)
+- `map_map`:     (optional) `Map` magnetic anomaly map struct
+- `dt`:          (optional) measurement time step [s]
+- `di`:          (optional) GIF measurement interval (e.g., `di = 10` uses every 10th measurement)
+- `speedup`:     (optional) GIF speedup (e.g., `speedup = 60` is 60x speed)
+- `conf_units`:  (optional) confidence ellipse units {`:m`,`:ft`,`:deg`,`:rad`}
+- `μ`:           (optional) confidence ellipse center [`conf_units`]
+- `conf`:        (optional) percentile {0:1}
+- `clip`:        (optional) clipping radius [`conf_units`]
+- `n`:           (optional) number of confidence ellipse points
+- `lim`:         (optional) `x` & `y` plotting limits [`conf_units`]
+- `dpi`:         (optional) dots per inch (image resolution)
+- `margin`:      (optional) margin around plot [mm]
+- `axis`:        (optional) if true, show axes
+- `plot_eigax`:  (optional) if true, show major and minor axes
+- `bg_color`:    (optional) background color
+- `ce_color`:    (optional) confidence ellipse color
+- `map_color`:   (optional) filled contour color scheme {`:usgs`,`:gray`,`:gray1`,`:gray2`,`:plasma`,`:magma`}
+- `clims`:       (optional) map color scale limits
+- `b_e`:         (optional) plotting backend
 
 **Returns:**
 - `g1`: confidence ellipse gif
 """
 function gif_ellipse(filt_res::FILTres,
                      filt_out::FILTout,
-                     gif_name::String   = "conf_ellipse",
-                     map_map::Map       = mapS_null;
-                     dt                 = 0.1,
-                     di::Int            = 10,
-                     speedup::Int       = 60,
-                     conf_units::Symbol = :m,
-                     μ                  = zeros(2),
-                     conf               = 0.95,
-                     clip               = Inf,
-                     n::Int             = 61,
-                     lim                = 500,
-                     dpi::Int           = 200,
-                     margin::Int        = 2,
-                     axis::Bool         = true,
-                     plot_eigax::Bool   = false,
-                     bg_color::Symbol   = :white,
-                     ce_color::Symbol   = :black,
-                     map_color::Symbol  = :usgs,
-                     clims::Tuple       = (0,0),
-                     b_e                = gr())
+                     ellipse_gif::String = "conf_ellipse.gif",
+                     map_map::Map        = mapS_null;
+                     dt                  = 0.1,
+                     di::Int             = 10,
+                     speedup::Int        = 60,
+                     conf_units::Symbol  = :m,
+                     μ                   = zeros(2),
+                     conf                = 0.95,
+                     clip                = Inf,
+                     n::Int              = 61,
+                     lim                 = 500,
+                     dpi::Int            = 200,
+                     margin::Int         = 2,
+                     axis::Bool          = true,
+                     plot_eigax::Bool    = false,
+                     bg_color::Symbol    = :white,
+                     ce_color::Symbol    = :black,
+                     map_color::Symbol   = :usgs,
+                     clims::Tuple        = (0,0),
+                     b_e                 = gr())
 
     dlat = get_step(map_map.yy)
     dlon = get_step(map_map.xx)
@@ -1419,7 +1422,8 @@ function gif_ellipse(filt_res::FILTres,
         frame(a1,p1)
     end
 
-    g1 = gif(a1,"$gif_name.gif";fps=1/dt/di*speedup)
+    ellipse_gif = add_extension(ellipse_gif,".gif")
+    g1 = gif(a1,ellipse_gif;fps=1/dt/di*speedup)
 
     return (g1)
 end # function gif_ellipse

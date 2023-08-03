@@ -1,5 +1,5 @@
 using MagNav, Test, MAT, DataFrames, Geodesy, Plots
-using MagNav: MapS, MapSd, MapV
+using MagNav: MapS, MapSd, MapS3D, MapV
 
 test_file = joinpath(@__DIR__,"test_data/test_data_grid.mat")
 grid_data = matopen(test_file,"r") do file
@@ -13,25 +13,30 @@ itp_mapS  = map_interpolate(mapS,:linear) # linear to match MATLAB
 traj_file = joinpath(@__DIR__,"test_data/test_data_traj.mat")
 traj      = get_traj(traj_file,:traj,silent=true)
 
-gxf_file  = joinpath(@__DIR__,"test_data/HighAlt_Mag.gxf")
+gxf_file  = MagNav.ottawa_area_maps_gxf()*"/HighAlt_Mag.gxf"
 (map_map,map_xx,map_yy) = map_get_gxf(gxf_file)
-mapP = get_map(string(MagNav.ottawa_area_maps(),"/HighAlt_5181.h5"))
+mapP = get_map(MagNav.ottawa_area_maps()*"/HighAlt_5181.h5")
 
 mapV = get_map(MagNav.emm720)
 mapV = map_trim(mapV,traj)
 
-mapSd = MapSd(mapS.map,mapS.xx,mapS.yy,mapS.alt*one.(mapS.map))
+mapSd  = MapSd(mapS.map,mapS.xx,mapS.yy,mapS.alt*one.(mapS.map))
+mapS3D = upward_fft(mapS,[mapS.alt,mapS.alt+5])
 
 @testset "map_interpolate tests" begin
     @test itp_mapS(traj.lon[1],traj.lat[1]) ≈ grid_data["itp_map"]
-    @test_nowarn map_interpolate(mapS,:quad)
-    @test_nowarn map_interpolate(mapS,:cubic)
+    @test_nowarn map_interpolate(mapS  ,:linear)
+    @test_nowarn map_interpolate(mapSd ,:quad)
+    @test_nowarn map_interpolate(mapS3D,:cubic)
     @test_throws ErrorException map_interpolate(mapS,:test)
     @test_nowarn map_interpolate(mapV,:X,:linear)
     @test_nowarn map_interpolate(mapV,:Y,:quad)
     @test_nowarn map_interpolate(mapV,:Z,:cubic)
     @test_throws ErrorException map_interpolate(mapV,:test)
     @test_throws ErrorException map_interpolate(mapV,:X,:test)
+    typeof(mapS3D(mapS3D.alt[1]  -1)) <: MapS
+    typeof(mapS3D(mapS3D.alt[end]+1)) <: MapS
+    @test mapS3D(mapS3D.alt[1]).map ≈ mapS.map
 end
 
 @testset "map_get_gxf tests" begin
@@ -52,24 +57,30 @@ end
     @test map_trim(map_map,map_xx,map_yy,mapP.alt) == (68:91,52:75)
     @test_throws ErrorException map_trim(map_map,map_xx,map_yy,mapP.alt;
                                          map_units=:test)
-    @test map_trim(mapS ).map  ≈ mapS.map
-    @test map_trim(mapSd).map  ≈ mapSd.map
-    @test map_trim(mapV ).mapX ≈ mapV.mapX
+    @test map_trim(mapS  ).map  ≈ mapS.map
+    @test map_trim(mapSd ).map  ≈ mapSd.map
+    @test map_trim(mapS3D).map  ≈ mapS3D.map
+    @test map_trim(mapV  ).mapX ≈ mapV.mapX
 end
 
 add_igrf_date = get_years(2013,293)
 
 @testset "map_correct_igrf tests" begin
-    @test typeof(map_correct_igrf(mapS.map,mapS.alt,mapS.xx,mapS.yy;
-                                  add_igrf_date=add_igrf_date)) <: Matrix
+    @test map_correct_igrf(mapS.map,mapS.alt,mapS.xx,mapS.yy;
+                           add_igrf_date=add_igrf_date,map_units=:rad) == 
+          map_correct_igrf(mapS.map,mapS.alt,rad2deg.(mapS.xx),rad2deg.(mapS.yy);
+                           add_igrf_date=add_igrf_date,map_units=:deg)
+    @test_throws ErrorException map_correct_igrf(mapS.map,mapS.alt,mapS.xx,mapS.yy;
+                                                 add_igrf_date=add_igrf_date,map_units=:test)
     @test typeof(map_correct_igrf(mapS ;add_igrf_date=add_igrf_date)) <: MapS
     @test typeof(map_correct_igrf(mapSd;add_igrf_date=add_igrf_date)) <: MapSd
 end
 
 @testset "map_fill tests" begin
     @test typeof(map_fill(mapS.map,mapS.xx,mapS.yy)) <: Matrix
-    @test typeof(map_fill(mapS )) <: MapS
-    @test typeof(map_fill(mapSd)) <: MapSd
+    @test typeof(map_fill(mapS  )) <: MapS
+    @test typeof(map_fill(mapSd )) <: MapSd
+    @test typeof(map_fill(mapS3D)) <: MapS3D
 end
 
 @testset "map_chessboard tests" begin
@@ -144,7 +155,36 @@ df_event = DataFrame(flight=:test,tt=49.5*60,event="test")
 end
 
 @testset "map_check tests" begin
-    @test map_check(mapS,traj) == true
-    @test map_check(mapV,traj) == true
-    @test all(map_check([mapS,mapV],traj)) == true
+    @test all(map_check([mapS,mapSd,mapS3D,mapV],traj)) == true
+end
+
+@testset "get_map_val tests" begin
+    @test [get_map_val(mapS  ,traj.lat[1],traj.lon[1],traj.alt[1]),
+           get_map_val(mapSd ,traj.lat[1],traj.lon[1],traj.alt[1]),
+           get_map_val(mapS3D,traj.lat[1],traj.lon[1],traj.alt[1])] == 
+           get_map_val([mapS,mapSd,mapS3D],traj,1)
+end
+
+@testset "map_border tests" begin
+    @test_nowarn map_border(map_map,map_xx,map_yy;inner=true,sort_border=true)
+    @test_nowarn map_border(mapS  ;inner=true ,sort_border=true)
+    @test_nowarn map_border(mapSd ;inner=true ,sort_border=false)
+    @test_nowarn map_border(mapS3D;inner=false,sort_border=false)
+end
+
+ind = [1,100]
+
+@testset "map_resample tests" begin
+    @test map_resample(mapS,mapS.xx[ind],mapS.yy[ind]).map ≈ mapS.map[ind,ind]
+    @test_nowarn map_resample(mapS,mapS)
+end
+
+xx_lim = extrema(mapS.xx) .+ (-0.01,0.01)
+yy_lim = extrema(mapS.yy) .+ (-0.01,0.01)
+mapS_fallback = upward_fft(map_fill(map_trim(get_map(),
+                xx_lim=xx_lim,yy_lim=yy_lim)),mapS.alt)
+
+@testset "map_combine tests" begin
+    @test typeof(map_combine(mapS,mapS_fallback)) <: MapS
+    @test typeof(map_combine([mapS,upward_fft(mapS,mapS.alt+5)],mapS_fallback)) <: MapS3D
 end

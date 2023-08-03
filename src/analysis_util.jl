@@ -1865,9 +1865,9 @@ Reference: https://en.wikipedia.org/wiki/Kabsch_algorithm
 - `R`: 3D matrix rotatating v1s into v2s' directions
 """
 function get_optimal_rotation_matrix(v1s, v2s)
-    @assert size(v1s)[1] == size(v2s)[1] "size(`v1s`)[1] ≂̸ size(`v2s`)[1]"
-    @assert size(v1s)[2] == 3 "size(`v1s`)[2] ≂̸ 3"
-    @assert size(v2s)[2] == 3 "size(`v2s`)[2] ≂̸ 3"
+    @assert size(v1s,1) == size(v2s,1) "size(`v1s`,1) ≂̸ size(`v2s`,1)"
+    @assert size(v1s,2) == 3 "size(`v1s`,2) ≂̸ 3"
+    @assert size(v2s,2) == 3 "size(`v2s`,2) ≂̸ 3"
 
     # compute centroids and recenter point clouds
     v1_centroid   = mean(v1s,dims=1)
@@ -2019,75 +2019,79 @@ function filter_events(df_event::DataFrame, flight::Symbol, keyword::String = ""
 end # function filter_events
 
 """
-    gif_animation_m3(TL_perm, TL_induced, TL_eddy, TL_aircraft, B_unit, y_NN, y, y_hat, xyz, filt_out;
-                     ind=trues(xyz.traj.N), tlims=(0.0,), skip_every=5, save_plot=false, gif_file="comp_xai.gif")
+    gif_animation_m3(TL_perm::AbstractMatrix, TL_induced::AbstractMatrix, TL_eddy::AbstractMatrix,
+                     TL_aircraft::AbstractMatrix, B_unit::AbstractMatrix, y_nn::AbstractMatrix,
+                     y::Vector, y_hat::Vector, filt_lat::Vector, filt_lon::Vector,
+                     xyz::Union{XYZ1,XYZ20,XYZ21};
+                     ind             = trues(xyz.traj.N),
+                     tt_lim::Tuple   = (0.0, (xyz.traj.tt[ind][end]-xyz.traj.tt[ind][1])/60.0),
+                     skip_every::Int = 5,
+                     save_plot::Bool = false,
+                     mag_gif::String = "comp_xai.gif")
 
-After calling `comp_m3_test` to generate the individual model components, this function makes
-an animated GIF of the model components and the true and estimated scalar magnetic field.
+After calling `comp_m3_test` to generate the individual model components,
+this function makes a GIF animation of the model components and the true and
+estimated scalar magnetic field.
 
 **Arguments**
-- `TL_perm::Matrix`: Permanent magnetic vector field vs time
-- `TL_induced::Matrix`: Induced vector field vs time
-- `TL_eddy::Matrix`: Eddy magnetic field vs time.
-- `TL_aircraft::Matrix`: Total magnetic field of aircraft due to Tolles-Lawson
-- `B_unit::Adjoint`: Normalized magnetic field vector, as measured.
-- `y_NN::Matrix`: Neural network output from Model 3
-- `y::Vector`: True scalar magnetic field.
-- `y_hat::Vector`: Estimated scalar magnetic field (TL + NN) from Model 3
-- `xyz::Union{XYZ1,XYZ20,XYZ21}`: XYZ object containing the magnetic field data.
-- `filt_out::MagNav.FILTout`: Filter output.
-- `ind`: Indices of the magnetic field data to plot, default=trues(xyz.traj.N)
-- `tlims::Tuple{Number,Number}`: Time limits for the plot, minutes (default is 0.0 to whole line)
-- `skip_every::Int`: Number of time steps to skip between frames (default: `5`).
-- `save_plot::Bool`: Whether to save the plot as a GIF file (default: `false`).
-- `gif_file::String`: Name of the GIF file to save (default: `"comp_xai.gif"`).
+- `TL_perm`:     TL permanent vector field
+- `TL_induced`:  TL induced vector field
+- `TL_eddy`:     TL eddy current vector field
+- `TL_aircraft`: TL aircraft vector field
+- `B_unit`:      normalized vector magnetometer measurements
+- `y_nn`:        vector neural network correction (for scalar models, in direction of `Bt`)
+- `y`:           observed scalar magnetometer data
+- `y_hat`:       predicted scalar magnetometer data
+- `filt_lat`:    filter output latitude  [rad]
+- `filt_lon`:    filter output longitude [rad]
+- `xyz`:         `XYZ` flight data struct
+- `ind`:         (optional) selected data indices
+- `tt_lim`:      (optional) 2-element (inclusive) start and stop time limits, in minutes. Defaults to use full time range
+- `skip_every`:  (optional) number of time steps to skip between frames
+- `save_plot`:   (optional) if true, `g1` will be saved
+- `mag_gif`:     (optional) path/name of magnetic field GIF file to save (`.gif` extension optional)
 
 **Returns**
-- `Plots.AnimatedGif`: GIF animation.
+- `g1`: magnetic field GIF animation
 
 **Example**
 ```julia
-gif_animation_m3(TL_perm, TL_induced, TL_eddy, TL_aircraft, B_unit, y_NN, y, y_hat, xyz, filt_out;
-             ind, tlims=(0.0,10.0), skip_every=5, save_plot=false, gif_file="comp_xai.gif")
+gif_animation_m3(TL_perm, TL_induced, TL_eddy, TL_aircraft, B_unit,
+                 y_nn, y, y_hat, filt_lat, filt_lon, xyz; ind=ind, tt_lim=(0.0,10.0),
+                 skip_every=5, save_plot=false, mag_gif="comp_xai.gif")
 ```
 """
-function gif_animation_m3(TL_perm::Matrix,
-    TL_induced::Matrix,
-    TL_eddy::Matrix,
-    TL_aircraft::Matrix,
-    B_unit::Adjoint,
-    y_NN::Matrix,
-    y::Vector,
-    y_hat::Vector,
-    xyz::Union{XYZ1,XYZ20,XYZ21},
-    filt_out::MagNav.FILTout;
-    ind=trues(xyz.traj.N),
-    tlims::Tuple{Number,Number}=(0.0, (xyz.traj.tt[ind][end]-xyz.traj.tt[ind][1])/60.0),
-    skip_every::Int=5,
-    save_plot::Bool=false,
-    gif_file::String="comp_xai.gif")
+function gif_animation_m3(TL_perm::AbstractMatrix, TL_induced::AbstractMatrix, TL_eddy::AbstractMatrix,
+                          TL_aircraft::AbstractMatrix, B_unit::AbstractMatrix, y_nn::AbstractMatrix,
+                          y::Vector, y_hat::Vector, filt_lat::Vector, filt_lon::Vector,
+                          xyz::Union{XYZ1,XYZ20,XYZ21};
+                          ind             = trues(xyz.traj.N),
+                          tt_lim::Tuple   = (0.0, (xyz.traj.tt[ind][end]-xyz.traj.tt[ind][1])/60.0),
+                          skip_every::Int = 5,
+                          save_plot::Bool = false,
+                          mag_gif::String = "comp_xai.gif")
 
-    @assert size(TL_perm)[2] == size(TL_induced)[2] == size(TL_eddy)[2] == size(TL_aircraft)[2] == size(B_unit)[2]
-    @assert size(y_NN)[2] == length(y) == length(y_hat) == length(xyz.traj.tt[ind]) == length(filt_out.tt)
+    @assert size(TL_perm,2) == size(TL_induced,2) == size(TL_eddy,2) == size(TL_aircraft,2) == size(B_unit,2)
+    @assert size(y_nn,2) == length(y) == length(y_hat) == length(xyz.traj.tt[ind]) == length(filt_lat) == length(filt_lon)
     @assert skip_every > 0 && skip_every < length(xyz.traj.tt)
 
-    traj = get_traj(xyz, ind);
+    traj = get_traj(xyz,ind);
     # Get lat/longitude for plotting
-    filt_lat = rad2deg.(filt_out.lat)
-    filt_lon = rad2deg.(filt_out.lon)
-    gps_lat = rad2deg.(traj.lat);
-    gps_lon = rad2deg.(traj.lon);
+    filt_lat = rad2deg.(filt_lat);
+    filt_lon = rad2deg.(filt_lon);
+    gps_lat  = rad2deg.(traj.lat);
+    gps_lon  = rad2deg.(traj.lon);
 
     xlim = MagNav.get_lim(gps_lon,0.2);
     ylim = MagNav.get_lim(gps_lat,0.2);
-    ves = traj.ve;
-    vns = traj.vn;
+    ves  = traj.ve;
+    vns  = traj.vn;
     directions = atand.(vns,ves);
 
     # Convert fields to 2D "compass" projections
-    igrf_nav  = get_igrf(xyz,ind;frame=:nav,norm_igrf=true);
+    igrf_nav = get_igrf(xyz,ind;frame=:nav,norm_igrf=true);
     # Compute the dot product component of each field
-    NN_component = vec(sum(y_NN .* B_unit, dims=1))
+    NN_component = vec(sum(y_nn .* B_unit, dims=1))
     TL_component = vec(sum(TL_aircraft .* B_unit, dims=1))
 
     # Note that we can project onto the 3D IGRF vector to get the full picture, although for this flight,
@@ -2098,56 +2102,57 @@ function gif_animation_m3(TL_perm::Matrix,
     normalize!.(eachcol(igrf_nav_2D));
 
     dcms = xyz.ins.Cnb[:,:,ind]
-    aircraft_2D_NN = project_body_field_to_2d_igrf.(eachcol(y_NN),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
-    aircraft_2D_TL = project_body_field_to_2d_igrf.(eachcol(TL_aircraft),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
+    aircraft_2D_NN   = project_body_field_to_2d_igrf.(eachcol(y_nn),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
+    aircraft_2D_TL   = project_body_field_to_2d_igrf.(eachcol(TL_aircraft),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
 
-    perm_field_2D =  project_body_field_to_2d_igrf.(eachcol(TL_perm),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
-    induced_field_2D =  project_body_field_to_2d_igrf.(eachcol(TL_induced),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
-    eddy_field_2D =  project_body_field_to_2d_igrf.(eachcol(TL_eddy),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
+    perm_field_2D    = project_body_field_to_2d_igrf.(eachcol(TL_perm),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
+    induced_field_2D = project_body_field_to_2d_igrf.(eachcol(TL_induced),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
+    eddy_field_2D    = project_body_field_to_2d_igrf.(eachcol(TL_eddy),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
 
-    aircraft_2D_NN = reduce(hcat, aircraft_2D_NN);
-    aircraft_2D_TL = reduce(hcat, aircraft_2D_TL);
-    perm_field_2D  = reduce(hcat,perm_field_2D);
-    induced_field_2D  = reduce(hcat,induced_field_2D);
-    eddy_field_2D  = reduce(hcat,eddy_field_2D);
+    aircraft_2D_NN   = reduce(hcat,aircraft_2D_NN)
+    aircraft_2D_TL   = reduce(hcat,aircraft_2D_TL)
+    perm_field_2D    = reduce(hcat,perm_field_2D)
+    induced_field_2D = reduce(hcat,induced_field_2D)
+    eddy_field_2D    = reduce(hcat,eddy_field_2D)
 
-    tts = (traj.tt .- traj.tt[1])./60;
+    tts = (traj.tt .- traj.tt[1]) ./ 60
     ## Create the gif
     l= @layout[
            a{0.6w} [b;c] ]
 
-    i_start = findfirst(tts .>= tlims[1])
-    i_end   = findlast(tts .<= tlims[2])
+    i_start = findfirst(tts .>= tt_lim[1])
+    i_end   = findlast( tts .<= tt_lim[2])
 
-    p = plot(layout=l, size=(800,500),margin=5Plots.mm)
+    p = plot(layout=l, size=(800,500),margin=5*mm)
     anim = Animation();
     for i ∈ i_start:skip_every:i_end
            # Move a vertical line across the sensor data
-           p = plot(layout=l, size=(800,500),margin=5Plots.mm)
-           plot!(p[1],tts, y, label="True Compensation", color=:gray, style=:dash)
-           plot!(p[1],tts, y_hat, label="Model 3 Compensation", color=:black)
-           plot!(p[1],tts, TL_component, label="TL component", color=:blue)
-           plot!(p[1],tts, NN_component, label="NN component",ylabel="nT", xlabel="Time,min", xlims=tlims,color=:red)
+           p = plot(layout=l, size=(800,500),margin=5*mm)
 
-           plot!(p[1], [tts[i]], linetype=:vline, color=:black, label="", legend=:bottomleft)
+           plot!(p[1],tts,y           ,lab="True Compensation"   ,color=:gray, style=:dash)
+           plot!(p[1],tts,y_hat       ,lab="Model 3 Compensation",color=:black)
+           plot!(p[1],tts,TL_component,lab="TL component"        ,color=:blue)
+           plot!(p[1],tts,NN_component,lab="NN component"        ,color=:red,ylab="nT",xlab="Time,min",xlims=tt_lim)
+           plot!(p[1], [tts[i]], linetype=:vline, color=:black, lab="", legend=:bottomleft)
 
            # Draw the compass plot for each field
-           plot!(p[2],[0.0,aircraft_2D_TL[2,i]], [0.0,aircraft_2D_TL[1,i]],arrow=true, label="TL", xlabel="nT, East", ylabel="nT, North", color=:blue)
-           plot!(p[2],[0.0,aircraft_2D_NN[2,i]], [0.0,aircraft_2D_NN[1,i]],arrow=true, label="NN", color=:red)
-           plot!(p[2],[0.0,perm_field_2D[2,i]], [0.0,perm_field_2D[1,i]],arrow=true, label="Perm.")
-           plot!(p[2],[0.0,induced_field_2D[2,i]], [0.0,induced_field_2D[1,i]],arrow=true, label="Ind.")
-           plot!(p[2],[0.0,eddy_field_2D[2,i]], [0.0,eddy_field_2D[1,i]],arrow=true, label="Eddy",xlim=(-2500,2500),ylim=(-2500,2500), legend=:topright)
+           plot!(p[2],[0.0,aircraft_2D_TL[2,i]]  ,[0.0,aircraft_2D_TL[1,i]]  ,arrow=true,lab="TL",xlab="nT, East",ylab="nT, North",color=:blue)
+           plot!(p[2],[0.0,aircraft_2D_NN[2,i]]  ,[0.0,aircraft_2D_NN[1,i]]  ,arrow=true,lab="NN",color=:red)
+           plot!(p[2],[0.0,perm_field_2D[2,i]]   ,[0.0,perm_field_2D[1,i]]   ,arrow=true,lab="Perm.")
+           plot!(p[2],[0.0,induced_field_2D[2,i]],[0.0,induced_field_2D[1,i]],arrow=true,lab="Ind.")
+           plot!(p[2],[0.0,eddy_field_2D[2,i]]   ,[0.0,eddy_field_2D[1,i]]   ,arrow=true,lab="Eddy",xlim=(-2500,2500),ylim=(-2500,2500),legend=:topright)
 
            # Plot the plane on the map
-           plot!(p[3],gps_lon[1:i], gps_lat[1:i],xlim=xlim,ylim=ylim,label="GPS",xlabel="Longitude", ylabel="Latitude")
-           #plot!(p[3],ins_lon[1:i], ins_lat[1:i],xlim=xlim,ylim=ylim,label="INS",xlabel="Longitude", ylabel="Latitude")
-           plot!(p[3],filt_lon[1:i], filt_lat[1:i],xlim=xlim,ylim=ylim,label="EKF",xlabel="Longitude", ylabel="Latitude", xrotation=18)
+           plot!(p[3],gps_lon[1:i] ,gps_lat[1:i] ,xlim=xlim,ylim=ylim,lab="GPS",xlab="longitude [deg]",ylab="latitude [deg]")
+           # plot!(p[3],ins_lon[1:i] ,ins_lat[1:i] ,xlim=xlim,ylim=ylim,lab="INS",xlab="longitude [deg]",ylab="latitude [deg]")
+           plot!(p[3],filt_lon[1:i],filt_lat[1:i],xlim=xlim,ylim=ylim,lab="EKF",xlab="longitude [deg]",ylab="latitude [deg]",xrotation=18)
            annotate!(gps_lon[i], gps_lat[i], Plots.text("✈", 20, rotation=directions[i]), subplot=3)
 
-           frame(anim, p)
+           frame(anim,p)
     end
 
     # Show or save the plot
-    g = save_plot ? gif(anim, gif_file, fps=15) : gif(anim, fps=15)
-    return g
+    mag_gif = add_extension(mag_gif,".gif")
+    g = save_plot ? gif(anim,mag_gif,fps=15) : gif(anim,fps=15)
+    return (g)
 end

@@ -57,9 +57,10 @@ ins  = MagNav.INS( N,dt,tt,ins_lat,ins_lon,ins_alt,ins_vn,ins_ve,ins_vd,
 ins2 = MagNav.INS( N,dt,tt,ins_lat,ins_lon,ins_alt,ins_vn,ins_ve,ins_vd,
                    ins_fn,ins_fe,ins_fd,ins_Cnb,ones(3,3,N))
 
-mapS = MagNav.MapS(map_map,map_xx,map_yy,map_alt)
-itp_mapS = map_interpolate(mapS,:linear) # linear to match MATLAB
-map_val  = itp_mapS.(lon,lat)
+mapS       = MagNav.MapS(map_map,map_xx,map_yy,map_alt)
+itp_mapS   = map_interpolate(mapS,:linear) # linear to match MATLAB
+itp_mapS3D = map_interpolate(upward_fft(mapS,[mapS.alt,mapS.alt+5]),:linear)
+map_val    = itp_mapS.(lon,lat)
 
 @testset "run_filt tests" begin
     @test typeof(run_filt(traj,ins,mag_1_c,itp_mapS,:ekf;
@@ -100,10 +101,11 @@ p1 = plot();
 end
 
 @testset "plot_filt tests" begin
-    @test_nowarn plot_mag_map(traj,mag_1_c,itp_mapS;order=:magmap);
-    @test_nowarn plot_mag_map(traj,mag_1_c,itp_mapS;order=:mapmag);
+    @test_nowarn plot_mag_map(traj,mag_1_c,itp_mapS  ;order=:magmap);
+    @test_nowarn plot_mag_map(traj,mag_1_c,itp_mapS3D;order=:mapmag);
     @test_throws ErrorException plot_mag_map(traj,mag_1_c,itp_mapS;order=:test);
-    @test typeof(plot_mag_map_err(traj,mag_1_c,itp_mapS)) <: Plots.Plot
+    @test typeof(plot_mag_map_err(traj,mag_1_c,itp_mapS  )) <: Plots.Plot
+    @test typeof(plot_mag_map_err(traj,mag_1_c,itp_mapS3D)) <: Plots.Plot
 end
 
 @testset "plot_autocor tests" begin
@@ -123,7 +125,7 @@ P = crlb_P[1:2,1:2,:]
 
 p1 = plot();
 
-gif_name = joinpath(@__DIR__,"conf_ellipse")
+ellipse_gif = joinpath(@__DIR__,"conf_ellipse")
 
 @testset "ellipse tests" begin
     ENV["GKSwstype"] = "100"
@@ -136,9 +138,10 @@ gif_name = joinpath(@__DIR__,"conf_ellipse")
     @test typeof(MagNav.units_ellipse(filt_res,filt_out;conf_units=:ft)) <: Array
     @test typeof(MagNav.units_ellipse(filt_res,filt_out;conf_units=:m )) <: Array
     @test_throws ErrorException MagNav.units_ellipse(filt_res,filt_out;conf_units=:test)
-    @test typeof(gif_ellipse(P,gif_name)) <: Plots.AnimatedGif
-    @test typeof(gif_ellipse(filt_res,filt_out,gif_name)) <: Plots.AnimatedGif
-    @test typeof(gif_ellipse(filt_res,filt_out,gif_name,mapS)) <: Plots.AnimatedGif
+    @test typeof(gif_ellipse(P,ellipse_gif)) <: Plots.AnimatedGif
+    @test typeof(gif_ellipse(filt_res,filt_out,ellipse_gif)) <: Plots.AnimatedGif
+    @test typeof(gif_ellipse(filt_res,filt_out,ellipse_gif,mapS)) <: Plots.AnimatedGif
 end
 
-rm("$gif_name.gif")
+ellipse_gif = MagNav.add_extension(ellipse_gif,".gif")
+rm(ellipse_gif)

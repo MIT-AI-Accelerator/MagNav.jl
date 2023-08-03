@@ -963,10 +963,10 @@ function create_informed_xyz(xyz::Union{XYZ1,XYZ20,XYZ21}, ind, mapS::Union{MapS
     pts     = 1:spacing:traj.N
 
     # figure out direction from trajectory to middle of map
-    mean_traj_lat_lon  = [mean(traj.lon[pts]),mean(traj.lat[pts])]
-    mean_map_lat_lon   = [(mapS.xx[1] + mapS.xx[end]) / 2,
-                          (mapS.yy[1] + mapS.yy[end]) / 2]
-    traj_to_map_middle = mean_map_lat_lon - mean_traj_lat_lon
+    mean_traj_lat_lon = [mean(traj.lon[pts]),mean(traj.lat[pts])]
+    mean_map_lat_lon  = [(mapS.xx[1] + mapS.xx[end]) / 2,
+                         (mapS.yy[1] + mapS.yy[end]) / 2]
+    traj_to_map_mid   = mean_map_lat_lon - mean_traj_lat_lon
 
     # average x/y gradients [nT/rad] of sampled points
     avg_grad = mean(map((x,y) -> collect(gradient(itp_mapS,x,y)),
@@ -974,7 +974,7 @@ function create_informed_xyz(xyz::Union{XYZ1,XYZ20,XYZ21}, ind, mapS::Union{MapS
     dir_disp = normalize(avg_grad)
 
     # switch direction to go toward middle of map if necessary
-    (dot(traj_to_map_middle,dir_disp) < 0) && (dir_disp *= -1)
+    (dot(traj_to_map_mid,dir_disp) < 0) && (dir_disp *= -1)
 
     # convert displacement limits from [m] to [rad]
     disp_min = min(dn2dlat(disp_min,mean_traj_lat_lon[2]),

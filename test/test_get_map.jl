@@ -81,7 +81,9 @@ df_map    = DataFrame(map_h5=map_files,map_name=map_names)
 end
 
 mapS   = get_map(test_data_map)
-map_h5 = joinpath(@__DIR__,"test_get_map.h5")
+map_h5 = joinpath(@__DIR__,"test_save_map")
+comp_params_lin_bson = joinpath(@__DIR__,"test_save_comp_params_lin")
+comp_params_nn_bson  = joinpath(@__DIR__,"test_save_comp_params_nn")
 
 @testset "save_map tests" begin
     @test typeof(save_map(mapS,map_h5;map_units=:deg )) <: Nothing
@@ -90,7 +92,23 @@ map_h5 = joinpath(@__DIR__,"test_get_map.h5")
     @test typeof(save_map(mapS,map_h5;map_units=:test)) <: Nothing
 end
 
+@testset "save_comp_params tests" begin
+    @test_nowarn save_comp_params(LinCompParams(),comp_params_lin_bson)
+    @test_nowarn save_comp_params(NNCompParams() ,comp_params_nn_bson)
+end
+
+@testset "get_comp_params tests" begin
+    @test typeof(get_comp_params(comp_params_lin_bson)) <: MagNav.LinCompParams
+    @test typeof(get_comp_params(comp_params_nn_bson )) <: MagNav.NNCompParams
+end
+
+map_h5 = MagNav.add_extension(map_h5,".h5")
+comp_params_lin_bson = MagNav.add_extension(comp_params_lin_bson,".bson")
+comp_params_nn_bson  = MagNav.add_extension(comp_params_nn_bson ,".bson")
+
 rm(test_data_map_badS)
 rm(test_data_map_badV)
 rm(test_data_map_drpS)
 rm(map_h5)
+rm(comp_params_lin_bson)
+rm(comp_params_nn_bson)
