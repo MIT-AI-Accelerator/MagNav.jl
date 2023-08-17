@@ -40,12 +40,13 @@
 # Build/Run commands via Docker
 # -------------------------------------------------------------------------------- 
 # docker build --tag magnav .
-# docker run -p 8888:8888 -v `pwd`:/home/jovyan/work magnav
+# docker run -p 8888:8888 magnav
+
 FROM "jupyter/minimal-notebook"
 
 USER root
 
-ENV JULIA_VERSION=1.8.5
+ENV JULIA_VERSION=1.9.2
 
 # Install Julia
 RUN mkdir /opt/julia-${JULIA_VERSION} && \
@@ -60,26 +61,15 @@ USER $NB_UID
 
 # Add packages and precompile
 RUN julia -e 'import Pkg; Pkg.update()' && \
-    julia -e 'import Pkg; Pkg.add("BenchmarkTools"); using BenchmarkTools' && \
-    julia -e 'import Pkg; Pkg.add("BSON"); using BSON' && \
     julia -e 'import Pkg; Pkg.add("CSV"); using CSV' && \
     julia -e 'import Pkg; Pkg.add("DataFrames"); using DataFrames' && \
-    julia -e 'import Pkg; Pkg.add("Distributions"); using Distributions' && \
-    julia -e 'import Pkg; Pkg.add("DSP"); using DSP' && \
-    julia -e 'import Pkg; Pkg.add("FFTW"); using FFTW' && \
-    julia -e 'import Pkg; Pkg.add("Flux"); using Flux' && \
     julia -e 'import Pkg; Pkg.add("IJulia"); using IJulia' && \
-    julia -e 'import Pkg; Pkg.add("Optim"); using Optim' && \
-    julia -e 'import Pkg; Pkg.add("Plots"); using Plots' && \
-    julia -e 'import Pkg; Pkg.add("Revise"); using Revise' && \
-    julia -e 'import Pkg; Pkg.add("Zygote"); using Zygote'
+    julia -e 'import Pkg; Pkg.add("MagNav"); using MagNav' && \
+    julia -e 'import Pkg; Pkg.add("Plots"); using Plots'
 
-# Install MagNav and add common files
-RUN julia -e 'import Pkg; Pkg.add(url="https://github.com/MIT-AI-Accelerator/MagNav.jl"); using MagNav' 
+# Download examples
 RUN git clone "https://github.com/MIT-AI-Accelerator/MagNav.jl" /home/$NB_USER/work/MagNav.jl
-RUN julia -e 'cd("work/MagNav.jl/runs"); include("common_setup.jl");'
-
-# Bring in the notebook for convenience
-RUN cp /home/$NB_USER/work/MagNav.jl/runs/Demo.ipynb /home/$NB_USER/Demo.ipynb
+RUN cp -r /home/$NB_USER/work/MagNav.jl/runs/. /home/$NB_USER/work/
+RUN rm -r /home/$NB_USER/work/MagNav.jl
 
 RUN fix-permissions /home/$NB_USER
