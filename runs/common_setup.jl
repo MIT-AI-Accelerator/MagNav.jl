@@ -52,7 +52,7 @@ df_nav[!,:map_name] = Symbol.(df_nav[!,:map_name])
 df_nav[!,:map_type] = Symbol.(df_nav[!,:map_type])
 
 ## in-flight events
-df_event = DataFrame(CSV.File("../readmes/pilot_comments.csv"))
+df_event = DataFrame(CSV.File("dataframes/df_event.csv"))
 df_event[!,:flight] = Symbol.(df_event[!,:flight])
 
 ## all lines for flights 3-6, except 1003.05
