@@ -1,27 +1,55 @@
-# MagNav: airborne Magnetic anomaly Navigation
+# MagNav: airborne **Mag**netic anomaly **Nav**igation
 
-<p align="left">
-    <a href="https://github.com/MIT-AI-Accelerator/MagNav.jl/actions/workflows/ci.yml">
-        <img src="https://github.com/MIT-AI-Accelerator/MagNav.jl/workflows/CI/badge.svg" title="CI">
-    </a>
-    <a href="https://app.codecov.io/gh/MIT-AI-Accelerator/MagNav.jl">
-        <img src="https://codecov.io/gh/MIT-AI-Accelerator/MagNav.jl/branch/master/graph/badge.svg" title="codecov">
-    </a>
-    <a href="https://mit-ai-accelerator.github.io/MagNav.jl/stable/">
-        <img src="https://img.shields.io/badge/docs-stable-blue.svg" title="docs-stable">
-    </a>
-</p>
+[![CI](https://github.com/MIT-AI-Accelerator/MagNav.jl/workflows/CI/badge.svg)](https://github.com/MIT-AI-Accelerator/MagNav.jl/actions/workflows/ci.yml)
+[![Codecov](https://codecov.io/gh/MIT-AI-Accelerator/MagNav.jl/branch/master/graph/badge.svg)](https://app.codecov.io/gh/MIT-AI-Accelerator/MagNav.jl)
+[![docs-stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://mit-ai-accelerator.github.io/MagNav.jl/stable/)
 
-MagNav.jl contains a full suite of tools for airborne Magnetic anomaly Navigation (MagNav), including flight path & INS data import or simulation, mapping, aeromagnetic compensation, and navigation. Julia source code files are in the [`src`](src) folder and examples are in the [`examples`](examples) folder. This package was developed as part of the [DAF-MIT Artificial Intelligence Accelerator](https://aia.mit.edu/). More information on this effort, including a list of relevant publications, is provided on the [challenge problem website](https://magnav.mit.edu/). The package has been tested on the long-term support (LTS) and latest stable versions of Julia, which may be downloaded from [here](https://julialang.org/downloads/).
+MagNav.jl contains a full suite of tools for airborne Magnetic anomaly Navigation (MagNav), including flight path & INS data import or simulation, mapping, aeromagnetic compensation, and navigation. This package was developed as part of the [DAF-MIT Artificial Intelligence Accelerator](https://aia.mit.edu/). More information on this effort, including a list of relevant publications, is provided on the [challenge problem website](https://magnav.mit.edu/). The package has been tested on the long-term support (LTS) and latest stable versions of Julia, which may be downloaded from [here](https://julialang.org/downloads/). The recommended IDE for Julia is [Visual Studio Code](https://code.visualstudio.com/).
 
-The package may be downloaded directly or installed using:
+## Installation
+
+From the Julia REPL, run:
 
 ```julia
-] add MagNav
+julia> using Pkg
+julia> Pkg.add("MagNav")
+```
+
+or from the Julia REPL, type `]` to enter Pkg REPL mode and run:
+
+```julia
+pkg> add MagNav
+```
+
+or clone/download the MagNav.jl repo and from within the local MagNav.jl folder, run:
+
+```julia
+julia> using Pkg
+julia> Pkg.activate(".")
+julia> Pkg.instantiate()
 ```
 
 NOTE: If any artifacts produce a hash mismatch error while downloading, simply navigate to the 
-`.julia/artifacts` folder and manually set the appropriate artifact folder name, e.g., `bf360d29207d6468a8cf783269191bda2cf1f679` for the ottawa_area_maps artifact.
+`.julia/artifacts` folder and manually set the appropriate artifact folder name. For example, the ottawa_area_maps artifact folder name should be `bf360d29207d6468a8cf783269191bda2cf1f679`.
+
+## Usage
+
+For general usage, run:
+
+```julia
+julia> using MagNav
+```
+
+Multiple examples (Pluto notebooks) are in the [`examples`](examples) folder. To start Pluto in a web browser, run:
+
+```julia
+julia> using Pkg
+julia> Pkg.add("Pluto") # as necessary
+julia> using Pluto
+julia> Pluto.run()
+```
+
+In Pluto, open the desired Pluto notebook file and it should run automatically.
 
 ## Data
 
