@@ -1,9 +1,16 @@
 ## full example using the MagNav package with simulated data
 cd(@__DIR__)
-include("common_setup.jl"); # load common-use packages, DataFrames, and Dicts
+# uncomment line below to use local MagNav.jl (downloaded folder)
+# using Pkg; Pkg.activate("../"); Pkg.instantiate()
+using MagNav
+using CSV, DataFrames
+using Plots: plot, plot!
+using Random: seed!
+using Statistics: mean, median, std
+seed!(33); # for reproducibility
+include("dataframes_setup.jl"); # setup DataFrames
 
 ##* flight, map, and INS data section ========================================
-seed!(2); # for reproducibility
 t    = 1800; # selected flight time [s]
 mapS = get_map(MagNav.namad); # load built-in NAMAD map
 xyz  = create_XYZ0(mapS;alt=mapS.alt,t=t,N_waves=2); # create flight data

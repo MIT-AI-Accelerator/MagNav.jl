@@ -1,6 +1,14 @@
 ## full example using the MagNav package with real SGL flight data
 cd(@__DIR__)
-include("common_setup.jl"); # load common-use packages, DataFrames, and Dicts
+# uncomment line below to use local MagNav.jl (downloaded folder)
+# using Pkg; Pkg.activate("../"); Pkg.instantiate()
+using MagNav
+using CSV, DataFrames
+using Plots: plot, plot!
+using Random: seed!
+using Statistics: mean, median, std
+seed!(33); # for reproducibility
+include("dataframes_setup.jl"); # setup DataFrames
 
 #* flight and map data section ===============================================
 ## specify flight, load flight data ------------------------------------------

@@ -1,17 +1,5 @@
-##* load MagNav & other packages commonly used in REPL =======================
-#*  adjust the environment activation location & install packages as needed
-using Pkg; Pkg.activate("../"); Pkg.instantiate()
-using Revise
-using MagNav
-using BenchmarkTools, CSV, DataFrames, Flux, LinearAlgebra, Plots, Zygote
-using BSON: bson, load, @load, @save
-using DataFrames: outerjoin, sort
-using DelimitedFiles: readdlm, writedlm
-using Plots: plot, plot!
-using Random: rand, randn, randperm, seed!, shuffle
-using Statistics: cor, cov, mean, median, std, var
+## setup DataFrames for use with examples
 
-##* load useful DataFrames ===================================================
 ## SGL flight compensation lines
 df_comp = DataFrame(CSV.File("dataframes/df_comp.csv"))
 df_comp[!,:flight]   = Symbol.(df_comp[!,:flight])
