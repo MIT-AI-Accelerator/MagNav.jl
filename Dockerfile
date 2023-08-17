@@ -69,7 +69,7 @@ RUN julia -e 'import Pkg; Pkg.update()' && \
 
 # Download examples
 RUN git clone "https://github.com/MIT-AI-Accelerator/MagNav.jl" /home/$NB_USER/work/MagNav.jl
-RUN cp -r /home/$NB_USER/work/MagNav.jl/runs/. /home/$NB_USER/work/
+RUN cp -r /home/$NB_USER/work/MagNav.jl/examples/. /home/$NB_USER/work/
 RUN rm -r /home/$NB_USER/work/MagNav.jl
 
 RUN fix-permissions /home/$NB_USER
