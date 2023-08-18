@@ -39,6 +39,8 @@
 
 # Build/Run commands via Docker
 # -------------------------------------------------------------------------------- 
+# This will take a while, as it installs Julia and MagNav.jl into the image
+# and downloads support files. The image is large, about 10 GB.
 # docker build --tag magnav .
 # docker run -p 8888:8888 magnav
 

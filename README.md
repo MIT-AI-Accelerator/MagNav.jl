@@ -51,14 +51,17 @@ julia> Pluto.run()
 
 In Pluto, open the desired Pluto notebook file and it should run automatically.
 
-## Docker
+### Docker Demonstration Notebook
 
-Download [Docker Desktop](https://www.docker.com/products/docker-desktop/), search and pull `jtaylormit/magnav`, and run with the host port set to `8888`. Alternatively, from the command line, run:
+A Docker image is available that contains an example usage of the package. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/), search and pull `jtaylormit/magnav`, and run with the host port set to `8888`. Alternatively, from the command line, run:
 
 ```
 docker pull jtaylormit/magnav
 docker run -p 8888:8888 jtaylormit/magnav
 ```
+
+A Docker container will spin up and provide a URL to copy into a local browser. It will look something like this: `http://127.0.0.1:8888/lab?token=###`. Note that changes to the notebook occur inside
+the container only. The notebook must be manually downloaded from the browser to be saved.
 
 The above image is [hosted on Docker Hub](https://hub.docker.com/r/jtaylormit/magnav), and it is manually and sporadically updated. For the most recent image, run:
 
@@ -67,7 +70,7 @@ docker pull ghcr.io/mit-ai-accelerator/magnav.jl
 docker run -p 8888:8888 ghcr.io/mit-ai-accelerator/magnav.jl
 ```
 
-This requires a [personal access token](https://github.com/settings/tokens). Generate a new token (classic) with the expiration set as desired and `read:packages` checked. Generate and copy the token, then run:
+This will require a [personal access token](https://github.com/settings/tokens). Generate a new token (classic) with the expiration set as desired and `read:packages` checked. Generate and copy the token, then run:
 
 ```
 export CR_PAT=YOUR_TOKEN
@@ -78,7 +81,7 @@ echo $CR_PAT | docker login ghcr.io -u YOUR_USERNAME --password-stdin
 
 Publicly available flight data can be automatically downloaded within the package itself. This dataset can also be directly downloaded from [here](https://doi.org/10.5281/zenodo.4271803). See the [datasheet](readmes/datasheet_sgl_2020_train.pdf) for high-level information about this dataset. Details of the flight data are described in the readme files within the [`readmes`](readmes) folder.
 
-## Data Sharing Agreement
+### Data Sharing Agreement
 
 Please read the full Data Sharing Agreement located [here](readmes/DATA_SHARING_AGREEMENT.md).
 
