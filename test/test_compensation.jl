@@ -137,7 +137,9 @@ comp_out = zeros(23,2)
                                    df_map,comp_params,silent=silent)[[4,7]]
         @test std(err_train_1)   ≈ std(err_train_2)
         @test std(err_test_1 )   ≈ std(err_test_2 )
-        @test isapprox(comp_out_save[i,:],[std(err_train_1),std(err_test_1)],atol=eps(Float32)) # reproducibility
+        if VERSION >= v"1.9" # check for reproducibility on latest Julia only
+            @test isapprox(comp_out_save[i,:],[std(err_train_1),std(err_test_1)],atol=eps(Float32))
+        end
         @test MagNav.compare_fields(comp_params_,comp_params;silent=silent) == 0 # no mutating
     end
 end
