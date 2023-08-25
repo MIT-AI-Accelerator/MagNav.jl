@@ -1,5 +1,7 @@
 using MagNav, Test, MAT, DataFrames, Flux, Statistics, Zygote
+using DelimitedFiles: readdlm
 
+silent = true
 df = DataFrame() # empty dataframe
 
 flight   = :Flt1007
@@ -9,7 +11,7 @@ map_name = :Renfrew_395
 xyz_h5   = MagNav.sgl_2020_train()*"/$(flight)_train.h5"
 map_h5   = MagNav.ottawa_area_maps()*"/$(map_name).h5"
 
-xyz = get_XYZ20(xyz_h5;tt_sort=true,silent=true)
+xyz = get_XYZ20(xyz_h5;tt_sort=true,silent=silent)
 ind = xyz.line .== line
 ind[findall(ind)[26:end]] .= false
 
@@ -65,10 +67,10 @@ comp_params_3s  = NNCompParams(model_type=:m3s ,terms=terms_pi,
 comp_params_3v  = NNCompParams(model_type=:m3v ,terms=terms_pi,
                                terms_A=terms_pie,TL_coef=TL_coef_pie,
                                batchsize=batchsize,epoch_adam=epoch_adam)
-comp_params_3sc = NNCompParams(model_type=:m3sc,y_type=:a,terms=terms_pi,
+comp_params_3sc = NNCompParams(model_type=:m3sc,terms=terms_pi,
                                terms_A=terms_pie,TL_coef=TL_coef_pie,
                                batchsize=batchsize,epoch_adam=epoch_adam)
-comp_params_3vc = NNCompParams(model_type=:m3vc,y_type=:a,terms=terms_pi,
+comp_params_3vc = NNCompParams(model_type=:m3vc,terms=terms_pi,
                                terms_A=terms_pie,TL_coef=TL_coef_pie,
                                batchsize=batchsize,epoch_adam=epoch_adam)
 
@@ -78,14 +80,22 @@ comp_params_map_TL     = LinCompParams(model_type=:map_TL,y_type=:a,sub_igrf=tru
 comp_params_elasticnet = LinCompParams(model_type=:elasticnet,y_type=:a)
 comp_params_plsr       = LinCompParams(model_type=:plsr,y_type=:a,k_plsr=1)
 
-drop_fi_bson        = joinpath(@__DIR__,"drop_fi")
-drop_fi_csv         = joinpath(@__DIR__,"drop_fi")
+drop_fi_bson = joinpath(@__DIR__,"drop_fi")
+drop_fi_csv  = joinpath(@__DIR__,"drop_fi")
+perm_fi_csv  = joinpath(@__DIR__,"perm_fi")
+
 comp_params_1_drop  = NNCompParams(comp_params_1,drop_fi=true,
                       drop_fi_bson=drop_fi_bson,drop_fi_csv=drop_fi_csv)
+comp_params_1_perm  = NNCompParams(comp_params_1,perm_fi=true,
+                      perm_fi_csv=perm_fi_csv)
 comp_params_2c_drop = NNCompParams(comp_params_2c,drop_fi=true,
                       drop_fi_bson=drop_fi_bson,drop_fi_csv=drop_fi_csv)
+comp_params_2c_perm = NNCompParams(comp_params_2c,perm_fi=true,
+                      perm_fi_csv=perm_fi_csv)
 comp_params_3s_drop = NNCompParams(comp_params_3s,drop_fi=true,
                       drop_fi_bson=drop_fi_bson,drop_fi_csv=drop_fi_csv)
+comp_params_3s_perm = NNCompParams(comp_params_3s,perm_fi=true,
+                      perm_fi_csv=perm_fi_csv)
 
 comp_params_nn_bad      = NNCompParams(model_type=:test)
 comp_params_m3_bad      = NNCompParams(comp_params_3s,y_type=:e)
@@ -94,154 +104,103 @@ comp_params_nn_bad_drop = NNCompParams(model_type=:test,drop_fi=true,
                                        drop_fi_bson=drop_fi_bson,
                                        drop_fi_csv=drop_fi_csv)
 
-x = [1:5;][:,:]
-y = [1:5;]
+comp_out_file = joinpath(@__DIR__,"test_data/comp_out_save.csv")
+comp_out_save = readdlm(comp_out_file,',')
+comp_out = zeros(23,2)
 
-@testset "comp_train tests" begin
-    @test std(comp_train(xyz,ind;comp_params=comp_params_1,
-                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
-    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_1,
-                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
-    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_2a,
-                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
-    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_2b,
-                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
-    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_2c,
-                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
-    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_2d,
-                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
-    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_3tl,
-                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
-    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_3s,
-                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
-    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_3v,
-                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
-    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_3sc,
-                         xyz_test=xyz,ind_test=ind)[end-1]) < 50
-    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_3vc,
-                         xyz_test=xyz,ind_test=ind)[end-1]) < 50
-    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_TL,
-                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
-    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_mod_TL,
-                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
-    @test std(comp_train([xyz,xyz],[ind,ind],mapS;comp_params=comp_params_map_TL,
-                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
-    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_elasticnet,
-                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
-    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_plsr,
-                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
-    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_1_drop,
-                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
-    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_2c_drop,
-                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
-    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_3s_drop,
-                         xyz_test=xyz,ind_test=ind)[end-1]) < 1
-    @test isone(MagNav.plsr_fit(x,y;return_set=true)[:,:,1])
-    @test std(MagNav.elasticnet_fit(x,y;λ=0.01)[end]) < 1
-    @test_throws ErrorException comp_train([xyz,xyz],[ind,ind];
-                                           comp_params=comp_params_nn_bad)
-    @test_throws AssertionError comp_train([xyz,xyz],[ind,ind];
-                                           comp_params=comp_params_m3_bad)
-    @test_throws ErrorException comp_train([xyz,xyz],[ind,ind];
-                                           comp_params=comp_params_lin_bad)
-    @test_throws ErrorException comp_train([xyz,xyz],[ind,ind];
-                                           comp_params=comp_params_nn_bad_drop)
-    @test_throws ErrorException comp_train(xyz,ind;
-                                           comp_params=comp_params_nn_bad)
-    @test_throws AssertionError comp_train(xyz,ind;
-                                           comp_params=comp_params_m3_bad)
-    @test_throws ErrorException comp_train(xyz,ind;
-                                           comp_params=comp_params_lin_bad)
-    @test_throws ErrorException comp_train(xyz,ind;
-                                           comp_params=comp_params_nn_bad_drop)
-    @test_throws ErrorException comp_train(line,df_line,df_flight,df,
-                                           comp_params_nn_bad)
-    @test_throws AssertionError comp_train(line,df_line,df_flight,df,
-                                           comp_params_m3_bad)
-    @test_throws ErrorException comp_train(line,df_line,df_flight,df,
-                                           comp_params_lin_bad)
-    @test_throws ErrorException comp_train(line,df_line,df_flight,df,
-                                           comp_params_nn_bad_drop)
+@testset "comp_train_test tests" begin
+    for (i,comp_params) in enumerate([comp_params_1,
+                                      comp_params_2a,
+                                      comp_params_2b,
+                                      comp_params_2c,
+                                      comp_params_2d,
+                                      comp_params_3tl,
+                                      comp_params_3s,
+                                      comp_params_3v,
+                                      comp_params_3sc,
+                                      comp_params_3vc,
+                                      comp_params_TL,
+                                      comp_params_mod_TL,
+                                      comp_params_map_TL,
+                                      comp_params_elasticnet,
+                                      comp_params_plsr,
+                                      comp_params_1_drop,
+                                      comp_params_1_perm,
+                                      comp_params_2c_drop,
+                                      comp_params_2c_perm,
+                                      comp_params_3s_drop,
+                                      comp_params_3s_perm])
+        comp_params_ = deepcopy(comp_params)
+        (err_train_1,err_test_1) = comp_train_test(xyz,xyz,ind,ind,mapS,mapS;
+                                   comp_params=comp_params,silent=silent)[[4,7]]
+        (err_train_2,err_test_2) = comp_train_test(line,line,df_line,df_flight,
+                                   df_map,comp_params,silent=silent)[[4,7]]
+        @test std(err_train_1)   ≈ std(err_train_2)
+        @test std(err_test_1 )   ≈ std(err_test_2 )
+        @test isapprox(comp_out_save[i,:],[std(err_train_1),std(err_test_1)],atol=1e-9) # reproducibility
+        @test MagNav.compare_fields(comp_params_,comp_params;silent=silent) == 0 # no mutating
+    end
 end
 
-comp_params_1   = comp_train(xyz,ind;comp_params=comp_params_1  )[1]
-comp_params_2a  = comp_train(xyz,ind;comp_params=comp_params_2a )[1]
-comp_params_2b  = comp_train(xyz,ind;comp_params=comp_params_2b )[1]
-comp_params_2c  = comp_train(xyz,ind;comp_params=comp_params_2c )[1]
-comp_params_2d  = comp_train(xyz,ind;comp_params=comp_params_2d )[1]
-comp_params_3tl = comp_train(xyz,ind;comp_params=comp_params_3tl)[1]
-comp_params_3s  = comp_train(xyz,ind;comp_params=comp_params_3s )[1]
-comp_params_3v  = comp_train(xyz,ind;comp_params=comp_params_3v )[1]
-comp_params_3sc = comp_train(xyz,ind;comp_params=comp_params_3sc)[1]
-comp_params_3vc = comp_train(xyz,ind;comp_params=comp_params_3vc)[1]
-
-drop_fi_bson = joinpath(@__DIR__,"drop_fi")
-comp_train(xyz,ind;comp_params=NNCompParams(comp_params_1,
-           drop_fi=true,drop_fi_bson=drop_fi_bson,drop_fi_csv=drop_fi_csv))
+comp_params_1   = comp_train(xyz,ind;comp_params=comp_params_1  ,silent=silent)[1]
+comp_params_2a  = comp_train(xyz,ind;comp_params=comp_params_2a ,silent=silent)[1]
+comp_params_2b  = comp_train(xyz,ind;comp_params=comp_params_2b ,silent=silent)[1]
+comp_params_2c  = comp_train(xyz,ind;comp_params=comp_params_2c ,silent=silent)[1]
+comp_params_2d  = comp_train(xyz,ind;comp_params=comp_params_2d ,silent=silent)[1]
+comp_params_3tl = comp_train(xyz,ind;comp_params=comp_params_3tl,silent=silent)[1]
+comp_params_3s  = comp_train(xyz,ind;comp_params=comp_params_3s ,silent=silent)[1]
+comp_params_3v  = comp_train(xyz,ind;comp_params=comp_params_3v ,silent=silent)[1]
+comp_params_3sc = comp_train(xyz,ind;comp_params=comp_params_3sc,silent=silent)[1]
+comp_params_3vc = comp_train(xyz,ind;comp_params=comp_params_3vc,silent=silent)[1]
 
 @testset "comp_train (re-train) tests" begin
-    @test std(comp_train(xyz,ind;comp_params=comp_params_1 )[end-1]) < 1
-    @test std(comp_train(xyz,ind;comp_params=comp_params_2a)[end-1]) < 1
-    @test std(comp_train(xyz,ind;comp_params=comp_params_2b)[end-1]) < 1
-    @test std(comp_train(xyz,ind;comp_params=comp_params_2c)[end-1]) < 1
-    @test std(comp_train(xyz,ind;comp_params=comp_params_2d)[end-1]) < 1
+    @test std(comp_train(xyz,ind;comp_params=comp_params_1 ,silent=silent)[end-1]) < 1
+    @test std(comp_train(xyz,ind;comp_params=comp_params_2a,silent=silent)[end-1]) < 1
+    @test std(comp_train(xyz,ind;comp_params=comp_params_2b,silent=silent)[end-1]) < 1
+    @test std(comp_train(xyz,ind;comp_params=comp_params_2c,silent=silent)[end-1]) < 1
+    @test std(comp_train(xyz,ind;comp_params=comp_params_2d,silent=silent)[end-1]) < 1
     @test std(comp_train(line,df_line,df_flight,df,
-                         comp_params_1  )[end-1]) < 1
+                         comp_params_1  ;silent=silent)[end-1]) < 1
     @test std(comp_train(line,df_line,df_flight,df,
-                         comp_params_2a )[end-1]) < 1
+                         comp_params_2a ;silent=silent)[end-1]) < 1
     @test std(comp_train(line,df_line,df_flight,df,
-                         comp_params_2b )[end-1]) < 1
+                         comp_params_2b ;silent=silent)[end-1]) < 1
     @test std(comp_train(line,df_line,df_flight,df,
-                         comp_params_2c )[end-1]) < 1
+                         comp_params_2c ;silent=silent)[end-1]) < 1
     @test std(comp_train(line,df_line,df_flight,df,
-                         comp_params_2d )[end-1]) < 1
+                         comp_params_2d ;silent=silent)[end-1]) < 1
     @test std(comp_train(line,df_line,df_flight,df,
-                         comp_params_3tl)[end-1]) < 1
+                         comp_params_3tl;silent=silent)[end-1]) < 1
     @test std(comp_train(line,df_line,df_flight,df,
-                         comp_params_3s )[end-1]) < 1
+                         comp_params_3s ;silent=silent)[end-1]) < 1
     @test std(comp_train(line,df_line,df_flight,df,
-                         comp_params_3v )[end-1]) < 1
+                         comp_params_3v ;silent=silent)[end-1]) < 1
     @test std(comp_train(line,df_line,df_flight,df,
-                         comp_params_3sc)[end-1]) < 50
+                         comp_params_3sc;silent=silent)[end-1]) < 50
     @test std(comp_train(line,df_line,df_flight,df,
-                         comp_params_3vc)[end-1]) < 50
-end
-
-@testset "comp_test tests" begin
-    @test_throws ErrorException comp_test(xyz,ind;
-                                          comp_params=comp_params_nn_bad)
-    @test_throws ErrorException comp_test(xyz,ind;
-                                          comp_params=comp_params_lin_bad)
-    @test_throws ErrorException comp_test(xyz,ind;
-                                          comp_params=comp_params_nn_bad_drop)
-    @test_throws ErrorException comp_test(line,df_line,df_flight,df,
-                                          comp_params_nn_bad)
-    @test_throws ErrorException comp_test(line,df_line,df_flight,df,
-                                          comp_params_lin_bad)
-    @test_throws ErrorException comp_test(line,df_line,df_flight,df,
-                                          comp_params_nn_bad_drop)
+                         comp_params_3vc;silent=silent)[end-1]) < 50
 end
 
 @testset "comp_m2bc_test tests" begin
     @test std(comp_m2bc_test(line,df_line,df_flight,df,
-                             comp_params_2b;silent=true)[end-1]) < 1
+                             comp_params_2b;silent=silent)[end-1]) < 1
     @test std(comp_m2bc_test(line,df_line,df_flight,df,
-                             comp_params_2c;silent=true)[end-1]) < 1
+                             comp_params_2c;silent=silent)[end-1]) < 1
 end
 
 @testset "comp_m3_test tests" begin
     @test_throws AssertionError comp_m3_test(line,df_line,df_flight,df,
-                                             comp_params_m3_bad;silent=true)[end-1]
+                                             comp_params_m3_bad;silent=silent)[end-1]
     @test_throws AssertionError comp_m3_test(line,df_line,df_flight,df,
-                                             comp_params_3tl;silent=true)[end-1]
+                                             comp_params_3tl;silent=silent)[end-1]
     @test std(comp_m3_test(line,df_line,df_flight,df,
-                           comp_params_3s ;silent=true)[end-1]) < 1
+                           comp_params_3s ;silent=silent)[end-1]) < 1
     @test std(comp_m3_test(line,df_line,df_flight,df,
-                           comp_params_3v ;silent=true)[end-1]) < 1
+                           comp_params_3v ;silent=silent)[end-1]) < 1
     @test std(comp_m3_test(line,df_line,df_flight,df,
-                           comp_params_3sc;silent=true)[end-1]) < 50
+                           comp_params_3sc;silent=silent)[end-1]) < 50
     @test std(comp_m3_test(line,df_line,df_flight,df,
-                           comp_params_3vc;silent=true)[end-1]) < 50
+                           comp_params_3vc;silent=silent)[end-1]) < 50
 end
 
 epoch_lbfgs = 1
@@ -300,68 +259,115 @@ comp_params_2d  = NNCompParams(model_type  = :m2d,
 k_pca_big = 100
 
 comp_params_3tl = NNCompParams(comp_params_3tl,
+                               epoch_lbfgs = epoch_lbfgs,
                                k_pca       = k_pca_big,
                                frac_train  = frac_train)
 
 comp_params_3s  = NNCompParams(comp_params_3s,
+                               epoch_lbfgs = epoch_lbfgs,
                                k_pca       = k_pca_big,
                                frac_train  = frac_train)
 
 comp_params_3v  = NNCompParams(comp_params_3v,
+                               epoch_lbfgs = epoch_lbfgs,
                                k_pca       = k_pca_big,
                                frac_train  = frac_train)
 
 comp_params_3sc = NNCompParams(comp_params_3sc,
+                               y_type      = :a,
+                               epoch_lbfgs = epoch_lbfgs,
                                k_pca       = k_pca_big,
                                frac_train  = frac_train)
 
 comp_params_3vc = NNCompParams(comp_params_3vc,
+                               y_type      = :a,
+                               epoch_lbfgs = epoch_lbfgs,
                                k_pca       = k_pca_big,
                                frac_train  = frac_train)
 
-perm_fi_csv = joinpath(@__DIR__,"perm_fi")
-comp_params_1_drop  = NNCompParams(comp_params_1,drop_fi=true,
-                      drop_fi_bson=drop_fi_bson,drop_fi_csv=drop_fi_csv)
-comp_params_1_perm  = NNCompParams(comp_params_1,perm_fi=true,
-                      perm_fi_csv=perm_fi_csv)
-comp_params_2c_drop = NNCompParams(comp_params_2c,drop_fi=true,
-                      drop_fi_bson=drop_fi_bson,drop_fi_csv=drop_fi_csv)
-comp_params_2c_perm = NNCompParams(comp_params_2c,perm_fi=true,
-                      perm_fi_csv=perm_fi_csv)
-comp_params_3s_drop = NNCompParams(comp_params_3s,drop_fi=true,
-                      drop_fi_bson=drop_fi_bson,drop_fi_csv=drop_fi_csv)
-comp_params_3s_perm = NNCompParams(comp_params_3s,perm_fi=true,
-                      perm_fi_csv=perm_fi_csv)
+x = [1:5;][:,:]
+y = [1:5;]
 
-@testset "comp_train_test tests" begin
-    for comp_params in [comp_params_1,
-                        comp_params_2a,
-                        comp_params_2b,
-                        comp_params_2c,
-                        comp_params_2d,
-                        comp_params_3tl,
-                        comp_params_3s,
-                        comp_params_3v,
-                        comp_params_3sc,
-                        comp_params_3vc,
-                        comp_params_TL,
-                        comp_params_mod_TL,
-                        comp_params_map_TL,
-                        comp_params_elasticnet,
-                        comp_params_plsr,
-                        comp_params_1_drop,
-                        comp_params_1_perm,
-                        comp_params_2c_drop,
-                        comp_params_2c_perm,
-                        comp_params_3s_drop,
-                        comp_params_3s_perm]
-        comp_params_ = deepcopy(comp_params)
-        @test std(comp_train_test(xyz,xyz,ind,ind,mapS,mapS;
-                                  comp_params=comp_params)[end-1]) ≈
-              std(comp_train_test(line,line,df_line,df_flight,
-                                  df_map,comp_params)[end-1])
-        @test MagNav.compare_fields(comp_params_,comp_params;silent=true) == 0 # no mutating
-    end
+@testset "comp_train tests" begin
+    @test std(comp_train(xyz,ind;comp_params=comp_params_1,
+                         xyz_test=xyz,ind_test=ind,silent=silent)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_1,
+                         xyz_test=xyz,ind_test=ind,silent=silent)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_2a,
+                         xyz_test=xyz,ind_test=ind,silent=silent)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_2b,
+                         xyz_test=xyz,ind_test=ind,silent=silent)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_2c,
+                         xyz_test=xyz,ind_test=ind,silent=silent)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_2d,
+                         xyz_test=xyz,ind_test=ind,silent=silent)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_3tl,
+                         xyz_test=xyz,ind_test=ind,silent=silent)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_3s,
+                         xyz_test=xyz,ind_test=ind,silent=silent)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_3v,
+                         xyz_test=xyz,ind_test=ind,silent=silent)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_3sc,
+                         xyz_test=xyz,ind_test=ind,silent=silent)[end-1]) < 50
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_3vc,
+                         xyz_test=xyz,ind_test=ind,silent=silent)[end-1]) < 50
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_TL,
+                         xyz_test=xyz,ind_test=ind,silent=silent)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_mod_TL,
+                         xyz_test=xyz,ind_test=ind,silent=silent)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind],mapS;comp_params=comp_params_map_TL,
+                         xyz_test=xyz,ind_test=ind,silent=silent)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_elasticnet,
+                         xyz_test=xyz,ind_test=ind,silent=silent)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_plsr,
+                         xyz_test=xyz,ind_test=ind,silent=silent)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_1_drop,
+                         xyz_test=xyz,ind_test=ind,silent=silent)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_2c_drop,
+                         xyz_test=xyz,ind_test=ind,silent=silent)[end-1]) < 1
+    @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_3s_drop,
+                         xyz_test=xyz,ind_test=ind,silent=silent)[end-1]) < 1
+    @test isone(MagNav.plsr_fit(x,y;return_set=true)[:,:,1])
+    @test std(MagNav.elasticnet_fit(x,y;λ=0.01)[end]) < 1
+    @test_throws ErrorException comp_train([xyz,xyz],[ind,ind];
+                                           comp_params=comp_params_nn_bad,silent=silent)
+    @test_throws AssertionError comp_train([xyz,xyz],[ind,ind];
+                                           comp_params=comp_params_m3_bad,silent=silent)
+    @test_throws ErrorException comp_train([xyz,xyz],[ind,ind];
+                                           comp_params=comp_params_lin_bad,silent=silent)
+    @test_throws ErrorException comp_train([xyz,xyz],[ind,ind];
+                                           comp_params=comp_params_nn_bad_drop,silent=silent)
+    @test_throws ErrorException comp_train(xyz,ind;
+                                           comp_params=comp_params_nn_bad,silent=silent)
+    @test_throws AssertionError comp_train(xyz,ind;
+                                           comp_params=comp_params_m3_bad,silent=silent)
+    @test_throws ErrorException comp_train(xyz,ind;
+                                           comp_params=comp_params_lin_bad,silent=silent)
+    @test_throws ErrorException comp_train(xyz,ind;
+                                           comp_params=comp_params_nn_bad_drop,silent=silent)
+    @test_throws ErrorException comp_train(line,df_line,df_flight,df,
+                                           comp_params_nn_bad;silent=silent)
+    @test_throws AssertionError comp_train(line,df_line,df_flight,df,
+                                           comp_params_m3_bad;silent=silent)
+    @test_throws ErrorException comp_train(line,df_line,df_flight,df,
+                                           comp_params_lin_bad;silent=silent)
+    @test_throws ErrorException comp_train(line,df_line,df_flight,df,
+                                           comp_params_nn_bad_drop;silent=silent)
+end
+
+@testset "comp_test tests" begin
+    @test_throws ErrorException comp_test(xyz,ind;
+                                          comp_params=comp_params_nn_bad,silent=silent)
+    @test_throws ErrorException comp_test(xyz,ind;
+                                          comp_params=comp_params_lin_bad,silent=silent)
+    @test_throws ErrorException comp_test(xyz,ind;
+                                          comp_params=comp_params_nn_bad_drop,silent=silent)
+    @test_throws ErrorException comp_test(line,df_line,df_flight,df,
+                                          comp_params_nn_bad;silent=silent)
+    @test_throws ErrorException comp_test(line,df_line,df_flight,df,
+                                          comp_params_lin_bad;silent=silent)
+    @test_throws ErrorException comp_test(line,df_line,df_flight,df,
+                                          comp_params_nn_bad_drop;silent=silent)
 end
 
 terms_pi5e8 = [:p,:i5,:e8]
@@ -384,6 +390,13 @@ terms_pi3e3 = [:p,:i3,:e3]
                                                  TL_coef_i_1,TL_coef_e_1)
         @test typeof(TL_aircraft) <: Matrix
     end
+end
+
+x_norm = ones(3,3) ./ 3
+y      = ones(3)
+
+@testset "linear_test tests" begin
+    @test MagNav.linear_test(x_norm,y,[0],[1],(y,[0]);silent=silent)[1] == y
 end
 
 @testset "print_time tests" begin

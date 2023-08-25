@@ -23,7 +23,7 @@ md"# Magnetic Anomaly Maps Example
 This file is best viewed in a [Pluto](https://plutojl.org/) notebook. To run it this way, from the MagNav.jl directory, do:
 ```julia
 julia> using Pluto
-julia> Pluto.run() # select and open notebook
+julia> Pluto.run() # select & open notebook
 ```
 
 This is a reactive notebook, so feel free to change any parameters.
@@ -45,7 +45,7 @@ end
 # ╔═╡ 438f2f01-5cbe-4088-b365-571de4f9539a
 md"## Display Perth map in Google Earth
 
-The map may be exported to a KMZ file and opened in Google Earth.
+The map may be exported to a KMZ file & opened in Google Earth.
 "
 
 # ╔═╡ d7d5fa3e-0c00-4d0b-b9e0-b6d8b0e917cf
@@ -109,7 +109,7 @@ end
 # ╔═╡ 2d18bbeb-ad4e-4c5b-80a3-25bd99f45c73
 md"## Plot Eastern Ontario altitude map CDF
 
-Most of the map data was collected at altitudes between 215 m and 395 m.
+Most of the map data was collected at altitudes between 215 & 395 m.
 "
 
 # ╔═╡ c5b6b439-e962-4c9d-9b02-339657fb266b
@@ -127,7 +127,7 @@ end
 # ╔═╡ 3f6b725b-f1c7-41fb-9854-c737b9698a40
 md"## Plot Eastern Ontario altitude map
 
-Minimal areas have map data collected at 395 m or higher, so a level map can be generated at 395 m with almost entirely upward continuation and minimal downward continuation.
+Minimal areas have map data collected at 395 m or higher, so a level map can be generated at 395 m with almost entirely upward continuation & minimal downward continuation.
 "
 
 # ╔═╡ ae1acc31-19db-4e94-85dc-e6274186978e
@@ -161,7 +161,7 @@ end
 # ╔═╡ 8b5c030a-e0b9-4a7a-a901-a6967edbe70b
 md"## Plot combined Eastern Ontario & NAMAD maps together
 
-2 maps can be combined at the same altitude. Here, the Eastern Ontario map is better (higher resolution), but the NAMAD map can be used in the case of navigation near the Eastern Ontario map border. Note that only the southeast part of the NAMAD map is accurate here, as the map coverage ends and the remainder is filled-in (e.g., the northwest corner).
+2 maps can be combined at the same altitude. Here, the Eastern Ontario map is better (higher resolution), but the NAMAD map can be used in the case of navigation near the Eastern Ontario map border. Note that only the southeast part of the NAMAD map is accurate here, as the map coverage ends & the remainder is filled-in (e.g., the northwest corner).
 "
 
 # ╔═╡ 9ed61357-346b-49de-a1ed-8849db041ade
@@ -226,7 +226,7 @@ Plots = "~1.38.17"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.9.2"
+julia_version = "1.9.3"
 manifest_format = "2.0"
 project_hash = "590d1622e1796bf504b36b11857c0a4f3f4ad57c"
 
@@ -785,10 +785,15 @@ version = "0.9.20"
 uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
 [[deps.FillArrays]]
-deps = ["LinearAlgebra", "Random", "SparseArrays", "Statistics"]
-git-tree-sha1 = "f372472e8672b1d993e93dada09e23139b509f9e"
+deps = ["LinearAlgebra", "Random"]
+git-tree-sha1 = "a20eaa3ad64254c61eeb5f230d9306e937405434"
 uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
-version = "1.5.0"
+version = "1.6.1"
+weakdeps = ["SparseArrays", "Statistics"]
+
+    [deps.FillArrays.extensions]
+    FillArraysSparseArraysExt = "SparseArrays"
+    FillArraysStatisticsExt = "Statistics"
 
 [[deps.FiniteDiff]]
 deps = ["ArrayInterface", "LinearAlgebra", "Requires", "Setfield", "SparseArrays"]
@@ -882,9 +887,9 @@ uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
 
 [[deps.FuzzyCompletions]]
 deps = ["REPL"]
-git-tree-sha1 = "e16dd964b4dfaebcded16b2af32f05e235b354be"
+git-tree-sha1 = "001bd0eefc8c532660676725bed56b696321dfd2"
 uuid = "fb4132e2-a121-4a70-b8a1-d5b831dcdcc2"
-version = "0.5.1"
+version = "0.5.2"
 
 [[deps.GDAL]]
 deps = ["CEnum", "GDAL_jll", "NetworkOptions", "PROJ_jll"]
@@ -1017,10 +1022,10 @@ uuid = "42e2da0e-8278-4e71-bc24-59509adca0fe"
 version = "1.0.2"
 
 [[deps.HDF5]]
-deps = ["Compat", "HDF5_jll", "Libdl", "Mmap", "Random", "Requires", "UUIDs"]
-git-tree-sha1 = "c73fdc3d9da7700691848b78c61841274076932a"
+deps = ["Compat", "HDF5_jll", "Libdl", "Mmap", "Printf", "Random", "Requires", "UUIDs"]
+git-tree-sha1 = "114e20044677badbc631ee6fdc80a67920561a29"
 uuid = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
-version = "0.16.15"
+version = "0.16.16"
 
 [[deps.HDF5_jll]]
 deps = ["Artifacts", "JLLWrappers", "LibCURL_jll", "Libdl", "OpenSSL_jll", "Pkg", "Zlib_jll"]
@@ -1153,9 +1158,9 @@ version = "0.1.5"
 
 [[deps.JLLWrappers]]
 deps = ["Artifacts", "Preferences"]
-git-tree-sha1 = "a7e91ef94114d5bc8952bcaa8d6ff952cf709808"
+git-tree-sha1 = "7e5d6779a1e09a36db2a7b6cff50942a0a7d0fca"
 uuid = "692b3bcd-3c85-4b1f-b108-f13ce0eb3210"
-version = "1.4.2"
+version = "1.5.0"
 
 [[deps.JSON]]
 deps = ["Dates", "Mmap", "Parsers", "Unicode"]
@@ -1387,9 +1392,9 @@ version = "2.12.0+0"
 
 [[deps.LogExpFunctions]]
 deps = ["DocStringExtensions", "IrrationalConstants", "LinearAlgebra"]
-git-tree-sha1 = "c3ce8e7420b3a6e071e0fe4745f5d4300e37b13f"
+git-tree-sha1 = "7d6dd4e9212aebaeed356de34ccf262a3cd415aa"
 uuid = "2ab3a3ac-af41-5b50-aa03-7779005ae688"
-version = "0.3.24"
+version = "0.3.26"
 
     [deps.LogExpFunctions.extensions]
     LogExpFunctionsChainRulesCoreExt = "ChainRulesCore"
@@ -1406,9 +1411,9 @@ uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
 
 [[deps.LoggingExtras]]
 deps = ["Dates", "Logging"]
-git-tree-sha1 = "cedb76b37bc5a6c702ade66be44f831fa23c681e"
+git-tree-sha1 = "a03c77519ab45eb9a34d3cfe2ca223d79c064323"
 uuid = "e6f89c97-d47a-5376-807f-9c37f3926c36"
-version = "1.0.0"
+version = "1.0.1"
 
 [[deps.LoweredCodeUtils]]
 deps = ["JuliaInterpreter"]
@@ -1447,9 +1452,9 @@ version = "0.9.2"
 
 [[deps.MLJModelInterface]]
 deps = ["Random", "ScientificTypesBase", "StatisticalTraits"]
-git-tree-sha1 = "e89d1ea12c5a50057bfb0c124d905669e5ed4ec9"
+git-tree-sha1 = "03ae109be87f460fe3c96b8a0dbbf9c7bf840bd5"
 uuid = "e80e1ace-859a-464e-9ed9-23947d8ae3ea"
-version = "1.9.1"
+version = "1.9.2"
 
 [[deps.MLStyle]]
 git-tree-sha1 = "bc38dff0548128765760c79eb7388a4b37fae2c8"
@@ -1464,9 +1469,9 @@ version = "0.4.3"
 
 [[deps.MacroTools]]
 deps = ["Markdown", "Random"]
-git-tree-sha1 = "42324d08725e200c23d4dfb549e0d5d89dede2d2"
+git-tree-sha1 = "9ee1618cbf5240e6d4e0371d6f24065083f60c48"
 uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
-version = "0.5.10"
+version = "0.5.11"
 
 [[deps.MagNav]]
 deps = ["ArchGDAL", "BSON", "BenchmarkTools", "CSV", "DSP", "DataFrames", "DelimitedFiles", "Distributions", "ExponentialUtilities", "Flux", "FluxOptTools", "ForwardDiff", "GLMNet", "GR", "Geodesy", "GlobalSensitivity", "HDF5", "Inflate", "Interpolations", "IterTools", "KernelFunctions", "LazyArtifacts", "LinearAlgebra", "MAT", "MLJLinearModels", "NearestNeighbors", "Optim", "Parameters", "Pkg", "Plots", "Pluto", "Random", "RecipesBase", "Revise", "SatelliteToolbox", "ShapML", "SpecialFunctions", "Statistics", "StatsBase", "TOML", "ZipFile", "Zygote"]
@@ -1658,9 +1663,9 @@ version = "1.7.7"
 
 [[deps.Optimisers]]
 deps = ["ChainRulesCore", "Functors", "LinearAlgebra", "Random", "Statistics"]
-git-tree-sha1 = "16776280310aa5553c370b9c7b17f34aadaf3c8e"
+git-tree-sha1 = "c1fc26bab5df929a5172f296f25d7d08688fd25b"
 uuid = "3bd65402-5787-11e9-1adc-39752487f4e2"
-version = "0.2.19"
+version = "0.2.20"
 
 [[deps.OptionalData]]
 git-tree-sha1 = "d047cc114023e12292533bb822b45c23cb51d310"
@@ -1807,9 +1812,9 @@ version = "3.0.3"
 
 [[deps.PrecompileTools]]
 deps = ["Preferences"]
-git-tree-sha1 = "9673d39decc5feece56ef3940e5dafba15ba0f81"
+git-tree-sha1 = "03b4c25b43cb84cee5c90aa9b5ea0a78fd848d2f"
 uuid = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
-version = "1.1.2"
+version = "1.2.0"
 
 [[deps.Preferences]]
 deps = ["TOML"]
@@ -2153,9 +2158,9 @@ version = "1.1.1"
 
 [[deps.SpaceIndices]]
 deps = ["Dates", "DelimitedFiles", "OptionalData", "Reexport", "Scratch"]
-git-tree-sha1 = "aa527defc37566c18dcdef93c4d04390a9ffb4f7"
+git-tree-sha1 = "0329173419328166fd0eae5ec92fa40f98f19a79"
 uuid = "5a540a4e-639f-452a-b107-23ea09ed4d36"
-version = "1.0.0"
+version = "1.1.0"
 
 [[deps.SparseArrays]]
 deps = ["Libdl", "LinearAlgebra", "Random", "Serialization", "SuiteSparse_jll"]
@@ -2379,9 +2384,9 @@ version = "0.4.1"
 
 [[deps.Unitful]]
 deps = ["Dates", "LinearAlgebra", "Random"]
-git-tree-sha1 = "607c142139151faa591b5e80d8055a15e487095b"
+git-tree-sha1 = "a72d22c7e13fe2de562feda8645aa134712a87ee"
 uuid = "1986cc42-f94f-5a68-af5c-568840ba703d"
-version = "1.16.3"
+version = "1.17.0"
 weakdeps = ["ConstructionBase", "InverseFunctions"]
 
     [deps.Unitful.extensions]

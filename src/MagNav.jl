@@ -15,7 +15,7 @@ module MagNav
     using Flux: Chain, Dense, destructure, mse
     using FluxOptTools: optfuns
     using GLMNet: glmnetcv
-    using Geodesy: LLA, LLAfromUTMZ, UTMZ, UTMZfromLLA, WGS84
+    using Geodesy: LLA, LLAfromUTM, UTM, UTMfromLLA, WGS84, utm_zone
     using GlobalSensitivity: Morris, gsa
     using Interpolations: BSpline, Cubic, Line, Linear, OnGrid, Quadratic
     using Interpolations: interpolate, linear_interpolation, scale
@@ -30,7 +30,7 @@ module MagNav
     using Plots: mm, plot, plot!
     using Random: rand, randn, randperm, seed!, shuffle
     using RecipesBase: @recipe
-    using SatelliteToolbox: igrf, igrfd
+    using SatelliteToolboxGeomagneticField: igrf, igrfd
     using ShapML: shap
     using SpecialFunctions: gamma, gamma_inc, gamma_inc_inv
     using Statistics: cor, cov, mean, median, std, var

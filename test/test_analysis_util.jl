@@ -1,5 +1,5 @@
 using MagNav, Test, MAT
-using DataFrames, Flux, LinearAlgebra, Plots, SatelliteToolbox, Statistics
+using DataFrames, Flux, LinearAlgebra, Plots, Statistics
 using MagNav: project_vec_to_2d, unpack_data_norms
 
 test_file = joinpath(@__DIR__,"test_data/test_data_params.mat")

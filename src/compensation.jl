@@ -175,13 +175,11 @@ function nn_comp_1_train(x, y, no_norm;
             params = Flux.params(m_l)
             opt = LBFGS()
             (_,_,fg!,p0) = optfuns(loss_,params)
-            res = optimize(only_fg!(fg!),p0,opt,
-                  Options(iterations=iter,show_trace=true))
-            return (res)
+            optimize(only_fg!(fg!),p0,opt,Options(iterations=iter,show_trace=true))
         end # function lbfgs_train!
 
         # train NN with LBFGS optimizer
-        res = lbfgs_train!(m,data,epoch_lbfgs)
+        lbfgs_train!(m,data,epoch_lbfgs)
     end
 
     # get results
@@ -508,6 +506,7 @@ function nn_comp_2_train(A, x, y, no_norm;
     TL_coef_norm = TL_coef_store
 
     if epoch_lbfgs > 0 # LBFGS, may overfit depending on iterations
+        model_type == :m2c && (@info ("LBFGS will only update NN model weights (not TL coef)"))
         data = Flux.DataLoader((A_norm',x_norm',y_norm'),shuffle=true,batchsize=batchsize)
 
         function lbfgs_train!(m_l,data_l,iter,t_l,TL_coef_l)
@@ -521,13 +520,11 @@ function nn_comp_2_train(A, x, y, no_norm;
             end
             opt = LBFGS()
             (_,_,fg!,p0) = optfuns(loss_,params)
-            res = optimize(only_fg!(fg!),p0,opt,
-                  Options(iterations=iter,show_trace=true))
-            return (res)
+            optimize(only_fg!(fg!),p0,opt,Options(iterations=iter,show_trace=true))
         end # function lbfgs_train!
 
         # train NN with LBFGS optimizer
-        res = lbfgs_train!(m,data,epoch_lbfgs,model_type,TL_coef_norm)
+        lbfgs_train!(m,data,epoch_lbfgs,model_type,TL_coef_norm)
     end
 
     # get results
@@ -1163,7 +1160,13 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
     TL_coef = TL_coef_store
     (TL_coef_p,TL_coef_i,TL_coef_e) = TL_vec2mat(TL_coef,terms_A;Bt_scale=Bt_scale)
 
+    if (epoch_lbfgs > 0) & (model_type == :m3tl)
+        @info ("LBFGS not supported with $model_type model type")
+        epoch_lbfgs = 0
+    end
+
     if epoch_lbfgs > 0 # LBFGS, may overfit depending on iterations
+        @info ("LBFGS will only update NN model weights (not TL coef)")
         data = Flux.DataLoader((B_unit',B_vec',B_vec_dot',x_norm',y_norm'),shuffle=true,batchsize=batchsize)
 
         function lbfgs_train!(m_l,data_l,iter,t_l,p_l,i_l,e_l)
@@ -1174,13 +1177,11 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
             params = Flux.params(m_l,p_l,i_l,e_l)
             opt = LBFGS()
             (_,_,fg!,p0) = optfuns(loss_,params)
-            res = optimize(only_fg!(fg!),p0,opt,
-                  Options(iterations=iter,show_trace=true))
-            return (res)
+            optimize(only_fg!(fg!),p0,opt,Options(iterations=iter,show_trace=true))
         end # function lbfgs_train!
 
         # train NN with LBFGS optimizer
-        res = lbfgs_train!(m,data,epoch_lbfgs,model_type,TL_coef_p,TL_coef_i.data,TL_coef_e)
+        lbfgs_train!(m,data,epoch_lbfgs,model_type,TL_coef_p,TL_coef_i.data,TL_coef_e)
     end
 
     TL_coef = TL_mat2vec(TL_coef_p,TL_coef_i,TL_coef_e,terms_A;Bt_scale=Bt_scale)
@@ -3370,11 +3371,9 @@ function comp_m3_test(lines, df_line::DataFrame,
         y_nn = y_nn' .* B_unit # assume same direction [3xN]
     elseif model_type in [:m3v,:m3vc] # vector-corrected
         y_nn = m(x_norm') .* y_scale # rescale to TL [3xN]
-    else
-        y_nn = zero.(TL_aircraft) # not NN-corrected [3xN]
     end
+
     vec_aircraft = TL_aircraft + y_nn # [3xN]
-    # model_type in [:m3s,:m3sc] && (vec_aircraft += y_bias .* B_unit) # assume same direction [3xN]
 
     # compute aircraft field correction or Earth field target
     y_hat = nn_comp_3_fwd(B_unit',B_vec',B_vec_dot',x_norm,y_bias,y_scale,m,

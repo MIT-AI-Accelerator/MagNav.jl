@@ -23,72 +23,108 @@ md"# Using the MagNav Package with Real Simulated Data Example
 This file is best viewed in a [Pluto](https://plutojl.org/) notebook. To run it this way, from the MagNav.jl directory, do:
 ```julia
 julia> using Pluto
-julia> Pluto.run() # select and open notebook
+julia> Pluto.run() # select & open notebook
 ```
 
 This is a reactive notebook, so feel free to change any parameters of interest.
 "
 
+# ╔═╡ 3ffae734-b7b2-45bf-9843-171b6e2deb13
+md"## Import Map Data & Create Flight Data
+
+The built-in NAMAD map is used to create flight data.
+"
+
 # ╔═╡ ff29f1c4-74ef-43cb-95be-14b5518e2cc6
 begin
-	##* flight, map, and INS data section ========================================
-	t    = 1800 # selected flight time [s]
-	mapS = get_map(MagNav.namad) # load built-in NAMAD map
+	t    = 1800 # flight time [s]
+	mapS = get_map(MagNav.namad) # load map data
 	xyz  = create_XYZ0(mapS;alt=mapS.alt,t=t,N_waves=2) # create flight data
-	traj = xyz.traj # get trajectory (GPS) struct
-	ins  = xyz.ins  # get INS struct
+	traj = xyz.traj # trajectory (GPS) struct
+	ins  = xyz.ins  # INS struct
 	mapS = map_trim(mapS,traj;pad=10) # trim map for given trajectory (with padding)
-	itp_mapS = map_interpolate(mapS) # get map interpolation function
+	itp_mapS = map_interpolate(mapS)  # map interpolation function
 end;
 
+# ╔═╡ 773df1f5-4cfc-42a8-b6c4-6d9d6e40bb0c
+md"## Navigation
+
+Create a navigation filter model.
+"
+
 # ╔═╡ 49eafe6d-120d-4e9e-8a34-2a5034f7de3f
-##* navigation filter section ================================================
-(P0,Qd,R) = create_model(traj.dt,traj.lat[1]); # create filter model
+(P0,Qd,R) = create_model(traj.dt,traj.lat[1]);
+
+# ╔═╡ 9a092951-05fd-47c2-932d-002231135486
+md"Run the navigation filter (EKF), determine the Cramér–Rao lower bound (CRLB), & extract output data.
+"
 
 # ╔═╡ 81a1f9fd-245d-42ca-bce0-fe78a69009ac
 begin
-	# run filter (EKF or MPF), determine CRLB
-	mag_use = xyz.mag_1_c # selected mag (using compensated mag)
+	mag_use = xyz.mag_1_c # selected magnetometer (using compensated mag)
 	(crlb_out,ins_out,filt_out) = run_filt(traj,ins,mag_use,itp_mapS,:ekf;P0,Qd,R)
 end;
 
+# ╔═╡ 4b40ae5b-6641-4792-89bb-dcceb553dd41
+md"Plotting setup.
+"
+
 # ╔═╡ 8f417413-6739-4c25-848f-7d47a491b89a
 begin
-	#* plotting section ==========================================================
-	t0 = traj.tt[1]
-	tt = (traj.tt.-t0)/60 # [min]
+	t0 = traj.tt[1]/60    # [min]
+	tt = traj.tt/60 .- t0 # [min]
 end;
+
+# ╔═╡ dc5aa915-9037-4792-a3e1-09074431d786
+md"Position (lat & lot) for trajectory (GPS), INS (after zeroing), & navigation filter.
+"
 
 # ╔═╡ 363b668b-bece-4bcd-8ac4-287b3138fdee
 begin
-	## lat/lon for GPS, INS (after zeroing), and Filter --------------------------
 	p1 = plot_map(mapS;map_color=:gray); # map background
-	plot_filt!(p1,traj,ins,filt_out;show_plot=false); # overlay GPS, INS, & filter
+	plot_filt!(p1,traj,ins,filt_out;show_plot=false) # overlay GPS, INS, & filter
 	plot!(p1,legend=:topleft) # move as needed
-	# png(p1,"flight_path") # to save figure
 end
+
+# ╔═╡ 9f90be51-1d9b-45a0-8ef3-91c93aa9bf2b
+md"Northing & easting INS error (after zeroing).
+"
 
 # ╔═╡ 3699e96c-48b4-4116-8c33-13cbc64bb3df
 begin
-	## northing/easting INS error (after zeroing) --------------------------------
-	p2 = plot(xlab="time [min]",ylab="error [m]",legend=:topright); # move as needed
-	plot!(p2,tt,ins_out.n_err,lab="northing");
+	p2 = plot(xlab="time [min]",ylab="error [m]",legend=:topright,dpi=200)
+	plot!(p2,tt,ins_out.n_err,lab="northing")
 	plot!(p2,tt,ins_out.e_err,lab="easting")
 end
 
 # ╔═╡ 7fecb8d4-5b8d-4731-b224-22b9adfad5ee
-## northing/easting filter residuals -----------------------------------------
 (p3,p4) = plot_filt_err(traj,filt_out,crlb_out;show_plot=false);
 
-# ╔═╡ db615061-54c0-40d4-bd8e-77f3836f2161
-## generating Google Earth map -----------------------------------------------
-# map2kmz(mapS,"example_sim_map")
+# ╔═╡ 9e6376e6-3280-4f10-8a52-870c8c43f1b2
+md"Northing navigation filter residuals.
+"
+
+# ╔═╡ 4027a986-1cdf-467b-802d-ca4e963c77f5
+p3
+
+# ╔═╡ 893d6521-87e0-422c-9aee-480fb2dcbfba
+md"Easting navigation filter residuals.
+"
+
+# ╔═╡ c8c89445-acc7-4dfe-8b35-181abbb89f1b
+p4
+
+# ╔═╡ ac029f6d-a7b4-40d6-a47c-041f3be99850
+md"Display the map or flight paths in Google Earth by uncommenting below to generate a KMZ file (`mapS`) or KML files (`traj`, `ins`, `filt_out`), then open in Google Earth.
+"
 
 # ╔═╡ 26810eff-0812-43cc-b1bc-d4f5d7c9542d
-## generating Google Earth flight paths --------------------------------------
-# path2kml(traj,"example_sim_gps")
-# path2kml(ins,"example_sim_ins")
-# path2kml(filt_out,"example_sim_filt")
+begin
+	# map2kmz(mapS,"example_sim_map")
+	# path2kml(traj,"example_sim_gps")
+	# path2kml(ins,"example_sim_ins")
+	# path2kml(filt_out,"example_sim_filt")
+end;
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -111,7 +147,7 @@ Plots = "~1.38.17"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.9.2"
+julia_version = "1.9.3"
 manifest_format = "2.0"
 project_hash = "590d1622e1796bf504b36b11857c0a4f3f4ad57c"
 
@@ -670,10 +706,15 @@ version = "0.9.20"
 uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
 [[deps.FillArrays]]
-deps = ["LinearAlgebra", "Random", "SparseArrays", "Statistics"]
-git-tree-sha1 = "f372472e8672b1d993e93dada09e23139b509f9e"
+deps = ["LinearAlgebra", "Random"]
+git-tree-sha1 = "a20eaa3ad64254c61eeb5f230d9306e937405434"
 uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
-version = "1.5.0"
+version = "1.6.1"
+weakdeps = ["SparseArrays", "Statistics"]
+
+    [deps.FillArrays.extensions]
+    FillArraysSparseArraysExt = "SparseArrays"
+    FillArraysStatisticsExt = "Statistics"
 
 [[deps.FiniteDiff]]
 deps = ["ArrayInterface", "LinearAlgebra", "Requires", "Setfield", "SparseArrays"]
@@ -767,9 +808,9 @@ uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
 
 [[deps.FuzzyCompletions]]
 deps = ["REPL"]
-git-tree-sha1 = "e16dd964b4dfaebcded16b2af32f05e235b354be"
+git-tree-sha1 = "001bd0eefc8c532660676725bed56b696321dfd2"
 uuid = "fb4132e2-a121-4a70-b8a1-d5b831dcdcc2"
-version = "0.5.1"
+version = "0.5.2"
 
 [[deps.GDAL]]
 deps = ["CEnum", "GDAL_jll", "NetworkOptions", "PROJ_jll"]
@@ -902,10 +943,10 @@ uuid = "42e2da0e-8278-4e71-bc24-59509adca0fe"
 version = "1.0.2"
 
 [[deps.HDF5]]
-deps = ["Compat", "HDF5_jll", "Libdl", "Mmap", "Random", "Requires", "UUIDs"]
-git-tree-sha1 = "c73fdc3d9da7700691848b78c61841274076932a"
+deps = ["Compat", "HDF5_jll", "Libdl", "Mmap", "Printf", "Random", "Requires", "UUIDs"]
+git-tree-sha1 = "114e20044677badbc631ee6fdc80a67920561a29"
 uuid = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
-version = "0.16.15"
+version = "0.16.16"
 
 [[deps.HDF5_jll]]
 deps = ["Artifacts", "JLLWrappers", "LibCURL_jll", "Libdl", "OpenSSL_jll", "Pkg", "Zlib_jll"]
@@ -1038,9 +1079,9 @@ version = "0.1.5"
 
 [[deps.JLLWrappers]]
 deps = ["Artifacts", "Preferences"]
-git-tree-sha1 = "a7e91ef94114d5bc8952bcaa8d6ff952cf709808"
+git-tree-sha1 = "7e5d6779a1e09a36db2a7b6cff50942a0a7d0fca"
 uuid = "692b3bcd-3c85-4b1f-b108-f13ce0eb3210"
-version = "1.4.2"
+version = "1.5.0"
 
 [[deps.JSON]]
 deps = ["Dates", "Mmap", "Parsers", "Unicode"]
@@ -1056,9 +1097,9 @@ version = "2.1.91+0"
 
 [[deps.JuliaInterpreter]]
 deps = ["CodeTracking", "InteractiveUtils", "Random", "UUIDs"]
-git-tree-sha1 = "e8ab063deed72e14666f9d8af17bd5f9eab04392"
+git-tree-sha1 = "81dc6aefcbe7421bd62cb6ca0e700779330acff8"
 uuid = "aa1ae85d-cabe-5617-a682-6adf51b2e16a"
-version = "0.9.24"
+version = "0.9.25"
 
 [[deps.JuliaVariables]]
 deps = ["MLStyle", "NameResolution"]
@@ -1272,9 +1313,9 @@ version = "2.12.0+0"
 
 [[deps.LogExpFunctions]]
 deps = ["DocStringExtensions", "IrrationalConstants", "LinearAlgebra"]
-git-tree-sha1 = "c3ce8e7420b3a6e071e0fe4745f5d4300e37b13f"
+git-tree-sha1 = "7d6dd4e9212aebaeed356de34ccf262a3cd415aa"
 uuid = "2ab3a3ac-af41-5b50-aa03-7779005ae688"
-version = "0.3.24"
+version = "0.3.26"
 
     [deps.LogExpFunctions.extensions]
     LogExpFunctionsChainRulesCoreExt = "ChainRulesCore"
@@ -1291,9 +1332,9 @@ uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
 
 [[deps.LoggingExtras]]
 deps = ["Dates", "Logging"]
-git-tree-sha1 = "cedb76b37bc5a6c702ade66be44f831fa23c681e"
+git-tree-sha1 = "a03c77519ab45eb9a34d3cfe2ca223d79c064323"
 uuid = "e6f89c97-d47a-5376-807f-9c37f3926c36"
-version = "1.0.0"
+version = "1.0.1"
 
 [[deps.LoweredCodeUtils]]
 deps = ["JuliaInterpreter"]
@@ -1332,9 +1373,9 @@ version = "0.9.2"
 
 [[deps.MLJModelInterface]]
 deps = ["Random", "ScientificTypesBase", "StatisticalTraits"]
-git-tree-sha1 = "e89d1ea12c5a50057bfb0c124d905669e5ed4ec9"
+git-tree-sha1 = "03ae109be87f460fe3c96b8a0dbbf9c7bf840bd5"
 uuid = "e80e1ace-859a-464e-9ed9-23947d8ae3ea"
-version = "1.9.1"
+version = "1.9.2"
 
 [[deps.MLStyle]]
 git-tree-sha1 = "bc38dff0548128765760c79eb7388a4b37fae2c8"
@@ -1349,9 +1390,9 @@ version = "0.4.3"
 
 [[deps.MacroTools]]
 deps = ["Markdown", "Random"]
-git-tree-sha1 = "42324d08725e200c23d4dfb549e0d5d89dede2d2"
+git-tree-sha1 = "9ee1618cbf5240e6d4e0371d6f24065083f60c48"
 uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
-version = "0.5.10"
+version = "0.5.11"
 
 [[deps.MagNav]]
 deps = ["ArchGDAL", "BSON", "BenchmarkTools", "CSV", "DSP", "DataFrames", "DelimitedFiles", "Distributions", "ExponentialUtilities", "Flux", "FluxOptTools", "ForwardDiff", "GLMNet", "GR", "Geodesy", "GlobalSensitivity", "HDF5", "Inflate", "Interpolations", "IterTools", "KernelFunctions", "LazyArtifacts", "LinearAlgebra", "MAT", "MLJLinearModels", "NearestNeighbors", "Optim", "Parameters", "Pkg", "Plots", "Pluto", "Random", "RecipesBase", "Revise", "SatelliteToolbox", "ShapML", "SpecialFunctions", "Statistics", "StatsBase", "TOML", "ZipFile", "Zygote"]
@@ -1543,9 +1584,9 @@ version = "1.7.7"
 
 [[deps.Optimisers]]
 deps = ["ChainRulesCore", "Functors", "LinearAlgebra", "Random", "Statistics"]
-git-tree-sha1 = "16776280310aa5553c370b9c7b17f34aadaf3c8e"
+git-tree-sha1 = "c1fc26bab5df929a5172f296f25d7d08688fd25b"
 uuid = "3bd65402-5787-11e9-1adc-39752487f4e2"
-version = "0.2.19"
+version = "0.2.20"
 
 [[deps.OptionalData]]
 git-tree-sha1 = "d047cc114023e12292533bb822b45c23cb51d310"
@@ -1692,9 +1733,9 @@ version = "3.0.3"
 
 [[deps.PrecompileTools]]
 deps = ["Preferences"]
-git-tree-sha1 = "9673d39decc5feece56ef3940e5dafba15ba0f81"
+git-tree-sha1 = "03b4c25b43cb84cee5c90aa9b5ea0a78fd848d2f"
 uuid = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
-version = "1.1.2"
+version = "1.2.0"
 
 [[deps.Preferences]]
 deps = ["TOML"]
@@ -2038,9 +2079,9 @@ version = "1.1.1"
 
 [[deps.SpaceIndices]]
 deps = ["Dates", "DelimitedFiles", "OptionalData", "Reexport", "Scratch"]
-git-tree-sha1 = "aa527defc37566c18dcdef93c4d04390a9ffb4f7"
+git-tree-sha1 = "0329173419328166fd0eae5ec92fa40f98f19a79"
 uuid = "5a540a4e-639f-452a-b107-23ea09ed4d36"
-version = "1.0.0"
+version = "1.1.0"
 
 [[deps.SparseArrays]]
 deps = ["Libdl", "LinearAlgebra", "Random", "Serialization", "SuiteSparse_jll"]
@@ -2264,9 +2305,9 @@ version = "0.4.1"
 
 [[deps.Unitful]]
 deps = ["Dates", "LinearAlgebra", "Random"]
-git-tree-sha1 = "607c142139151faa591b5e80d8055a15e487095b"
+git-tree-sha1 = "a72d22c7e13fe2de562feda8645aa134712a87ee"
 uuid = "1986cc42-f94f-5a68-af5c-568840ba703d"
-version = "1.16.3"
+version = "1.17.0"
 weakdeps = ["ConstructionBase", "InverseFunctions"]
 
     [deps.Unitful.extensions]
@@ -2598,16 +2639,24 @@ version = "1.4.1+0"
 # ╔═╡ Cell order:
 # ╟─d9ac0df2-3d79-11ee-0869-73b7f6649d95
 # ╠═f799c623-3802-491b-9709-6c1a01ac3978
+# ╟─3ffae734-b7b2-45bf-9843-171b6e2deb13
 # ╠═ff29f1c4-74ef-43cb-95be-14b5518e2cc6
+# ╟─773df1f5-4cfc-42a8-b6c4-6d9d6e40bb0c
 # ╠═49eafe6d-120d-4e9e-8a34-2a5034f7de3f
+# ╟─9a092951-05fd-47c2-932d-002231135486
 # ╠═81a1f9fd-245d-42ca-bce0-fe78a69009ac
+# ╟─4b40ae5b-6641-4792-89bb-dcceb553dd41
 # ╠═8f417413-6739-4c25-848f-7d47a491b89a
+# ╟─dc5aa915-9037-4792-a3e1-09074431d786
 # ╠═363b668b-bece-4bcd-8ac4-287b3138fdee
+# ╟─9f90be51-1d9b-45a0-8ef3-91c93aa9bf2b
 # ╠═3699e96c-48b4-4116-8c33-13cbc64bb3df
 # ╠═7fecb8d4-5b8d-4731-b224-22b9adfad5ee
-# ╠═777b4ce1-6250-4e76-91e8-537cd0d1681c
-# ╠═300dd778-1b7a-4aff-8e11-1cd5c3c99b90
-# ╠═db615061-54c0-40d4-bd8e-77f3836f2161
+# ╟─9e6376e6-3280-4f10-8a52-870c8c43f1b2
+# ╠═4027a986-1cdf-467b-802d-ca4e963c77f5
+# ╟─893d6521-87e0-422c-9aee-480fb2dcbfba
+# ╠═c8c89445-acc7-4dfe-8b35-181abbb89f1b
+# ╟─ac029f6d-a7b4-40d6-a47c-041f3be99850
 # ╠═26810eff-0812-43cc-b1bc-d4f5d7c9542d
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

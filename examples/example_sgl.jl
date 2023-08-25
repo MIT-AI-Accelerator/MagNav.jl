@@ -23,147 +23,185 @@ md"# Using the MagNav Package with Real SGL Flight Data Example
 This file is best viewed in a [Pluto](https://plutojl.org/) notebook. To run it this way, from the MagNav.jl directory, do:
 ```julia
 julia> using Pluto
-julia> Pluto.run() # select and open notebook
+julia> Pluto.run() # select & open notebook
 ```
 
 This is a reactive notebook, so feel free to change any parameters of interest.
 "
 
+# ╔═╡ 2f1e71ff-8f7f-4704-8e7d-b4fd2846f7ed
+md"## Import Flight & Map Data
+
+Specify the flight & load the flight data. The full list of SGL flights is in `df_flight`.
+"
+
 # ╔═╡ da75fd96-1e6a-46bc-bcea-cdcc8c5f2a86
 begin
-	#* flight and map data section ===============================================
-	## specify flight, load flight data ------------------------------------------
-	flight = :Flt1006 # specify flight #* full list of SGL flights in df_flight
-	xyz    = get_XYZ(flight,df_flight); # load flight data
+	flight = :Flt1006
+	xyz    = get_XYZ(flight,df_flight)
 end;
+
+# ╔═╡ 1a3aba8d-3aa8-454b-9fb0-708f0bd38c42
+md"Specify the map & view the flight line options (`df_options`) for the selected flight & map. The full list of SGL flights is in `df_flight`. The full list of maps is in `df_map` & the full list of navigation-capable lines is in `df_nav`.
+"
 
 # ╔═╡ c192c83b-deb3-4b6e-b0d9-97357e0b554c
 begin
-	## specify map, see line options ---------------------------------------------
-	map_name = :Eastern_395 # specify map #* full list of maps in df_map
-	#* full list of navigation-capable lines in df_nav
-	#* df_options is the portion of df_nav valid for the selected flight & map
-	df_options = df_nav[(df_nav.flight   .== flight  ) .& 
-	                    (df_nav.map_name .== map_name),:] # line options
-end;
+	map_name = :Eastern_395
+	df_options = df_nav[(df_nav.flight   .== flight  ) .&
+	                    (df_nav.map_name .== map_name),:]
+end
+
+# ╔═╡ e001a13c-2662-4c2f-a89a-de6658fa81db
+md"Select a flight line (row of `df_options`) & get the flight data indices (mask).
+"
 
 # ╔═╡ 7390ee91-6a92-4070-af8b-e3c003c3b5fb
 begin
-	## choose line, get flight data indices --------------------------------------
-	line = df_options.line[1] # select line (row) from df_options
-	ind  = get_ind(xyz,line,df_nav); # get indicies
-	# ind = get_ind(xyz;lines=[line]); # alternate way to get indicies
+	line = df_options.line[1]
+	ind  = get_ind(xyz,line,df_nav)
+	# ind = get_ind(xyz;lines=[line]) # alternative
 end;
+
+# ╔═╡ f665ea95-dac3-4823-94af-c7ba58cd4401
+md"Select a flight line (row of `df_comp`) & get the flight data indices (mask) for Tolles-Lawson calibration/compensation. The full list of compensation flight line portions is in `df_comp`.
+"
 
 # ╔═╡ 5346a989-cf32-436c-9181-d7aff6dd44a1
 begin
-	## choose line, get calibration box indices ----------------------------------
 	TL_i   = 6 # first calibration box of 1006.04
-	TL_ind = get_ind(xyz;tt_lim=[df_comp.t_start[TL_i],df_comp.t_end[TL_i]]);
+	TL_ind = get_ind(xyz;tt_lim=[df_comp.t_start[TL_i],df_comp.t_end[TL_i]])
 end;
+
+# ╔═╡ db7dc866-b889-4fb7-81d4-97cd8435636e
+md"## Baseline Plots of Scalar & Vector (Fluxgate) Magnetometer Data
+
+Setup for the baseline plots.
+"
 
 # ╔═╡ 3db31fc5-9ec2-4ca2-a5e0-6b478a7b29f9
 begin
-	#* baseline plots of scalar and vector (fluxgate) magnetometer data ==========
-	show_plot = false
-	save_plot = false
-	use_mags  = [:mag_1_uc,:mag_4_uc,:mag_5_uc]
+	show_plot    = false
+	save_plot    = false
+	detrend_data = true
 end;
 
+# ╔═╡ 6796c1ee-74a1-4d21-b68d-bd08929a817f
+md"Scalar magnetometers.
+"
+
 # ╔═╡ d02f285c-389c-4b9d-8fef-243253fcc8bb
-## scalar magnetometer
-b1 = plot_mag(xyz;ind,show_plot,save_plot,
-              use_mags=use_mags,
-              detrend_data=true,
-              plot_png="scalar_mags.png")
+b1 = plot_mag(xyz;ind,show_plot,save_plot,detrend_data,
+              use_mags = [:mag_1_uc,:mag_4_uc,:mag_5_uc])
+
+# ╔═╡ 3f69ee39-d3cb-4458-8381-345b289f5d3f
+md"Vector (fluxgate) magnetometer `d`.
+"
 
 # ╔═╡ 18189264-9abf-464a-9101-3f7f4f312690
-## vector magnetometer (fluxgate)
-b2 = plot_mag(xyz;ind,show_plot,save_plot,
-              use_mags=[:flux_b],
-              detrend_data=true,
-              plot_png="vector_mag_b.png")
+b2 = plot_mag(xyz;ind,show_plot,save_plot,detrend_data,
+              use_mags = [:flux_d])
+
+# ╔═╡ 5401fd57-4ac0-4ee3-ab9c-63746ebfd854
+md"Magnetometer 1 compensation as provided in dataset by SGL.
+"
 
 # ╔═╡ 15a1e17a-fd89-486d-9ad9-0ae73c0c2b79
-## mag_1 compensation (provided)
 b3 = plot_mag(xyz;ind,show_plot,save_plot,
-              use_mags=[:comp_mags],
-              plot_png="scalar_mags_comp.png")
+              use_mags = [:comp_mags])
+
+# ╔═╡ ee2119b5-b61f-4bad-87ed-abb4c88194bc
+md"Magnetometer 1 compensation using Tolles-Lawson with vector (fluxgate) magnetometer `d`.
+"
 
 # ╔═╡ 05ebfbab-deaa-43f3-965a-aeb91fec9e67
-## scalar magnetometer compensations (using Tolles-Lawson)
-b4 = plot_mag_c(xyz,xyz;ind=ind,ind_comp=TL_ind,show_plot,save_plot,
-                use_mags=[:mag_1_uc],
-                use_vec=:flux_b,
-                detrend_data=true,
-                plot_diff=true,
-                plot_png="scalar_mags_comp.png")
+b4 = plot_mag_c(xyz,xyz;ind,show_plot,save_plot,detrend_data,
+                ind_comp  = TL_ind,
+                use_mags  = [:mag_1_uc],
+                use_vec   = :flux_d,
+                plot_diff = true)
+
+# ╔═╡ ab8b23b1-63f8-4306-97a8-2e9d6f2707c4
+md"Magnetometer 1 Welch power spectral density (PSD).
+"
 
 # ╔═╡ 1eee0857-1278-412b-89fe-f6c3dc094f6f
-#* plot frequency domain data ================================================
-## Welch power spectral density (PSD)
-b5 = plot_frequency(xyz;ind,show_plot,save_plot,
-                    field=:mag_1_uc,
-                    freq_type=:PSD,
-                    plot_png="mag_1_uc_PSD.png")
+b5 = plot_frequency(xyz;ind,show_plot,save_plot,detrend_data,
+                    field     = :mag_1_uc,
+                    freq_type = :PSD)
+
+# ╔═╡ 0d362625-7d94-4131-9254-a336e6a791b1
+md"Magnetometer 1 spectrogram.
+"
 
 # ╔═╡ 90db7042-37b7-4751-ad7d-b1fabb305a5a
-## spectrogram
-b6 = plot_frequency(xyz;ind,show_plot,save_plot,
-                    field=:mag_1_uc,
-                    freq_type=:spec,
-                    plot_png="mag_1_uc_spec.png")
+b6 = plot_frequency(xyz;ind,show_plot,save_plot,detrend_data,
+                    field     = :mag_1_uc,
+                    freq_type = :spec)
+
+# ╔═╡ 1233e336-3f11-44e3-b136-08c724f12e0f
+md"## Tolles-Lawson Calibration & Compensation
+
+Create Tolles-Lawson coefficients for uncompensated scalar magnetometers `1-5` with vector (fluxgate) magnetometer `d`.
+"
 
 # ╔═╡ 162f9444-146b-41dd-ba2c-729beff44306
 begin
-	## create Tolles-Lawson coefficients -----------------------------------------
-	λ       = 0.025
+	λ       = 0.025 # ridge parameter for ridge regression
 	use_vec = :flux_d
 	flux    = getfield(xyz,use_vec)
-	TL_b_1  = create_TL_coef(flux,xyz.mag_1_uc,TL_ind;λ=λ);
-	TL_b_2  = create_TL_coef(flux,xyz.mag_2_uc,TL_ind;λ=λ);
-	TL_b_3  = create_TL_coef(flux,xyz.mag_3_uc,TL_ind;λ=λ);
-	TL_b_4  = create_TL_coef(flux,xyz.mag_4_uc,TL_ind;λ=λ);
-	TL_b_5  = create_TL_coef(flux,xyz.mag_5_uc,TL_ind;λ=λ);
+	TL_d_1  = create_TL_coef(flux,xyz.mag_1_uc,TL_ind;λ=λ)
+	TL_d_2  = create_TL_coef(flux,xyz.mag_2_uc,TL_ind;λ=λ)
+	TL_d_3  = create_TL_coef(flux,xyz.mag_3_uc,TL_ind;λ=λ)
+	TL_d_4  = create_TL_coef(flux,xyz.mag_4_uc,TL_ind;λ=λ)
+	TL_d_5  = create_TL_coef(flux,xyz.mag_5_uc,TL_ind;λ=λ)
 end;
+
+# ╔═╡ ebf894ec-5140-42cb-b2b5-1b85f96b7a75
+md"Get the relevant scalar magnetometer data.
+"
 
 # ╔═╡ c54b97cd-565f-4d5a-980a-44a3e1d18355
 begin
-	## get relevant scalar magnetometer data -------------------------------------
-	A = create_TL_A(flux,ind);
-	mag_1_sgl = xyz.mag_1_c[ind];
-	mag_1_uc  = xyz.mag_1_uc[ind];
-	mag_2_uc  = xyz.mag_2_uc[ind];
-	mag_3_uc  = xyz.mag_3_uc[ind];
-	mag_4_uc  = xyz.mag_4_uc[ind];
-	mag_5_uc  = xyz.mag_5_uc[ind];
+	A = create_TL_A(flux,ind)
+	mag_1_sgl = xyz.mag_1_c[ind]
+	mag_1_uc  = xyz.mag_1_uc[ind]
+	mag_2_uc  = xyz.mag_2_uc[ind]
+	mag_3_uc  = xyz.mag_3_uc[ind]
+	mag_4_uc  = xyz.mag_4_uc[ind]
+	mag_5_uc  = xyz.mag_5_uc[ind]
 end;
+
+# ╔═╡ d83b4b7a-e8c9-4dbe-8682-592f0ac5e1b6
+md"Create the Tolles-Lawson `A` matrices & perform Tolles-Lawson compensation.
+"
 
 # ╔═╡ 9116a5b5-7b5f-4c38-8a48-e854584a8ada
 begin
-	## create Tolles-Lawson `A` matrix and perform compensation ------------------
-	mag_1_c = mag_1_uc - detrend(A*TL_b_1;mean_only=true);
-	mag_2_c = mag_2_uc - detrend(A*TL_b_2;mean_only=true);
-	mag_3_c = mag_3_uc - detrend(A*TL_b_3;mean_only=true);
-	mag_4_c = mag_4_uc - detrend(A*TL_b_4;mean_only=true);
-	mag_5_c = mag_5_uc - detrend(A*TL_b_5;mean_only=true);
+	mag_1_c = mag_1_uc - detrend(A*TL_d_1;mean_only=true)
+	mag_2_c = mag_2_uc - detrend(A*TL_d_2;mean_only=true)
+	mag_3_c = mag_3_uc - detrend(A*TL_d_3;mean_only=true)
+	mag_4_c = mag_4_uc - detrend(A*TL_d_4;mean_only=true)
+	mag_5_c = mag_5_uc - detrend(A*TL_d_5;mean_only=true)
 end;
+
+# ╔═╡ 01779ec7-0088-4b37-bda4-7fccf4dbb548
+md"Prepare the flight data for the navigation filter, load the map data, & get the map interpolation function & map values along the selected flight line.
+"
 
 # ╔═╡ 3f2dd431-6c5b-403f-9a96-320d8ab6ef17
 begin
-	## prepare data for filter, load map data, get interpolation -----------------
-	traj = get_traj(xyz,ind); # get trajectory (gps) struct
-	ins  = get_ins(xyz,ind;N_zero_ll=1); # get INS struct
-	mapS = get_map(map_name,df_map); # load map data
-	all(mapS.alt .> 0) && (mapS = upward_fft(mapS,mean(traj.alt))); #* do not do with drape map
-	itp_mapS = map_interpolate(mapS); # get interpolation
-	map_val  = itp_mapS.(traj.lon,traj.lat) + (xyz.diurnal + xyz.igrf)[ind];
+	traj = get_traj(xyz,ind) # trajectory (gps) struct
+	ins  = get_ins(xyz,ind;N_zero_ll=1) # INS struct
+	mapS = get_map(map_name,df_map) # load map data
+	# get map values & map interpolation function
+	(map_val,itp_mapS) = get_map_val(mapS,traj;return_itp=true)
+	map_val += (xyz.diurnal + xyz.igrf)[ind] # add in diurnal & IGRF
 end;
 
-# ╔═╡ 946d547e-ed36-4c4d-b0f2-72fd21ae510f
-# mapS3D = upward_fft(mapS,300:100:500;α=200)
-# itp_mapS3D = map_interpolate(mapS3D); # get interpolation
-# map_val_3D = itp_mapS3D.(traj.lon,traj.lat,traj.alt) + (xyz.diurnal + xyz.igrf)[ind];
+# ╔═╡ 50a6302c-b1ed-4be3-8af7-1c641715b25f
+md"Map to magnetometer (standard deviation) errors. Magnetometer `1` is great (stinger), while `2` is unusable & `3-5` are in between.
+"
 
 # ╔═╡ 110e5de7-9011-4ba6-83d6-3443b6845dc6
 begin
@@ -174,82 +212,111 @@ begin
 	println("mag 5: ",round(std(map_val-mag_5_c),digits=2))
 end
 
+# ╔═╡ e5adfd84-4727-4839-bef0-9365d035249f
+md"## Navigation
+
+Create a navigation filter model. Only the most relevant navigation filter parameters are shown.
+"
+
 # ╔═╡ 1c3579bc-bf1f-45ad-bdfb-df4683ace128
-#* navigation filter section =================================================
-## create filter model, only showing most relevant filter parameters (fp) here
 (P0,Qd,R) = create_model(traj.dt,traj.lat[1];
                          init_pos_sigma = 0.1,
                          init_alt_sigma = 1.0,
                          init_vel_sigma = 1.0,
-                         meas_var       = 5^2, #* increase if mag_use is bad
+                         meas_var       = 5^2, # increase if mag_use is bad
                          fogm_sigma     = 3,
                          fogm_tau       = 180);
 
+# ╔═╡ 690c1b98-4201-4a7a-8c1d-04984c3e0307
+md"Run the navigation filter (EKF), determine the Cramér–Rao lower bound (CRLB), & extract output data.
+"
+
 # ╔═╡ 74b69225-a541-49b8-98fc-cacbf22f187a
 begin
-	## run filter (EKF or MPF), determine CRLB, & extract output -----------------
-	mag_use = mag_1_c; # selected magnetometer #* modify here to see what happens
+	mag_use = mag_1_c # selected magnetometer, modify & see what happens
 	(crlb_out,ins_out,filt_out) = run_filt(traj,ins,mag_use,itp_mapS,:ekf;
-	                                       P0,Qd,R,core=true);
+	                                       P0,Qd,R,core=true)
 end;
 
 # ╔═╡ f01997d2-0ea7-4be3-acd8-533580ccb82d
-#* type "?" then "crlb_out" or "ins_out" or "filt_out" in REPL to see fields
+md"Plotting setup.
+"
 
 # ╔═╡ 8167ba6a-fff4-4c79-9ee6-57d6f594bb18
 begin
-	#* plotting section ==========================================================
-	t0 = traj.tt[1]/60;    # [min]
-	tt = traj.tt/60 .- t0; # [min]
+	t0 = traj.tt[1]/60    # [min]
+	tt = traj.tt/60 .- t0 # [min]
 end;
+
+# ╔═╡ 8c92cea8-5cec-42a6-838d-ebc083e0d9b4
+md"Comparison of magnetometers after compensation.
+"
 
 # ╔═╡ e0a21a3c-b48c-458e-a4eb-7a726e77b2b2
 begin
-	## comparison of magnetometers after compensation ----------------------------
-	p1 = plot(xlab="time [min]",ylab="magnetic field [nT]",legend=:topleft,dpi=300)
+	p1 = plot(xlab="time [min]",ylab="magnetic field [nT]",legend=:topleft,dpi=200)
 	plot!(p1,tt,detrend(mag_1_uc ),lab="SGL raw Mag 1" ,color=:cyan,lw=2)
 	plot!(p1,tt,detrend(mag_1_sgl),lab="SGL comp Mag 1",color=:blue,lw=2)
 	plot!(p1,tt,detrend(mag_1_c  ),lab="MIT comp Mag 1",color=:red ,lw=2,ls=:dash)
-	# plot!(p1,tt,detrend(mag_2_c  ),lab="MIT comp Mag 2",color=:purple) #* bad
+	# plot!(p1,tt,detrend(mag_2_c  ),lab="MIT comp Mag 2",color=:purple) # bad
 	plot!(p1,tt,detrend(mag_3_c  ),lab="MIT comp Mag 3",color=:green)
 	plot!(p1,tt,detrend(mag_4_c  ),lab="MIT comp Mag 4",color=:black)
 	plot!(p1,tt,detrend(mag_5_c  ),lab="MIT comp Mag 5",color=:orange)
 	# png(p1,"comp_prof_1") # to save figure
 end
 
+# ╔═╡ 4036432b-2bea-4463-908a-5f5dcc5544cf
+md"Position (lat & lot) for trajectory (GPS), INS (after zeroing), & navigation filter.
+"
+
 # ╔═╡ 228b18b7-6374-4ceb-a2b1-b188aa2f593f
 begin
-	## lat/lon for GPS, INS (after zeroing), and Filter --------------------------
-	p2 = plot_map(mapS;map_color=:gray,legend=false); # map background
-	plot_filt!(p2,traj,ins,filt_out;show_plot=false);
-	plot!(p2,legend=:topleft)
+	p2 = plot_map(mapS;map_color=:gray) # map background
+	plot_filt!(p2,traj,ins,filt_out;show_plot=false) # overlay GPS, INS, & filter
+	plot!(p2,legend=:topleft) # move as needed
 end
+
+# ╔═╡ 60c2bb16-a0d4-42f2-ba4a-f42dd70f2611
+md"Northing & easting INS error (after zeroing).
+"
 
 # ╔═╡ 9bc21e37-9911-4b2e-8460-99ebd8256673
 begin
-	## northing/easting INS error (after zeroing) --------------------------------
-	p3 = plot(xlab="time [min]",ylab="error [m]",legend=:topleft,dpi=200);
-	plot!(p3,tt,ins_out.n_err,lab="northing");
+	p3 = plot(xlab="time [min]",ylab="error [m]",legend=:topleft,dpi=200)
+	plot!(p3,tt,ins_out.n_err,lab="northing")
 	plot!(p3,tt,ins_out.e_err,lab="easting")
 end
 
 # ╔═╡ de62fdda-a107-4283-9140-43dcf2dfb4bc
-## northing/easting filter residuals -----------------------------------------
 (p4,p5) = plot_filt_err(traj,filt_out,crlb_out;show_plot,save_plot);
+
+# ╔═╡ 5a71c032-287a-4c70-90dc-e922cf11c606
+md"Northing navigation filter residuals.
+"
 
 # ╔═╡ 6439d401-07a5-4d31-81e3-411e3aacd0bb
 p4
 
+# ╔═╡ 0cf07d89-6be4-491c-9c07-9ce4d94dee46
+md"Easting navigation filter residuals.
+"
+
 # ╔═╡ 6c4bf761-18f9-4724-8101-910f4f5ad65e
 p5
 
+# ╔═╡ 123a6d91-8950-40ef-804b-86021f9a0207
+md"Map values vs magnetometer measurements.
+"
+
 # ╔═╡ 4bb44a93-c17d-4667-b160-57b62c4c2914
-## map vs magnetometer measurement -------------------------------------------
 p6 = plot_mag_map(traj,mag_use,itp_mapS)
+
+# ╔═╡ 4c1c21b1-6ee8-4099-893f-9a473cba2d2d
+md"Magnetometers with in-flight event(s) marked. This may be useful for understanding errors in the magnetic signal compared to the map.
+"
 
 # ╔═╡ 289d9265-a8a0-410b-a858-3698bd4cae37
 begin
-	## magnetometers with event(s) marked ----------------------------------------
 	p7 = plot(xlab="time [min]",ylab="magnetic field [nT]",dpi=200)
 	plot!(p7,tt,mag_1_uc,lab="mag_1_uc")
 	plot!(p7,tt,mag_3_uc,lab="mag_3_uc")
@@ -279,7 +346,7 @@ Plots = "~1.38.17"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.9.2"
+julia_version = "1.9.3"
 manifest_format = "2.0"
 project_hash = "590d1622e1796bf504b36b11857c0a4f3f4ad57c"
 
@@ -838,10 +905,15 @@ version = "0.9.20"
 uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
 [[deps.FillArrays]]
-deps = ["LinearAlgebra", "Random", "SparseArrays", "Statistics"]
-git-tree-sha1 = "f372472e8672b1d993e93dada09e23139b509f9e"
+deps = ["LinearAlgebra", "Random"]
+git-tree-sha1 = "a20eaa3ad64254c61eeb5f230d9306e937405434"
 uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
-version = "1.5.0"
+version = "1.6.1"
+weakdeps = ["SparseArrays", "Statistics"]
+
+    [deps.FillArrays.extensions]
+    FillArraysSparseArraysExt = "SparseArrays"
+    FillArraysStatisticsExt = "Statistics"
 
 [[deps.FiniteDiff]]
 deps = ["ArrayInterface", "LinearAlgebra", "Requires", "Setfield", "SparseArrays"]
@@ -935,9 +1007,9 @@ uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
 
 [[deps.FuzzyCompletions]]
 deps = ["REPL"]
-git-tree-sha1 = "e16dd964b4dfaebcded16b2af32f05e235b354be"
+git-tree-sha1 = "001bd0eefc8c532660676725bed56b696321dfd2"
 uuid = "fb4132e2-a121-4a70-b8a1-d5b831dcdcc2"
-version = "0.5.1"
+version = "0.5.2"
 
 [[deps.GDAL]]
 deps = ["CEnum", "GDAL_jll", "NetworkOptions", "PROJ_jll"]
@@ -1070,10 +1142,10 @@ uuid = "42e2da0e-8278-4e71-bc24-59509adca0fe"
 version = "1.0.2"
 
 [[deps.HDF5]]
-deps = ["Compat", "HDF5_jll", "Libdl", "Mmap", "Random", "Requires", "UUIDs"]
-git-tree-sha1 = "c73fdc3d9da7700691848b78c61841274076932a"
+deps = ["Compat", "HDF5_jll", "Libdl", "Mmap", "Printf", "Random", "Requires", "UUIDs"]
+git-tree-sha1 = "114e20044677badbc631ee6fdc80a67920561a29"
 uuid = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
-version = "0.16.15"
+version = "0.16.16"
 
 [[deps.HDF5_jll]]
 deps = ["Artifacts", "JLLWrappers", "LibCURL_jll", "Libdl", "OpenSSL_jll", "Pkg", "Zlib_jll"]
@@ -1206,9 +1278,9 @@ version = "0.1.5"
 
 [[deps.JLLWrappers]]
 deps = ["Artifacts", "Preferences"]
-git-tree-sha1 = "a7e91ef94114d5bc8952bcaa8d6ff952cf709808"
+git-tree-sha1 = "7e5d6779a1e09a36db2a7b6cff50942a0a7d0fca"
 uuid = "692b3bcd-3c85-4b1f-b108-f13ce0eb3210"
-version = "1.4.2"
+version = "1.5.0"
 
 [[deps.JSON]]
 deps = ["Dates", "Mmap", "Parsers", "Unicode"]
@@ -1224,9 +1296,9 @@ version = "2.1.91+0"
 
 [[deps.JuliaInterpreter]]
 deps = ["CodeTracking", "InteractiveUtils", "Random", "UUIDs"]
-git-tree-sha1 = "e8ab063deed72e14666f9d8af17bd5f9eab04392"
+git-tree-sha1 = "81dc6aefcbe7421bd62cb6ca0e700779330acff8"
 uuid = "aa1ae85d-cabe-5617-a682-6adf51b2e16a"
-version = "0.9.24"
+version = "0.9.25"
 
 [[deps.JuliaVariables]]
 deps = ["MLStyle", "NameResolution"]
@@ -1440,9 +1512,9 @@ version = "2.12.0+0"
 
 [[deps.LogExpFunctions]]
 deps = ["DocStringExtensions", "IrrationalConstants", "LinearAlgebra"]
-git-tree-sha1 = "c3ce8e7420b3a6e071e0fe4745f5d4300e37b13f"
+git-tree-sha1 = "7d6dd4e9212aebaeed356de34ccf262a3cd415aa"
 uuid = "2ab3a3ac-af41-5b50-aa03-7779005ae688"
-version = "0.3.24"
+version = "0.3.26"
 
     [deps.LogExpFunctions.extensions]
     LogExpFunctionsChainRulesCoreExt = "ChainRulesCore"
@@ -1459,9 +1531,9 @@ uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
 
 [[deps.LoggingExtras]]
 deps = ["Dates", "Logging"]
-git-tree-sha1 = "cedb76b37bc5a6c702ade66be44f831fa23c681e"
+git-tree-sha1 = "a03c77519ab45eb9a34d3cfe2ca223d79c064323"
 uuid = "e6f89c97-d47a-5376-807f-9c37f3926c36"
-version = "1.0.0"
+version = "1.0.1"
 
 [[deps.LoweredCodeUtils]]
 deps = ["JuliaInterpreter"]
@@ -1500,9 +1572,9 @@ version = "0.9.2"
 
 [[deps.MLJModelInterface]]
 deps = ["Random", "ScientificTypesBase", "StatisticalTraits"]
-git-tree-sha1 = "e89d1ea12c5a50057bfb0c124d905669e5ed4ec9"
+git-tree-sha1 = "03ae109be87f460fe3c96b8a0dbbf9c7bf840bd5"
 uuid = "e80e1ace-859a-464e-9ed9-23947d8ae3ea"
-version = "1.9.1"
+version = "1.9.2"
 
 [[deps.MLStyle]]
 git-tree-sha1 = "bc38dff0548128765760c79eb7388a4b37fae2c8"
@@ -1517,9 +1589,9 @@ version = "0.4.3"
 
 [[deps.MacroTools]]
 deps = ["Markdown", "Random"]
-git-tree-sha1 = "42324d08725e200c23d4dfb549e0d5d89dede2d2"
+git-tree-sha1 = "9ee1618cbf5240e6d4e0371d6f24065083f60c48"
 uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
-version = "0.5.10"
+version = "0.5.11"
 
 [[deps.MagNav]]
 deps = ["ArchGDAL", "BSON", "BenchmarkTools", "CSV", "DSP", "DataFrames", "DelimitedFiles", "Distributions", "ExponentialUtilities", "Flux", "FluxOptTools", "ForwardDiff", "GLMNet", "GR", "Geodesy", "GlobalSensitivity", "HDF5", "Inflate", "Interpolations", "IterTools", "KernelFunctions", "LazyArtifacts", "LinearAlgebra", "MAT", "MLJLinearModels", "NearestNeighbors", "Optim", "Parameters", "Pkg", "Plots", "Pluto", "Random", "RecipesBase", "Revise", "SatelliteToolbox", "ShapML", "SpecialFunctions", "Statistics", "StatsBase", "TOML", "ZipFile", "Zygote"]
@@ -1711,9 +1783,9 @@ version = "1.7.7"
 
 [[deps.Optimisers]]
 deps = ["ChainRulesCore", "Functors", "LinearAlgebra", "Random", "Statistics"]
-git-tree-sha1 = "16776280310aa5553c370b9c7b17f34aadaf3c8e"
+git-tree-sha1 = "c1fc26bab5df929a5172f296f25d7d08688fd25b"
 uuid = "3bd65402-5787-11e9-1adc-39752487f4e2"
-version = "0.2.19"
+version = "0.2.20"
 
 [[deps.OptionalData]]
 git-tree-sha1 = "d047cc114023e12292533bb822b45c23cb51d310"
@@ -1860,9 +1932,9 @@ version = "3.0.3"
 
 [[deps.PrecompileTools]]
 deps = ["Preferences"]
-git-tree-sha1 = "9673d39decc5feece56ef3940e5dafba15ba0f81"
+git-tree-sha1 = "03b4c25b43cb84cee5c90aa9b5ea0a78fd848d2f"
 uuid = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
-version = "1.1.2"
+version = "1.2.0"
 
 [[deps.Preferences]]
 deps = ["TOML"]
@@ -2206,9 +2278,9 @@ version = "1.1.1"
 
 [[deps.SpaceIndices]]
 deps = ["Dates", "DelimitedFiles", "OptionalData", "Reexport", "Scratch"]
-git-tree-sha1 = "aa527defc37566c18dcdef93c4d04390a9ffb4f7"
+git-tree-sha1 = "0329173419328166fd0eae5ec92fa40f98f19a79"
 uuid = "5a540a4e-639f-452a-b107-23ea09ed4d36"
-version = "1.0.0"
+version = "1.1.0"
 
 [[deps.SparseArrays]]
 deps = ["Libdl", "LinearAlgebra", "Random", "Serialization", "SuiteSparse_jll"]
@@ -2432,9 +2504,9 @@ version = "0.4.1"
 
 [[deps.Unitful]]
 deps = ["Dates", "LinearAlgebra", "Random"]
-git-tree-sha1 = "607c142139151faa591b5e80d8055a15e487095b"
+git-tree-sha1 = "a72d22c7e13fe2de562feda8645aa134712a87ee"
 uuid = "1986cc42-f94f-5a68-af5c-568840ba703d"
-version = "1.16.3"
+version = "1.17.0"
 weakdeps = ["ConstructionBase", "InverseFunctions"]
 
     [deps.Unitful.extensions]
@@ -2766,34 +2838,58 @@ version = "1.4.1+0"
 # ╔═╡ Cell order:
 # ╟─13ac32f0-3d77-11ee-3009-e70e93e2e71b
 # ╠═c18afc43-9df3-45a1-b6e5-283ca8b26872
+# ╟─2f1e71ff-8f7f-4704-8e7d-b4fd2846f7ed
 # ╠═da75fd96-1e6a-46bc-bcea-cdcc8c5f2a86
+# ╟─1a3aba8d-3aa8-454b-9fb0-708f0bd38c42
 # ╠═c192c83b-deb3-4b6e-b0d9-97357e0b554c
+# ╟─e001a13c-2662-4c2f-a89a-de6658fa81db
 # ╠═7390ee91-6a92-4070-af8b-e3c003c3b5fb
+# ╟─f665ea95-dac3-4823-94af-c7ba58cd4401
 # ╠═5346a989-cf32-436c-9181-d7aff6dd44a1
+# ╟─db7dc866-b889-4fb7-81d4-97cd8435636e
 # ╠═3db31fc5-9ec2-4ca2-a5e0-6b478a7b29f9
+# ╟─6796c1ee-74a1-4d21-b68d-bd08929a817f
 # ╠═d02f285c-389c-4b9d-8fef-243253fcc8bb
+# ╟─3f69ee39-d3cb-4458-8381-345b289f5d3f
 # ╠═18189264-9abf-464a-9101-3f7f4f312690
+# ╟─5401fd57-4ac0-4ee3-ab9c-63746ebfd854
 # ╠═15a1e17a-fd89-486d-9ad9-0ae73c0c2b79
+# ╟─ee2119b5-b61f-4bad-87ed-abb4c88194bc
 # ╠═05ebfbab-deaa-43f3-965a-aeb91fec9e67
+# ╟─ab8b23b1-63f8-4306-97a8-2e9d6f2707c4
 # ╠═1eee0857-1278-412b-89fe-f6c3dc094f6f
+# ╟─0d362625-7d94-4131-9254-a336e6a791b1
 # ╠═90db7042-37b7-4751-ad7d-b1fabb305a5a
+# ╟─1233e336-3f11-44e3-b136-08c724f12e0f
 # ╠═162f9444-146b-41dd-ba2c-729beff44306
+# ╟─ebf894ec-5140-42cb-b2b5-1b85f96b7a75
 # ╠═c54b97cd-565f-4d5a-980a-44a3e1d18355
+# ╟─d83b4b7a-e8c9-4dbe-8682-592f0ac5e1b6
 # ╠═9116a5b5-7b5f-4c38-8a48-e854584a8ada
+# ╟─01779ec7-0088-4b37-bda4-7fccf4dbb548
 # ╠═3f2dd431-6c5b-403f-9a96-320d8ab6ef17
-# ╠═946d547e-ed36-4c4d-b0f2-72fd21ae510f
+# ╟─50a6302c-b1ed-4be3-8af7-1c641715b25f
 # ╠═110e5de7-9011-4ba6-83d6-3443b6845dc6
+# ╟─e5adfd84-4727-4839-bef0-9365d035249f
 # ╠═1c3579bc-bf1f-45ad-bdfb-df4683ace128
+# ╟─690c1b98-4201-4a7a-8c1d-04984c3e0307
 # ╠═74b69225-a541-49b8-98fc-cacbf22f187a
-# ╠═f01997d2-0ea7-4be3-acd8-533580ccb82d
+# ╟─f01997d2-0ea7-4be3-acd8-533580ccb82d
 # ╠═8167ba6a-fff4-4c79-9ee6-57d6f594bb18
+# ╟─8c92cea8-5cec-42a6-838d-ebc083e0d9b4
 # ╠═e0a21a3c-b48c-458e-a4eb-7a726e77b2b2
+# ╟─4036432b-2bea-4463-908a-5f5dcc5544cf
 # ╠═228b18b7-6374-4ceb-a2b1-b188aa2f593f
+# ╟─60c2bb16-a0d4-42f2-ba4a-f42dd70f2611
 # ╠═9bc21e37-9911-4b2e-8460-99ebd8256673
 # ╠═de62fdda-a107-4283-9140-43dcf2dfb4bc
+# ╟─5a71c032-287a-4c70-90dc-e922cf11c606
 # ╠═6439d401-07a5-4d31-81e3-411e3aacd0bb
+# ╟─0cf07d89-6be4-491c-9c07-9ce4d94dee46
 # ╠═6c4bf761-18f9-4724-8101-910f4f5ad65e
+# ╟─123a6d91-8950-40ef-804b-86021f9a0207
 # ╠═4bb44a93-c17d-4667-b160-57b62c4c2914
+# ╟─4c1c21b1-6ee8-4099-893f-9a473cba2d2d
 # ╠═289d9265-a8a0-410b-a858-3698bd4cae37
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
