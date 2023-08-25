@@ -1,33 +1,87 @@
-# MagNav: airborne Magnetic anomaly Navigation
+# MagNav: airborne **Mag**netic anomaly **Nav**igation
 
-<p align="left">
-    <a href="https://github.com/MIT-AI-Accelerator/MagNav.jl/actions/workflows/ci.yml">
-        <img src="https://github.com/MIT-AI-Accelerator/MagNav.jl/workflows/CI/badge.svg" title="CI">
-    </a>
-    <a href="https://app.codecov.io/gh/MIT-AI-Accelerator/MagNav.jl">
-        <img src="https://codecov.io/gh/MIT-AI-Accelerator/MagNav.jl/branch/master/graph/badge.svg" title="codecov">
-    </a>
-    <a href="https://mit-ai-accelerator.github.io/MagNav.jl/stable/">
-        <img src="https://img.shields.io/badge/docs-stable-blue.svg" title="docs-stable">
-    </a>
-</p>
+[![CI](https://github.com/MIT-AI-Accelerator/MagNav.jl/workflows/CI/badge.svg)](https://github.com/MIT-AI-Accelerator/MagNav.jl/actions/workflows/ci.yml)
+[![Codecov](https://codecov.io/gh/MIT-AI-Accelerator/MagNav.jl/branch/master/graph/badge.svg)](https://app.codecov.io/gh/MIT-AI-Accelerator/MagNav.jl)
+[![docs-stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://mit-ai-accelerator.github.io/MagNav.jl/stable/)
 
-MagNav.jl contains a full suite of tools for airborne Magnetic anomaly Navigation (MagNav), including flight path & INS data import or simulation, mapping, aeromagnetic compensation, and navigation. Julia source code files are in the [`src`](src) folder and examples are in the [`runs`](runs) folder. This package was developed as part of the [DAF-MIT Artificial Intelligence Accelerator](https://aia.mit.edu/). More information on this effort, including a list of relevant publications, is provided on the [challenge problem website](https://magnav.mit.edu/). The package has been tested on the long-term support (LTS) and latest stable versions of Julia, which may be downloaded from [here](https://julialang.org/downloads/).
+MagNav.jl contains a full suite of tools for airborne Magnetic anomaly Navigation (MagNav), including flight path & INS data import or simulation, mapping, aeromagnetic compensation, and navigation. This package was developed as part of the [DAF-MIT Artificial Intelligence Accelerator](https://aia.mit.edu/). More information on this effort, including a list of relevant publications, is provided on the [challenge problem website](https://magnav.mit.edu/). The package has been tested on the long-term support (LTS) and latest stable versions of Julia, which may be downloaded from [here](https://julialang.org/downloads/). The recommended IDE for Julia is [Visual Studio Code](https://code.visualstudio.com/).
 
-The package may be downloaded directly or installed using:
+## Installation
+
+From the Julia REPL, run:
 
 ```julia
-] add MagNav
+julia> using Pkg
+julia> Pkg.add("MagNav")
+```
+
+or from the Julia REPL, type `]` to enter Pkg REPL mode and run:
+
+```julia
+pkg> add MagNav
+```
+
+or clone/download the MagNav.jl repo and from within the local MagNav.jl folder, run:
+
+```julia
+julia> using Pkg
+julia> Pkg.activate(".")
+julia> Pkg.instantiate()
 ```
 
 NOTE: If any artifacts produce a hash mismatch error while downloading, simply navigate to the 
-`.julia/artifacts` folder and manually set the appropriate artifact folder name, e.g., `bf360d29207d6468a8cf783269191bda2cf1f679` for the ottawa_area_maps artifact.
+`.julia/artifacts` folder and manually set the appropriate artifact folder name. For example, the ottawa_area_maps artifact folder name should be `bf360d29207d6468a8cf783269191bda2cf1f679`.
+
+## Usage
+
+For general usage, run:
+
+```julia
+julia> using MagNav
+```
+
+Multiple examples (Pluto notebooks) are in the [`examples`](examples) folder. To start Pluto in a web browser, run:
+
+```julia
+julia> using Pkg
+julia> Pkg.add("Pluto") # as necessary
+julia> using Pluto
+julia> Pluto.run()
+```
+
+In Pluto, open the desired Pluto notebook file and it should run automatically.
+
+### Docker Demonstration Notebook
+
+A Docker image is available that contains an example usage of the package. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/), search and pull `jtaylormit/magnav`, and run with the host port set to `8888`. Alternatively, from the command line, run:
+
+```
+docker pull jtaylormit/magnav
+docker run -p 8888:8888 jtaylormit/magnav
+```
+
+A Docker container will spin up and provide a URL to copy into a local browser. It will look something like this: `http://127.0.0.1:8888/lab?token=###`. Note that changes to the notebook occur inside
+the container only. The notebook must be manually downloaded from the browser to be saved.
+
+The above image is [hosted on Docker Hub](https://hub.docker.com/r/jtaylormit/magnav), and it is manually and sporadically updated. For the most recent image, run:
+
+```
+docker pull ghcr.io/mit-ai-accelerator/magnav.jl
+docker run -p 8888:8888 ghcr.io/mit-ai-accelerator/magnav.jl
+```
+
+This will require a [personal access token](https://github.com/settings/tokens). Generate a new token (classic) with the expiration set as desired and `read:packages` checked. Generate and copy the token, then run:
+
+```
+export CR_PAT=YOUR_TOKEN
+echo $CR_PAT | docker login ghcr.io -u YOUR_USERNAME --password-stdin
+```
 
 ## Data
 
 Publicly available flight data can be automatically downloaded within the package itself. This dataset can also be directly downloaded from [here](https://doi.org/10.5281/zenodo.4271803). See the [datasheet](readmes/datasheet_sgl_2020_train.pdf) for high-level information about this dataset. Details of the flight data are described in the readme files within the [`readmes`](readmes) folder.
 
-## Data Sharing Agreement
+### Data Sharing Agreement
 
 Please read the full Data Sharing Agreement located [here](readmes/DATA_SHARING_AGREEMENT.md).
 

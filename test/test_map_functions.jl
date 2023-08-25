@@ -1,5 +1,6 @@
-using MagNav, Test, MAT, DataFrames, Geodesy, Plots
+using MagNav, Test, MAT, DataFrames, Plots, Statistics
 using MagNav: MapS, MapSd, MapS3D, MapV
+using Geodesy: LLA, LLAfromUTM, UTM, UTMfromLLA, WGS84, utm_zone
 
 test_file = joinpath(@__DIR__,"test_data/test_data_grid.mat")
 grid_data = matopen(test_file,"r") do file
@@ -49,14 +50,12 @@ end
 end
 
 @testset "map_lla_lim tests" begin
-    @test_nowarn MagNav.map_lla_lim(map_xx,map_yy,mapP.alt,
-                                    1,length(map_xx),1,length(map_yy))
+    @test_nowarn MagNav.map_lla_lim(map_xx,map_yy)
 end
 
 @testset "map_trim tests" begin
-    @test map_trim(map_map,map_xx,map_yy,mapP.alt) == (68:91,52:75)
-    @test_throws ErrorException map_trim(map_map,map_xx,map_yy,mapP.alt;
-                                         map_units=:test)
+    @test map_trim(map_map,map_xx,map_yy) == (68:91,52:75)
+    @test_throws ErrorException map_trim(map_map,map_xx,map_yy;map_units=:test)
     @test map_trim(mapS  ).map  ≈ mapS.map
     @test map_trim(mapSd ).map  ≈ mapSd.map
     @test map_trim(mapS3D).map  ≈ mapS3D.map
@@ -90,8 +89,9 @@ end
     @test typeof(map_chessboard(mapSd,mapS.alt;down_cont=false,dz=200)) <: MapS
 end
 
-lla2utm  = UTMZfromLLA(WGS84)
-utm_temp = lla2utm.(LLA.(rad2deg.(mapS.yy),rad2deg.(mapS.xx),mapS.alt))
+(zone_utm,is_north) = utm_zone(mean(rad2deg.(mapS.yy)),mean(rad2deg.(mapS.xx)))
+lla2utm  = UTMfromLLA(zone_utm,is_north,WGS84)
+utm_temp = lla2utm.(LLA.(rad2deg.(mapS.yy),rad2deg.(mapS.xx)))
 mapUTM   = MapS( mapS.map,[utm_temp[i].x for i in eachindex(mapS.xx)],
                           [utm_temp[i].y for i in eachindex(mapS.yy)],mapS.alt)
 mapUTMd  = MapSd(mapS.map,[utm_temp[i].x for i in eachindex(mapS.xx)],
@@ -152,6 +152,7 @@ df_event = DataFrame(flight=:test,tt=49.5*60,event="test")
 @testset "plot_events! tests" begin
     @test_nowarn plot_events!(p1,df_event.tt[1]/60,df_event.event[1])
     @test_nowarn plot_events!(p1,df_event,df_event.flight[1])
+    @test typeof(plot_events!(p1,df_event.flight[1],df_event)) <: Plots.Plot
 end
 
 @testset "map_check tests" begin
@@ -163,13 +164,16 @@ end
            get_map_val(mapSd ,traj.lat[1],traj.lon[1],traj.alt[1]),
            get_map_val(mapS3D,traj.lat[1],traj.lon[1],traj.alt[1])] == 
            get_map_val([mapS,mapSd,mapS3D],traj,1)
+    @test_nowarn get_map_val(mapS3D,traj.lat[1],traj.lon[1],mapS3D.alt[1]-1)
+    @test_nowarn get_map_val(mapS3D,traj.lat[1],traj.lon[1],mapS3D.alt[end]+1)
 end
 
 @testset "map_border tests" begin
-    @test_nowarn map_border(map_map,map_xx,map_yy;inner=true,sort_border=true)
-    @test_nowarn map_border(mapS  ;inner=true ,sort_border=true)
-    @test_nowarn map_border(mapSd ;inner=true ,sort_border=false)
-    @test_nowarn map_border(mapS3D;inner=false,sort_border=false)
+    @test typeof(map_border(map_map,map_xx,map_yy;inner=true,sort_border=true)) <: Tuple
+    @test typeof(map_border(mapS  ;inner=true ,sort_border=true )) <: Tuple
+    @test typeof(map_border(mapSd ;inner=true ,sort_border=false)) <: Tuple
+    @test typeof(map_border(mapS3D;inner=false,sort_border=false)) <: Tuple
+    @test MagNav.map_border_clean(trues(3,3)) == trues(3,3)
 end
 
 ind = [1,100]
@@ -187,4 +191,5 @@ mapS_fallback = upward_fft(map_fill(map_trim(get_map(),
 @testset "map_combine tests" begin
     @test typeof(map_combine(mapS,mapS_fallback)) <: MapS
     @test typeof(map_combine([mapS,upward_fft(mapS,mapS.alt+5)],mapS_fallback)) <: MapS3D
+    @test typeof(map_combine([mapS,upward_fft(mapS,mapS.alt+5)];use_fallback=false)) <: MapS3D
 end

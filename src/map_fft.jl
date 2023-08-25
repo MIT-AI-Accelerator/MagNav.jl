@@ -80,11 +80,9 @@ function upward_fft(map_map::Map, alt; expand::Bool=true, α=0)
         alt = sort(alt)
     end
 
-    alt  = convert.(eltype(map_map.alt),alt)
-    dlon = get_step(map_map.xx)
-    dlat = get_step(map_map.yy)
-    dx   = dlon2de(dlon,mean(map_map.yy))
-    dy   = dlat2dn(dlat,mean(map_map.yy))
+    alt = convert.(eltype(map_map.alt),alt)
+    dx  = dlon2de(get_step(map_map.xx),mean(map_map.yy))
+    dy  = dlat2dn(get_step(map_map.yy),mean(map_map.yy))
 
     if (typeof(map_map) <: Union{MapS,MapSd,MapV}) & (all(alt .>= median(map_map.alt)) | (α > 0))
 
@@ -230,12 +228,12 @@ function map_expand(map_map::Matrix, pad::Int=1)
     # (Ny,Nx) = (ny,nx).+ 2*pad # map size with naive padding
 
     # padding on each edge
-    pady = (floor(Int,(Ny-ny)/2),ceil(Int,(Ny-ny)/2))
     padx = (floor(Int,(Nx-nx)/2),ceil(Int,(Nx-nx)/2))
+    pady = (floor(Int,(Ny-ny)/2),ceil(Int,(Ny-ny)/2))
 
     # place original map in middle of new map
-    (y1,y2) = (1,ny) .+ pady[1]
     (x1,x2) = (1,nx) .+ padx[1]
+    (y1,y2) = (1,ny) .+ pady[1]
     map_map = zeros(Ny,Nx)
     map_map[y1:y2,x1:x2] = map_
 
@@ -328,7 +326,7 @@ function downward_L(map_map::Matrix, dx, dy, dz, α::Vector;
 end # function downward_L
 
 """
-    downward_L(mapS::Union{MapS,MapSd}, alt, α::Vector;
+    downward_L(mapS::Union{MapS,MapSd,MapS3D}, alt, α::Vector;
                expand::Bool = true,
                ind          = map_params(mapS)[2])
 
@@ -338,7 +336,7 @@ minimum on the L-curve, which is a local maximum of curvature. The global
 maximum of curvature may or may not be the optimal regularization parameter.
 
 **Arguments:**
-- `mapS`:   `MapS` or `MapSd` scalar magnetic anomaly map struct
+- `mapS`:   `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct
 - `alt`:    target downward continuation altitude [m]
 - `α`:      (geometric) sequence of regularization parameters
 - `expand`: (optional) if true, expand map temporarily to reduce edge effects
@@ -347,17 +345,17 @@ maximum of curvature may or may not be the optimal regularization parameter.
 **Returns:**
 - `norms`: L-infinity norm of difference between sequential D.C. solutions
 """
-function downward_L(mapS::Union{MapS,MapSd}, alt, α::Vector;
+function downward_L(mapS::Union{MapS,MapSd,MapS3D}, alt, α::Vector;
                     expand::Bool = true,
                     ind          = map_params(mapS)[2])
-    dlon = get_step(mapS.xx)
-    dlat = get_step(mapS.yy)
-    dx   = dlon2de(dlon,mean(mapS.yy))
-    dy   = dlat2dn(dlat,mean(mapS.yy))
-    dz   = length(mapS.alt) > 1 ? alt - median(mapS.alt[ind]) : alt - mapS.alt
-    downward_L(mapS.map,dx,dy,dz,α;
-               expand = expand,
-               ind    = ind)
+    dx   = dlon2de(get_step(mapS.xx),mean(mapS.yy))
+    dy   = dlat2dn(get_step(mapS.yy),mean(mapS.yy))
+    alt_ = typeof(mapS) <: Union{MapSd} ? median(mapS.alt[ind]) : mapS.alt[1]
+    dz   = alt - alt_
+    typeof(mapS) <: MapS3D && @info("3D map provided, using map at lowest altitude")
+    return downward_L(mapS.map[:,:,1],dx,dy,dz,α;
+                      expand = expand,
+                      ind    = ind)
 end # function downward_L
 
 """
@@ -385,24 +383,23 @@ function psd(map_map::Matrix, dx, dy)
 end # function psd
 
 """
-    psd(mapS::Union{MapS,MapSd})
+    psd(mapS::Union{MapS,MapSd,MapS3D})
 
 Power spectral density of a potential field (i.e., magnetic anomaly field) map.
 Uses the Fast Fourier Transform to determine the spectral energy distribution
 across the radial wavenumbers (spatial frequencies) in the Fourier transform.
 
 **Arguments:**
-- `mapS`: `MapS` or `MapSd` scalar magnetic anomaly map struct
+- `mapS`: `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct
 
 **Returns:**
 - `map_psd`: `ny` x `nx` power spectral density of 2D gridded map data
 - `kx`:      `ny` x `nx` x-direction radial wavenumber
 - `ky`:      `ny` x `nx` y-direction radial wavenumber
 """
-function psd(mapS::Union{MapS,MapSd})
-    dlon = get_step(mapS.xx)
-    dlat = get_step(mapS.yy)
-    dx   = dlon2de(dlon,mean(mapS.yy))
-    dy   = dlat2dn(dlat,mean(mapS.yy))
-    psd(mapS.map, dx, dy)
+function psd(mapS::Union{MapS,MapSd,MapS3D})
+    dx = dlon2de(get_step(mapS.xx),mean(mapS.yy))
+    dy = dlat2dn(get_step(mapS.yy),mean(mapS.yy))
+    typeof(mapS) <: MapS3D && @info("3D map provided, using map at lowest altitude")
+    return psd(mapS.map[:,:,1], dx, dy)
 end # function psd

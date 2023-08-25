@@ -1,17 +1,5 @@
-##* load MagNav & other packages commonly used in REPL =======================
-#*  adjust the environment activation location & install packages as needed
-using Pkg; Pkg.activate("../"); Pkg.instantiate()
-using Revise
-using MagNav
-using BenchmarkTools, CSV, DataFrames, Flux, LinearAlgebra, Plots, Zygote
-using BSON: bson, load, @load, @save
-using DataFrames: outerjoin, sort
-using DelimitedFiles: readdlm, writedlm
-using Plots: plot, plot!
-using Random: rand, randn, randperm, seed!, shuffle
-using Statistics: cor, cov, mean, median, std, var
+## setup DataFrames for use with examples
 
-##* load useful DataFrames ===================================================
 ## SGL flight compensation lines
 df_comp = DataFrame(CSV.File("dataframes/df_comp.csv"))
 df_comp[!,:flight]   = Symbol.(df_comp[!,:flight])
@@ -52,7 +40,7 @@ df_nav[!,:map_name] = Symbol.(df_nav[!,:map_name])
 df_nav[!,:map_type] = Symbol.(df_nav[!,:map_type])
 
 ## in-flight events
-df_event = DataFrame(CSV.File("../readmes/pilot_comments.csv"))
+df_event = DataFrame(CSV.File("dataframes/df_event.csv"))
 df_event[!,:flight] = Symbol.(df_event[!,:flight])
 
 ## all lines for flights 3-6, except 1003.05

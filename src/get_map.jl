@@ -1,16 +1,22 @@
 """
-    get_map(map_file::String=namad; map_units::Symbol=:deg)
+    get_map(map_file::String   = namad;
+            map_units::Symbol  = :rad,
+            file_units::Symbol = :deg)
 
-Get map data from saved file. Maps are typically saved in `:deg` units.
+Get map data from saved HDF5 or MAT file. Maps are typically saved in `:deg`
+units, while `:rad` is used internally.
 
 **Arguments:**
-- `map_file`:  path/name of map data HDF5 or MAT file (`.h5` or `.mat` extension)
-- `map_units`: (optional) map xx/yy units used in HDF5 file {`:deg`,`:rad`}
+- `map_file`:   path/name of map data HDF5 or MAT file (`.h5` or `.mat` extension required)
+- `map_units`:  (optional) map xx/yy units to use in `map_map` {`:rad`,`:deg`}
+- `file_units`: (optional) map xx/yy units used in `map_file` {`:rad`,`:deg`}
 
 **Returns:**
 - `map_map`: `Map` magnetic anomaly map struct
 """
-function get_map(map_file::String=namad; map_units::Symbol=:deg)
+function get_map(map_file::String   = namad;
+                 map_units::Symbol  = :rad,
+                 file_units::Symbol = :deg)
 
     @assert any(occursin.([".h5",".mat"],map_file)) "$map_file map data file must have .h5 or .mat extension"
 
@@ -59,26 +65,32 @@ function get_map(map_file::String=namad; map_units::Symbol=:deg)
     map_xx = vec(map_xx)
     map_yy = vec(map_yy)
 
-    if map_units == :deg
-        map_xx = deg2rad.(map_xx)
-        map_yy = deg2rad.(map_yy)
-    elseif map_units != :rad
-        @info("$map_units map xx/yy units not defined")
+    if (file_units == :deg) & (map_units == :rad)
+        map_xx .= deg2rad.(map_xx)
+        map_yy .= deg2rad.(map_yy)
+    elseif (file_units == :rad) & (map_units == :deg)
+        map_xx .= rad2deg.(map_xx)
+        map_yy .= red2deg.(map_yy)
+    elseif file_units != map_units
+        error("[$file_units] map file xx/yy units ≠ [$map_units] xx/yy map units")
+    elseif file_units ∉ [:rad,:deg]
+        @info("[$file_units] map file xx/yy units not defined")
+    elseif map_units ∉ [:rad,:deg]
+        @info("[$map_units] map xx/yy units not defined")
     end
 
     map_alt = convert.(eltype(map_xx),map_alt)
+    (ny,nx) = (length(map_yy),length(map_xx))
 
     if map_vec
-        if ((length(map_yy),length(map_xx)) == size(map_mapX)) & 
-           ((length(map_yy),length(map_xx)) == size(map_mapY)) & 
-           ((length(map_yy),length(map_xx)) == size(map_mapZ))
-           length(map_alt) == 1 && (map_alt = map_alt[1])
+        if (ny,nx) == size(map_mapX) == size(map_mapY) == size(map_mapZ)
+            length(map_alt) == 1 && (map_alt = map_alt[1])
             return MapV(map_mapX,map_mapY,map_mapZ,map_xx,map_yy,map_alt)
         else
             error("map dimensions are inconsistent")
         end
     else
-        if (length(map_yy),length(map_xx)) == size(map_map)
+        if (ny,nx) == size(map_map[:,:,1])
             if size(map_alt) == size(map_map) # drape map
                 return MapSd( map_map,map_xx,map_yy,map_alt)
             elseif length(map_alt) > 1 # 3D map
@@ -96,30 +108,39 @@ function get_map(map_file::String=namad; map_units::Symbol=:deg)
 end # function get_map
 
 """
-    get_map(map_name::Symbol, df_map::DataFrame; map_units::Symbol=:deg)
+    get_map(map_name::Symbol, df_map::DataFrame;
+            map_units::Symbol  = :rad,
+            file_units::Symbol = :deg)
 
-Get map data from saved file via DataFrame lookup.
-Maps are typically saved in `:deg` units.
+Get map data from saved HDF5 or MAT file via DataFrame lookup. Maps are
+typically saved in `:deg` units, while `:rad` is used internally.
 
 **Arguments:**
-- `map_name`:  name of magnetic anomaly map
-- `df_map`:    lookup table (DataFrame) of map data HDF5 files
-- `map_units`: (optional) map xx/yy units used in HDF5 file {`:deg`,`:rad`}
+- `map_name`:   name of magnetic anomaly map
+- `df_map`:     lookup table (DataFrame) of map data HDF5 and/or MAT files
+- `map_units`:  (optional) map xx/yy units to use in `map_map` {`:rad`,`:deg`}
+- `file_units`: (optional) map xx/yy units used in files within `df_map` {`:rad`,`:deg`}
 
 **Returns:**
 - `map_map`: `Map` magnetic anomaly map struct
 """
-function get_map(map_name::Symbol, df_map::DataFrame; map_units::Symbol=:deg)
-    get_map(df_map.map_h5[df_map.map_name .== map_name][1]; map_units=map_units)
+function get_map(map_name::Symbol, df_map::DataFrame;
+                 map_units::Symbol  = :rad,
+                 file_units::Symbol = :deg)
+    get_map(df_map.map_h5[df_map.map_name .== map_name][1];
+            map_units  = map_units,
+            file_units = file_units)
 end # function get_map
 
 """
     save_map(map_map, map_xx, map_yy, map_alt, map_h5::String="map_data.h5";
-             map_units::Symbol   = :deg,
              map_mask::BitMatrix = falses(1,1),
-             map_border::Matrix  = zeros(1,1))
+             map_border::Matrix  = zeros(1,1),
+             map_units::Symbol   = :rad,
+             file_units::Symbol  = :deg)
 
-Save map data to HDF5 file. Maps are typically saved in `:deg` units.
+Save map data to HDF5 file. Maps are typically saved in `:deg` units, while
+`:rad` is used internally.
 
 **Arguments:**
 - `map_map`:   `ny` x `nx` (x `nz`) 2D or 3D gridded map data
@@ -127,37 +148,45 @@ Save map data to HDF5 file. Maps are typically saved in `:deg` units.
 - `map_yy`:    `ny` map y-direction (latitude)  coordinates [rad] or [m]
 - `map_alt`:    map altitude(s) or `ny` x `nx` 2D gridded altitude map data [m]
 - `map_h5`:     (optional) path/name of map data HDF5 file to save (`.h5` extension optional)
-- `map_units`:  (optional) map xx/yy units to use in `map_h5` {`:deg`,`:rad`,`:utm`}
 - `map_mask`:   (optional) mask for valid (not filled-in) map area
 - `map_border`: (optional) border for valid (not filled-in) map area
+- `map_units`:  (optional) map xx/yy units used in `map_xx` & `map_yy` {`:rad`,`:deg`}
+- `file_units`: (optional) map xx/yy units to use in `map_h5` {`:rad`,`:deg`}
 
 **Returns:**
 - `nothing`: `map_h5` is created
 """
 function save_map(map_map, map_xx, map_yy, map_alt, map_h5::String="map_data.h5";
-                  map_units::Symbol   = :deg,
                   map_mask::BitMatrix = falses(1,1),
-                  map_border::Matrix  = zeros(1,1))
+                  map_border::Matrix  = zeros(1,1),
+                  map_units::Symbol   = :rad,
+                  file_units::Symbol  = :deg)
 
     map_h5 = add_extension(map_h5,".h5")
 
     map_xx = vec(map_xx)
     map_yy = vec(map_yy)
 
-    if map_units == :deg
+    if (map_units == :rad) & (file_units == :deg)
         map_xx     = rad2deg.(map_xx)
         map_yy     = rad2deg.(map_yy)
         map_border = rad2deg.(map_border)
+    elseif (map_units == :deg) & (file_units == :rad)
+        map_xx     = deg2rad.(map_xx)
+        map_yy     = deg2rad.(map_yy)
+        map_border = deg2rad.(map_border)
+    elseif map_units != file_units
+        error("[$map_units] xx/yy map units ≠ [$file_units] map file xx/yy units")
+    elseif map_units ∉ [:rad,:deg]
+        @info("[$map_units] map xx/yy units not defined")
+    elseif file_units ∉ [:rad,:deg]
+        @info("[$file_units] map file xx/yy units not defined")
     end
 
     map_alt  = convert.(eltype(map_xx),map_alt)
     map_mask = convert.(Int8,map_mask)
 
-    if map_units in [:deg,:rad,:utm]
-        @info("saving map with $map_units map xx/yy units")
-    else
-        @info("$map_units map xx/yy units not defined")
-    end
+    @info("saving map with [$file_units] map xx/yy units")
 
     h5open(map_h5,"w") do file # read-write, destroy existing contents
         if length(map_map) == 3 # vector map
@@ -178,41 +207,47 @@ end # function save_map
 
 """
     save_map(map_map::Map, map_h5::String="map_data.h5";
-             map_units::Symbol   = :deg,
              map_mask::BitMatrix = falses(1,1),
-             map_border::Matrix  = zeros(1,1))
+             map_border::Matrix  = zeros(1,1),
+             map_units::Symbol   = :rad,
+             file_units::Symbol  = :deg)
 
-Save map data to HDF5 file. Maps are typically saved in `:deg` units.
+Save map data to HDF5 file. Maps are typically saved in `:deg` units, while
+`:rad` is used internally.
 
 **Arguments:**
 - `map_map`:    `Map` magnetic anomaly map struct
 - `map_h5`:     (optional) path/name of map data HDF5 file to save (`.h5` extension optional)
-- `map_units`:  (optional) map xx/yy units to use in `map_h5` {`:deg`,`:rad`,`:utm`}
 - `map_mask`:   (optional) mask for valid (not filled-in) map area
 - `map_border`: (optional) border for valid (not filled-in) map area
+- `map_units`:  (optional) map xx/yy units used in `map_map` {`:rad`,`:deg`}
+- `file_units`: (optional) map xx/yy units to use in `map_h5` {`:rad`,`:deg`}
 
 **Returns:**
 - `nothing`: `map_h5` is created
 """
 function save_map(map_map::Map, map_h5::String="map_data.h5";
-                  map_units::Symbol   = :deg,
                   map_mask::BitMatrix = falses(1,1),
-                  map_border::Matrix  = zeros(1,1))
-    if typeof(Map) <: MapV # vector map
+                  map_border::Matrix  = zeros(1,1),
+                  map_units::Symbol   = :rad,
+                  file_units::Symbol  = :deg)
+    if typeof(map_map) <: MapV # vector map
         save_map((map_map.mapX,map_map.mapY,map_map.mapZ),
                  map_map.xx,map_map.yy,map_map.alt,map_h5;
-                 map_units=map_units,map_mask=map_mask,map_border=map_border)
+                 map_mask=map_mask,map_border=map_border,
+                 map_units=map_units,file_units=file_units)
     else # scalar map
         save_map(map_map.map,
                  map_map.xx,map_map.yy,map_map.alt,map_h5;
-                 map_units=map_units,map_mask=map_mask,map_border=map_border)
+                 map_mask=map_mask,map_border=map_border,
+                 map_units=map_units,file_units=file_units)
     end
 end # function save_map
 
 """
     get_comp_params(comp_params_bson::String, silent::Bool=false)
 
-Get aeromagnetic compensation parameters from saved file.
+Get aeromagnetic compensation parameters from saved BSON file.
 
 **Arguments:**
 - `comp_params_bson`: path/name of aeromagnetic compensation parameters BSON file (`.bson` extension optional)
@@ -257,7 +292,7 @@ function get_comp_params(comp_params_bson::String, silent::Bool=false)
         end
     end
 
-    if typeof(comp_params_default) <: MagNav.NNCompParams
+    if typeof(comp_params_default) <: NNCompParams
         @unpack version, features_setup, features_no_norm, model_type, y_type,
         use_mag, use_vec, data_norms, model, terms, terms_A, sub_diurnal,
         sub_igrf, bpf_mag, reorient_vec, norm_type_A, norm_type_x, norm_type_y,
@@ -298,7 +333,7 @@ function get_comp_params(comp_params_bson::String, silent::Bool=false)
                                    drop_fi_csv      = drop_fi_csv,
                                    perm_fi          = perm_fi,
                                    perm_fi_csv      = perm_fi_csv)
-    elseif typeof(comp_params_default) <: MagNav.LinCompParams
+    elseif typeof(comp_params_default) <: LinCompParams
         @unpack version, features_setup, features_no_norm, model_type, y_type,
         use_mag, use_vec, data_norms, model, terms, terms_A, sub_diurnal,
         sub_igrf, bpf_mag, reorient_vec, norm_type_A, norm_type_x, norm_type_y,
@@ -329,9 +364,9 @@ function get_comp_params(comp_params_bson::String, silent::Bool=false)
 end # function get_comp_params
 
 """
-    save_comp_params(comp_params::MagNav.CompParams, comp_params_bson::String="comp_params.bson")
+    save_comp_params(comp_params::CompParams, comp_params_bson::String="comp_params.bson")
 
-Get aeromagnetic compensation parameters from saved file.
+Save aeromagnetic compensation parameters to BSON file.
 
 **Arguments:**
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct, either:
@@ -342,7 +377,7 @@ Get aeromagnetic compensation parameters from saved file.
 **Returns:**
 - `nothing`: `comp_params_bson` is created
 """
-function save_comp_params(comp_params::MagNav.CompParams, comp_params_bson::String="comp_params.bson")
+function save_comp_params(comp_params::CompParams, comp_params_bson::String="comp_params.bson")
     comp_params_bson = add_extension(comp_params_bson,".bson")
     d = Dict{Symbol,Any}()
     # push!(d,:comp_params => comp_params) # do NOT do this, version issue

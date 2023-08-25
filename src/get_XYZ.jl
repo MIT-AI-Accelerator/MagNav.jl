@@ -63,7 +63,7 @@ INS fields should be within the specified `ins_field` MAT struct and without
 `ins_` prefixes. This is the standard way the MATLAB-companion outputs data.
 
 **Arguments:**
-- `xyz_file`:   path/name of flight data HDF5 or MAT file (`.h5` or `.mat` extension)
+- `xyz_file`:   path/name of flight data HDF5 or MAT file (`.h5` or `.mat` extension required)
 - `traj_field`: (optional) trajectory struct field within MAT file to use, not relevant for HDF5 file
 - `ins_field`:  (optional) INS struct field within MAT file to use, `:none` if unavailable, not relevant for HDF5 file
 - `flight`:     (optional) flight number, only used if not in file
@@ -244,7 +244,7 @@ INS fields should be within the specified `ins_field` MAT struct and without
 `ins_` prefixes. This is the standard way the MATLAB-companion outputs data.
 
 **Arguments:**
-- `xyz_file`:   path/name of flight data HDF5 or MAT file (`.h5` or `.mat` extension)
+- `xyz_file`:   path/name of flight data HDF5 or MAT file (`.h5` or `.mat` extension required)
 - `traj_field`: (optional) trajectory struct field within MAT file to use, not relevant for HDF5 file
 - `ins_field`:  (optional) INS struct field within MAT file to use, `:none` if unavailable, not relevant for HDF5 file
 - `flight`:     (optional) flight number, only used if not in file
@@ -360,7 +360,7 @@ should be within the specified `field` MAT struct. This is the standard way the
 MATLAB-companion outputs data.
 
 **Arguments:**
-- `flux_file`: path/name of vector magnetometer data HDF5 or MAT file (`.h5` or `.mat` extension)
+- `flux_file`: path/name of vector magnetometer data HDF5 or MAT file (`.h5` or `.mat` extension required)
 - `field`:     (optional) struct field within MAT file to use, not relevant for HDF5 file
 - `use_vec`:   (optional) vector magnetometer (fluxgate) to use
 
@@ -442,7 +442,7 @@ should be within the specified `field` MAT struct. This is the standard way the
 MATLAB-companion outputs data.
 
 **Arguments:**
-- `traj_file`: path/name of trajectory data HDF5 or MAT file (`.h5` or `.mat` extension)
+- `traj_file`: path/name of trajectory data HDF5 or MAT file (`.h5` or `.mat` extension required)
 - `field`:     (optional) struct field within MAT file to use, not relevant for HDF5 file
 - `dt`:        (optional) measurement time step [s], only used if not in file
 - `silent`:    (optional) if true, no print outs
@@ -544,11 +544,12 @@ function get_traj(traj_file::String, field::Symbol=:traj; dt=0.1, silent::Bool=f
     # if needed, create vn, ve, vd
     if any(isnan.([vn;ve;vd]))
         silent || @info("creating velocity data")
-        lla2utm = UTMZfromLLA(WGS84)
-        llas    = LLA.(rad2deg.(lat),rad2deg.(lon),alt)
-        vn      =  fdm([lla2utm(lla).y for lla in llas]) / dt
-        ve      =  fdm([lla2utm(lla).x for lla in llas]) / dt
-        vd      = -fdm([lla2utm(lla).z for lla in llas]) / dt
+        (zone_utm,is_north) = utm_zone(mean(rad2deg.(lat)),mean(rad2deg.(lon)))
+        lla2utm = UTMfromLLA(zone_utm,is_north,WGS84)
+        utms    = lla2utm.(LLA.(rad2deg.(lat),rad2deg.(lon),alt))
+        vn      =  fdm([utm.y for utm in utms]) / dt
+        ve      =  fdm([utm.x for utm in utms]) / dt
+        vd      = -fdm([utm.z for utm in utms]) / dt
     end
 
     # if needed, create fn, fe, fd
@@ -604,7 +605,7 @@ should be within the specified `field` MAT struct and without `ins_`
 prefixes. This is the standard way the MATLAB-companion outputs data.
 
 **Arguments:**
-- `ins_file`: path/name of INS data HDF5 or MAT file (`.h5` or `.mat` extension)
+- `ins_file`: path/name of INS data HDF5 or MAT file (`.h5` or `.mat` extension required)
 - `field`:    (optional) struct field within MAT file to use, not relevant for HDF5 file
 - `dt`:       (optional) measurement time step [s], only used if not in file
 - `silent`:   (optional) if true, no print outs
@@ -708,11 +709,12 @@ function get_ins(ins_file::String, field::Symbol=:ins_data; dt=0.1, silent::Bool
     # if needed, create vn, ve, vd
     if any(isnan.([vn;ve;vd]))
         silent || @info("creating INS velocity data")
-        lla2utm = UTMZfromLLA(WGS84)
-        llas    = LLA.(rad2deg.(lat),rad2deg.(lon),alt)
-        vn      =  fdm([lla2utm(lla).y for lla in llas]) / dt
-        ve      =  fdm([lla2utm(lla).x for lla in llas]) / dt
-        vd      = -fdm([lla2utm(lla).z for lla in llas]) / dt
+        (zone_utm,is_north) = utm_zone(mean(rad2deg.(lat)),mean(rad2deg.(lon)))
+        lla2utm = UTMfromLLA(zone_utm,is_north,WGS84)
+        utms    = lla2utm.(LLA.(rad2deg.(lat),rad2deg.(lon),alt))
+        vn      =  fdm([utm.y for utm in utms]) / dt
+        ve      =  fdm([utm.x for utm in utms]) / dt
+        vd      = -fdm([utm.z for utm in utms]) / dt
     end
 
     # if needed, create fn, fe, fd
@@ -746,7 +748,7 @@ end # function get_ins
     get_ins(xyz::XYZ, ind=trues(xyz.traj.N);
             N_zero_ll::Int=0, t_zero_ll=0, err=0.0)
 
-Get inertial navigation system data at specific indicies, possibly zeroed.
+Get inertial navigation system data at specific indices, possibly zeroed.
 
 **Arguments:**
 - `xyz`:       `XYZ` flight data struct
@@ -774,7 +776,7 @@ get_INS = get_ins
                lat=zero(ins.lat[ind]),
                lon=zero(ins.lon[ind]))
 
-Get inertial navigation system data at specific indicies, possibly zeroed.
+Get inertial navigation system data at specific indices, possibly zeroed.
 
 **Arguments:**
 - `ins`:       `INS` inertial navigation system struct
@@ -862,7 +864,7 @@ end # function zero_ins_ll
 """
     get_traj(xyz::XYZ, ind=trues(xyz.traj.N))
 
-Get trajectory data at specific indicies.
+Get trajectory data at specific indices.
 
 **Arguments:**
 - `xyz`: `XYZ` flight data struct
@@ -880,7 +882,7 @@ get_Traj = get_traj
 """
     (traj::Traj)(ind=trues(traj.N))
 
-Get trajectory data at specific indicies.
+Get trajectory data at specific indices.
 
 **Arguments:**
 - `traj`: `Traj` trajectory struct
@@ -903,7 +905,7 @@ end # function Traj
 """
     (flux::MagV)(ind=trues(length(flux.x)))
 
-Get vector magnetometer measurements at specific indicies.
+Get vector magnetometer measurements at specific indices.
 
 **Arguments:**
 - `flux`: `MagV` vector magnetometer measurement struct

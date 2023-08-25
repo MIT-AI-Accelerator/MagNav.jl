@@ -2082,8 +2082,8 @@ function gif_animation_m3(TL_perm::AbstractMatrix, TL_induced::AbstractMatrix, T
     gps_lat  = rad2deg.(traj.lat);
     gps_lon  = rad2deg.(traj.lon);
 
-    xlim = MagNav.get_lim(gps_lon,0.2);
-    ylim = MagNav.get_lim(gps_lat,0.2);
+    xlim = get_lim(gps_lon,0.2);
+    ylim = get_lim(gps_lat,0.2);
     ves  = traj.ve;
     vns  = traj.vn;
     directions = atand.(vns,ves);

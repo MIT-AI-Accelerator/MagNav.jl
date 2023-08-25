@@ -7,217 +7,302 @@ using InteractiveUtils
 # ╔═╡ 22982d8e-240c-11ee-2e0c-bda2a93a4ab0
 begin
 	cd(@__DIR__)
-	include("common_setup.jl"); # load common-use packages, DataFrames, and Dicts
+    # uncomment line below to use local MagNav.jl (downloaded folder)
+    # using Pkg; Pkg.activate("../"); Pkg.instantiate()
+	using MagNav
+    using CSV, DataFrames
+    using Plots: plot, plot!
+	using Random: seed!
+	using Statistics: mean, median, std
 	seed!(33); # for reproducibility
-	using MagNav, Statistics, Plots
+    include("dataframes_setup.jl"); # setup DataFrames
 end;
 
 # ╔═╡ e289486a-57ed-4eeb-9ec9-6500f0bc563b
-md"# Magnetic Anomaly Maps Example
+md"# Model 3 Training & Explainability Example
 This file is best viewed in a [Pluto](https://plutojl.org/) notebook. To run it this way, from the MagNav.jl directory, do:
 ```julia
-> using Pluto
-> Pluto.run(notebook=\"runs/example_maps.jl\")
+julia> using Pluto
+julia> Pluto.run() # select & open notebook
 ```
 
-This is a reactive notebook, so feel free to change any parameters.
+This is a reactive notebook, so feel free to change any parameters of interest, like adding/removing features to the model, changing the number of training epochs, switching between versions of model 3 (scalar is :m3s, vector is :m3v), or different training & testing lines.
 "
 
 # ╔═╡ 3a55962c-bd1b-410c-b98a-3130fc11ee11
-md"## Import Perth map
+md"## Train a Tolles-Lawson Model
 
-This is the Perth map (at 800 m) as provided by Sander Geophysics Ltd.
-"
+First, we select a flight & return indices for a specific calibration flight line that will be used to fit the Tolles-Lawson coefficients. "
 
 # ╔═╡ bf9f72f0-c351-48d3-a811-418ee965073c
-begin
-	map_gxf = MagNav.ottawa_area_maps_gxf()*"/Perth_Mag.gxf"
-	p_mapS_plot = map_gxf2h5(map_gxf,800;fill_map=false)
-	p1 = plot_map(p_mapS_plot;legend=false)
-end
-
-# ╔═╡ 438f2f01-5cbe-4088-b365-571de4f9539a
-md"## Display Perth map in Google Earth
-
-The map may be exported to a KMZ file and opened in Google Earth.
-"
-
-# ╔═╡ d7d5fa3e-0c00-4d0b-b9e0-b6d8b0e917cf
-# map2kmz(p_mapS_plot,"Perth") # uncomment to generate KMZ file
-
-# ╔═╡ 32d385fd-1a78-47f8-b748-41e77f680da0
-md"## Overlay Perth mini-survey
-
-Overlaid on the Perth map are most of the flight lines used to generate the map.
-"
+flight_train = :Flt1006; # choose flight
 
 # ╔═╡ 9d11d4be-9ba7-44ab-a4ff-f0fdf95b2171
-begin
-	xyz_1004 = get_XYZ(:Flt1004,df_flight;silent=true)
-	xyz_1005 = get_XYZ(:Flt1005,df_flight;silent=true)
-	lines = [4019,4018,4017,4016,4015,4012,4011,4010,4009,4008,4007,4004,
-	         4003,4002,4001,421,419,417,415,413,411,409,408,407,405,403,401]
-	for line in lines
-	    xyz = line in xyz_1004.line ? xyz_1004 : xyz_1005
-	    ind = get_ind(xyz,line,df_nav)
-	    plot_path!(p1,xyz.traj,ind;show_plot=false,path_color=:black)
-	end
-	p1
-end
-
-# ╔═╡ b21e0015-367e-44e2-89b9-841867b6299d
-md"## Import previously processed maps
-
-Eastern Ontario & NAMAD maps have been processed & saved previously.
-"
+reorient_vec = true; # align vector magnetometers with aircraft body frame
 
 # ╔═╡ 663f7b8c-dfc6-445d-9c54-1141856f2a66
-begin # e_mask contains indices with "real" map data (not filled-in)
-	e_mapS_395  = get_map(:Eastern_395,df_map)
-	e_mask      = MagNav.map_params(get_map(:Eastern_plot,df_map))[2]
-	e_mapS_plot = deepcopy(e_mapS_395)
-	e_mapS_plot.map .*= e_mask
-end;
+xyz_train = get_XYZ(flight_train, df_flight;
+					reorient_vec=reorient_vec, silent=true); # load flight data
 
 # ╔═╡ 99405ae1-580a-4fd3-a860-13cc5b22b045
-begin
-	xx_lim = extrema(e_mapS_plot.xx) .+ (-0.01,0.01)
-	yy_lim = extrema(e_mapS_plot.yy) .+ (-0.01,0.01)
-	n_mapS_395 = upward_fft(map_fill(map_trim(
-				 get_map(),xx_lim=xx_lim,yy_lim=yy_lim)),e_mapS_plot.alt)
+begin # choose a calibration flight line to train Tolles-Lawson on
+	println(df_comp[df_comp.flight .== flight_train, :])
+	TL_i = 10
+	TL_ind = get_ind(xyz_train;tt_lim=[df_comp.t_start[TL_i],df_comp.t_end[TL_i]])
 end;
 
-# ╔═╡ c111d83f-2883-4149-8ee2-53bf4b57640a
-md"## Plot all Ottawa area maps
-
-3 maps are overlayed with 3 different color schemes.
-"
-
 # ╔═╡ 6d4a87c8-41d7-4478-b52a-4dc5a1ae18ea
-begin
-	p2 = plot_map(n_mapS_395;legend=false,clims=(-500,500),map_color=:magma) # 395 m
-	plot_map!(p2,e_mapS_plot;legend=false,clims=(-500,500),map_color=:usgs) # 395 m
-	plot_map!(p2,p_mapS_plot;legend=false,clims=(-500,500),map_color=:gray2) # 800 m
-end
-
-# ╔═╡ 2d18bbeb-ad4e-4c5b-80a3-25bd99f45c73
-md"## Plot Eastern Ontario altitude map CDF
-
-Most of the map data was collected at altitudes between 215 m and 395 m.
-"
+begin # choose the measurements & terms used to set up for Tolles-Lawson
+	use_vec = :flux_a
+	use_mag = :mag_4_uc
+	flux    = getfield(xyz_train,use_vec)
+	terms   = [:p,:i,:e]
+	comp_params_lin_init = LinCompParams(use_mag     = use_mag,
+		                                use_vec      = use_vec,
+		                                terms        = terms,
+		                                y_type       = :e,
+		                                terms_A      = terms,
+		                                model_type   = :TL,
+		                                sub_diurnal  = false,
+		                                sub_igrf     = false,
+		                                reorient_vec = reorient_vec)
+end;
 
 # ╔═╡ c5b6b439-e962-4c9d-9b02-339657fb266b
 begin
-	e_mapS_drp = get_map(:Eastern_drape,df_map) # drape map (with altitude map)
-	e_alts  = e_mapS_drp.alt[e_mask]
-	alt_avg = round(Int,mean(e_alts))
-	alt_med = round(Int,median(e_alts))
-	alt_val = 200:500
-	alt_cdf = [sum(e_alts .< a) for a in alt_val] / sum(e_mask)
-	p3 = plot(alt_val,alt_cdf,xlab="altitude [m]",ylab="fraction [-]",
-	          title="altitude map CDF",lab=false)
+	tt = (xyz_train.traj.tt[TL_ind] .- xyz_train.traj.tt[TL_ind][1]) / 60
+	p1 = plot(xlab="time [min]",ylab="magnetic field [nT]",dpi=200,
+		      ylim=(51000,55000))
+	plot!(p1, tt, xyz_train.igrf[TL_ind],     lab="IGRF core field")
+	plot!(p1, tt, xyz_train.mag_1_c[TL_ind],  lab="compensated tail stinger")
+	plot!(p1, tt, xyz_train.mag_4_uc[TL_ind], lab="uncompensated Mag 4")
+	plot!(p1, tt, xyz_train.flux_a.t[TL_ind], lab="vector Flux A, total field")
 end
-
-# ╔═╡ 3f6b725b-f1c7-41fb-9854-c737b9698a40
-md"## Plot Eastern Ontario altitude map
-
-Minimal areas have map data collected at 395 m or higher, so a level map can be generated at 395 m with almost entirely upward continuation and minimal downward continuation.
-"
 
 # ╔═╡ ae1acc31-19db-4e94-85dc-e6274186978e
-begin
-	p4 = plot_map(e_mapS_plot;map_color=:gray,legend=false)
-	e_mapS_plot_ = deepcopy(e_mapS_plot)
-	e_mapS_plot_.map[e_mapS_drp.alt .<= 395] .= 0
-	plot_map!(p4,e_mapS_plot_)
-end
+begin # fit Tolles-Lawson model to data
+	(comp_params_lin, y_TL, y_hat_TL, TL_err) =
+		comp_train(xyz_train, TL_ind; comp_params=comp_params_lin_init)
+	TL_a_4 = comp_params_lin.model[1]
+end;
 
-# ╔═╡ 504842a2-61e0-4154-a1e9-5182c97b6090
-md"## Plot expanded Eastern Ontario map
-
-During upward (or downward) continuation, the map is temporarily expanded with \"wrapped\" edges for a more accurate result.
-"
+# ╔═╡ 7a20ef62-f352-4fc7-9061-13fb293bb0bf
+md"Choose a test flight & line to compare different compensation models."
 
 # ╔═╡ 39bdbe6a-52ae-44d2-8e80-2e7d2a75e322
 begin
-	(map_map,px,py) = MagNav.map_expand(e_mapS_395.map,200)
-	px_end    = size(map_map,2) - length(e_mapS_395.xx) - px
-	py_end    = size(map_map,1) - length(e_mapS_395.yy) - py
-	dx        = MagNav.get_step(e_mapS_395.xx)
-	dy        = MagNav.get_step(e_mapS_395.yy)
-	xx        = [(e_mapS_395.xx[1]-dx*px):dx:(e_mapS_395.xx[end]+dx*px_end);]
-	yy        = [(e_mapS_395.yy[1]-dy*py):dy:(e_mapS_395.yy[end]+dy*py_end);]
-	(lon,lat) = map_border(e_mapS_plot;sort_border=true) # get map border
-	p5 = plot_map(map_map,xx,yy)
-	plot_path!(p5,lat,lon,path_color=:black)
-end
-
-# ╔═╡ 8b5c030a-e0b9-4a7a-a901-a6967edbe70b
-md"## Plot combined Eastern Ontario & NAMAD maps together
-
-2 maps can be combined at the same altitude. Here, the Eastern Ontario map is better (higher resolution), but the NAMAD map can be used in the case of navigation near the Eastern Ontario map border. Note that only the southeast part of the NAMAD map is accurate here, as the map coverage ends and the remainder is filled-in (e.g., the northwest corner).
-"
+	flight_test = :Flt1006;
+	println(df_nav[df_nav.flight .== :Flt1006, :])
+	xyz_test  = get_XYZ(flight_test, df_flight;
+	                    reorient_vec=reorient_vec, silent=true)
+	line_test = 1006.08
+	ind_test  = get_ind(xyz_test, line_test, df_nav)
+end;
 
 # ╔═╡ 9ed61357-346b-49de-a1ed-8849db041ade
-begin
-	mapS_combined = map_combine(e_mapS_plot,n_mapS_395)
-	mapS_upward   = upward_fft(mapS_combined,395) # 408773
-	p6 = plot_map(mapS_upward)
-	plot_path!(p6,lat,lon,path_color=:black)
+comp_test(line_test, df_all, df_flight, df_map, comp_params_lin);
+
+# ╔═╡ a9cac83d-03b3-4793-8da4-f45563091bd0
+md"## Model 3 Training
+
+First, we create a low-pass (not the default, bandpass)-filtered version of the coefficients to preserve the Earth field, which helps to remove a bias term in the Tolles-Lawson (T-L) fitting."
+
+# ╔═╡ f492ee3d-c097-4937-9552-e7d2632a5e50
+TL_coef = create_TL_coef(getfield(xyz_train,use_vec), 
+	                     getfield(xyz_train,use_mag)-xyz_train.mag_1_c, TL_ind;
+	                     terms=terms, pass1=0.0, pass2=0.9);
+
+# ╔═╡ 7e15f297-64a4-4ee6-a0ab-65d959354f29
+begin # create Tolles-Lawson `A` matrix & perform compensation
+	A = create_TL_A(flux,TL_ind);
+	mag_1_sgl_TL_train = xyz_train.mag_1_c[TL_ind];
+	mag_4_uc_TL_train  = xyz_train.mag_4_uc[TL_ind];
+	
+	# This shows how the bandpass filter causes a bias in the compensation (filtering out the Earth field). That's not a problem for navigating, but we'd prefer not to have the neural network learn a simple correction that could be accounted for more simply by Tolles-Lawson.
+	mag_4_c_bpf = mag_4_uc_TL_train - A*TL_a_4;
+	mag_4_c_lpf = mag_4_uc_TL_train - A*TL_coef;
+	p2 = plot(xlab="time [min]",ylab="magnetic field [nT]",dpi=200,
+		      ylim=(52000,55000))
+	plot!(p2, tt, mag_1_sgl_TL_train, lab="ground truth")
+	plot!(p2, tt, mag_4_c_lpf,        lab="low-pass filtered T-L")
+	plot!(p2, tt, mag_4_c_bpf,        lab="bandpass filtered T-L")
 end
 
-# ╔═╡ 1b4d1092-1680-4676-a69d-6acc2549d588
-md"## Compare map values on line on Eastern Ontario & NAMAD maps
+# ╔═╡ 239b60aa-0e97-4871-a9a5-64cd802f4bde
+md"### Training Data & Parameters
 
-Map values on 2 maps will be compared for the red line along the border.
+Here we set the training lines (all from the same flight in this example), select a model type, features for the neural network, & intialize all of this using the `NNCompParams` structure, which keeps all these configuration/learning settings in one place. For Model 3, it's important to leave the `A` matrix unnormalized.
 "
 
-# ╔═╡ 1927f750-c3de-4c52-8a78-bb7f0f05c21e
+# ╔═╡ 21828f95-98f3-4271-9a57-121252065741
 begin
-	e_itp_mapS = map_itp(e_mapS_plot)
-	n_itp_mapS = map_itp(n_mapS_395)
-	ind_trim   = (rad2deg.(lon) .> -76) .& (rad2deg.(lat) .< 45)
-	lon_trim   = lon[ind_trim]
-	lat_trim   = lat[ind_trim]
-	# lon_trim   = deg2rad.(LinRange(-76,-75,100))
-	# lat_trim   = deg2rad.(LinRange(44.5,45.1,100))
-	e_mapS_val = e_itp_mapS.(lon_trim,lat_trim)
-	n_mapS_val = n_itp_mapS.(lon_trim,lat_trim)
-	mapS_err   = n_mapS_val - e_mapS_val
-	p7 = plot_map(mapS_combined,map_color=:gray)
-	plot_path!(p7,lat,lon,path_color=:black)
-	plot_path!(p7,lat_trim,lon_trim,path_color=:red)
-end
+	lines_train=[1006.03, 1006.04, 1006.05, 1006.06]
+	ind_train = get_ind(xyz_train, lines = lines_train)
+end;
 
-# ╔═╡ 7cf91a2c-73a3-4ad5-93f2-6f6908702441
-md" The trend of the map values agree, as expected.
+# ╔═╡ 4c3b7f4c-062c-40c2-8677-b47e775aa0dc
+model_type = :m3s;
+
+# ╔═╡ 80cc7f27-a17d-4649-9640-370a57dfefeb
+features = [:mag_4_uc, :lpf_cur_com_1, :lpf_cur_strb, :lpf_cur_outpwr, :lpf_cur_ac_lo,:TL_A_flux_a];
+
+# ╔═╡ 8ca83ae3-5cad-44a0-ad89-1dff234f50d7
+num_epochs = 100;
+
+# ╔═╡ 4d75b716-bc93-42f5-8b1a-f5550e7de276
+comp_params_init = NNCompParams(features_setup = features,
+                                reorient_vec   = reorient_vec,
+                                y_type         = :d,
+                                use_mag        = use_mag,
+                                use_vec        = use_vec,
+                                terms          = [:permanent,:induced,:eddy],
+                                terms_A        = [:permanent,:induced,:eddy],
+                                sub_diurnal    = false,
+                                sub_igrf       = false,
+                                bpf_mag        = false,
+                                norm_type_A    = :none,
+                                norm_type_x    = :normalize,
+                                norm_type_y    = :normalize,
+                                TL_coef        = TL_coef,
+                                model_type     = model_type,
+                                η_adam         = 0.001,
+                                epoch_adam     = num_epochs,
+                                epoch_lbfgs    = 0,
+                                hidden         = [8,4],
+                                batchsize      = 2048,
+                                frac_train     = 13/17);
+
+# ╔═╡ 4171fef9-650b-4f37-ae5d-7084d54a0be0
+(comp_params, y_train, y_train_hat, err_train, _) =
+	comp_train(xyz_train, ind_train;
+			   comp_params = comp_params_init,
+			   xyz_test    = xyz_test,
+	           ind_test    = ind_test);
+
+# ╔═╡ 0c839441-909d-4095-a4eb-4dfc92eb2121
+md"Evaluate how well we did on the test line & return additional terms that will be useful in visualizing the compensation performance"
+
+# ╔═╡ 0a1b7102-59e0-4e2a-a45c-5c21d0039b88
+(TL_perm, TL_induced, TL_eddy, TL_aircraft, B_unit, _, y_nn, _, y, y_hat, _, _) =
+	comp_m3_test(line_test, df_nav, df_flight, df_map, comp_params; silent=true);
+
+# ╔═╡ 5f88bca1-ecc9-45b2-8164-0f6965b81088
+md"## Navigation Performance
+
+Ultimately, we'd like to use the compensated magnetometer values in a navigation algorithm. We will do that with a Kalman filter, for which we will need a few more objects:
+* The GPS struct information as the `traj` object
+* The INS struct information as the `ins` object
+* An interpolated map object to pass to the filter to use for measurement evaluations, `itp_mapS`
+* Initialized covariance & noise matrices for the prediction & measurement steps, (`P0`, `Qd`, `R`)
 "
 
-# ╔═╡ 992dce6d-3bed-428c-84ca-2ee9bc9f0167
+
+# ╔═╡ ed1f8baa-d228-4f66-a979-527f68acccdc
 begin
-	p8 = plot(e_mapS_val,lab="Eastern",ylab="map value [nT]",dpi=200)
-	plot!(p8,n_mapS_val,lab="NAMAD")
+	map_name = df_nav[df_nav.line .== line_test, :].map_name[1]
+	traj = get_traj(xyz_test,ind_test) # get trajectory (GPS) struct
+	ins  = get_ins(xyz_test,ind_test;N_zero_ll=1) # get INS struct
+	mapS = get_map(map_name,df_map) # load map data
+	all(mapS.alt .> 0) && (mapS = upward_fft(mapS,mean(traj.alt)))
+	itp_mapS = map_interpolate(mapS) # get interpolation
+	map_val  = itp_mapS.(traj.lon,traj.lat)
+end;
+
+# ╔═╡ 4e01e107-5d58-409d-b08c-23135b4c28ba
+md"### Compensate the Magnetometer
+We next compute the compensated magnetometer values consistent with the `:d` setting in `NNCompParams`, that is, we have learned a correction to remove from the uncompensated measurement that predicts that compensated measurement. The figure below should illustrate how well we are doing as compared to the uncompensated figure from above.
+"
+
+# ╔═╡ 566bb8eb-23d3-473d-8e79-1d02536dfdd5
+begin
+	# perform the compensation from the neural network
+	mag_4_c  = xyz_test.mag_4_uc[ind_test] - y_hat
+	# Remove an assumed constant map-magnetometer bias, which is approximated at the first measurement. The diurnal & IGRF core fields must be included to leave only the nearly constant bias, if any.
+	mag_4_c .+= (map_val + (xyz_test.diurnal + xyz_test.igrf)[ind_test] - mag_4_c)[1]
+
+	# These first-order Gauss-Markov noise values can also be estimated from the training output without resorting to the known map values.
+	(sigma, tau) = get_autocor(mag_4_c - map_val)
 end
+
+# ╔═╡ 987292fe-4e58-4cc9-bfe2-734c0f4174f8
+begin
+	tt_test = (xyz_test.traj.tt[ind_test] .- xyz_test.traj.tt[ind_test][1]) / 60
+	p3 = plot(xlab="time [min]",ylab="magnetic field [nT]",dpi=200,
+		      ylim=(52900,53700))
+	plot!(p3, tt_test, map_val + (xyz_test.diurnal + xyz_test.igrf)[ind_test],
+												   lab="map value")
+	plot!(p3, tt_test, xyz_test.mag_1_c[ind_test], lab="compensated tail stinger")
+	plot!(p3, tt_test, mag_4_c,                    lab="compensated Mag 4")
+end
+
+# ╔═╡ 70b8e7ff-71ee-489b-817e-1d4ea3004355
+# create filter model, only showing most relevant filter parameters here
+(P0,Qd,R) = create_model(traj.dt,traj.lat[1];
+                         init_pos_sigma = 0.1,
+                         init_alt_sigma = 1.0,
+                         init_vel_sigma = 1.0,
+                         meas_var       = sigma^2, #* increase if mag_use is bad
+                         fogm_sigma     = sigma,
+                         fogm_tau       = tau);
+
+# ╔═╡ a56f0b50-0b39-4400-928d-f485af206d23
+begin
+	mag_use = mag_4_c
+	(crlb_out,ins_out,filt_out) = run_filt(traj,ins,mag_use,itp_mapS,:ekf;
+	                                       P0,Qd,R,core=true)
+	drms_out = round(Int,sqrt(mean(filt_out.n_err.^2+filt_out.e_err.^2)))
+end;
+
+# ╔═╡ 658524ef-c716-408c-ab57-f1a10459ff24
+md"
+## Compensation & Navigation Animation
+
+Make an animation of the navigation performance, keeping track of each component of the compensation terms emitted by model 3, projected into a 2-D plane (north/east, removing the vertical components) to make visualization simpler. Ideally, you should see that the knowledge-integrated architecture in model 3 is mostly accounting for variations in the compensation field arising from the map/plane maneuvers in the Tolles-Lawson (TL) component, whereas the neural network (NN) correction is addressing any deviations due to current/voltage fluctuations.
+
+Increase (or decrease) the `skip_every` argument to exclude (or include) more frames, which will speed up (or slow down) the rendering time & decrease (or increase) the file size.
+"
+
+# ╔═╡ c469bc3c-434d-452a-8dca-1a96823a8153
+g1 = gif_animation_m3(TL_perm, TL_induced, TL_eddy, TL_aircraft, B_unit,
+					  y_nn, y, y_hat, filt_out.lat, filt_out.lon, xyz_test;
+					  ind=ind_test, skip_every=20, tt_lim=(3.0,9.5))
+
+# ╔═╡ 0cda1d66-6ba5-40d2-89ff-caf574d9a09f
+md"Show detailed filter performance using `plot_filt_err`"
+
+# ╔═╡ 3e9e848e-bf16-428a-98c3-9fee4eddda41
+(pn,pe) = plot_filt_err(traj, filt_out, crlb_out);
+
+# ╔═╡ a42f021e-0a11-4589-949a-7a2a56af129a
+pn
+
+# ╔═╡ ea334b91-e53d-404f-ae3c-106ba1bb7463
+pe
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 MagNav = "f91b31a4-be4d-40e3-b767-4b8c09c10076"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
-MagNav = "~1.1.0"
-Plots = "~1.38.16"
+CSV = "~0.10.11"
+DataFrames = "~1.6.1"
+MagNav = "~1.1.1"
+Plots = "~1.38.17"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.9.2"
+julia_version = "1.9.3"
 manifest_format = "2.0"
-project_hash = "d6c291b107d40beceee46db021bf8871e77ed804"
+project_hash = "590d1622e1796bf504b36b11857c0a4f3f4ad57c"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -327,12 +412,6 @@ git-tree-sha1 = "66771c8d21c8ff5e3a93379480a2307ac36863f7"
 uuid = "13072b0f-2c55-5437-9ae7-d433b7a33950"
 version = "1.0.1"
 
-[[deps.BFloat16s]]
-deps = ["LinearAlgebra", "Printf", "Random", "Test"]
-git-tree-sha1 = "dbf84058d0a8cbbadee18d25cf606934b22d7c66"
-uuid = "ab4f0b2a-ad5b-11e8-123f-65d77653426b"
-version = "0.4.2"
-
 [[deps.BSON]]
 git-tree-sha1 = "2208958832d6e1b59e49f53697483a84ca8d664e"
 uuid = "fbb218c0-5317-5bc6-957e-2ee96dd4b1f0"
@@ -378,9 +457,9 @@ uuid = "d1d4a3ce-64b1-5f1a-9ba4-7e7e69966f35"
 version = "0.1.7"
 
 [[deps.BufferedStreams]]
-git-tree-sha1 = "5bcb75a2979e40b29eb250cb26daab67aa8f97f5"
+git-tree-sha1 = "4ae47f9a4b1dc19897d3743ff13685925c5202ec"
 uuid = "e1450e63-4bb3-523b-b2a4-4ffa8c0fd77d"
-version = "1.2.0"
+version = "1.2.1"
 
 [[deps.Bzip2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -411,36 +490,6 @@ git-tree-sha1 = "44dbf560808d49041989b8a96cae4cffbeb7966a"
 uuid = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 version = "0.10.11"
 
-[[deps.CUDA]]
-deps = ["AbstractFFTs", "Adapt", "BFloat16s", "CEnum", "CUDA_Driver_jll", "CUDA_Runtime_Discovery", "CUDA_Runtime_jll", "ExprTools", "GPUArrays", "GPUCompiler", "KernelAbstractions", "LLVM", "LazyArtifacts", "Libdl", "LinearAlgebra", "Logging", "Preferences", "Printf", "Random", "Random123", "RandomNumbers", "Reexport", "Requires", "SparseArrays", "SpecialFunctions", "UnsafeAtomicsLLVM"]
-git-tree-sha1 = "35160ef0f03b14768abfd68b830f8e3940e8e0dc"
-uuid = "052768ef-5323-5732-b1bb-66c8b64840ba"
-version = "4.4.0"
-
-[[deps.CUDA_Driver_jll]]
-deps = ["Artifacts", "JLLWrappers", "LazyArtifacts", "Libdl", "Pkg"]
-git-tree-sha1 = "498f45593f6ddc0adff64a9310bb6710e851781b"
-uuid = "4ee394cb-3365-5eb0-8335-949819d2adfc"
-version = "0.5.0+1"
-
-[[deps.CUDA_Runtime_Discovery]]
-deps = ["Libdl"]
-git-tree-sha1 = "bcc4a23cbbd99c8535a5318455dcf0f2546ec536"
-uuid = "1af6417a-86b4-443c-805f-a4643ffb695f"
-version = "0.2.2"
-
-[[deps.CUDA_Runtime_jll]]
-deps = ["Artifacts", "CUDA_Driver_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "TOML"]
-git-tree-sha1 = "5248d9c45712e51e27ba9b30eebec65658c6ce29"
-uuid = "76a88914-d11a-5bdc-97e0-2f5a05c973a2"
-version = "0.6.0+0"
-
-[[deps.CUDNN_jll]]
-deps = ["Artifacts", "CUDA_Runtime_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "TOML"]
-git-tree-sha1 = "c30b29597102341a1ea4c2175c4acae9ae522c9d"
-uuid = "62b44479-cb7b-5706-934f-f13b2eb2e645"
-version = "8.9.2+0"
-
 [[deps.Cairo_jll]]
 deps = ["Artifacts", "Bzip2_jll", "CompilerSupportLibraries_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll", "JLLWrappers", "LZO_jll", "Libdl", "Pixman_jll", "Pkg", "Xorg_libXext_jll", "Xorg_libXrender_jll", "Zlib_jll", "libpng_jll"]
 git-tree-sha1 = "4b859a208b2397a7a623a03449e4636bdb17bcf2"
@@ -467,9 +516,9 @@ version = "1.16.0"
 
 [[deps.CodeTracking]]
 deps = ["InteractiveUtils", "UUIDs"]
-git-tree-sha1 = "d730914ef30a06732bdd9f763f6cc32e92ffbff1"
+git-tree-sha1 = "a1296f0fe01a4c3f9bf0dc2934efbf4416f5db31"
 uuid = "da1fd8a2-8d9e-5ec2-8556-3022fb5608a2"
-version = "1.3.1"
+version = "1.3.4"
 
 [[deps.CodecZlib]]
 deps = ["TranscodingStreams", "Zlib_jll"]
@@ -479,9 +528,9 @@ version = "0.7.2"
 
 [[deps.ColorSchemes]]
 deps = ["ColorTypes", "ColorVectorSpace", "Colors", "FixedPointNumbers", "PrecompileTools", "Random"]
-git-tree-sha1 = "be6ab11021cd29f0344d5c4357b163af05a48cba"
+git-tree-sha1 = "d9a8f86737b665e15a9641ecbac64deef9ce6724"
 uuid = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
-version = "3.21.0"
+version = "3.23.0"
 
 [[deps.ColorTypes]]
 deps = ["FixedPointNumbers", "Random"]
@@ -519,9 +568,9 @@ version = "0.3.0"
 
 [[deps.Compat]]
 deps = ["UUIDs"]
-git-tree-sha1 = "4e88377ae7ebeaf29a047aa1ee40826e0b708a5d"
+git-tree-sha1 = "e460f044ca8b99be31d35fe54fc33a5c33dd8ed7"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
-version = "4.7.0"
+version = "4.9.0"
 weakdeps = ["Dates", "LinearAlgebra"]
 
     [deps.Compat.extensions]
@@ -631,9 +680,9 @@ version = "1.6.1"
 
 [[deps.DataStructures]]
 deps = ["Compat", "InteractiveUtils", "OrderedCollections"]
-git-tree-sha1 = "cf25ccb972fec4e4817764d01c82386ae94f77b4"
+git-tree-sha1 = "3dbd312d370723b6bb43ba9d02fc36abade4518d"
 uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
-version = "0.18.14"
+version = "0.18.15"
 
 [[deps.DataValueInterfaces]]
 git-tree-sha1 = "bfc1187b79289637fa0ef6d4436ebdfe6905cbd6"
@@ -669,9 +718,9 @@ version = "1.15.1"
 
 [[deps.DiskArrays]]
 deps = ["OffsetArrays"]
-git-tree-sha1 = "52253d45971d96d24c33e0cf89bba41c127ee3b9"
+git-tree-sha1 = "7e8dcba9d1d1ba8aa576f7d899d42e04d76431b2"
 uuid = "3c3547ce-8d99-4f5e-a174-61eb10b00ae3"
-version = "0.3.14"
+version = "0.3.15"
 
 [[deps.Distances]]
 deps = ["LinearAlgebra", "Statistics", "StatsAPI"]
@@ -688,10 +737,10 @@ deps = ["Random", "Serialization", "Sockets"]
 uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[deps.Distributions]]
-deps = ["FillArrays", "LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "SparseArrays", "SpecialFunctions", "Statistics", "StatsAPI", "StatsBase", "StatsFuns", "Test"]
-git-tree-sha1 = "e76a3281de2719d7c81ed62c6ea7057380c87b1d"
+deps = ["FillArrays", "LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "SpecialFunctions", "Statistics", "StatsAPI", "StatsBase", "StatsFuns", "Test"]
+git-tree-sha1 = "938fe2981db009f531b6332e31c58e9584a2f9bd"
 uuid = "31c24e10-a181-5473-b8eb-7969acd0382f"
-version = "0.25.98"
+version = "0.25.100"
 
     [deps.Distributions.extensions]
     DistributionsChainRulesCoreExt = "ChainRulesCore"
@@ -740,11 +789,6 @@ deps = ["Adapt", "ArrayInterface", "GPUArraysCore", "GenericSchur", "LinearAlgeb
 git-tree-sha1 = "fb7dbef7d2631e2d02c49e2750f7447648b0ec9b"
 uuid = "d4d017d3-3776-5f7e-afef-a10c40355c18"
 version = "1.24.0"
-
-[[deps.ExprTools]]
-git-tree-sha1 = "27415f162e6028e81c72b82ef756bf321213b6ec"
-uuid = "e2ba6199-217a-4e67-a87a-7c52f15ade04"
-version = "0.1.10"
 
 [[deps.ExproniconLite]]
 deps = ["Pkg", "TOML"]
@@ -815,10 +859,15 @@ version = "0.9.20"
 uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
 [[deps.FillArrays]]
-deps = ["LinearAlgebra", "Random", "SparseArrays", "Statistics"]
-git-tree-sha1 = "f372472e8672b1d993e93dada09e23139b509f9e"
+deps = ["LinearAlgebra", "Random"]
+git-tree-sha1 = "a20eaa3ad64254c61eeb5f230d9306e937405434"
 uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
-version = "1.5.0"
+version = "1.6.1"
+weakdeps = ["SparseArrays", "Statistics"]
+
+    [deps.FillArrays.extensions]
+    FillArraysSparseArraysExt = "SparseArrays"
+    FillArraysStatisticsExt = "Statistics"
 
 [[deps.FiniteDiff]]
 deps = ["ArrayInterface", "LinearAlgebra", "Requires", "Setfield", "SparseArrays"]
@@ -843,24 +892,28 @@ uuid = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
 version = "0.8.4"
 
 [[deps.Flux]]
-deps = ["Adapt", "CUDA", "ChainRulesCore", "Functors", "LinearAlgebra", "MLUtils", "MacroTools", "NNlib", "NNlibCUDA", "OneHotArrays", "Optimisers", "Preferences", "ProgressLogging", "Random", "Reexport", "SparseArrays", "SpecialFunctions", "Statistics", "Zygote", "cuDNN"]
-git-tree-sha1 = "3e2c3704c2173ab4b1935362384ca878b53d4c34"
+deps = ["Adapt", "ChainRulesCore", "Functors", "LinearAlgebra", "MLUtils", "MacroTools", "NNlib", "OneHotArrays", "Optimisers", "Preferences", "ProgressLogging", "Random", "Reexport", "SparseArrays", "SpecialFunctions", "Statistics", "Zygote"]
+git-tree-sha1 = "863218453b276cad81ab750579cf429bfe6a62c9"
 uuid = "587475ba-b771-5e3f-ad9e-33799f191a9c"
-version = "0.13.17"
+version = "0.14.2"
 
     [deps.Flux.extensions]
-    AMDGPUExt = "AMDGPU"
+    FluxAMDGPUExt = "AMDGPU"
+    FluxCUDAExt = "CUDA"
+    FluxCUDAcuDNNExt = ["CUDA", "cuDNN"]
     FluxMetalExt = "Metal"
 
     [deps.Flux.weakdeps]
     AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
+    CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
     Metal = "dde4c033-4e86-420c-a63e-0dd931031962"
+    cuDNN = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
 
 [[deps.FluxOptTools]]
 deps = ["Distributions", "Flux", "LinearAlgebra", "OnlineStats", "Optim", "Random", "RecipesBase", "Statistics", "Zygote"]
-git-tree-sha1 = "c1c72f361054f381c70807cbc62662fc4eb89232"
+git-tree-sha1 = "34001ce5ef5bc495d426c930a9febabf9487eaa7"
 uuid = "ca11d760-9bce-11e9-0b7e-4f72fcadb4f9"
-version = "0.1.2"
+version = "0.1.3"
 
 [[deps.Fontconfig_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Expat_jll", "FreeType2_jll", "JLLWrappers", "Libdl", "Libuuid_jll", "Pkg", "Zlib_jll"]
@@ -876,9 +929,9 @@ version = "0.4.2"
 
 [[deps.ForwardDiff]]
 deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "LinearAlgebra", "LogExpFunctions", "NaNMath", "Preferences", "Printf", "Random", "SpecialFunctions"]
-git-tree-sha1 = "00e252f4d706b3d55a8863432e742bf5717b498d"
+git-tree-sha1 = "cf0fe81336da9fb90944683b8c41984b08793dad"
 uuid = "f6369f11-7733-5829-9624-2563aa707210"
-version = "0.10.35"
+version = "0.10.36"
 weakdeps = ["StaticArrays"]
 
     [deps.ForwardDiff.extensions]
@@ -908,9 +961,9 @@ uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
 
 [[deps.FuzzyCompletions]]
 deps = ["REPL"]
-git-tree-sha1 = "e16dd964b4dfaebcded16b2af32f05e235b354be"
+git-tree-sha1 = "001bd0eefc8c532660676725bed56b696321dfd2"
 uuid = "fb4132e2-a121-4a70-b8a1-d5b831dcdcc2"
-version = "0.5.1"
+version = "0.5.2"
 
 [[deps.GDAL]]
 deps = ["CEnum", "GDAL_jll", "NetworkOptions", "PROJ_jll"]
@@ -938,9 +991,9 @@ version = "3.3.8+0"
 
 [[deps.GLMNet]]
 deps = ["DataFrames", "Distributed", "Distributions", "Printf", "Random", "SparseArrays", "StatsBase", "glmnet_jll"]
-git-tree-sha1 = "7ea4e2bbb84183fe52a488d05e16c152b2387b95"
+git-tree-sha1 = "49ef90cd140f8a99a81338f1e08e8ebc18837a63"
 uuid = "8d5ece8b-de18-5317-b113-243142960cc6"
-version = "0.7.2"
+version = "0.7.0"
 
 [[deps.GPUArrays]]
 deps = ["Adapt", "GPUArraysCore", "LLVM", "LinearAlgebra", "Printf", "Random", "Reexport", "Serialization", "Statistics"]
@@ -953,12 +1006,6 @@ deps = ["Adapt"]
 git-tree-sha1 = "2d6ca471a6c7b536127afccfa7564b5b39227fe0"
 uuid = "46192b85-c4d5-4398-a991-12ede77f4527"
 version = "0.1.5"
-
-[[deps.GPUCompiler]]
-deps = ["ExprTools", "InteractiveUtils", "LLVM", "Libdl", "Logging", "Scratch", "TimerOutputs", "UUIDs"]
-git-tree-sha1 = "72b2e3c2ba583d1a7aa35129e56cf92e07c083e3"
-uuid = "61eb1bfa-7361-4325-ad38-22787b887f55"
-version = "0.21.4"
 
 [[deps.GR]]
 deps = ["Artifacts", "Base64", "DelimitedFiles", "Downloads", "GR_jll", "HTTP", "JSON", "Libdl", "LinearAlgebra", "Pkg", "Preferences", "Printf", "Random", "Serialization", "Sockets", "TOML", "Tar", "Test", "UUIDs", "p7zip_jll"]
@@ -1049,10 +1096,10 @@ uuid = "42e2da0e-8278-4e71-bc24-59509adca0fe"
 version = "1.0.2"
 
 [[deps.HDF5]]
-deps = ["Compat", "HDF5_jll", "Libdl", "Mmap", "Random", "Requires", "UUIDs"]
-git-tree-sha1 = "c73fdc3d9da7700691848b78c61841274076932a"
+deps = ["Compat", "HDF5_jll", "Libdl", "Mmap", "Printf", "Random", "Requires", "UUIDs"]
+git-tree-sha1 = "114e20044677badbc631ee6fdc80a67920561a29"
 uuid = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
-version = "0.16.15"
+version = "0.16.16"
 
 [[deps.HDF5_jll]]
 deps = ["Artifacts", "JLLWrappers", "LibCURL_jll", "Libdl", "OpenSSL_jll", "Pkg", "Zlib_jll"]
@@ -1119,9 +1166,9 @@ version = "0.1.2"
 
 [[deps.IntelOpenMP_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "0cb9352ef2e01574eeebdb102948a58740dcaf83"
+git-tree-sha1 = "ad37c091f7d7daf900963171600d7c1c5c3ede32"
 uuid = "1d5cc7b8-4909-519e-a0f8-d0f5ad9712d0"
-version = "2023.1.0+0"
+version = "2023.2.0+0"
 
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
@@ -1184,10 +1231,10 @@ uuid = "1019f520-868f-41f5-a6de-eb00f4b6a39c"
 version = "0.1.5"
 
 [[deps.JLLWrappers]]
-deps = ["Preferences"]
-git-tree-sha1 = "abc9885a7ca2052a736a600f7fa66209f96506e1"
+deps = ["Artifacts", "Preferences"]
+git-tree-sha1 = "7e5d6779a1e09a36db2a7b6cff50942a0a7d0fca"
 uuid = "692b3bcd-3c85-4b1f-b108-f13ce0eb3210"
-version = "1.4.1"
+version = "1.5.0"
 
 [[deps.JSON]]
 deps = ["Dates", "Mmap", "Parsers", "Unicode"]
@@ -1203,9 +1250,9 @@ version = "2.1.91+0"
 
 [[deps.JuliaInterpreter]]
 deps = ["CodeTracking", "InteractiveUtils", "Random", "UUIDs"]
-git-tree-sha1 = "6a125e6a4cb391e0b9adbd1afa9e771c2179f8ef"
+git-tree-sha1 = "81dc6aefcbe7421bd62cb6ca0e700779330acff8"
 uuid = "aa1ae85d-cabe-5617-a682-6adf51b2e16a"
-version = "0.9.23"
+version = "0.9.25"
 
 [[deps.JuliaVariables]]
 deps = ["MLStyle", "NameResolution"]
@@ -1419,9 +1466,9 @@ version = "2.12.0+0"
 
 [[deps.LogExpFunctions]]
 deps = ["DocStringExtensions", "IrrationalConstants", "LinearAlgebra"]
-git-tree-sha1 = "c3ce8e7420b3a6e071e0fe4745f5d4300e37b13f"
+git-tree-sha1 = "7d6dd4e9212aebaeed356de34ccf262a3cd415aa"
 uuid = "2ab3a3ac-af41-5b50-aa03-7779005ae688"
-version = "0.3.24"
+version = "0.3.26"
 
     [deps.LogExpFunctions.extensions]
     LogExpFunctionsChainRulesCoreExt = "ChainRulesCore"
@@ -1438,9 +1485,9 @@ uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
 
 [[deps.LoggingExtras]]
 deps = ["Dates", "Logging"]
-git-tree-sha1 = "cedb76b37bc5a6c702ade66be44f831fa23c681e"
+git-tree-sha1 = "a03c77519ab45eb9a34d3cfe2ca223d79c064323"
 uuid = "e6f89c97-d47a-5376-807f-9c37f3926c36"
-version = "1.0.0"
+version = "1.0.1"
 
 [[deps.LoweredCodeUtils]]
 deps = ["JuliaInterpreter"]
@@ -1467,9 +1514,9 @@ version = "0.1.4"
 
 [[deps.MKL_jll]]
 deps = ["Artifacts", "IntelOpenMP_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "Pkg"]
-git-tree-sha1 = "154d7aaa82d24db6d8f7e4ffcfe596f40bff214b"
+git-tree-sha1 = "eb006abbd7041c28e0d16260e50a24f8f9104913"
 uuid = "856f044c-d86e-5d09-b602-aeab76dc8ba7"
-version = "2023.1.0+0"
+version = "2023.2.0+0"
 
 [[deps.MLJLinearModels]]
 deps = ["DocStringExtensions", "IterativeSolvers", "LinearAlgebra", "LinearMaps", "MLJModelInterface", "Optim", "Parameters"]
@@ -1479,9 +1526,9 @@ version = "0.9.2"
 
 [[deps.MLJModelInterface]]
 deps = ["Random", "ScientificTypesBase", "StatisticalTraits"]
-git-tree-sha1 = "c8b7e632d6754a5e36c0d94a4b466a5ba3a30128"
+git-tree-sha1 = "03ae109be87f460fe3c96b8a0dbbf9c7bf840bd5"
 uuid = "e80e1ace-859a-464e-9ed9-23947d8ae3ea"
-version = "1.8.0"
+version = "1.9.2"
 
 [[deps.MLStyle]]
 git-tree-sha1 = "bc38dff0548128765760c79eb7388a4b37fae2c8"
@@ -1496,15 +1543,15 @@ version = "0.4.3"
 
 [[deps.MacroTools]]
 deps = ["Markdown", "Random"]
-git-tree-sha1 = "42324d08725e200c23d4dfb549e0d5d89dede2d2"
+git-tree-sha1 = "9ee1618cbf5240e6d4e0371d6f24065083f60c48"
 uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
-version = "0.5.10"
+version = "0.5.11"
 
 [[deps.MagNav]]
 deps = ["ArchGDAL", "BSON", "BenchmarkTools", "CSV", "DSP", "DataFrames", "DelimitedFiles", "Distributions", "ExponentialUtilities", "Flux", "FluxOptTools", "ForwardDiff", "GLMNet", "GR", "Geodesy", "GlobalSensitivity", "HDF5", "Inflate", "Interpolations", "IterTools", "KernelFunctions", "LazyArtifacts", "LinearAlgebra", "MAT", "MLJLinearModels", "NearestNeighbors", "Optim", "Parameters", "Pkg", "Plots", "Pluto", "Random", "RecipesBase", "Revise", "SatelliteToolbox", "ShapML", "SpecialFunctions", "Statistics", "StatsBase", "TOML", "ZipFile", "Zygote"]
-git-tree-sha1 = "5cdc1f5aae3e84481acc4acc16082447d9c58ecd"
+git-tree-sha1 = "45610920d2759bccb1d9806e1a1da9e095997767"
 uuid = "f91b31a4-be4d-40e3-b767-4b8c09c10076"
-version = "1.1.0"
+version = "1.1.1"
 
 [[deps.MappedArrays]]
 git-tree-sha1 = "2dab0221fe2b0f2cb6754eaa743cc266339f527e"
@@ -1576,21 +1623,19 @@ version = "7.8.3"
 
 [[deps.NNlib]]
 deps = ["Adapt", "Atomix", "ChainRulesCore", "GPUArraysCore", "KernelAbstractions", "LinearAlgebra", "Pkg", "Random", "Requires", "Statistics"]
-git-tree-sha1 = "72240e3f5ca031937bd536182cb2c031da5f46dd"
+git-tree-sha1 = "3d42748c725c3f088bcda47fa2aca89e74d59d22"
 uuid = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
-version = "0.8.21"
+version = "0.9.4"
 
     [deps.NNlib.extensions]
     NNlibAMDGPUExt = "AMDGPU"
+    NNlibCUDACUDNNExt = ["CUDA", "cuDNN"]
+    NNlibCUDAExt = "CUDA"
 
     [deps.NNlib.weakdeps]
     AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
-
-[[deps.NNlibCUDA]]
-deps = ["Adapt", "CUDA", "LinearAlgebra", "NNlib", "Random", "Statistics", "cuDNN"]
-git-tree-sha1 = "f94a9684394ff0d325cc12b06da7032d8be01aaf"
-uuid = "a00861dc-f156-4864-bf3c-e6376f28a68d"
-version = "0.2.7"
+    CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+    cuDNN = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
 
 [[deps.NaNMath]]
 deps = ["OpenLibm_jll"]
@@ -1674,9 +1719,9 @@ version = "1.4.1"
 
 [[deps.OpenSSL_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "1aa4b74f80b01c6bc2b89992b861b5f210e665b5"
+git-tree-sha1 = "bbb5c2115d63c2f1451cb70e5ef75e8fe4707019"
 uuid = "458c3c95-2e84-50aa-8efc-19380b2a3a95"
-version = "1.1.21+0"
+version = "1.1.22+0"
 
 [[deps.OpenSpecFun_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Pkg"]
@@ -1686,15 +1731,15 @@ version = "0.5.5+0"
 
 [[deps.Optim]]
 deps = ["Compat", "FillArrays", "ForwardDiff", "LineSearches", "LinearAlgebra", "NLSolversBase", "NaNMath", "Parameters", "PositiveFactorizations", "Printf", "SparseArrays", "StatsBase"]
-git-tree-sha1 = "e3a6546c1577bfd701771b477b794a52949e7594"
+git-tree-sha1 = "963b004d15216f8129f6c0f7d187efa136570be0"
 uuid = "429524aa-4258-5aef-a3af-852621145aeb"
-version = "1.7.6"
+version = "1.7.7"
 
 [[deps.Optimisers]]
 deps = ["ChainRulesCore", "Functors", "LinearAlgebra", "Random", "Statistics"]
-git-tree-sha1 = "16776280310aa5553c370b9c7b17f34aadaf3c8e"
+git-tree-sha1 = "c1fc26bab5df929a5172f296f25d7d08688fd25b"
 uuid = "3bd65402-5787-11e9-1adc-39752487f4e2"
-version = "0.2.19"
+version = "0.2.20"
 
 [[deps.OptionalData]]
 git-tree-sha1 = "d047cc114023e12292533bb822b45c23cb51d310"
@@ -1708,9 +1753,9 @@ uuid = "91d4177d-7536-5919-b921-800302f37372"
 version = "1.3.2+0"
 
 [[deps.OrderedCollections]]
-git-tree-sha1 = "d321bf2de576bf25ec4d3e4360faca399afca282"
+git-tree-sha1 = "2e73fe17cac3c62ad1aebe70d44c963c3cfdc3e3"
 uuid = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
-version = "1.6.0"
+version = "1.6.2"
 
 [[deps.PCRE2_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -1743,9 +1788,9 @@ version = "0.12.3"
 
 [[deps.Parsers]]
 deps = ["Dates", "PrecompileTools", "UUIDs"]
-git-tree-sha1 = "4b2e829ee66d4218e0cef22c0a64ee37cf258c29"
+git-tree-sha1 = "716e24b21538abc91f6205fd1d8363f39b442851"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "2.7.1"
+version = "2.7.2"
 
 [[deps.Pipe]]
 git-tree-sha1 = "6842804e7867b115ca9de748a0cf6b364523c16d"
@@ -1777,9 +1822,9 @@ version = "1.3.5"
 
 [[deps.Plots]]
 deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "JLFzf", "JSON", "LaTeXStrings", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "Pkg", "PlotThemes", "PlotUtils", "PrecompileTools", "Preferences", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "RelocatableFolders", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "UUIDs", "UnicodeFun", "UnitfulLatexify", "Unzip"]
-git-tree-sha1 = "75ca67b2c6512ad2d0c767a7cfc55e75075f8bbc"
+git-tree-sha1 = "9f8675a55b37a70aa23177ec110f6e3f4dd68466"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-version = "1.38.16"
+version = "1.38.17"
 
     [deps.Plots.extensions]
     FileIOExt = "FileIO"
@@ -1841,9 +1886,9 @@ version = "3.0.3"
 
 [[deps.PrecompileTools]]
 deps = ["Preferences"]
-git-tree-sha1 = "9673d39decc5feece56ef3940e5dafba15ba0f81"
+git-tree-sha1 = "03b4c25b43cb84cee5c90aa9b5ea0a78fd848d2f"
 uuid = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
-version = "1.1.2"
+version = "1.2.0"
 
 [[deps.Preferences]]
 deps = ["TOML"]
@@ -1907,18 +1952,6 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 [[deps.Random]]
 deps = ["SHA", "Serialization"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
-
-[[deps.Random123]]
-deps = ["Random", "RandomNumbers"]
-git-tree-sha1 = "552f30e847641591ba3f39fd1bed559b9deb0ef3"
-uuid = "74087812-796a-5b5d-8853-05524746bad3"
-version = "1.6.1"
-
-[[deps.RandomNumbers]]
-deps = ["Random", "Requires"]
-git-tree-sha1 = "043da614cc7e95c703498a491e2c21f58a2b8111"
-uuid = "e6cf234a-135c-5ec9-84dd-332b85af5143"
-version = "1.5.3"
 
 [[deps.Ratios]]
 deps = ["Requires"]
@@ -2019,9 +2052,9 @@ version = "0.4.0+0"
 
 [[deps.Roots]]
 deps = ["ChainRulesCore", "CommonSolve", "Printf", "Setfield"]
-git-tree-sha1 = "de432823e8aab4dd1a985be4be768f95acf152d4"
+git-tree-sha1 = "ff42754a57bb0d6dcfe302fd0d4272853190421f"
 uuid = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
-version = "2.0.17"
+version = "2.0.19"
 
     [deps.Roots.extensions]
     RootsForwardDiffExt = "ForwardDiff"
@@ -2056,21 +2089,21 @@ version = "0.11.1"
 
 [[deps.SatelliteToolboxAtmosphericModels]]
 deps = ["Accessors", "Crayons", "PolynomialRoots", "Printf", "Reexport", "SatelliteToolboxBase", "SatelliteToolboxCelestialBodies", "SatelliteToolboxLegendre", "SpaceIndices"]
-git-tree-sha1 = "2583ce405eb2208a64a5d4d6d3e6693d82b5b3fd"
+git-tree-sha1 = "ec25599402edb6fd0afd8e7e572e26c35494d9e9"
 uuid = "5718ef0a-a30f-426d-bcd9-4cf31dd12909"
-version = "0.1.0"
+version = "0.1.1"
 
 [[deps.SatelliteToolboxBase]]
 deps = ["Crayons", "Dates", "LinearAlgebra", "PrecompileTools", "Printf", "ReferenceFrameRotations", "StaticArrays"]
-git-tree-sha1 = "b891406c571bbd3f24567f3f70ea7204c8ce3f03"
+git-tree-sha1 = "9652189ca82b7c3fee94c6cc030df70d0664dc74"
 uuid = "9e17983a-0463-41a7-9a16-1682db6d8b66"
-version = "0.2.4"
+version = "0.2.5"
 
 [[deps.SatelliteToolboxCelestialBodies]]
 deps = ["Dates", "Reexport", "SatelliteToolboxBase", "StaticArrays"]
-git-tree-sha1 = "fa46023fcb1ba9fc2b444c4e6c025022477fa382"
+git-tree-sha1 = "c366cdeb0301d97cd1ff9cb36497ad0eb873e13c"
 uuid = "b0edd99f-a7ca-4aa6-9a1e-a53e8f506046"
-version = "0.1.0"
+version = "0.1.1"
 
 [[deps.SatelliteToolboxGeomagneticField]]
 deps = ["LinearAlgebra", "ReferenceFrameRotations", "SatelliteToolboxLegendre", "SatelliteToolboxTransformations", "StaticArrays"]
@@ -2080,9 +2113,9 @@ version = "0.1.0"
 
 [[deps.SatelliteToolboxGravityModels]]
 deps = ["Crayons", "Dates", "Downloads", "ReferenceFrameRotations", "SatelliteToolboxBase", "SatelliteToolboxLegendre", "Scratch", "StaticArrays"]
-git-tree-sha1 = "c916d0c8d93f2438b89e3d791419612008d7221f"
+git-tree-sha1 = "a145726bc306d2d928b3069bda25b6ebccd0dea5"
 uuid = "bd9e9728-6f7b-4d28-9e50-c765cb1b7c8c"
-version = "0.1.1"
+version = "0.1.2"
 
 [[deps.SatelliteToolboxLegendre]]
 git-tree-sha1 = "8151c3d6e18e6b1e0417960f5e44286b722e033a"
@@ -2097,9 +2130,9 @@ version = "0.2.1"
 
 [[deps.SatelliteToolboxSgp4]]
 deps = ["Crayons", "Dates", "LinearAlgebra", "PrecompileTools", "Printf", "Reexport", "SatelliteToolboxBase", "SatelliteToolboxTle", "StaticArrays"]
-git-tree-sha1 = "2d42c942352bad761e4aa4b2e7146e977a62d427"
+git-tree-sha1 = "66b246e63b6e00a60861a55110361c263994fa17"
 uuid = "ba14ac17-bfc9-4710-a76f-b32930ef2339"
-version = "2.1.1"
+version = "2.1.2"
 
 [[deps.SatelliteToolboxTle]]
 deps = ["Crayons", "Dates", "Downloads", "PrecompileTools", "Printf", "URIs"]
@@ -2109,9 +2142,9 @@ version = "1.0.4"
 
 [[deps.SatelliteToolboxTransformations]]
 deps = ["Crayons", "Dates", "DelimitedFiles", "Downloads", "Interpolations", "LinearAlgebra", "Reexport", "ReferenceFrameRotations", "SatelliteToolboxBase", "Scratch", "StaticArrays"]
-git-tree-sha1 = "2f20ee9fc9af33296181a64bb7a752b98f4df85b"
+git-tree-sha1 = "9d65e7bef5aa177a227ebacdc4a51363c56df2c3"
 uuid = "6b019ec1-7a1e-4f04-96c7-a9db1ca5514d"
-version = "0.1.3"
+version = "0.1.4"
 
 [[deps.ScientificTypesBase]]
 git-tree-sha1 = "a8e18eb383b5ecf1b5e6fc237eb39255044fd92b"
@@ -2199,9 +2232,9 @@ version = "1.1.1"
 
 [[deps.SpaceIndices]]
 deps = ["Dates", "DelimitedFiles", "OptionalData", "Reexport", "Scratch"]
-git-tree-sha1 = "aa527defc37566c18dcdef93c4d04390a9ffb4f7"
+git-tree-sha1 = "0329173419328166fd0eae5ec92fa40f98f19a79"
 uuid = "5a540a4e-639f-452a-b107-23ea09ed4d36"
-version = "1.0.0"
+version = "1.1.0"
 
 [[deps.SparseArrays]]
 deps = ["Libdl", "LinearAlgebra", "Random", "Serialization", "SuiteSparse_jll"]
@@ -2209,9 +2242,9 @@ uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [[deps.SpecialFunctions]]
 deps = ["IrrationalConstants", "LogExpFunctions", "OpenLibm_jll", "OpenSpecFun_jll"]
-git-tree-sha1 = "7beb031cf8145577fbccacd94b8a8f4ce78428d3"
+git-tree-sha1 = "e2cfc4012a19088254b3950b85c3c1d8882d864d"
 uuid = "276daf66-3868-5448-9aa4-cd146d93841b"
-version = "2.3.0"
+version = "2.3.1"
 weakdeps = ["ChainRulesCore"]
 
     [deps.SpecialFunctions.extensions]
@@ -2263,9 +2296,9 @@ version = "1.6.0"
 
 [[deps.StatsBase]]
 deps = ["DataAPI", "DataStructures", "LinearAlgebra", "LogExpFunctions", "Missings", "Printf", "Random", "SortingAlgorithms", "SparseArrays", "Statistics", "StatsAPI"]
-git-tree-sha1 = "75ebe04c5bed70b91614d684259b661c9e6274a4"
+git-tree-sha1 = "d1bf48bfcc554a3761a133fe3a9bb01488e06916"
 uuid = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
-version = "0.34.0"
+version = "0.33.21"
 
 [[deps.StatsFuns]]
 deps = ["HypergeometricFunctions", "IrrationalConstants", "LogExpFunctions", "Reexport", "Rmath", "SpecialFunctions"]
@@ -2354,12 +2387,6 @@ git-tree-sha1 = "fd7da49fae680c18aa59f421f0ba468e658a2d7a"
 uuid = "e0b8ae26-5307-5830-91fd-398402328850"
 version = "0.16.0+0"
 
-[[deps.TimerOutputs]]
-deps = ["ExprTools", "Printf"]
-git-tree-sha1 = "f548a9e9c490030e545f72074a41edfd0e5bcdd7"
-uuid = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
-version = "0.5.23"
-
 [[deps.ToeplitzMatrices]]
 deps = ["AbstractFFTs", "DSP", "FillArrays", "LinearAlgebra"]
 git-tree-sha1 = "a097662c0fd28143bb714e4527ac2dcb7520212e"
@@ -2407,9 +2434,9 @@ uuid = "410a4b4d-49e4-4fbc-ab6d-cb71b17b3775"
 version = "0.1.7"
 
 [[deps.URIs]]
-git-tree-sha1 = "074f993b0ca030848b897beff716d93aca60f06a"
+git-tree-sha1 = "b7a5e99f24892b6824a954199a45e9ffcc1c70f0"
 uuid = "5c2747f8-b7ea-4ff2-ba2e-563bfd36b1d4"
-version = "1.4.2"
+version = "1.5.0"
 
 [[deps.UUIDs]]
 deps = ["Random", "SHA"]
@@ -2431,9 +2458,9 @@ version = "0.4.1"
 
 [[deps.Unitful]]
 deps = ["Dates", "LinearAlgebra", "Random"]
-git-tree-sha1 = "c4d2a349259c8eba66a00a540d550f122a3ab228"
+git-tree-sha1 = "a72d22c7e13fe2de562feda8645aa134712a87ee"
 uuid = "1986cc42-f94f-5a68-af5c-568840ba703d"
-version = "1.15.0"
+version = "1.17.0"
 weakdeps = ["ConstructionBase", "InverseFunctions"]
 
     [deps.Unitful.extensions]
@@ -2648,9 +2675,9 @@ version = "1.5.5+0"
 
 [[deps.Zygote]]
 deps = ["AbstractFFTs", "ChainRules", "ChainRulesCore", "DiffRules", "Distributed", "FillArrays", "ForwardDiff", "GPUArrays", "GPUArraysCore", "IRTools", "InteractiveUtils", "LinearAlgebra", "LogExpFunctions", "MacroTools", "NaNMath", "PrecompileTools", "Random", "Requires", "SparseArrays", "SpecialFunctions", "Statistics", "ZygoteRules"]
-git-tree-sha1 = "5be3ddb88fc992a7d8ea96c3f10a49a7e98ebc7b"
+git-tree-sha1 = "e2fe78907130b521619bc88408c859a472c4172b"
 uuid = "e88e6eb3-aa80-5325-afca-941959d7151f"
-version = "0.6.62"
+version = "0.6.63"
 
     [deps.Zygote.extensions]
     ZygoteColorsExt = "Colors"
@@ -2674,12 +2701,6 @@ git-tree-sha1 = "7a89efe0137720ca82f99e8daa526d23120d0d37"
 uuid = "28df3c45-c428-5900-9ff8-a3135698ca75"
 version = "1.76.0+1"
 
-[[deps.cuDNN]]
-deps = ["CEnum", "CUDA", "CUDNN_jll"]
-git-tree-sha1 = "ee79f97d07bf875231559f9b3f2649f34fac140b"
-uuid = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
-version = "1.1.0"
-
 [[deps.fzf_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "868e669ccb12ba16eaf50cb2957ee2ff61261c56"
@@ -2687,10 +2708,10 @@ uuid = "214eeab7-80f7-51ab-84ad-2988db7cef09"
 version = "0.29.0+0"
 
 [[deps.glmnet_jll]]
-deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "31adae3b983b579a1fbd7cfd43a4bc0d224c2f5a"
+deps = ["Libdl", "Pkg"]
+git-tree-sha1 = "a88d1783391cea1503e092e8a346751ec5e3b5d1"
 uuid = "78c6b45d-5eaf-5d68-bcfb-a5a2cb06c27f"
-version = "2.0.13+0"
+version = "5.0.0+0"
 
 [[deps.libaom_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -2773,26 +2794,39 @@ version = "1.4.1+0"
 # ╠═22982d8e-240c-11ee-2e0c-bda2a93a4ab0
 # ╟─3a55962c-bd1b-410c-b98a-3130fc11ee11
 # ╠═bf9f72f0-c351-48d3-a811-418ee965073c
-# ╟─438f2f01-5cbe-4088-b365-571de4f9539a
-# ╠═d7d5fa3e-0c00-4d0b-b9e0-b6d8b0e917cf
-# ╟─32d385fd-1a78-47f8-b748-41e77f680da0
 # ╠═9d11d4be-9ba7-44ab-a4ff-f0fdf95b2171
-# ╟─b21e0015-367e-44e2-89b9-841867b6299d
 # ╠═663f7b8c-dfc6-445d-9c54-1141856f2a66
 # ╠═99405ae1-580a-4fd3-a860-13cc5b22b045
-# ╟─c111d83f-2883-4149-8ee2-53bf4b57640a
 # ╠═6d4a87c8-41d7-4478-b52a-4dc5a1ae18ea
-# ╟─2d18bbeb-ad4e-4c5b-80a3-25bd99f45c73
 # ╠═c5b6b439-e962-4c9d-9b02-339657fb266b
-# ╟─3f6b725b-f1c7-41fb-9854-c737b9698a40
 # ╠═ae1acc31-19db-4e94-85dc-e6274186978e
-# ╟─504842a2-61e0-4154-a1e9-5182c97b6090
+# ╟─7a20ef62-f352-4fc7-9061-13fb293bb0bf
 # ╠═39bdbe6a-52ae-44d2-8e80-2e7d2a75e322
-# ╟─8b5c030a-e0b9-4a7a-a901-a6967edbe70b
 # ╠═9ed61357-346b-49de-a1ed-8849db041ade
-# ╟─1b4d1092-1680-4676-a69d-6acc2549d588
-# ╠═1927f750-c3de-4c52-8a78-bb7f0f05c21e
-# ╟─7cf91a2c-73a3-4ad5-93f2-6f6908702441
-# ╠═992dce6d-3bed-428c-84ca-2ee9bc9f0167
+# ╟─a9cac83d-03b3-4793-8da4-f45563091bd0
+# ╠═f492ee3d-c097-4937-9552-e7d2632a5e50
+# ╠═7e15f297-64a4-4ee6-a0ab-65d959354f29
+# ╟─239b60aa-0e97-4871-a9a5-64cd802f4bde
+# ╠═21828f95-98f3-4271-9a57-121252065741
+# ╠═4c3b7f4c-062c-40c2-8677-b47e775aa0dc
+# ╠═80cc7f27-a17d-4649-9640-370a57dfefeb
+# ╠═8ca83ae3-5cad-44a0-ad89-1dff234f50d7
+# ╠═4d75b716-bc93-42f5-8b1a-f5550e7de276
+# ╠═4171fef9-650b-4f37-ae5d-7084d54a0be0
+# ╟─0c839441-909d-4095-a4eb-4dfc92eb2121
+# ╠═0a1b7102-59e0-4e2a-a45c-5c21d0039b88
+# ╟─5f88bca1-ecc9-45b2-8164-0f6965b81088
+# ╠═ed1f8baa-d228-4f66-a979-527f68acccdc
+# ╟─4e01e107-5d58-409d-b08c-23135b4c28ba
+# ╠═566bb8eb-23d3-473d-8e79-1d02536dfdd5
+# ╠═987292fe-4e58-4cc9-bfe2-734c0f4174f8
+# ╠═70b8e7ff-71ee-489b-817e-1d4ea3004355
+# ╠═a56f0b50-0b39-4400-928d-f485af206d23
+# ╟─658524ef-c716-408c-ab57-f1a10459ff24
+# ╠═c469bc3c-434d-452a-8dca-1a96823a8153
+# ╟─0cda1d66-6ba5-40d2-89ff-caf574d9a09f
+# ╠═3e9e848e-bf16-428a-98c3-9fee4eddda41
+# ╠═a42f021e-0a11-4589-949a-7a2a56af129a
+# ╠═ea334b91-e53d-404f-ae3c-106ba1bb7463
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

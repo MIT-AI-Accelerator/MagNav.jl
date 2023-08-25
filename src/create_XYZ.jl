@@ -252,7 +252,9 @@ function create_traj(mapS::Union{MapS,MapSd,MapS3D} = get_map(namad);
     traj_h5 = add_extension(traj_h5,".h5")
 
     # check flight altitude
-    alt < median(mapS.alt) && error("flight altitude < scalar map altitude, modify")
+    ind  = map_params(mapS)[2]
+    alt_ = typeof(mapS) <: Union{MapSd} ? median(mapS.alt[ind]) : mapS.alt[1]
+    alt  < alt_ && error("flight altitude $alt < map altitude $alt_")
 
     i   = 0
     N   = 2
@@ -306,9 +308,9 @@ function create_traj(mapS::Union{MapS,MapSd,MapS3D} = get_map(namad);
         frac1 = 0
         frac2 = 0
         while !(frac1 ≈ 1) | !(frac2 ≈ 1) # typically 4-5 iterations
-            dn = dlat2dn.(fdm(lat),lat) # northing distance per time step
-            de = dlon2de.(fdm(lon),lat) # easting  distance per time step
-            d_now = sum(sqrt.(dn[2:N].^2+de[2:N].^2)) # current distance
+            dx = dlon2de.(fdm(lon),lat) # easting  distance per time step
+            dy = dlat2dn.(fdm(lat),lat) # northing distance per time step
+            d_now = sum(sqrt.(dx[2:N].^2+dy[2:N].^2)) # current distance
 
             if isempty(ll2) # scale to target distance
                 frac1 = d / d_now # scaling factor
@@ -322,9 +324,9 @@ function create_traj(mapS::Union{MapS,MapSd,MapS3D} = get_map(namad);
             lon = (lon .- lon[1])*frac2 .+ lon[1] # scale to target
         end
 
-        dn = dlat2dn.(fdm(lat),lat) # northing distance per time step
-        de = dlon2de.(fdm(lon),lat) # easting  distance per time step
-        d_now = sum(sqrt.(dn[2:N].^2+de[2:N].^2)) # current distance
+        dx = dlon2de.(fdm(lon),lat) # easting  distance per time step
+        dy = dlat2dn.(fdm(lat),lat) # northing distance per time step
+        d_now = sum(sqrt.(dx[2:N].^2+dy[2:N].^2)) # current distance
 
         if ll2 != () # correct time & N for true distance & given velocity
             range_old = LinRange(0,1,N) # starting range {0:1} with N_old
@@ -334,7 +336,7 @@ function create_traj(mapS::Union{MapS,MapSd,MapS3D} = get_map(namad);
             itp_lat   = linear_interpolation(range_old,lat) # lat itp = f(0:1)
             itp_lon   = linear_interpolation(range_old,lon) # lon itp = f(0:1)
             lat       = itp_lat.(range_new) # get interpolated lat
-            lon       = itp_lon.(range_new) # get interpolated lat
+            lon       = itp_lon.(range_new) # get interpolated lon
         end
 
         # plot!(p1,lon,lat)
@@ -350,12 +352,13 @@ function create_traj(mapS::Union{MapS,MapSd,MapS3D} = get_map(namad);
 
     @assert i <= attempts "maximum attempts reached, decrease t or increase v"
 
-    lla2utm = UTMZfromLLA(WGS84)
-    llas    = LLA.(rad2deg.(lat),rad2deg.(lon),alt)
+    (zone_utm,is_north) = utm_zone(mean(rad2deg.(lat)),mean(rad2deg.(lon)))
+    lla2utm = UTMfromLLA(zone_utm,is_north,WGS84)
+    utms    = lla2utm.(LLA.(rad2deg.(lat),rad2deg.(lon)))
 
     # velocities and specific forces from position
-    vn = fdm([lla2utm(lla).y for lla in llas]) / dt
-    ve = fdm([lla2utm(lla).x for lla in llas]) / dt
+    vn = fdm([utm.y for utm in utms]) / dt
+    ve = fdm([utm.x for utm in utms]) / dt
     vd = zero(lat)
     fn = fdm(vn) / dt
     fe = fdm(ve) / dt
@@ -575,7 +578,7 @@ function create_mag_c(lat, lon, mapS::Union{MapS,MapSd,MapS3D} = get_map(namad);
     end
 
     # map values along trajectory
-    @info("getting scalar map value, possibly with upward/downward continuation")
+    @info("getting scalar map values, possibly with upward/downward continuation")
     map_val = get_map_val(mapS,lat,lon,alt;α=200)
 
     # FOGM & white noise

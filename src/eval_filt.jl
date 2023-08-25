@@ -1060,8 +1060,8 @@ function conf_ellipse!(p1, P;
     xlab = ylab = axis             ? lab : nothing
     @assert all(real(eigval) .> 0) "P is not positive definite"
     @assert size(P) == (2,2)       "P is size $(size(P)) ≂̸ (2,2)"
-    @assert length(μ) == 2         "μ is length $length(μ) ≂̸ 2"
-    @assert 0 < conf < 1           "conf = $conf < 0 or conf = $conf > 1"
+    @assert length(μ) == 2         "μ is length $(length(μ)) ≂̸ 2"
+    @assert 0 < conf < 1           "conf is not 0 < $conf < 1"
 
     k  = sqrt(chisq_q(conf,2)) # compute quantile for desired percentile
     b_e # backend
@@ -1371,19 +1371,17 @@ function gif_ellipse(filt_res::FILTres,
                      clims::Tuple        = (0,0),
                      b_e                 = gr())
 
-    dlat = get_step(map_map.yy)
-    dlon = get_step(map_map.xx)
-    dn   = dlat2dn(dlat,mean(map_map.yy))
-    de   = dlon2de(dlon,mean(map_map.yy))
+    dx = dlon2de(get_step(map_map.xx),mean(map_map.yy))
+    dy = dlat2dn(get_step(map_map.yy),mean(map_map.yy))
 
-    if (dlon != 0) & (dlat != 0) & !isnan(dlon) & !isnan(dlat) & (clims == (0,0))
-        num = ceil(Int,1.5*lim/minimum([dn,de]))
-        y1  = findmin(abs.(map_map.yy.-minimum(filt_out.lat)))[2]
-        y2  = findmin(abs.(map_map.yy.-maximum(filt_out.lat)))[2]
+    if (dx != 0) & (dy != 0) & !isnan(dx) & !isnan(dy) & (clims == (0,0))
+        num = ceil(Int,1.5*lim/minimum([dx,dy]))
         x1  = findmin(abs.(map_map.xx.-minimum(filt_out.lon)))[2]
         x2  = findmin(abs.(map_map.xx.-maximum(filt_out.lon)))[2]
-        (y1,y2)   = sort([y1,y2])
+        y1  = findmin(abs.(map_map.yy.-minimum(filt_out.lat)))[2]
+        y2  = findmin(abs.(map_map.yy.-maximum(filt_out.lat)))[2]
         (x1,x2)   = sort([x1,x2])
+        (y1,y2)   = sort([y1,y2])
         (_,clims) = map_clims(map_cs(map_color),map_map.map[y1:y2,x1:x2,1])
     end
 
@@ -1392,7 +1390,7 @@ function gif_ellipse(filt_res::FILTres,
 
     for i = 1:di:size(P,3)
 
-        if (dlon != 0) & (dlat != 0) & !isnan(dlon) & !isnan(dlat)
+        if (dx != 0) & (dy != 0) & !isnan(dx) & !isnan(dy)
             xi   = findmin(abs.(map_map.xx.-filt_out.lon[i]))[2]
             yi   = findmin(abs.(map_map.yy.-filt_out.lat[i]))[2]
             xind = max(xi-num,1):min(xi+num,length(map_map.xx))

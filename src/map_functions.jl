@@ -247,56 +247,64 @@ function map_params(map_map::Map)
 end # function map_params
 
 """
-    map_lla_lim(map_xx::Vector, map_yy::Vector, alt,
-                xx_1::Int, xx_nx::Int, yy_1::Int, yy_ny::Int;
+    map_lla_lim(map_xx::Vector, map_yy::Vector;
+                xx_1::Int      = 1,
+                xx_nx::Int     = length(map_xx),
+                yy_1::Int      = 1,
+                yy_ny::Int     = length(map_yy),
                 zone_utm::Int  = 18,
                 is_north::Bool = true)
 
-Internal helper function to get lat/lon limits at 4 corners of `UTMZ` map.
+Internal helper function to get lat/lon limits at 4 corners of `UTM` map.
 
 **Arguments:**
 - `map_xx`:   `nx` map x-direction (longitude) coordinates [m]
 - `map_yy`:   `ny` map y-direction (latitude)  coordinates [m]
-- `alt`:      nominal map altitude, median used for 2D altitude map [m]
-- `xx_1`:     first index of `map_xx` to consider
-- `xx_nx`:    last  index of `map_xx` to consider
-- `yy_1`:     first index of `map_yy` to consider
-- `yy_ny`:    last  index of `map_yy` to consider
+- `xx_1`:     (optional) first index of `map_xx` to consider
+- `xx_nx`:    (optional) last  index of `map_xx` to consider
+- `yy_1`:     (optional) first index of `map_yy` to consider
+- `yy_ny`:    (optional) last  index of `map_yy` to consider
 - `zone_utm`: (optional) UTM zone
 - `is_north`: (optional) if true, map is in northern hemisphere
 
 **Returns:**
-- `lons`: longitudes for each of 4 corners of `UTMZ` map [deg]
-- `lats`: latitudes  for each of 4 corners of `UTMZ` map [deg]
+- `lons`: longitudes for each of 4 corners of `UTM` map [deg]
+- `lats`: latitudes  for each of 4 corners of `UTM` map [deg]
 """
-function map_lla_lim(map_xx::Vector, map_yy::Vector, alt,
-                     xx_1::Int, xx_nx::Int, yy_1::Int, yy_ny::Int;
+function map_lla_lim(map_xx::Vector, map_yy::Vector;
+                     xx_1::Int      = 1,
+                     xx_nx::Int     = length(map_xx),
+                     yy_1::Int      = 1,
+                     yy_ny::Int     = length(map_yy),
                      zone_utm::Int  = 18,
                      is_north::Bool = true)
 
-    utm2lla = LLAfromUTMZ(WGS84)
+    # 4 corners of UTM map
+    utm2lla = LLAfromUTM(zone_utm,is_north,WGS84)
+    x       = map_xx[[xx_1,xx_1,xx_nx,xx_nx]]
+    y       = map_yy[[yy_1,yy_ny,yy_1,yy_ny]]
+    llas    = utm2lla.(UTM.(x,y))
 
-    # 4 corners of UTMZ map
-    utms = [UTMZ(x,y,alt,zone_utm,is_north) for x in map_xx[[xx_1,xx_nx]]
-                                            for y in map_yy[[yy_1,yy_ny]]]
-
-    # sorted longitudes at 4 corners of UTMZ map
+    # sorted longitudes at 4 corners of UTM map
     # left/right edges are straight, so only corners needed
-    lons = sort([utm2lla(utm).lon for utm in utms])
+    lons = sort([lla.lon for lla in llas])
 
-    # lower/upper parallels of UTMZ map
-    utms_1  = UTMZ.(map_xx[xx_1:xx_nx],map_yy[yy_1 ],alt,zone_utm,is_north)
-    utms_ny = UTMZ.(map_xx[xx_1:xx_nx],map_yy[yy_ny],alt,zone_utm,is_north)
+    # lower/upper parallels of UTM map
+    x       = map_xx[xx_1:xx_nx]
+    llas_1  = utm2lla.(UTM.(x,map_yy[yy_1 ]))
+    llas_ny = utm2lla.(UTM.(x,map_yy[yy_ny]))
 
-    # sorted latitude limits for lower/upper parallels of UTMZ map
-    lats = sort([extrema([utm2lla(utm).lat for utm in utms_1 ])...,
-                 extrema([utm2lla(utm).lat for utm in utms_ny])...])
+    # sorted latitude limits for lower/upper parallels of UTM map
+    lats = sort([extrema([lla.lat for lla in llas_1 ])...,
+                 extrema([lla.lat for lla in llas_ny])...])
 
     return (lons, lats)
 end # function map_lla_lim
 
 """
-    map_trim(map_map::Matrix, map_xx::Vector, map_yy::Vector, alt;
+    map_trim(map_map::Matrix,
+             map_xx::Vector    = collect(axes(map_map,2)),
+             map_yy::Vector    = collect(axes(map_map,1)),
              pad::Int          = 0,
              xx_lim::Tuple     = (-Inf,Inf),
              yy_lim::Tuple     = (-Inf,Inf),
@@ -310,12 +318,11 @@ indices for the original map that will produce the appropriate trimmed map.
 
 **Arguments:**
 - `map_map`:   `ny` x `nx` 2D gridded map data
-- `map_xx`:    `nx` map x-direction (longitude) coordinates [m] or [rad] or [deg]
-- `map_yy`:    `ny` map y-direction (latitude)  coordinates [m] or [rad] or [deg]
-- `alt`:       nominal map altitude, median used for 2D altitude map [m]
+- `map_xx`:    (optional) `nx` map x-direction (longitude) coordinates [rad] or [deg] or [m]
+- `map_yy`:    (optional) `ny` map y-direction (latitude)  coordinates [rad] or [deg] or [m]
 - `pad`:       (optional) minimum padding (grid cells) along map edges
-- `xx_lim`:    (optional) x-direction map limits `(xx_min,xx_max)` [m] or [rad] or [deg]
-- `yy_lim`:    (optional) y-direction map limits `(yy_min,yy_max)` [m] or [rad] or [deg]
+- `xx_lim`:    (optional) x-direction map limits `(xx_min,xx_max)` [rad] or [deg] or [m]
+- `yy_lim`:    (optional) y-direction map limits `(yy_min,yy_max)` [rad] or [deg] or [m]
 - `zone_utm`:  (optional) UTM zone, only used if `map_units = :utm`
 - `is_north`:  (optional) if true, map is in northern hemisphere, only used if `map_units = :utm`
 - `map_units`: (optional) map xx/yy units {`:rad`,`:deg`,`:utm`}
@@ -327,8 +334,7 @@ indices for the original map that will produce the appropriate trimmed map.
 """
 function map_trim(map_map::Matrix,
                   map_xx::Vector    = collect(axes(map_map,2)),
-                  map_yy::Vector    = collect(axes(map_map,1)),
-                  alt               = 300;
+                  map_yy::Vector    = collect(axes(map_map,1));
                   pad::Int          = 0,
                   xx_lim::Tuple     = (-Inf,Inf),
                   yy_lim::Tuple     = (-Inf,Inf),
@@ -337,24 +343,17 @@ function map_trim(map_map::Matrix,
                   map_units::Symbol = :rad,
                   silent::Bool      = true)
 
-    (_,ind1,nx,ny) = map_params(map_map,map_xx,map_yy)
-
-    if sizeof(map_map) == sizeof(alt) # in case 2D altitude map provided
-        alt = median(alt[ind1])
-    elseif length(alt) > 1 # in case map altitude levels provided
-        alt = median(alt)
-    end
-    alt < 0 && (alt = 300) # in case drape map altitude (-1) provided
+    (ny,nx) = size(map_map)
 
     # xx limits of data-containing map
     xx_sum  = vec(sum(map_map,dims=1))
-    xx_1    = findfirst(xx_sum .!= 0) # 2491,  580
-    xx_nx   = findlast(xx_sum  .!= 0) # 8588, 3743
+    xx_1    = findfirst(xx_sum .!= 0)
+    xx_nx   = findlast(xx_sum  .!= 0)
 
     # yy limits of data-containing map
     yy_sum = vec(sum(map_map,dims=2))
-    yy_1   = findfirst(yy_sum .!= 0) #  494, 2604
-    yy_ny  = findlast(yy_sum  .!= 0) # 5290, 6301
+    yy_1   = findfirst(yy_sum .!= 0)
+    yy_ny  = findlast(yy_sum  .!= 0)
 
     # (optional) user-specified limits
     xx_lim = extrema(findall((map_xx .> minimum(xx_lim)) .& 
@@ -370,20 +369,23 @@ function map_trim(map_map::Matrix,
 
     if map_units == :utm
 
-        # get xx/yy limits at 4 corners of data-containing UTMZ map for no data loss
-        (lons,lats) = map_lla_lim(map_xx,map_yy,alt,xx_1,xx_nx,yy_1,yy_ny;
+        # get xx/yy limits at 4 corners of data-containing UTM map for no data loss
+        (lons,lats) = map_lla_lim(map_xx,map_yy;
+                                  xx_1     = xx_1,
+                                  xx_nx    = xx_nx,
+                                  yy_1     = yy_1,
+                                  yy_ny    = yy_ny,
                                   zone_utm = zone_utm,
                                   is_north = is_north)
 
-        lla2utm = UTMZfromLLA(WGS84)
-
         # use EXTERIOR 2 lons/lats as xx/yy limits
-        llas = [LLA(lat,lon,alt) for lat in lats[[1,end]] for lon in lons[[1,end]]]
+        lla2utm = UTMfromLLA(zone_utm,is_north,WGS84)
+        utms    = lla2utm.(LLA.(lats[[1,1,end,end]],lons[[1,end,1,end]]))
 
-        # xx/yy limits at 4 corners of UTMZ map for no data loss
+        # xx/yy limits at 4 corners of UTM map for no data loss
         # due to earth's curvature, xx/yy limits are further out
-        xxs  = sort([lla2utm(lla).x for lla in llas])
-        yys  = sort([lla2utm(lla).y for lla in llas])
+        xxs = sort([utm.x for utm in utms])
+        yys = sort([utm.y for utm in utms])
 
     elseif map_units in [:rad,:deg]
 
@@ -392,7 +394,7 @@ function map_trim(map_map::Matrix,
         yys = sort(map_yy[[yy_1,yy_1,yy_ny,yy_ny]])
 
     else
-        error("$map_units map xx/yy units not defined")
+        error("[$map_units] map xx/yy units not defined")
 
     end
 
@@ -446,8 +448,8 @@ trimmed magnetic anomaly map struct.
 **Arguments:**
 - `map_map`:   `Map` magnetic anomaly map struct
 - `pad`:       (optional) minimum padding (grid cells) along map edges
-- `xx_lim`:    (optional) x-direction map limits `(xx_min,xx_max)` [rad]
-- `yy_lim`:    (optional) y-direction map limits `(yy_min,yy_max)` [rad]
+- `xx_lim`:    (optional) x-direction map limits `(xx_min,xx_max)` [rad] or [deg] or [m]
+- `yy_lim`:    (optional) y-direction map limits `(yy_min,yy_max)` [rad] or [deg] or [m]
 - `zone_utm`:  (optional) UTM zone, only used if `map_units = :utm`
 - `is_north`:  (optional) if true, map is in northern hemisphere, only used if `map_units = :utm`
 - `map_units`: (optional) map xx/yy units {`:rad`,`:deg`,`:utm`}
@@ -466,7 +468,8 @@ function map_trim(map_map::Map;
                   silent::Bool      = true)
 
     if typeof(map_map) <: Union{MapS,MapSd,MapS3D} # scalar map
-        (ind_xx,ind_yy) = map_trim(map_map.map[:,:,1],map_map.xx,map_map.yy,map_map.alt;
+        typeof(map_map) <: MapS3D && @info("3D map provided, using map at lowest altitude")
+        (ind_xx,ind_yy) = map_trim(map_map.map[:,:,1],map_map.xx,map_map.yy;
                                    pad=pad,xx_lim=xx_lim,yy_lim=yy_lim,
                                    zone_utm=zone_utm,is_north=is_north,
                                    map_units=map_units,silent=silent)
@@ -481,7 +484,7 @@ function map_trim(map_map::Map;
                           map_map.yy[ind_yy],map_map.alt)
         end
     elseif typeof(map_map) <: MapV # vector map
-        (ind_xx,ind_yy) = map_trim(map_map.mapX,map_map.xx,map_map.yy,map_map.alt;
+        (ind_xx,ind_yy) = map_trim(map_map.mapX,map_map.xx,map_map.yy;
                                    pad=pad,xx_lim=xx_lim,yy_lim=yy_lim,
                                    zone_utm=zone_utm,is_north=is_north,
                                    map_units=map_units,silent=silent)
@@ -547,8 +550,8 @@ of a map by subtracting and/or adding the IGRF on specified date(s).
 **Arguments:**
 - `map_map`:       `ny` x `nx` 2D gridded map data
 - `map_alt`:       `ny` x `nx` 2D gridded altitude map data, single altitude value may be provided [m]
-- `map_xx`:        `nx` map x-direction (longitude) coordinates [m]
-- `map_yy`:        `ny` map y-direction (latitude)  coordinates [m]
+- `map_xx`:        `nx` map x-direction (longitude) coordinates [rad] or [deg] or [m]
+- `map_yy`:        `ny` map y-direction (latitude)  coordinates [rad] or [deg] or [m]
 - `sub_igrf_date`: (optional) date of IGRF core field to subtract [yr], -1 to ignore
 - `add_igrf_date`: (optional) date of IGRF core field to add [yr], -1 to ignore
 - `zone_utm`:      (optional) UTM zone, only used if `map_units = :utm`
@@ -569,14 +572,15 @@ function map_correct_igrf!(map_map::Matrix, map_alt,
     (_,ind1,nx,ny) = map_params(map_map,map_xx,map_yy)
 
     all(map_alt .< 0)    && (map_alt = 300) # in case drape map altitude provided (uses alt = -1)
-    length(map_alt) == 1 && (map_alt = map_alt*one.(map_map)) # in case scalar altitude provided
+    length(map_alt) == 1 && (map_alt = map_alt*one.(map_map)) # in case single altitude provided
+    map_alt = float(map_alt)
 
     sub_igrf = sub_igrf_date > 0 ? true : false
     add_igrf = add_igrf_date > 0 ? true : false
 
     if sub_igrf | add_igrf
 
-        utm2lla = LLAfromUTMZ(WGS84)
+        utm2lla = LLAfromUTM(zone_utm,is_north,WGS84)
 
         @info("starting igrf")
 
@@ -585,14 +589,13 @@ function map_correct_igrf!(map_map::Matrix, map_alt,
                 if ind1[j,i]
 
                     if map_units == :utm
-                        lla = utm2lla(UTMZ(map_xx[i],map_yy[j],map_alt[j,i],
-                                           zone_utm,is_north))
+                        lla = utm2lla(UTM(map_xx[i],map_yy[j],map_alt[j,i]))
                     elseif map_units == :rad
                         lla = LLA(rad2deg(map_yy[j]),rad2deg(map_xx[i]),map_alt[j,i])
                     elseif map_units == :deg
                         lla = LLA(map_yy[j],map_xx[i],map_alt[j,i])
                     else
-                        error("$map_units map xx/yy units not defined")
+                        error("[$map_units] map xx/yy units not defined")
                     end
 
                     if sub_igrf
@@ -613,7 +616,7 @@ function map_correct_igrf!(map_map::Matrix, map_alt,
 end # function map_correct_igrf!
 
 """
-    map_correct_igrf!(mapS::Union{MapS,MapSd};
+    map_correct_igrf!(mapS::Union{MapS,MapSd,MapS3D};
                       sub_igrf_date::Real = get_years(2013,293), # 20-Oct-2013
                       add_igrf_date::Real = -1,
                       zone_utm::Int       = 18,
@@ -624,7 +627,7 @@ Correct the International Geomagnetic Reference Field (IGRF), i.e., core field,
 of a map by subtracting and/or adding the IGRF on specified date(s).
 
 **Arguments:**
-- `mapS`:          `MapS` or `MapSd` scalar magnetic anomaly map struct
+- `mapS`:          `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct
 - `sub_igrf_date`: (optional) date of IGRF core field to subtract [yr], -1 to ignore
 - `add_igrf_date`: (optional) date of IGRF core field to add [yr], -1 to ignore
 - `zone_utm`:      (optional) UTM zone, only used if `map_units = :utm`
@@ -634,18 +637,30 @@ of a map by subtracting and/or adding the IGRF on specified date(s).
 **Returns:**
 - `nothing`: `map` field within `mapS` is mutated with IGRF corrected map data
 """
-function map_correct_igrf!(mapS::Union{MapS,MapSd};
+function map_correct_igrf!(mapS::Union{MapS,MapSd,MapS3D};
                            sub_igrf_date::Real = get_years(2013,293),
                            add_igrf_date::Real = -1,
                            zone_utm::Int       = 18,
                            is_north::Bool      = true,
                            map_units::Symbol   = :rad)
-    map_correct_igrf!(mapS.map,mapS.alt,mapS.xx,mapS.yy;
-                      sub_igrf_date = sub_igrf_date,
-                      add_igrf_date = add_igrf_date,
-                      zone_utm      = zone_utm,
-                      is_north      = is_north,
-                      map_units     = map_units)
+    if typeof(mapS) <: Union{MapS,MapSd}
+        map_correct_igrf!(mapS.map,mapS.alt,mapS.xx,mapS.yy;
+                          sub_igrf_date = sub_igrf_date,
+                          add_igrf_date = add_igrf_date,
+                          zone_utm      = zone_utm,
+                          is_north      = is_north,
+                          map_units     = map_units)
+    elseif typeof(mapS) <: MapS3D
+        for i in eachindex(mapS.alt)
+            mapS.map[:,:,i] = map_correct_igrf(mapS.map[:,:,i],mapS.alt[i],
+                                               mapS.xx,mapS.yy;
+                                               sub_igrf_date = sub_igrf_date,
+                                               add_igrf_date = add_igrf_date,
+                                               zone_utm      = zone_utm,
+                                               is_north      = is_north,
+                                               map_units     = map_units)
+        end
+    end
 end # function map_correct_igrf!
 
 """
@@ -663,8 +678,8 @@ of a map by subtracting and/or adding the IGRF on specified date(s).
 **Arguments:**
 - `map_map`:       `ny` x `nx` 2D gridded map data
 - `map_alt`:       `ny` x `nx` 2D gridded altitude map data [m]
-- `map_xx`:        `nx` map x-direction (longitude) coordinates [m]
-- `map_yy`:        `ny` map y-direction (latitude)  coordinates [m]
+- `map_xx`:        `nx` map x-direction (longitude) coordinates [rad] or [deg] or [m]
+- `map_yy`:        `ny` map y-direction (latitude)  coordinates [rad] or [deg] or [m]
 - `sub_igrf_date`: (optional) date of IGRF core field to subtract [yr], -1 to ignore
 - `add_igrf_date`: (optional) date of IGRF core field to add [yr], -1 to ignore
 - `zone_utm`:      (optional) UTM zone, only used if `map_units = :utm`
@@ -692,7 +707,7 @@ function map_correct_igrf(map_map::Matrix, map_alt,
 end # function map_correct_igrf
 
 """
-    map_correct_igrf(mapS::Union{MapS,MapSd};
+    map_correct_igrf(mapS::Union{MapS,MapSd,MapS3D};
                      sub_igrf_date::Real = get_years(2013,293), # 20-Oct-2013
                      add_igrf_date::Real = -1,
                      zone_utm::Int       = 18,
@@ -703,7 +718,7 @@ Correct the International Geomagnetic Reference Field (IGRF), i.e., core field,
 of a map by subtracting and/or adding the IGRF on specified date(s).
 
 **Arguments:**
-- `mapS`:          `MapS` or `MapSd` scalar magnetic anomaly map struct
+- `mapS`:          `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct
 - `sub_igrf_date`: (optional) date of IGRF core field to subtract [yr], -1 to ignore
 - `add_igrf_date`: (optional) date of IGRF core field to add [yr], -1 to ignore
 - `zone_utm`:      (optional) UTM zone, only used if `map_units = :utm`
@@ -713,7 +728,7 @@ of a map by subtracting and/or adding the IGRF on specified date(s).
 **Returns:**
 - `mapS`: `MapS` or `MapSd` scalar magnetic anomaly map struct, IGRF corrected
 """
-function map_correct_igrf(mapS::Union{MapS,MapSd};
+function map_correct_igrf(mapS::Union{MapS,MapSd,MapS3D};
                           sub_igrf_date::Real = get_years(2013,293),
                           add_igrf_date::Real = -1,
                           zone_utm::Int       = 18,
@@ -785,7 +800,7 @@ function map_fill!(mapS::Union{MapS,MapSd,MapS3D}; k::Int=3)
         map_fill!(mapS.alt,mapS.xx,mapS.yy;k=k)
     elseif typeof(mapS) <: MapS3D
         for i in axes(mapS.map,3)
-            map_fill!(mapS.map[:,:,i],mapS.xx,mapS.yy;k=k)
+            mapS.map[:,:,i] = map_fill(mapS.map[:,:,i],mapS.xx,mapS.yy;k=k)
         end
     end
 end # function map_fill!
@@ -977,13 +992,13 @@ end # function map_chessboard
                  save_h5::Bool  = false,
                  map_h5::String = "map_data.h5")
 
-Convert map grid from `UTMZ` to `LLA`.
+Convert map grid from `UTM` to `LLA`.
 
 **Arguments:**
-- `map_map`:  `ny` x `nx` 2D gridded map data on `UTMZ` grid
+- `map_map`:  `ny` x `nx` 2D gridded map data on `UTM` grid
 - `map_xx`:   `nx` map x-direction (longitude) coordinates [m]
 - `map_yy`:   `ny` map y-direction (latitude)  coordinates [m]
-- `alt`:      nominal map altitude, median used for 2D altitude map [m]
+- `alt`:      map altitude(s) or altitude map [m]
 - `zone_utm`: (optional) UTM zone
 - `is_north`: (optional) if true, map is in northern hemisphere
 - `save_h5`:  (optional) if true, save map data to `map_h5`
@@ -1000,18 +1015,15 @@ function map_utm2lla!(map_map::Matrix, map_xx::Vector, map_yy::Vector, alt;
 
     (_,ind1,nx,ny) = map_params(map_map,map_xx,map_yy)
 
-    map_alt = alt # nominal map altitude, possibly mutated
-    map_drp = length(alt) > 1 ? true : false
-    map_drp && (alt = median(alt[ind1])) # in case 2D altitude map provided
-    alt < 0 && (alt = 300) # in case drape map altitude (-1) provided
+    map_drp = size(map_map) == size(alt) ? true : false
 
-    # interpolation for original (UTMZ) map
+    # interpolation for original (UTM) map
     itp_ind1 = map_itp(ind1   ,map_xx,map_yy,:linear)
     itp_map  = map_itp(map_map,map_xx,map_yy,:linear)
-    map_drp && (itp_alt = map_itp(map_alt,map_xx,map_yy,:linear))
+    map_drp && (itp_alt = map_itp(alt,map_xx,map_yy,:linear))
 
-    # get xx/yy limits at 4 corners of data-containing UTMZ map for no data loss
-    (lons,lats) = map_lla_lim(map_xx,map_yy,alt,1,nx,1,ny;
+    # get xx/yy limits at 4 corners of data-containing UTM map for no data loss
+    (lons,lats) = map_lla_lim(map_xx,map_yy;
                               zone_utm = zone_utm,
                               is_north = is_north)
 
@@ -1020,17 +1032,17 @@ function map_utm2lla!(map_map::Matrix, map_xx::Vector, map_yy::Vector, alt;
     map_xx .= [LinRange(lons[2]+δ,lons[3]-δ,nx);]
     map_yy .= [LinRange(lats[2]+δ,lats[3]-δ,ny);]
 
-    # interpolate original (UTMZ) map with grid for new (LLA) map
-    lla2utm = UTMZfromLLA(WGS84)
+    # interpolate original (UTM) map with grid for new (LLA) map
+    lla2utm = UTMfromLLA(zone_utm,is_north,WGS84)
     for i = 1:nx
         for j = 1:ny
-            utm = lla2utm(LLA(map_yy[j],map_xx[i],alt))
+            utm = lla2utm(LLA(map_yy[j],map_xx[i]))
             if itp_ind1(utm.x,utm.y) ≈ 1
                 @inbounds map_map[j,i] = itp_map(utm.x,utm.y)
-                map_drp && (@inbounds map_alt[j,i] = itp_alt(utm.x,utm.y))
+                map_drp && (@inbounds alt[j,i] = itp_alt(utm.x,utm.y))
             else
                 @inbounds map_map[j,i] = 0
-                map_drp && (@inbounds map_alt[j,i] = 0)
+                map_drp && (@inbounds alt[j,i] = 0)
             end
         end
     end
@@ -1039,21 +1051,22 @@ function map_utm2lla!(map_map::Matrix, map_xx::Vector, map_yy::Vector, alt;
     map_xx .= deg2rad.(map_xx)
     map_yy .= deg2rad.(map_yy)
 
-    save_h5 && save_map(map_map,map_xx,map_yy,map_alt,map_h5;map_units=:deg)
+    save_h5 && save_map(map_map,map_xx,map_yy,alt,map_h5;
+                        map_units=:rad,file_units=:deg)
 
 end # function map_utm2lla!
 
 """
-    map_utm2lla!(mapS::Union{MapS,MapSd};
+    map_utm2lla!(mapS::Union{MapS,MapSd,MapS3D};
                  zone_utm::Int  = 18,
                  is_north::Bool = true,
                  save_h5::Bool  = false
                  map_h5::String = "map_data.h5")
 
-Convert map grid from `UTMZ` to `LLA`.
+Convert map grid from `UTM` to `LLA`.
 
 **Arguments:**
-- `mapS`:     `MapS` or `MapSd` scalar magnetic anomaly map struct on `UTMZ` grid
+- `mapS`:     `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct on `UTM` grid
 - `zone_utm`: (optional) UTM zone
 - `is_north`: (optional) if true, map is in northern hemisphere
 - `save_h5`:  (optional) if true, save `mapS` to `map_h5`
@@ -1062,16 +1075,32 @@ Convert map grid from `UTMZ` to `LLA`.
 **Returns:**
 - `nothing`: `map`, `xx`, & `yy` (& `alt`) fields within `mapS` are mutated with `LLA` gridded map data
 """
-function map_utm2lla!(mapS::Union{MapS,MapSd};
+function map_utm2lla!(mapS::Union{MapS,MapSd,MapS3D};
                       zone_utm::Int  = 18,
                       is_north::Bool = true,
                       save_h5::Bool  = false,
                       map_h5::String = "map_data.h5")
-    map_utm2lla!(mapS.map,mapS.xx,mapS.yy,mapS.alt;
-                 zone_utm = zone_utm,
-                 is_north = is_north,
-                 save_h5  = save_h5,
-                 map_h5   = map_h5)
+    if typeof(mapS) <: Union{MapS,MapSd}
+        map_utm2lla!(mapS.map,mapS.xx,mapS.yy,mapS.alt;
+                     zone_utm = zone_utm,
+                     is_north = is_north,
+                     save_h5  = save_h5,
+                     map_h5   = map_h5)
+    elseif typeof(mapS) <: MapS3D
+        map_xx_ = deepcopy(mapS.xx)
+        map_yy_ = deepcopy(mapS.yy)
+        for i in eachindex(mapS.alt)
+            (map_map,map_xx,map_yy) = map_utm2lla(mapS.map[:,:,i],
+                                                  map_xx_,map_yy_,mapS.alt[i];
+                                                  zone_utm = zone_utm,
+                                                  is_north = is_north,
+                                                  save_h5  = false)
+            mapS.map[:,:,i] = map_map
+            mapS.xx .= map_xx
+            mapS.yy .= map_yy
+        end
+        save_h5 && save_map(mapS,map_h5;map_units=:rad,file_units=:deg)
+    end
 end # function map_utm2lla!
 
 """
@@ -1081,13 +1110,13 @@ end # function map_utm2lla!
                 save_h5::Bool  = false,
                 map_h5::String = "map_data.h5")
 
-Convert map grid from `UTMZ` to `LLA`.
+Convert map grid from `UTM` to `LLA`.
 
 **Arguments:**
-- `map_map`:  `ny` x `nx` 2D gridded map data on `UTMZ` grid
+- `map_map`:  `ny` x `nx` 2D gridded map data on `UTM` grid
 - `map_xx`:   `nx` map x-direction (longitude) coordinates [m]
 - `map_yy`:   `ny` map y-direction (latitude)  coordinates [m]
-- `alt`:      nominal map altitude, median used for 2D altitude map [m]
+- `alt`:      map altitude(s) or altitude map [m]
 - `zone_utm`: (optional) UTM zone
 - `is_north`: (optional) if true, map is in northern hemisphere
 - `save_h5`:  (optional) if true, save map data to `map_h5`
@@ -1116,25 +1145,25 @@ function map_utm2lla(map_map::Matrix, map_xx::Vector, map_yy::Vector, alt;
 end # function map_utm2lla
 
 """
-    map_utm2lla(mapS::Union{MapS,MapSd};
+    map_utm2lla(mapS::Union{MapS,MapSd,MapS3D};
                 zone_utm::Int  = 18,
                 is_north::Bool = true,
                 save_h5::Bool  = false
                 map_h5::String = "map_data.h5")
 
-Convert map grid from `UTMZ` to `LLA`.
+Convert map grid from `UTM` to `LLA`.
 
 **Arguments:**
-- `mapS`:     `MapS` or `MapSd` scalar magnetic anomaly map struct on `UTMZ` grid
+- `mapS`:     `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct on `UTM` grid
 - `zone_utm`: (optional) UTM zone
 - `is_north`: (optional) if true, map is in northern hemisphere
 - `save_h5`:  (optional) if true, save `mapS` to `map_h5`
 - `map_h5`:   (optional) path/name of map data HDF5 file to save (`.h5` extension optional)
 
 **Returns:**
-- `mapS`: `MapS` or `MapSd` scalar magnetic anomaly map struct on `LLA` grid
+- `mapS`: `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct on `LLA` grid
 """
-function map_utm2lla(mapS::Union{MapS,MapSd};
+function map_utm2lla(mapS::Union{MapS,MapSd,MapS3D};
                      zone_utm::Int  = 18,
                      is_north::Bool = true,
                      save_h5::Bool  = false,
@@ -1165,14 +1194,14 @@ end # function map_utm2lla
                save_h5::Bool       = false,
                map_h5::String      = "map_data.h5")
 
-Convert map data file (with assumed `UTMZ` grid) from GXF to HDF5. 
+Convert map data file (with assumed `UTM` grid) from GXF to HDF5. 
 The order of operations is: 
 - original map from `map_gxf` => 
 - trim away large areas that are missing map data => 
 - subtract and/or add IGRF to map data => 
 - fill remaining areas that are missing map data => 
 - upward/downward continue to `alt` => 
-- convert map grid from `UTMZ` to `LLA`
+- convert map grid from `UTM` to `LLA`
 This can be memory intensive, largely depending on the map size and `dz`. If 
 `up_cont = true`, a `MapS` struct is returned. If `up_cont = false`, a `MapSd` 
 struct is returned, which has an included altitude map.
@@ -1189,7 +1218,7 @@ struct is returned, which has an included altitude map.
 - `fill_map`:      (optional) if true, fill areas that are missing map data
 - `up_cont`:       (optional) if true, upward/downward continue to `alt`
 - `down_cont`:     (optional) if true, downward continue if needed, only used if `up_cont = true`
-- `get_lla`:       (optional) if true, convert map grid from `UTMZ` to `LLA`
+- `get_lla`:       (optional) if true, convert map grid from `UTM` to `LLA`
 - `dz`:            (optional) upward continuation step size [m]
 - `down_max`:      (optional) maximum downward continuation distance [m]
 - `α`:             (optional) regularization parameter for downward continuation
@@ -1227,7 +1256,7 @@ function map_gxf2h5(map_gxf::String, alt_gxf::String, alt::Real;
     @info("starting trim")
 
     # trim away large areas that are missing map data
-    (ind_xx,ind_yy) = map_trim(map_map,map_xx,map_yy,alt;
+    (ind_xx,ind_yy) = map_trim(map_map,map_xx,map_yy;
                                pad       = pad,
                                zone_utm  = zone_utm,
                                is_north  = is_north,
@@ -1254,7 +1283,7 @@ function map_gxf2h5(map_gxf::String, alt_gxf::String, alt::Real;
 
     if up_cont # upward/downward continue to alt
         if alt < 0
-            @info("not upward continuing to alt < 0")
+            @info("not upward continuing to $alt < 0")
         else
             map_chessboard!(map_map,map_alt,map_xx,map_yy,alt;
                             down_cont = down_cont,
@@ -1266,7 +1295,7 @@ function map_gxf2h5(map_gxf::String, alt_gxf::String, alt::Real;
 
     alt_ = up_cont ? alt : map_alt
 
-    if get_lla # convert map grid from UTMZ to LLA
+    if get_lla # convert map grid from UTM to LLA
         @info("starting utm2lla")
         map_utm2lla!(map_map,map_xx,map_yy,alt_;
                      zone_utm = zone_utm,
@@ -1274,7 +1303,8 @@ function map_gxf2h5(map_gxf::String, alt_gxf::String, alt::Real;
                      save_h5  = save_h5,
                      map_h5   = map_h5)
     elseif save_h5
-        save_map(map_map,map_xx,map_yy,alt_,map_h5;map_units=:utm)
+        save_map(map_map,map_xx,map_yy,alt_,map_h5;
+                 map_units=:utm,file_units=:utm)
     end
 
     if up_cont
@@ -1293,19 +1323,19 @@ end # function map_gxf2h5
                save_h5::Bool  = false,
                map_h5::String = "map_data.h5")
 
-Convert map data file (with assumed `UTMZ` grid) from GXF to HDF5. 
+Convert map data file (with assumed `UTM` grid) from GXF to HDF5. 
 The order of operations is: 
 - original map from `map_gxf` => 
 - trim away large areas that are missing map data => 
 - fill remaining areas that are missing map data => 
-- convert map grid from `UTMZ` to `LLA`
+- convert map grid from `UTM` to `LLA`
 Specifically meant for SMALL and LEVEL maps ONLY.
 
 **Arguments:**
 - `map_gxf`:  path/name of target (e.g., magnetic) map GXF file (`.gxf` extension optional)
 - `alt`:      map altitude [m]
 - `fill_map`: (optional) if true, fill areas that are missing map data
-- `get_lla`:  (optional) if true, convert map grid from `UTMZ` to `LLA`
+- `get_lla`:  (optional) if true, convert map grid from `UTM` to `LLA`
 - `zone_utm`: (optional) UTM zone
 - `is_north`: (optional) if true, map is in northern hemisphere
 - `save_h5`:  (optional) if true, save `mapS` to `map_h5`
@@ -1325,7 +1355,7 @@ function map_gxf2h5(map_gxf::String, alt::Real;
     (map_map,map_xx,map_yy) = map_get_gxf(map_gxf) # get raw map data
 
     # trim away large areas that are missing map data
-    (ind_xx,ind_yy) = map_trim(map_map,map_xx,map_yy,alt;
+    (ind_xx,ind_yy) = map_trim(map_map,map_xx,map_yy;
                                pad       = 0,
                                zone_utm  = zone_utm,
                                is_north  = is_north,
@@ -1338,14 +1368,15 @@ function map_gxf2h5(map_gxf::String, alt::Real;
     # fill remaining areas that are missing map data
     fill_map && map_fill!(map_map,map_xx,map_yy)
 
-    if get_lla # convert map grid from UTMZ to LLA
+    if get_lla # convert map grid from UTM to LLA
         map_utm2lla!(map_map,map_xx,map_yy,alt;
                      zone_utm = zone_utm,
                      is_north = is_north,
                      save_h5  = save_h5,
                      map_h5   = map_h5)
     elseif save_h5
-        save_map(map_map,map_xx,map_yy,alt,map_h5;map_units=:utm)
+        save_map(map_map,map_xx,map_yy,alt,map_h5;
+                 map_units=:utm,file_units=:utm)
     end
 
     return MapS(map_map, map_xx, map_yy, convert(eltype(map_map), alt))
@@ -1405,8 +1436,8 @@ function plot_map!(p1, map_map::Matrix,
                    b_e                = gr())
 
     (ny,nx) = size(map_map)
-    xx_mid  = floor(Int,nx/2)
-    yy_mid  = floor(Int,ny/2)
+    xx_mid  = ceil(Int,nx/2)
+    yy_mid  = ceil(Int,ny/2)
 
     # avoid changing map struct data
     map_map = float.(map_map)
@@ -1434,7 +1465,7 @@ function plot_map!(p1, map_map::Matrix,
             map_yy .= dlat2dn.(deg2rad.(map_yy .- lat_mid), deg2rad.(map_yy))
         end
     else
-        error("$map_units map xx/yy units not defined")
+        error("[$map_units] map xx/yy units not defined")
     end
 
     if plot_units == :rad
@@ -1476,7 +1507,7 @@ function plot_map!(p1, map_map::Matrix,
 end # function plot_map!
 
 """
-    plot_map!(p1, mapS::Union{MapS,MapSd};
+    plot_map!(p1, mapS::Union{MapS,MapSd,MapS3D};
               clims::Tuple       = (-500,500),
               dpi::Int           = 200,
               margin::Int        = 2,
@@ -1493,7 +1524,7 @@ Plot map on an existing plot.
 
 **Arguments:**
 - `p1`:         existing plot
-- `mapS`:       `MapS` or `MapSd` scalar magnetic anomaly map struct
+- `mapS`:       `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct
 - `clims`:      (optional) color scale limits
 - `dpi`:        (optional) dots per inch (image resolution)
 - `margin`:     (optional) margin around plot [mm]
@@ -1509,7 +1540,7 @@ Plot map on an existing plot.
 **Returns:**
 - `nothing`: map is plotted on `p1`
 """
-function plot_map!(p1, mapS::Union{MapS,MapSd};
+function plot_map!(p1, mapS::Union{MapS,MapSd,MapS3D};
                    clims::Tuple       = (-500,500),
                    dpi::Int           = 200,
                    margin::Int        = 2,
@@ -1521,7 +1552,8 @@ function plot_map!(p1, mapS::Union{MapS,MapSd};
                    map_units::Symbol  = :rad,
                    plot_units::Symbol = :deg,
                    b_e                = gr())
-    plot_map!(p1,mapS.map,mapS.xx,mapS.yy;
+    typeof(mapS) <: MapS3D && @info("3D map provided, using map at lowest altitude")
+    plot_map!(p1,mapS.map[:,:,1],mapS.xx,mapS.yy;
               clims      = clims,
               dpi        = dpi,
               margin     = margin,
@@ -1533,6 +1565,72 @@ function plot_map!(p1, mapS::Union{MapS,MapSd};
               map_units  = map_units,
               plot_units = plot_units,
               b_e        = b_e)
+end # function plot_map!
+
+"""
+    plot_map!(p1, p2, p3, mapV::MapV;
+              clims::Tuple       = (-500,500),
+              dpi::Int           = 200,
+              margin::Int        = 2,
+              Nmax::Int          = 6*dpi,
+              legend::Bool       = true,
+              axis::Bool         = true,
+              map_color::Symbol  = :usgs,
+              bg_color::Symbol   = :white,
+              map_units::Symbol  = :rad,
+              plot_units::Symbol = :deg
+              b_e                = gr())
+
+Plot map on an existing plot.
+
+**Arguments:**
+- `p1`:         existing plot
+- `p2`:         existing plot
+- `p3`:         existing plot
+- `mapV`:       `MapV` vector magnetic anomaly map struct
+- `clims`:      (optional) color scale limits
+- `dpi`:        (optional) dots per inch (image resolution)
+- `margin`:     (optional) margin around plot [mm]
+- `Nmax`:       (optional) maximum number of data points plotted
+- `legend`:     (optional) if true, show legend
+- `axis`:       (optional) if true, show axes
+- `map_color`:  (optional) filled contour color scheme {`:usgs`,`:gray`,`:gray1`,`:gray2`,`:plasma`,`:magma`}
+- `bg_color`:   (optional) background color
+- `map_units`:  (optional) map  xx/yy units {`:rad`,`:deg`}
+- `plot_units`: (optional) plot xx/yy units {`:rad`,`:deg`,`:m`}
+- `b_e`:        (optional) plotting backend
+
+**Returns:**
+- `nothing`: map (if typeof(`map_map`) = `MapV`, `mapX`) is plotted on `p1`
+- `nothing`: map (if typeof(`map_map`) = `MapV`, `mapY`) is plotted on `p2`
+- `nothing`: map (if typeof(`map_map`) = `MapV`, `mapZ`) is plotted on `p3`
+"""
+function plot_map!(p1, p2, p3, mapV::MapV;
+                   clims::Tuple       = (-500,500),
+                   dpi::Int           = 200,
+                   margin::Int        = 2,
+                   Nmax::Int          = 6*dpi,
+                   legend::Bool       = true,
+                   axis::Bool         = true,
+                   map_color::Symbol  = :usgs,
+                   bg_color::Symbol   = :white,
+                   map_units::Symbol  = :rad,
+                   plot_units::Symbol = :deg,
+                   b_e                = gr())
+    for (p_,map_) in zip([p1,p2,p3],[mapV.mapX,mapV.mapY,mapV.mapZ])
+        plot_map!(p_,map_,mapV.xx,mapV.yy;
+                  clims      = clims,
+                  dpi        = dpi,
+                  margin     = margin,
+                  Nmax       = Nmax,
+                  legend     = legend,
+                  axis       = axis,
+                  map_color  = map_color,
+                  bg_color   = bg_color,
+                  map_units  = map_units,
+                  plot_units = plot_units,
+                  b_e        = b_e)
+    end
 end # function plot_map!
 
 """
@@ -1603,7 +1701,7 @@ function plot_map(map_map::Matrix,
 end # function plot_map
 
 """
-    plot_map(mapS::Union{MapS,MapSd};
+    plot_map(map_map::Map;
              clims::Tuple       = (0,0),
              dpi::Int           = 200,
              margin::Int        = 2,
@@ -1619,7 +1717,7 @@ end # function plot_map
 Plot map.
 
 **Arguments:**
-- `mapS`:       `MapS` or `MapSd` scalar magnetic anomaly map struct
+- `map_map`:    `Map` magnetic anomaly map struct
 - `clims`:      (optional) color scale limits
 - `dpi`:        (optional) dots per inch (image resolution)
 - `margin`:     (optional) margin around plot [mm]
@@ -1633,9 +1731,11 @@ Plot map.
 - `b_e`:        (optional) plotting backend
 
 **Returns:**
-- `p1`: plot of map
+- `p1`: plot of map (if typeof(`map_map`) = `MapV`, `mapX`)
+- `p2`: if typeof(`map_map`) = `MapV`, `mapY`
+- `p3`: if typeof(`map_map`) = `MapV`, `mapZ`
 """
-function plot_map(mapS::Union{MapS,MapSd};
+function plot_map(map_map::Map;
                   clims::Tuple       = (0,0),
                   dpi::Int           = 200,
                   margin::Int        = 2,
@@ -1648,19 +1748,39 @@ function plot_map(mapS::Union{MapS,MapSd};
                   plot_units::Symbol = :deg,
                   b_e                = gr())
     b_e # backend
-    p1 = plot(legend=legend,lab=false)
-    plot_map!(p1,mapS.map,mapS.xx,mapS.yy;
-              clims      = clims,
-              dpi        = dpi,
-              margin     = margin,
-              Nmax       = Nmax,
-              legend     = legend,
-              axis       = axis,
-              map_color  = map_color,
-              bg_color   = bg_color,
-              map_units  = map_units,
-              plot_units = plot_units,
-              b_e        = b_e)
+    if typeof(map_map) <: Union{MapS,MapSd,MapS3D}
+        p1 = plot(legend=legend,lab=false)
+        plot_map!(p1,map_map;
+                  clims      = clims,
+                  dpi        = dpi,
+                  margin     = margin,
+                  Nmax       = Nmax,
+                  legend     = legend,
+                  axis       = axis,
+                  map_color  = map_color,
+                  bg_color   = bg_color,
+                  map_units  = map_units,
+                  plot_units = plot_units,
+                  b_e        = b_e)
+        return (p1)
+    elseif typeof(map_map) <: MapV
+        p1 = plot(legend=legend,lab=false)
+        p2 = plot(legend=legend,lab=false)
+        p3 = plot(legend=legend,lab=false)
+        plot_map!(p1,p2,p3,map_map;
+                  clims      = clims,
+                  dpi        = dpi,
+                  margin     = margin,
+                  Nmax       = Nmax,
+                  legend     = legend,
+                  axis       = axis,
+                  map_color  = map_color,
+                  bg_color   = bg_color,
+                  map_units  = map_units,
+                  plot_units = plot_units,
+                  b_e        = b_e)
+        return (p1, p2, p3)
+    end
 end # function plot_map
 
 """
@@ -2144,7 +2264,8 @@ function get_step(x::Vector)
 end # function get_step
 
 """
-    get_cached_map(map_cache::Map_Cache, lat, lon, alt; silent::Bool=false)
+    get_cached_map(map_cache::Map_Cache, lat::Real, lon::Real, alt::Real;
+                   silent::Bool = false)
 
 Get cached map at specific location.
 
@@ -2158,7 +2279,8 @@ Get cached map at specific location.
 **Returns:**
 - `itp_mapS`: scalar map interpolation function
 """
-function get_cached_map(map_cache::Map_Cache, lat, lon, alt; silent::Bool=false)
+function get_cached_map(map_cache::Map_Cache, lat::Real, lon::Real, alt::Real;
+                        silent::Bool = false)
     alt_lev = -1  # initialize
     o = map_cache # convenience
 
@@ -2198,7 +2320,7 @@ function get_cached_map(map_cache::Map_Cache, lat, lon, alt; silent::Bool=false)
 end # function get_cached_map
 
 """
-    (map_cache::Map_Cache)(lat, lon, alt; silent::Bool=false)
+    (map_cache::Map_Cache)(lat::Real, lon::Real, alt::Real; silent::Bool=false)
 
 Get cached map value at specific location.
 
@@ -2212,7 +2334,7 @@ Get cached map value at specific location.
 **Returns:**
 - `map_val`: scalar magnetic anomaly map value
 """
-function (map_cache::Map_Cache)(lat, lon, alt; silent::Bool=false)
+function (map_cache::Map_Cache)(lat::Real, lon::Real, alt::Real; silent::Bool=false)
     get_cached_map(map_cache,lat,lon,alt;silent=silent)(lon,lat)
 end # function Map_Cache
 
@@ -2256,6 +2378,7 @@ function map_border(map_map::Matrix, map_xx::Vector, map_yy::Vector;
             ind[j,i] = ind1[j,i]
         end
     end
+
     # non-empty point along top/bottom edge of original map area
     for i = 2:Nx-1
         for j in [2,Ny-1]
@@ -2324,6 +2447,7 @@ function map_border(mapS::Union{MapS,MapSd,MapS3D};
                     inner::Bool       = true,
                     sort_border::Bool = false,
                     return_ind::Bool  = false)
+    typeof(mapS) <: MapS3D && @info("3D map provided, using map at lowest altitude")
     map_border(mapS.map[:,:,1],mapS.xx,mapS.yy;
                inner=inner,sort_border=sort_border,return_ind=return_ind)
 end # function map_border
@@ -2344,51 +2468,25 @@ Sort map border data points sequentially.
 - `yy`: border y-direction (latitude)  coordinates, sorted
 """
 function map_border_sort(xx::Vector, yy::Vector, dx, dy)
+    d3 = 3*[dx,dy]
     ll = vcat(xx',yy')
     ll_out = zero.(ll)
-    ll_out[:,1] = ll[:,1]
-    ll = ll[:,axes(ll,2).!=1]
+    ind = falses(size(ll,2))
+    ind[1] = true
+    ll_out[:,1] = ll[:,ind]
     for i in axes(ll_out,2)[2:end]
+        ll = ll[:, .!ind]
         pt = ll_out[:,i-1]
-        ind_nn = (pt[1] - 3*dx .< ll[1,:] .< pt[1] + 3*dx) .&
-                 (pt[2] - 3*dy .< ll[2,:] .< pt[2] + 3*dy)
-        ind = nn(KDTree(ll[:,ind_nn]),pt)[1]
-        ind = findfirst(all(ll[:,ind_nn][:,ind].≈ll,dims=1))[2]
+        ll_nn = ll[:, vec(all(abs.(ll .- pt) .< d3, dims=1))]
+        try
+            ind_nn = nn(KDTree(ll_nn),pt)[1]
+            ind    = vec(all(ll_nn[:,ind_nn] .≈ ll, dims=1))
+        catch _
+            return (ll_out[1,1:i-1], ll_out[2,1:i-1])
+        end
         ll_out[:,i] = ll[:,ind]
-        ll = ll[:,axes(ll,2).!=ind]
     end
-    (xx,yy) = (ll_out[1,:],ll_out[2,:])
     return (ll_out[1,:], ll_out[2,:])
-end # function map_border_sort
-
-"""
-    map_border_sort(ind::BitMatrix)
-
-Sort map border data points sequentially.
-
-**Arguments:**
-- `ind`: `BitMatrix` of border indices
-
-**Returns:**
-- `ind`: `BitMatrix` of border indices, sorted
-"""
-function map_border_sort(ind::BitMatrix)
-    (ny,nx) = size(ind)
-    ll = convert.(Int32,vcat(vec(repeat((1:nx)',ny,1)[ind])',
-                             vec(repeat((1:ny) ,1,nx)[ind])'))
-    pt = ll[:,1]
-    ind_out = zeros(Int32,axes(ll,2))
-    for i in eachindex(ind_out)
-        ind_nn = (pt[1] - 3 .< ll[1,:] .< pt[1] + 3) .&
-                 (pt[2] - 3 .< ll[2,:] .< pt[2] + 3)
-        # ind_ = findmin()[2][2]
-        ind_ = findmin((ll[1,ind_nn].-pt[1]).^2 .+ (ll[2,ind_nn].-pt[2]).^2)[2]
-        ind_ = findfirst(all(ll[:,ind_nn][:,ind_].≈ll,dims=1))[2]
-        pt  .= ll[:,ind_]
-        ll[:,ind_] .= -1
-        ind_out[i]  = ind_
-    end
-    return (ind_out)
 end # function map_border_sort
 
 """
@@ -2628,8 +2726,8 @@ function map_combine(mapS::MapS, mapS_fallback::MapS = get_map(namad);
 end # function map_combine
 
 """
-    map_combine(mapS_vec::Vector, mapS_fallback::MapS = get_map(namad),
-                n_levels::Int      = 3;
+    map_combine(mapS_vec::Vector, mapS_fallback::MapS = get_map(namad);
+                n_levels::Int      = 3,
                 dx                 = get_step(mapS_vec[1].xx),
                 dy                 = get_step(mapS_vec[1].yy),
                 xx_lim::Tuple      = get_lim(mapS_vec[1].xx,0.5),
@@ -2654,8 +2752,8 @@ Combine maps at different altitudes. Lowest and highest maps are directly used
 **Returns:**
 - `mapS3D`: `MapS3D` 3D (multi-level) scalar magnetic anomaly map struct
 """
-function map_combine(mapS_vec::Vector, mapS_fallback::MapS = get_map(namad),
-                     n_levels::Int      = 3;
+function map_combine(mapS_vec::Vector, mapS_fallback::MapS = get_map(namad);
+                     n_levels::Int      = 3,
                      dx                 = get_step(mapS_vec[1].xx),
                      dy                 = get_step(mapS_vec[1].yy),
                      xx_lim::Tuple      = get_lim(mapS_vec[1].xx,0.5),
@@ -2688,20 +2786,14 @@ function map_combine(mapS_vec::Vector, mapS_fallback::MapS = get_map(namad),
     map_map = zeros(eltype(mapS_vec[1].map),
                     length(map_yy),length(map_xx),length(alt_lev))
 
-    # get map at each level with upward/downward continuation as necessary
+    # get map at each level with upward continuation as necessary
     for (i,alt) in enumerate(alt_lev)
         j = findfirst(alt .≈ mapS_alt)
-        if j !== nothing # use map directly if a map altitude is specified
-            map_map[:,:,i] = mapS_vec[j].map
-        else # use most appropriate map with upward/downward continuation
-            k = findfirst(alt .< mapS_alt)
-            if k == 1 # use lowest map (downward)
-                map_map[:,:,i] = upward_fft(mapS_vec[1],alt;α=α).map
-            elseif k !== nothing # use first map below (upward)
-                map_map[:,:,i] = upward_fft(mapS_vec[k-1],alt).map
-            elseif k === nothing # use highest map (upward)
-                map_map[:,:,i] = upward_fft(mapS_vec[end],alt).map
-            end
+        if j !== nothing
+            map_map[:,:,i] = mapS_vec[j].map # use map directly if a map altitude is specified
+        else
+            k = findlast(alt .> mapS_alt)
+            map_map[:,:,i] = upward_fft(mapS_vec[k],alt).map # use first map below & upward continue
         end
     end
 
