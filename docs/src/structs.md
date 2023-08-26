@@ -16,7 +16,15 @@ MagNav.MapSd
 ```
 
 ```@docs
+MagNav.MapS3D
+```
+
+```@docs
 MagNav.MapV
+```
+
+```@docs
+MagNav.Map_Cache
 ```
 
 ## Vector Magnetometer
@@ -75,7 +83,12 @@ MagNav.INSout
 MagNav.FILTout
 ```
 
-## Aeromagnetic Compensation Model Parameters
+## Real-time EKF
+```@docs
+MagNav.EKF_RT
+```
+
+## Compensation Parameters
 ```@docs
 MagNav.CompParams
 ```
