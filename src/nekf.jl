@@ -67,11 +67,11 @@ function nekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS,
 
     x = zeros(nx) # state estimate
     P = P0        # covariance matrix
-    map_cache = (typeof(itp_mapS) == Map_Cache) ? itp_mapS : nothing
+    map_cache = (typeof(itp_mapS) <: Map_Cache) ? itp_mapS : nothing
 
     for t = 1:N
         # custom itp_mapS from map cache, if available
-        if typeof(map_cache) == Map_Cache
+        if typeof(map_cache) <: Map_Cache
             itp_mapS = get_cached_map(map_cache,lat[t],lon[t],alt[t];silent=true)
         end
 
@@ -220,7 +220,7 @@ function ekf_single(lat, lon, alt, Phi, meas, itp_mapS,
     ny = length(meas)
 
     # get map interpolation function from map cache (based on location)
-    if typeof(itp_mapS) == Map_Cache
+    if typeof(itp_mapS) <: Map_Cache
         itp_mapS = get_cached_map(itp_mapS,lat,lon,alt)
     end
 

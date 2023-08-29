@@ -469,54 +469,54 @@ function plot_filt!(p1, traj::Traj, ins::INS, filt_out::FILTout;
     ylim = get_lim(lat,0.05)
 
     plot!(p1,xlab="longitude [deg]",ylab="latitude [deg]",dpi=dpi)
-    plot!(p1,rad2deg.(traj.lon[i])    ,rad2deg.(traj.lat[i])    ,lab="gps")
-    plot!(p1,rad2deg.(ins.lon[i])     ,rad2deg.(ins.lat[i])     ,lab="ins")
-    plot!(p1,rad2deg.(filt_out.lon[i]),rad2deg.(filt_out.lat[i]),lab="filter")
+    plot!(p1,rad2deg.(traj.lon[i])    ,rad2deg.(traj.lat[i])    ,lab="GPS")
+    plot!(p1,rad2deg.(ins.lon[i])     ,rad2deg.(ins.lat[i])     ,lab="INS")
+    plot!(p1,rad2deg.(filt_out.lon[i]),rad2deg.(filt_out.lat[i]),lab="MagNav")
     plot!(p1,xlim=xlim,ylim=ylim)
     show_plot && display(p1)
     save_plot && png(p1,"flight_path.png")
 
     p2 = plot(xlab="time [min]",ylab="latitude [deg]",dpi=dpi)
-    plot!(p2,tt,rad2deg.(traj.lat[i])    ,lab="gps")
-    plot!(p2,tt,rad2deg.(ins.lat[i])     ,lab="ins")
-    plot!(p2,tt,rad2deg.(filt_out.lat[i]),lab="filter")
+    plot!(p2,tt,rad2deg.(traj.lat[i])    ,lab="GPS")
+    plot!(p2,tt,rad2deg.(ins.lat[i])     ,lab="INS")
+    plot!(p2,tt,rad2deg.(filt_out.lat[i]),lab="MagNav")
     show_plot && display(p2)
     save_plot && png(p2,"latitude.png")
 
     p3 = plot(xlab="time [min]",ylab="longitude [deg]",dpi=dpi)
-    plot!(p3,tt,rad2deg.(traj.lon[i])    ,lab="gps")
-    plot!(p3,tt,rad2deg.(ins.lon[i])     ,lab="ins")
-    plot!(p3,tt,rad2deg.(filt_out.lon[i]),lab="filter")
+    plot!(p3,tt,rad2deg.(traj.lon[i])    ,lab="GPS")
+    plot!(p3,tt,rad2deg.(ins.lon[i])     ,lab="INS")
+    plot!(p3,tt,rad2deg.(filt_out.lon[i]),lab="MagNav")
     show_plot && display(p3)
     save_plot && png(p3,"longitude.png")
 
     # p4 = plot(xlab="time [min]",ylab="altitude [m]",dpi=dpi)
-    # plot!(p4,tt,traj.alt[i]    ,lab="gps")
-    # plot!(p4,tt,ins.alt[i]     ,lab="ins")
-    # plot!(p4,tt,filt_out.alt[i],lab="filter")
+    # plot!(p4,tt,traj.alt[i]    ,lab="GPS")
+    # plot!(p4,tt,ins.alt[i]     ,lab="INS")
+    # plot!(p4,tt,filt_out.alt[i],lab="MagNav")
     # show_plot && display(p4)
     # save_plot && png(p4,"altitude.png")
 
     if vel_plot
         p5 = plot(xlab="time [min]",ylab="north velocity [m/s]",dpi=dpi)
-        plot!(p5,tt,traj.vn[i]    ,lab="gps")
-        plot!(p5,tt,ins.vn[i]     ,lab="ins")
-        plot!(p5,tt,filt_out.vn[i],lab="filter")
+        plot!(p5,tt,traj.vn[i]    ,lab="GPS")
+        plot!(p5,tt,ins.vn[i]     ,lab="INS")
+        plot!(p5,tt,filt_out.vn[i],lab="MagNav")
         show_plot && display(p5)
         save_plot && png(p5,"north_velocity.png")
 
         p6 = plot(xlab="time [min]",ylab="east velocity [m/s]",dpi=dpi)
-        plot!(p6,tt,traj.ve[i]    ,lab="gps")
-        plot!(p6,tt,ins.ve[i]     ,lab="ins")
-        plot!(p6,tt,filt_out.ve[i],lab="filter")
+        plot!(p6,tt,traj.ve[i]    ,lab="GPS")
+        plot!(p6,tt,ins.ve[i]     ,lab="INS")
+        plot!(p6,tt,filt_out.ve[i],lab="MagNav")
         show_plot && display(p6)
         save_plot && png(p6,"east_velocity.png")
     end
 
     # p7 = plot(xlab="time [min]",ylab="down velocity [m/s]",dpi=dpi)
-    # plot!(p7,tt,traj.vd[i]    ,lab="gps")
-    # plot!(p7,tt,ins.vd[i]     ,lab="ins")
-    # plot!(p7,tt,filt_out.vd[i],lab="filter")
+    # plot!(p7,tt,traj.vd[i]    ,lab="GPS")
+    # plot!(p7,tt,ins.vd[i]     ,lab="INS")
+    # plot!(p7,tt,filt_out.vd[i],lab="MagNav")
     # show_plot && display(p7)
     # save_plot && png(p7,"down_velocity.png")
 
@@ -771,7 +771,7 @@ function plot_mag_map(path::Path, mag, itp_mapS;
     tt = (path.tt[i] .- path.tt[i][1]) / 60
 
     # custom itp_mapS from map cache, using median path position
-    if typeof(itp_mapS) == Map_Cache # not the most accurate, but it runs
+    if typeof(itp_mapS) <: Map_Cache # not the most accurate, but it runs
         itp_mapS = get_cached_map(itp_mapS,median(path.lat[i]),
                                            median(path.lon[i]),
                                            median(path.alt[i]))
@@ -841,7 +841,7 @@ function plot_mag_map_err(path::Path, mag, itp_mapS;
     f = detrend_data ? detrend : x -> x
 
     # custom itp_mapS from map cache, using median path position
-    if typeof(itp_mapS) == Map_Cache # not the most accurate, but it runs
+    if typeof(itp_mapS) <: Map_Cache # not the most accurate, but it runs
         itp_mapS = get_cached_map(itp_mapS,median(path.lat[i]),
                                            median(path.lon[i]),
                                            median(path.alt[i]))

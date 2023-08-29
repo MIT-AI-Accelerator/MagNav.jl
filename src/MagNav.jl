@@ -27,7 +27,7 @@ module MagNav
     using Optim: LBFGS, Options, only_fg!, optimize
     using Parameters: @unpack, @with_kw
     using Pkg.Artifacts: @artifact_str
-    using Plots: mm, plot, plot!
+    using Plots: annotate!, contourf!, heatmap, mm, plot, plot!, scatter
     using Random: rand, randn, randperm, seed!, shuffle
     using RecipesBase: @recipe
     using SatelliteToolboxGeomagneticField: igrf, igrfd
@@ -40,18 +40,18 @@ module MagNav
     project_toml = normpath(joinpath(@__DIR__,"../Project.toml"))
 
     """
-        magnav_version
+        magnav_version :: VersionNumber
 
     MagNav.jl version as recorded in Project.toml.
     """
-    const magnav_version = TOML.parse(open(project_toml))["version"]
+    const magnav_version = VersionNumber(TOML.parse(open(project_toml))["version"])
 
     """
-        const num_mag_max = 10
+        const num_mag_max = 6
 
     Maximum number of scalar & vector magnetometers (each)
     """
-    const num_mag_max = 10
+    const num_mag_max = 6
 
     """
         const e_earth = 0.0818191908426
@@ -133,7 +133,7 @@ module MagNav
     """
         const emm720
 
-    Enhanced Magnetic Model
+    Enhanced Magnetic Model (vector magnetic anomaly map)
     """
     const emm720 = joinpath(artifact"EMM720_World","EMM720_World.h5")
 
@@ -962,7 +962,7 @@ module MagNav
     |`λ_TL`  | ridge parameter, only used for `model_type = :TL, :mod_TL, :map_TL`
     """
     @with_kw struct LinCompParams <: CompParams
-        version          :: String          = magnav_version
+        version          :: String          = string(magnav_version)
         features_setup   :: Vector{Symbol}  = [:mag_1_uc,:TL_A_flux_a]
         features_no_norm :: Vector{Symbol}  = Symbol[]
         model_type       :: Symbol          = :plsr
@@ -1068,7 +1068,7 @@ module MagNav
         - `tanh`  = hyperbolic tan
     """
     @with_kw struct NNCompParams <: CompParams
-        version          :: String          = magnav_version
+        version          :: String          = string(magnav_version)
         features_setup   :: Vector{Symbol}  = [:mag_1_uc,:TL_A_flux_a]
         features_no_norm :: Vector{Symbol}  = Symbol[]
         model_type       :: Symbol          = :m1

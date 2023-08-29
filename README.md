@@ -4,7 +4,7 @@
 [![Codecov](https://codecov.io/gh/MIT-AI-Accelerator/MagNav.jl/branch/master/graph/badge.svg)](https://app.codecov.io/gh/MIT-AI-Accelerator/MagNav.jl)
 [![docs-stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://mit-ai-accelerator.github.io/MagNav.jl/stable/)
 
-MagNav.jl contains a full suite of tools for airborne Magnetic anomaly Navigation (MagNav), including flight path & INS data import or simulation, mapping, aeromagnetic compensation, and navigation. This package was developed as part of the [DAF-MIT Artificial Intelligence Accelerator](https://aia.mit.edu/). More information on this effort, including a list of relevant publications, is provided on the [challenge problem website](https://magnav.mit.edu/). The package has been tested on the long-term support (LTS) and latest stable versions of Julia, which may be downloaded from [here](https://julialang.org/downloads/). The recommended IDE for Julia is [Visual Studio Code](https://code.visualstudio.com/).
+MagNav.jl contains a full suite of tools for airborne Magnetic anomaly Navigation (MagNav), including flight path & INS data import or simulation, mapping, aeromagnetic compensation, and navigation. This package was developed as part of the [DAF-MIT Artificial Intelligence Accelerator](https://aia.mit.edu/). More information on this effort, including a list of relevant publications, is provided on the [challenge problem website](https://magnav.mit.edu/). The package has been tested on the long-term support (LTS) and latest stable versions of Julia, which may be downloaded from [here](https://julialang.org/downloads/). The recommended IDE for Julia is [Visual Studio Code](https://code.visualstudio.com/) (with the Julia extension).
 
 ## Installation
 
@@ -40,7 +40,9 @@ For general usage, run:
 julia> using MagNav
 ```
 
-Multiple examples (Pluto notebooks) are in the [`examples`](examples) folder. To start Pluto in a web browser, run:
+### Examples
+
+Multiple example Jupyter and Pluto notebooks are in the [`examples`](examples) folder. Jupyter can be run directly in [Visual Studio Code](https://code.visualstudio.com/) (with the Jupyter extension). To start Pluto in a web browser, run:
 
 ```julia
 julia> using Pkg
@@ -49,21 +51,20 @@ julia> using Pluto
 julia> Pluto.run()
 ```
 
-In Pluto, open the desired Pluto notebook file and it should run automatically.
+In Pluto, select and open the desired Pluto notebook, and it should run automatically.
 
-### Docker Demonstration Notebook
+### Docker
 
-A Docker image is available that contains an example usage of the package. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/), search and pull `jtaylormit/magnav`, and run with the host port set to `8888`. Alternatively, from the command line, run:
+A Docker image is available, which contains Julia, MagNav.jl, and the example notebooks. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/), search and pull `jtaylormit/magnav`, and run with the host port set to `8888`. Alternatively, from the command line, run:
 
 ```
 docker pull jtaylormit/magnav
 docker run -p 8888:8888 jtaylormit/magnav
 ```
 
-A Docker container will spin up and provide a URL to copy into a local browser. It will look something like this: `http://127.0.0.1:8888/lab?token=###`. Note that changes to the notebook occur inside
-the container only. The notebook must be manually downloaded from the browser to be saved.
+A Docker container will spin up and provide a URL that then must be opened in a local browser. It will look something like this: `http://127.0.0.1:8888/lab?token=###`. Jupyter notebooks can be opened directly, but for Pluto notebooks, click `Pluto Notebook` from the Launcher, then select and open the desired Pluto notebook. Note that any changes to the notebooks occur inside the Docker container only, so a notebook must be manually downloaded to be saved.
 
-The above image is [hosted on Docker Hub](https://hub.docker.com/r/jtaylormit/magnav), and it is manually and sporadically updated. For the most recent image, run:
+The above Docker image is [hosted on Docker Hub](https://hub.docker.com/r/jtaylormit/magnav), and it is manually and sporadically updated. For the most recent Docker image, run:
 
 ```
 docker pull ghcr.io/mit-ai-accelerator/magnav.jl
