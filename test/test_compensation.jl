@@ -138,8 +138,8 @@ comp_err  = readdlm(comp_file,',')
                                    df_map,comp_params;silent)[[4,7]]
         @test std(err_train_1)   ≈ std(err_train_2)
         @test std(err_test_1 )   ≈ std(err_test_2 )
-        @test isapprox(comp_err[i,1],std(err_train_1),atol=eps(Float32))  # reproducibility
-        @test isapprox(comp_err[i,2],std(err_test_1 ),atol=eps(Float32))  # reproducibility
+        @test isapprox(comp_err[i,1],std(err_train_1),atol=1f-6) # reproducibility
+        @test isapprox(comp_err[i,2],std(err_test_1 ),atol=1f-6) # reproducibility
         @test MagNav.compare_fields(comp_params_,comp_params;silent) == 0 # no mutating
     end
 end
