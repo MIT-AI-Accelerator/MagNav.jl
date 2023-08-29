@@ -62,9 +62,9 @@ docker pull jtaylormit/magnav
 docker run -p 8888:8888 jtaylormit/magnav
 ```
 
-A Docker container will spin up and provide a URL to copy into a local browser. It will look something like this: `http://127.0.0.1:8888/lab?token=###`. Jupyter notebooks can be opened directly, but for Pluto notebooks, click `Pluto Notebook` from the Launcher, then select and open the desired Pluto notebook. Note that any changes to the notebooks occur inside the container only, so a notebook must be manually downloaded to be saved.
+A Docker container will spin up and provide a URL that then must be opened in a local browser. It will look something like this: `http://127.0.0.1:8888/lab?token=###`. Jupyter notebooks can be opened directly, but for Pluto notebooks, click `Pluto Notebook` from the Launcher, then select and open the desired Pluto notebook. Note that any changes to the notebooks occur inside the Docker container only, so a notebook must be manually downloaded to be saved.
 
-The above image is [hosted on Docker Hub](https://hub.docker.com/r/jtaylormit/magnav), and it is manually and sporadically updated. For the most recent image, run:
+The above Docker image is [hosted on Docker Hub](https://hub.docker.com/r/jtaylormit/magnav), and it is manually and sporadically updated. For the most recent Docker image, run:
 
 ```
 docker pull ghcr.io/mit-ai-accelerator/magnav.jl
