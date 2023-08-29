@@ -582,7 +582,7 @@ function create_mag_c(lat, lon, mapS::Union{MapS,MapSd,MapS3D} = get_map(namad);
     map_val = get_map_val(mapS,lat,lon,alt;α=200)
 
     # FOGM & white noise
-    @info("adding FOGM & white noise to scalar map value")
+    @info("adding FOGM & white noise to scalar map values")
     mag_c = map_val + fogm(fogm_sigma,fogm_tau,dt,N) + sqrt(meas_var)*randn(N)
 
     return (mag_c)

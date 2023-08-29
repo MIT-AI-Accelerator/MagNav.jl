@@ -73,11 +73,11 @@ function ekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS;
 
     x = zeros(nx) # state estimate
     P = P0        # covariance matrix
-    map_cache = (typeof(itp_mapS) == Map_Cache) ? itp_mapS : nothing
+    map_cache = (typeof(itp_mapS) <: Map_Cache) ? itp_mapS : nothing
 
     for t = 1:N
         # custom itp_mapS from map cache, if available
-        if typeof(map_cache) == Map_Cache
+        if typeof(map_cache) <: Map_Cache
             itp_mapS = get_cached_map(map_cache,lat[t],lon[t],alt[t];silent=true)
         end
 
@@ -239,7 +239,7 @@ function (ekf_rt::EKF_RT)(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, t,
                   o.baro_tau,o.acc_tau,o.gyro_tau,o.fogm_tau,dt)
 
     # get map interpolation function from map cache (based on location)
-    if typeof(itp_mapS) == Map_Cache
+    if typeof(itp_mapS) <: Map_Cache
         itp_mapS = get_cached_map(itp_mapS,lat,lon,alt)
         der_mapS = nothing
     end
@@ -333,11 +333,11 @@ function crlb(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, dt, itp_mapS;
     P     = P0 # covariance matrix
 
     length(R) == 2 && (R = mean(R))
-    map_cache = (typeof(itp_mapS) == Map_Cache) ? itp_mapS : nothing
+    map_cache = (typeof(itp_mapS) <: Map_Cache) ? itp_mapS : nothing
 
     for t = 1:N
         # custom itp_mapS from map cache, if available
-        if typeof(map_cache) == Map_Cache
+        if typeof(map_cache) <: Map_Cache
             itp_mapS = get_cached_map(map_cache,lat[t],lon[t],alt[t];silent=true)
         end
         # Pinson matrix exponential

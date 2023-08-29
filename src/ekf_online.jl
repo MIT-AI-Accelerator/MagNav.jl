@@ -81,11 +81,11 @@ function ekf_online(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
 
     vec_states = nx_vec > 0 ? true : false
 
-    map_cache = (typeof(itp_mapS) == Map_Cache) ? itp_mapS : nothing
+    map_cache = (typeof(itp_mapS) <: Map_Cache) ? itp_mapS : nothing
 
     for t = 1:N
         # custom itp_mapS from map cache, if available
-        if typeof(map_cache) == Map_Cache
+        if typeof(map_cache) <: Map_Cache
             itp_mapS = get_cached_map(map_cache,lat[t],lon[t],alt[t];silent=true)
         end
 

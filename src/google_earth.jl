@@ -323,10 +323,10 @@ function path2kml(path::Path,
                   color2::String   = "00ffffff",
                   points::Bool     = false)
 
-    if color1 == ""
-        typeof(path) == Traj    && (color1 = "ffff8500")
-        typeof(path) == INS     && (color1 = "ff2b50ec")
-        typeof(path) == FILTout && (color1 = "ff319b00")
+    if isempty(color1)
+        typeof(path) <: Traj    && (color1 = "ffff8500")
+        typeof(path) <: INS     && (color1 = "ff2b50ec")
+        typeof(path) <: FILTout && (color1 = "ff319b00")
     end
 
     color1 in ["black","k"] && (color1 = "ff000000")
