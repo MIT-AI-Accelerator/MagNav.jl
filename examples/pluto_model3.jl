@@ -4,7 +4,7 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ c18afc43-9df3-45a1-b6e5-283ca8b26872
+# ╔═╡ 22982d8e-240c-11ee-2e0c-bda2a93a4ab0
 begin
 	cd(@__DIR__)
     # uncomment line below to use local MagNav.jl (downloaded folder)
@@ -18,312 +18,264 @@ begin
     include("dataframes_setup.jl"); # setup DataFrames
 end;
 
-# ╔═╡ 13ac32f0-3d77-11ee-3009-e70e93e2e71b
-md"# Using the MagNav Package with Real SGL Flight Data Example
+# ╔═╡ e289486a-57ed-4eeb-9ec9-6500f0bc563b
+md"# Model 3 Training & Explainability Example
 This file is best viewed in a [Pluto](https://plutojl.org/) notebook. To run it this way, from the MagNav.jl directory, do:
 ```julia
 julia> using Pluto
 julia> Pluto.run() # select & open notebook
 ```
 
-This is a reactive notebook, so feel free to change any parameters of interest.
+This is a reactive notebook, so feel free to change any parameters of interest, like adding/removing features to the model, changing the number of training epochs, switching between versions of model 3 (scalar is :m3s, vector is :m3v), or different training & testing lines.
 "
 
-# ╔═╡ 2f1e71ff-8f7f-4704-8e7d-b4fd2846f7ed
-md"## Import Flight & Map Data
+# ╔═╡ 3a55962c-bd1b-410c-b98a-3130fc11ee11
+md"## Train a Tolles-Lawson Model
 
-Specify the flight & load the flight data. The full list of SGL flights is in `df_flight`.
-"
+First, we select a flight & return indices for a specific calibration flight line that will be used to fit the Tolles-Lawson coefficients. "
 
-# ╔═╡ da75fd96-1e6a-46bc-bcea-cdcc8c5f2a86
-begin
-	flight = :Flt1006
-	xyz    = get_XYZ(flight,df_flight)
+# ╔═╡ bf9f72f0-c351-48d3-a811-418ee965073c
+flight_train = :Flt1006; # choose flight
+
+# ╔═╡ 9d11d4be-9ba7-44ab-a4ff-f0fdf95b2171
+reorient_vec = true; # align vector magnetometers with aircraft body frame
+
+# ╔═╡ 663f7b8c-dfc6-445d-9c54-1141856f2a66
+xyz_train = get_XYZ(flight_train, df_flight;
+					reorient_vec=reorient_vec, silent=true); # load flight data
+
+# ╔═╡ 99405ae1-580a-4fd3-a860-13cc5b22b045
+begin # choose a calibration flight line to train Tolles-Lawson on
+	println(df_comp[df_comp.flight .== flight_train, :])
+	TL_i = 10
+	TL_ind = get_ind(xyz_train;tt_lim=[df_comp.t_start[TL_i],df_comp.t_end[TL_i]])
 end;
 
-# ╔═╡ 1a3aba8d-3aa8-454b-9fb0-708f0bd38c42
-md"Specify the map & view the flight line options (`df_options`) for the selected flight & map. The full list of SGL flights is in `df_flight`. The full list of maps is in `df_map` & the full list of navigation-capable lines is in `df_nav`.
-"
+# ╔═╡ 6d4a87c8-41d7-4478-b52a-4dc5a1ae18ea
+begin # choose the measurements & terms used to set up for Tolles-Lawson
+	use_vec = :flux_a
+	use_mag = :mag_4_uc
+	flux    = getfield(xyz_train,use_vec)
+	terms   = [:p,:i,:e]
+	comp_params_lin_init = LinCompParams(use_mag     = use_mag,
+		                                use_vec      = use_vec,
+		                                terms        = terms,
+		                                y_type       = :e,
+		                                terms_A      = terms,
+		                                model_type   = :TL,
+		                                sub_diurnal  = false,
+		                                sub_igrf     = false,
+		                                reorient_vec = reorient_vec)
+end;
 
-# ╔═╡ c192c83b-deb3-4b6e-b0d9-97357e0b554c
+# ╔═╡ c5b6b439-e962-4c9d-9b02-339657fb266b
 begin
-	map_name = :Eastern_395
-	df_options = df_nav[(df_nav.flight   .== flight  ) .&
-	                    (df_nav.map_name .== map_name),:]
+	tt = (xyz_train.traj.tt[TL_ind] .- xyz_train.traj.tt[TL_ind][1]) / 60
+	p1 = plot(xlab="time [min]",ylab="magnetic field [nT]",dpi=200,
+		      ylim=(51000,55000))
+	plot!(p1, tt, xyz_train.igrf[TL_ind],     lab="IGRF core field")
+	plot!(p1, tt, xyz_train.mag_1_c[TL_ind],  lab="compensated tail stinger")
+	plot!(p1, tt, xyz_train.mag_4_uc[TL_ind], lab="uncompensated Mag 4")
+	plot!(p1, tt, xyz_train.flux_a.t[TL_ind], lab="vector Flux A, total field")
 end
 
-# ╔═╡ e001a13c-2662-4c2f-a89a-de6658fa81db
-md"Select a flight line (row of `df_options`) & get the flight data indices (mask).
-"
-
-# ╔═╡ 7390ee91-6a92-4070-af8b-e3c003c3b5fb
-begin
-	line = df_options.line[1]
-	ind  = get_ind(xyz,line,df_nav)
-	# ind = get_ind(xyz;lines=[line]) # alternative
+# ╔═╡ ae1acc31-19db-4e94-85dc-e6274186978e
+begin # fit Tolles-Lawson model to data
+	(comp_params_lin, y_TL, y_hat_TL, TL_err) =
+		comp_train(xyz_train, TL_ind; comp_params=comp_params_lin_init)
+	TL_a_4 = comp_params_lin.model[1]
 end;
 
-# ╔═╡ f665ea95-dac3-4823-94af-c7ba58cd4401
-md"Select a flight line (row of `df_comp`) & get the flight data indices (mask) for Tolles-Lawson calibration/compensation. The full list of compensation flight line portions is in `df_comp`.
-"
+# ╔═╡ 7a20ef62-f352-4fc7-9061-13fb293bb0bf
+md"Choose a test flight & line to compare different compensation models."
 
-# ╔═╡ 5346a989-cf32-436c-9181-d7aff6dd44a1
+# ╔═╡ 39bdbe6a-52ae-44d2-8e80-2e7d2a75e322
 begin
-	TL_i   = 6 # first calibration box of 1006.04
-	TL_ind = get_ind(xyz;tt_lim=[df_comp.t_start[TL_i],df_comp.t_end[TL_i]])
+	flight_test = :Flt1006;
+	println(df_nav[df_nav.flight .== :Flt1006, :])
+	xyz_test  = get_XYZ(flight_test, df_flight;
+	                    reorient_vec=reorient_vec, silent=true)
+	line_test = 1006.08
+	ind_test  = get_ind(xyz_test, line_test, df_nav)
 end;
 
-# ╔═╡ db7dc866-b889-4fb7-81d4-97cd8435636e
-md"## Baseline Plots of Scalar & Vector (Fluxgate) Magnetometer Data
+# ╔═╡ 9ed61357-346b-49de-a1ed-8849db041ade
+comp_test(line_test, df_all, df_flight, df_map, comp_params_lin);
 
-Setup for the baseline plots.
+# ╔═╡ a9cac83d-03b3-4793-8da4-f45563091bd0
+md"## Model 3 Training
+
+First, we create a low-pass (not the default, bandpass)-filtered version of the coefficients to preserve the Earth field, which helps to remove a bias term in the Tolles-Lawson (T-L) fitting."
+
+# ╔═╡ f492ee3d-c097-4937-9552-e7d2632a5e50
+TL_coef = create_TL_coef(getfield(xyz_train,use_vec), 
+	                     getfield(xyz_train,use_mag)-xyz_train.mag_1_c, TL_ind;
+	                     terms=terms, pass1=0.0, pass2=0.9);
+
+# ╔═╡ 7e15f297-64a4-4ee6-a0ab-65d959354f29
+begin # create Tolles-Lawson `A` matrix & perform compensation
+	A = create_TL_A(flux,TL_ind);
+	mag_1_sgl_TL_train = xyz_train.mag_1_c[TL_ind];
+	mag_4_uc_TL_train  = xyz_train.mag_4_uc[TL_ind];
+	
+	# This shows how the bandpass filter causes a bias in the compensation (filtering out the Earth field). That's not a problem for navigating, but we'd prefer not to have the neural network learn a simple correction that could be accounted for more simply by Tolles-Lawson.
+	mag_4_c_bpf = mag_4_uc_TL_train - A*TL_a_4;
+	mag_4_c_lpf = mag_4_uc_TL_train - A*TL_coef;
+	p2 = plot(xlab="time [min]",ylab="magnetic field [nT]",dpi=200,
+		      ylim=(52000,55000))
+	plot!(p2, tt, mag_1_sgl_TL_train, lab="ground truth")
+	plot!(p2, tt, mag_4_c_lpf,        lab="low-pass filtered T-L")
+	plot!(p2, tt, mag_4_c_bpf,        lab="bandpass filtered T-L")
+end
+
+# ╔═╡ 239b60aa-0e97-4871-a9a5-64cd802f4bde
+md"### Training Data & Parameters
+
+Here we set the training lines (all from the same flight in this example), select a model type, features for the neural network, & intialize all of this using the `NNCompParams` structure, which keeps all these configuration/learning settings in one place. For Model 3, it's important to leave the `A` matrix unnormalized.
 "
 
-# ╔═╡ 3db31fc5-9ec2-4ca2-a5e0-6b478a7b29f9
+# ╔═╡ 21828f95-98f3-4271-9a57-121252065741
 begin
-	show_plot    = false
-	save_plot    = false
-	detrend_data = true
+	lines_train=[1006.03, 1006.04, 1006.05, 1006.06]
+	ind_train = get_ind(xyz_train, lines = lines_train)
 end;
 
-# ╔═╡ 6796c1ee-74a1-4d21-b68d-bd08929a817f
-md"Scalar magnetometers.
+# ╔═╡ 4c3b7f4c-062c-40c2-8677-b47e775aa0dc
+model_type = :m3s;
+
+# ╔═╡ 80cc7f27-a17d-4649-9640-370a57dfefeb
+features = [:mag_4_uc, :lpf_cur_com_1, :lpf_cur_strb, :lpf_cur_outpwr, :lpf_cur_ac_lo,:TL_A_flux_a];
+
+# ╔═╡ 8ca83ae3-5cad-44a0-ad89-1dff234f50d7
+num_epochs = 100;
+
+# ╔═╡ 4d75b716-bc93-42f5-8b1a-f5550e7de276
+comp_params_init = NNCompParams(features_setup = features,
+                                reorient_vec   = reorient_vec,
+                                y_type         = :d,
+                                use_mag        = use_mag,
+                                use_vec        = use_vec,
+                                terms          = [:permanent,:induced,:eddy],
+                                terms_A        = [:permanent,:induced,:eddy],
+                                sub_diurnal    = false,
+                                sub_igrf       = false,
+                                bpf_mag        = false,
+                                norm_type_A    = :none,
+                                norm_type_x    = :normalize,
+                                norm_type_y    = :normalize,
+                                TL_coef        = TL_coef,
+                                model_type     = model_type,
+                                η_adam         = 0.001,
+                                epoch_adam     = num_epochs,
+                                epoch_lbfgs    = 0,
+                                hidden         = [8,4],
+                                batchsize      = 2048,
+                                frac_train     = 13/17);
+
+# ╔═╡ 4171fef9-650b-4f37-ae5d-7084d54a0be0
+(comp_params, y_train, y_train_hat, err_train, _) =
+	comp_train(xyz_train, ind_train;
+			   comp_params = comp_params_init,
+			   xyz_test    = xyz_test,
+	           ind_test    = ind_test);
+
+# ╔═╡ 0c839441-909d-4095-a4eb-4dfc92eb2121
+md"Evaluate how well we did on the test line & return additional terms that will be useful in visualizing the compensation performance"
+
+# ╔═╡ 0a1b7102-59e0-4e2a-a45c-5c21d0039b88
+(TL_perm, TL_induced, TL_eddy, TL_aircraft, B_unit, _, y_nn, _, y, y_hat, _, _) =
+	comp_m3_test(line_test, df_nav, df_flight, df_map, comp_params; silent=true);
+
+# ╔═╡ 5f88bca1-ecc9-45b2-8164-0f6965b81088
+md"## Navigation Performance
+
+Ultimately, we'd like to use the compensated magnetometer values in a navigation algorithm. We will do that with a Kalman filter, for which we will need a few more objects:
+* The GPS struct information as the `traj` object
+* The INS struct information as the `ins` object
+* An interpolated map object to pass to the filter to use for measurement evaluations, `itp_mapS`
+* Initialized covariance & noise matrices for the prediction & measurement steps, (`P0`, `Qd`, `R`)
 "
 
-# ╔═╡ d02f285c-389c-4b9d-8fef-243253fcc8bb
-b1 = plot_mag(xyz;ind,show_plot,save_plot,detrend_data,
-              use_mags = [:mag_1_uc,:mag_4_uc,:mag_5_uc])
-
-# ╔═╡ 3f69ee39-d3cb-4458-8381-345b289f5d3f
-md"Vector (fluxgate) magnetometer `d`.
-"
-
-# ╔═╡ 18189264-9abf-464a-9101-3f7f4f312690
-b2 = plot_mag(xyz;ind,show_plot,save_plot,detrend_data,
-              use_mags = [:flux_d])
-
-# ╔═╡ 5401fd57-4ac0-4ee3-ab9c-63746ebfd854
-md"Magnetometer 1 compensation as provided in dataset by SGL.
-"
-
-# ╔═╡ 15a1e17a-fd89-486d-9ad9-0ae73c0c2b79
-b3 = plot_mag(xyz;ind,show_plot,save_plot,
-              use_mags = [:comp_mags])
-
-# ╔═╡ ee2119b5-b61f-4bad-87ed-abb4c88194bc
-md"Magnetometer 1 compensation using Tolles-Lawson with vector (fluxgate) magnetometer `d`.
-"
-
-# ╔═╡ 05ebfbab-deaa-43f3-965a-aeb91fec9e67
-b4 = plot_mag_c(xyz,xyz;ind,show_plot,save_plot,detrend_data,
-                ind_comp  = TL_ind,
-                use_mags  = [:mag_1_uc],
-                use_vec   = :flux_d,
-                plot_diff = true)
-
-# ╔═╡ ab8b23b1-63f8-4306-97a8-2e9d6f2707c4
-md"Magnetometer 1 Welch power spectral density (PSD).
-"
-
-# ╔═╡ 1eee0857-1278-412b-89fe-f6c3dc094f6f
-b5 = plot_frequency(xyz;ind,show_plot,save_plot,detrend_data,
-                    field     = :mag_1_uc,
-                    freq_type = :PSD)
-
-# ╔═╡ 0d362625-7d94-4131-9254-a336e6a791b1
-md"Magnetometer 1 spectrogram.
-"
-
-# ╔═╡ 90db7042-37b7-4751-ad7d-b1fabb305a5a
-b6 = plot_frequency(xyz;ind,show_plot,save_plot,detrend_data,
-                    field     = :mag_1_uc,
-                    freq_type = :spec)
-
-# ╔═╡ 1233e336-3f11-44e3-b136-08c724f12e0f
-md"## Tolles-Lawson Calibration & Compensation
-
-Create Tolles-Lawson coefficients for uncompensated scalar magnetometers `1-5` with vector (fluxgate) magnetometer `d`.
-"
-
-# ╔═╡ 162f9444-146b-41dd-ba2c-729beff44306
+# ╔═╡ ed1f8baa-d228-4f66-a979-527f68acccdc
 begin
-	λ       = 0.025 # ridge parameter for ridge regression
-	use_vec = :flux_d
-	flux    = getfield(xyz,use_vec)
-	TL_d_1  = create_TL_coef(flux,xyz.mag_1_uc,TL_ind;λ=λ)
-	TL_d_2  = create_TL_coef(flux,xyz.mag_2_uc,TL_ind;λ=λ)
-	TL_d_3  = create_TL_coef(flux,xyz.mag_3_uc,TL_ind;λ=λ)
-	TL_d_4  = create_TL_coef(flux,xyz.mag_4_uc,TL_ind;λ=λ)
-	TL_d_5  = create_TL_coef(flux,xyz.mag_5_uc,TL_ind;λ=λ)
-end;
-
-# ╔═╡ ebf894ec-5140-42cb-b2b5-1b85f96b7a75
-md"Get the relevant scalar magnetometer data.
-"
-
-# ╔═╡ c54b97cd-565f-4d5a-980a-44a3e1d18355
-begin
-	A = create_TL_A(flux,ind)
-	mag_1_sgl = xyz.mag_1_c[ind]
-	mag_1_uc  = xyz.mag_1_uc[ind]
-	mag_2_uc  = xyz.mag_2_uc[ind]
-	mag_3_uc  = xyz.mag_3_uc[ind]
-	mag_4_uc  = xyz.mag_4_uc[ind]
-	mag_5_uc  = xyz.mag_5_uc[ind]
-end;
-
-# ╔═╡ d83b4b7a-e8c9-4dbe-8682-592f0ac5e1b6
-md"Create the Tolles-Lawson `A` matrices & perform Tolles-Lawson compensation.
-"
-
-# ╔═╡ 9116a5b5-7b5f-4c38-8a48-e854584a8ada
-begin
-	mag_1_c = mag_1_uc - detrend(A*TL_d_1;mean_only=true)
-	mag_2_c = mag_2_uc - detrend(A*TL_d_2;mean_only=true)
-	mag_3_c = mag_3_uc - detrend(A*TL_d_3;mean_only=true)
-	mag_4_c = mag_4_uc - detrend(A*TL_d_4;mean_only=true)
-	mag_5_c = mag_5_uc - detrend(A*TL_d_5;mean_only=true)
-end;
-
-# ╔═╡ 01779ec7-0088-4b37-bda4-7fccf4dbb548
-md"Prepare the flight data for the navigation filter, load the map data, & get the map interpolation function & map values along the selected flight line.
-"
-
-# ╔═╡ 3f2dd431-6c5b-403f-9a96-320d8ab6ef17
-begin
-	traj = get_traj(xyz,ind) # trajectory (gps) struct
-	ins  = get_ins(xyz,ind;N_zero_ll=1) # INS struct
+	map_name = df_nav[df_nav.line .== line_test, :].map_name[1]
+	traj = get_traj(xyz_test,ind_test) # trajectory (GPS) struct
+	ins  = get_ins(xyz_test,ind_test;N_zero_ll=1) # INS struct
 	mapS = get_map(map_name,df_map) # load map data
-	# get map values & map interpolation function
-	(map_val,itp_mapS) = get_map_val(mapS,traj;return_itp=true)
-	map_val += (xyz.diurnal + xyz.igrf)[ind] # add in diurnal & IGRF
+    # get map values & map interpolation function
+    (map_val,itp_mapS) = get_map_val(mapS,traj;return_itp=true)
 end;
 
-# ╔═╡ 50a6302c-b1ed-4be3-8af7-1c641715b25f
-md"Map to magnetometer (standard deviation) errors. Magnetometer `1` is great (stinger), while `2` is unusable & `3-5` are in between.
+# ╔═╡ 4e01e107-5d58-409d-b08c-23135b4c28ba
+md"### Compensate the Magnetometer
+We next compute the compensated magnetometer values consistent with the `:d` setting in `NNCompParams`, that is, we have learned a correction to remove from the uncompensated measurement that predicts that compensated measurement. The figure below should illustrate how well we are doing as compared to the uncompensated figure from above.
 "
 
-# ╔═╡ 110e5de7-9011-4ba6-83d6-3443b6845dc6
+# ╔═╡ 566bb8eb-23d3-473d-8e79-1d02536dfdd5
 begin
-	println("mag 1: ",round(std(map_val-mag_1_c),digits=2))
-	println("mag 2: ",round(std(map_val-mag_2_c),digits=2))
-	println("mag 3: ",round(std(map_val-mag_3_c),digits=2))
-	println("mag 4: ",round(std(map_val-mag_4_c),digits=2))
-	println("mag 5: ",round(std(map_val-mag_5_c),digits=2))
+	# perform the compensation from the neural network
+	mag_4_c  = xyz_test.mag_4_uc[ind_test] - y_hat
+	# Remove an assumed constant map-magnetometer bias, which is approximated at the first measurement. The diurnal & IGRF (core) fields must be included to leave only the nearly constant bias, if any.
+	mag_4_c .+= (map_val + (xyz_test.diurnal + xyz_test.igrf)[ind_test] - mag_4_c)[1]
+
+	# These first-order Gauss-Markov noise values can also be estimated from the training output without resorting to the known map values.
+	(sigma, tau) = get_autocor(mag_4_c - map_val)
 end
 
-# ╔═╡ e5adfd84-4727-4839-bef0-9365d035249f
-md"## Navigation
+# ╔═╡ 987292fe-4e58-4cc9-bfe2-734c0f4174f8
+begin
+	tt_test = (xyz_test.traj.tt[ind_test] .- xyz_test.traj.tt[ind_test][1]) / 60
+	p3 = plot(xlab="time [min]",ylab="magnetic field [nT]",dpi=200,
+		      ylim=(52900,53700))
+	plot!(p3, tt_test, map_val + (xyz_test.diurnal + xyz_test.igrf)[ind_test],
+												   lab="map value")
+	plot!(p3, tt_test, xyz_test.mag_1_c[ind_test], lab="compensated tail stinger")
+	plot!(p3, tt_test, mag_4_c,                    lab="compensated Mag 4")
+end
 
-Create a navigation filter model. Only the most relevant navigation filter parameters are shown.
-"
-
-# ╔═╡ 1c3579bc-bf1f-45ad-bdfb-df4683ace128
+# ╔═╡ 70b8e7ff-71ee-489b-817e-1d4ea3004355
+# create filter model, only showing most relevant filter parameters here
 (P0,Qd,R) = create_model(traj.dt,traj.lat[1];
                          init_pos_sigma = 0.1,
                          init_alt_sigma = 1.0,
                          init_vel_sigma = 1.0,
-                         meas_var       = 5^2, # increase if mag_use is bad
-                         fogm_sigma     = 3,
-                         fogm_tau       = 180);
+                         meas_var       = sigma^2, #* increase if mag_use is bad
+                         fogm_sigma     = sigma,
+                         fogm_tau       = tau);
 
-# ╔═╡ 690c1b98-4201-4a7a-8c1d-04984c3e0307
-md"Run the navigation filter (EKF), determine the Cramér–Rao lower bound (CRLB), & extract output data.
-"
-
-# ╔═╡ 74b69225-a541-49b8-98fc-cacbf22f187a
+# ╔═╡ a56f0b50-0b39-4400-928d-f485af206d23
 begin
-	mag_use = mag_1_c # selected magnetometer, modify & see what happens
+	mag_use = mag_4_c
 	(crlb_out,ins_out,filt_out) = run_filt(traj,ins,mag_use,itp_mapS,:ekf;
 	                                       P0,Qd,R,core=true)
+	drms_out = round(Int,sqrt(mean(filt_out.n_err.^2+filt_out.e_err.^2)))
 end;
 
-# ╔═╡ f01997d2-0ea7-4be3-acd8-533580ccb82d
-md"Plotting setup.
+# ╔═╡ 658524ef-c716-408c-ab57-f1a10459ff24
+md"
+## Compensation & Navigation Animation
+
+Make an animation of the navigation performance, keeping track of each component of the compensation terms emitted by model 3, projected into a 2-D plane (north/east, removing the vertical components) to make visualization simpler. Ideally, you should see that the knowledge-integrated architecture in model 3 is mostly accounting for variations in the compensation field arising from the map/plane maneuvers in the Tolles-Lawson (TL) component, whereas the neural network (NN) correction is addressing any deviations due to current/voltage fluctuations.
+
+Increase (or decrease) the `skip_every` argument to exclude (or include) more frames, which will speed up (or slow down) the rendering time & decrease (or increase) the file size.
 "
 
-# ╔═╡ 8167ba6a-fff4-4c79-9ee6-57d6f594bb18
-begin
-	t0 = traj.tt[1]/60    # [min]
-	tt = traj.tt/60 .- t0 # [min]
-end;
+# ╔═╡ c469bc3c-434d-452a-8dca-1a96823a8153
+g1 = gif_animation_m3(TL_perm, TL_induced, TL_eddy, TL_aircraft, B_unit,
+					  y_nn, y, y_hat, filt_out.lat, filt_out.lon, xyz_test;
+					  ind=ind_test, skip_every=20, tt_lim=(3.0,9.5))
 
-# ╔═╡ 8c92cea8-5cec-42a6-838d-ebc083e0d9b4
-md"Comparison of magnetometers after compensation.
-"
+# ╔═╡ 0cda1d66-6ba5-40d2-89ff-caf574d9a09f
+md"Show detailed filter performance using `plot_filt_err`"
 
-# ╔═╡ e0a21a3c-b48c-458e-a4eb-7a726e77b2b2
-begin
-	p1 = plot(xlab="time [min]",ylab="magnetic field [nT]",legend=:topleft,dpi=200)
-	plot!(p1,tt,detrend(mag_1_uc ),lab="SGL raw Mag 1" ,color=:cyan,lw=2)
-	plot!(p1,tt,detrend(mag_1_sgl),lab="SGL comp Mag 1",color=:blue,lw=2)
-	plot!(p1,tt,detrend(mag_1_c  ),lab="MIT comp Mag 1",color=:red ,lw=2,ls=:dash)
-	# plot!(p1,tt,detrend(mag_2_c  ),lab="MIT comp Mag 2",color=:purple) # bad
-	plot!(p1,tt,detrend(mag_3_c  ),lab="MIT comp Mag 3",color=:green)
-	plot!(p1,tt,detrend(mag_4_c  ),lab="MIT comp Mag 4",color=:black)
-	plot!(p1,tt,detrend(mag_5_c  ),lab="MIT comp Mag 5",color=:orange)
-	# png(p1,"comp_prof_1") # to save figure
-end
+# ╔═╡ 3e9e848e-bf16-428a-98c3-9fee4eddda41
+(pn,pe) = plot_filt_err(traj, filt_out, crlb_out);
 
-# ╔═╡ 4036432b-2bea-4463-908a-5f5dcc5544cf
-md"Position (lat & lot) for trajectory (GPS), INS (after zeroing), & navigation filter.
-"
+# ╔═╡ a42f021e-0a11-4589-949a-7a2a56af129a
+pn
 
-# ╔═╡ 228b18b7-6374-4ceb-a2b1-b188aa2f593f
-begin
-	p2 = plot_map(mapS;map_color=:gray) # map background
-	plot_filt!(p2,traj,ins,filt_out;show_plot=false) # overlay GPS, INS, & filter
-	plot!(p2,legend=:topleft) # move as needed
-end
-
-# ╔═╡ 60c2bb16-a0d4-42f2-ba4a-f42dd70f2611
-md"Northing & easting INS error (after zeroing).
-"
-
-# ╔═╡ 9bc21e37-9911-4b2e-8460-99ebd8256673
-begin
-	p3 = plot(xlab="time [min]",ylab="error [m]",legend=:topleft,dpi=200)
-	plot!(p3,tt,ins_out.n_err,lab="northing")
-	plot!(p3,tt,ins_out.e_err,lab="easting")
-end
-
-# ╔═╡ de62fdda-a107-4283-9140-43dcf2dfb4bc
-(p4,p5) = plot_filt_err(traj,filt_out,crlb_out;show_plot,save_plot);
-
-# ╔═╡ 5a71c032-287a-4c70-90dc-e922cf11c606
-md"Northing navigation filter residuals.
-"
-
-# ╔═╡ 6439d401-07a5-4d31-81e3-411e3aacd0bb
-p4
-
-# ╔═╡ 0cf07d89-6be4-491c-9c07-9ce4d94dee46
-md"Easting navigation filter residuals.
-"
-
-# ╔═╡ 6c4bf761-18f9-4724-8101-910f4f5ad65e
-p5
-
-# ╔═╡ 123a6d91-8950-40ef-804b-86021f9a0207
-md"Map values vs magnetometer measurements.
-"
-
-# ╔═╡ 4bb44a93-c17d-4667-b160-57b62c4c2914
-p6 = plot_mag_map(traj,mag_use,itp_mapS)
-
-# ╔═╡ 4c1c21b1-6ee8-4099-893f-9a473cba2d2d
-md"Magnetometers with in-flight event(s) marked. This may be useful for understanding errors in the magnetic signal compared to the map.
-"
-
-# ╔═╡ 289d9265-a8a0-410b-a858-3698bd4cae37
-begin
-	p7 = plot(xlab="time [min]",ylab="magnetic field [nT]",dpi=200)
-	plot!(p7,tt,mag_1_uc,lab="mag_1_uc")
-	plot!(p7,tt,mag_3_uc,lab="mag_3_uc")
-	plot!(p7,tt,mag_5_uc,lab="mag_5_uc")
-	plot_events!(p7,df_event,flight;t0=t0)
-	p7
-end
+# ╔═╡ ea334b91-e53d-404f-ae3c-106ba1bb7463
+pe
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -2836,60 +2788,43 @@ version = "1.4.1+0"
 """
 
 # ╔═╡ Cell order:
-# ╟─13ac32f0-3d77-11ee-3009-e70e93e2e71b
-# ╠═c18afc43-9df3-45a1-b6e5-283ca8b26872
-# ╟─2f1e71ff-8f7f-4704-8e7d-b4fd2846f7ed
-# ╠═da75fd96-1e6a-46bc-bcea-cdcc8c5f2a86
-# ╟─1a3aba8d-3aa8-454b-9fb0-708f0bd38c42
-# ╠═c192c83b-deb3-4b6e-b0d9-97357e0b554c
-# ╟─e001a13c-2662-4c2f-a89a-de6658fa81db
-# ╠═7390ee91-6a92-4070-af8b-e3c003c3b5fb
-# ╟─f665ea95-dac3-4823-94af-c7ba58cd4401
-# ╠═5346a989-cf32-436c-9181-d7aff6dd44a1
-# ╟─db7dc866-b889-4fb7-81d4-97cd8435636e
-# ╠═3db31fc5-9ec2-4ca2-a5e0-6b478a7b29f9
-# ╟─6796c1ee-74a1-4d21-b68d-bd08929a817f
-# ╠═d02f285c-389c-4b9d-8fef-243253fcc8bb
-# ╟─3f69ee39-d3cb-4458-8381-345b289f5d3f
-# ╠═18189264-9abf-464a-9101-3f7f4f312690
-# ╟─5401fd57-4ac0-4ee3-ab9c-63746ebfd854
-# ╠═15a1e17a-fd89-486d-9ad9-0ae73c0c2b79
-# ╟─ee2119b5-b61f-4bad-87ed-abb4c88194bc
-# ╠═05ebfbab-deaa-43f3-965a-aeb91fec9e67
-# ╟─ab8b23b1-63f8-4306-97a8-2e9d6f2707c4
-# ╠═1eee0857-1278-412b-89fe-f6c3dc094f6f
-# ╟─0d362625-7d94-4131-9254-a336e6a791b1
-# ╠═90db7042-37b7-4751-ad7d-b1fabb305a5a
-# ╟─1233e336-3f11-44e3-b136-08c724f12e0f
-# ╠═162f9444-146b-41dd-ba2c-729beff44306
-# ╟─ebf894ec-5140-42cb-b2b5-1b85f96b7a75
-# ╠═c54b97cd-565f-4d5a-980a-44a3e1d18355
-# ╟─d83b4b7a-e8c9-4dbe-8682-592f0ac5e1b6
-# ╠═9116a5b5-7b5f-4c38-8a48-e854584a8ada
-# ╟─01779ec7-0088-4b37-bda4-7fccf4dbb548
-# ╠═3f2dd431-6c5b-403f-9a96-320d8ab6ef17
-# ╟─50a6302c-b1ed-4be3-8af7-1c641715b25f
-# ╠═110e5de7-9011-4ba6-83d6-3443b6845dc6
-# ╟─e5adfd84-4727-4839-bef0-9365d035249f
-# ╠═1c3579bc-bf1f-45ad-bdfb-df4683ace128
-# ╟─690c1b98-4201-4a7a-8c1d-04984c3e0307
-# ╠═74b69225-a541-49b8-98fc-cacbf22f187a
-# ╟─f01997d2-0ea7-4be3-acd8-533580ccb82d
-# ╠═8167ba6a-fff4-4c79-9ee6-57d6f594bb18
-# ╟─8c92cea8-5cec-42a6-838d-ebc083e0d9b4
-# ╠═e0a21a3c-b48c-458e-a4eb-7a726e77b2b2
-# ╟─4036432b-2bea-4463-908a-5f5dcc5544cf
-# ╠═228b18b7-6374-4ceb-a2b1-b188aa2f593f
-# ╟─60c2bb16-a0d4-42f2-ba4a-f42dd70f2611
-# ╠═9bc21e37-9911-4b2e-8460-99ebd8256673
-# ╠═de62fdda-a107-4283-9140-43dcf2dfb4bc
-# ╟─5a71c032-287a-4c70-90dc-e922cf11c606
-# ╠═6439d401-07a5-4d31-81e3-411e3aacd0bb
-# ╟─0cf07d89-6be4-491c-9c07-9ce4d94dee46
-# ╠═6c4bf761-18f9-4724-8101-910f4f5ad65e
-# ╟─123a6d91-8950-40ef-804b-86021f9a0207
-# ╠═4bb44a93-c17d-4667-b160-57b62c4c2914
-# ╟─4c1c21b1-6ee8-4099-893f-9a473cba2d2d
-# ╠═289d9265-a8a0-410b-a858-3698bd4cae37
+# ╟─e289486a-57ed-4eeb-9ec9-6500f0bc563b
+# ╠═22982d8e-240c-11ee-2e0c-bda2a93a4ab0
+# ╟─3a55962c-bd1b-410c-b98a-3130fc11ee11
+# ╠═bf9f72f0-c351-48d3-a811-418ee965073c
+# ╠═9d11d4be-9ba7-44ab-a4ff-f0fdf95b2171
+# ╠═663f7b8c-dfc6-445d-9c54-1141856f2a66
+# ╠═99405ae1-580a-4fd3-a860-13cc5b22b045
+# ╠═6d4a87c8-41d7-4478-b52a-4dc5a1ae18ea
+# ╠═c5b6b439-e962-4c9d-9b02-339657fb266b
+# ╠═ae1acc31-19db-4e94-85dc-e6274186978e
+# ╟─7a20ef62-f352-4fc7-9061-13fb293bb0bf
+# ╠═39bdbe6a-52ae-44d2-8e80-2e7d2a75e322
+# ╠═9ed61357-346b-49de-a1ed-8849db041ade
+# ╟─a9cac83d-03b3-4793-8da4-f45563091bd0
+# ╠═f492ee3d-c097-4937-9552-e7d2632a5e50
+# ╠═7e15f297-64a4-4ee6-a0ab-65d959354f29
+# ╟─239b60aa-0e97-4871-a9a5-64cd802f4bde
+# ╠═21828f95-98f3-4271-9a57-121252065741
+# ╠═4c3b7f4c-062c-40c2-8677-b47e775aa0dc
+# ╠═80cc7f27-a17d-4649-9640-370a57dfefeb
+# ╠═8ca83ae3-5cad-44a0-ad89-1dff234f50d7
+# ╠═4d75b716-bc93-42f5-8b1a-f5550e7de276
+# ╠═4171fef9-650b-4f37-ae5d-7084d54a0be0
+# ╟─0c839441-909d-4095-a4eb-4dfc92eb2121
+# ╠═0a1b7102-59e0-4e2a-a45c-5c21d0039b88
+# ╟─5f88bca1-ecc9-45b2-8164-0f6965b81088
+# ╠═ed1f8baa-d228-4f66-a979-527f68acccdc
+# ╟─4e01e107-5d58-409d-b08c-23135b4c28ba
+# ╠═566bb8eb-23d3-473d-8e79-1d02536dfdd5
+# ╠═987292fe-4e58-4cc9-bfe2-734c0f4174f8
+# ╠═70b8e7ff-71ee-489b-817e-1d4ea3004355
+# ╠═a56f0b50-0b39-4400-928d-f485af206d23
+# ╟─658524ef-c716-408c-ab57-f1a10459ff24
+# ╠═c469bc3c-434d-452a-8dca-1a96823a8153
+# ╟─0cda1d66-6ba5-40d2-89ff-caf574d9a09f
+# ╠═3e9e848e-bf16-428a-98c3-9fee4eddda41
+# ╠═a42f021e-0a11-4589-949a-7a2a56af129a
+# ╠═ea334b91-e53d-404f-ae3c-106ba1bb7463
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

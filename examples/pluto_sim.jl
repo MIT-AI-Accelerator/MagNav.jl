@@ -19,7 +19,7 @@ begin
 end;
 
 # ╔═╡ d9ac0df2-3d79-11ee-0869-73b7f6649d95
-md"# Using the MagNav Package with Real Simulated Data Example
+md"# Using the MagNav Package with Simulated Data Example
 This file is best viewed in a [Pluto](https://plutojl.org/) notebook. To run it this way, from the MagNav.jl directory, do:
 ```julia
 julia> using Pluto
@@ -120,10 +120,10 @@ md"Display the map or flight paths in Google Earth by uncommenting below to gene
 
 # ╔═╡ 26810eff-0812-43cc-b1bc-d4f5d7c9542d
 begin
-	# map2kmz(mapS,"example_sim_map")
-	# path2kml(traj,"example_sim_gps")
-	# path2kml(ins,"example_sim_ins")
-	# path2kml(filt_out,"example_sim_filt")
+	# map2kmz(mapS,"pluto_sim_map")
+	# path2kml(traj,"pluto_sim_gps")
+	# path2kml(ins,"pluto_sim_ins")
+	# path2kml(filt_out,"pluto_sim_filt")
 end;
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
