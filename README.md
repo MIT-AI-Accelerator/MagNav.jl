@@ -64,18 +64,11 @@ docker run -p 8888:8888 jtaylormit/magnav
 
 A Docker container will spin up and provide a URL that then must be opened in a local browser. It will look something like this: `http://127.0.0.1:8888/lab?token=###`. Jupyter notebooks can be opened directly, but for Pluto notebooks, click `Pluto Notebook` from the Launcher, then select and open the desired Pluto notebook. Note that any changes to the notebooks occur inside the Docker container only, so a notebook must be manually downloaded to be saved.
 
-The above Docker image is [hosted on Docker Hub](https://hub.docker.com/r/jtaylormit/magnav), and it is manually and sporadically updated. For the most recent Docker image, run:
+The above Docker image is [hosted on Docker Hub](https://hub.docker.com/r/jtaylormit/magnav), and it is manually and sporadically updated. For the most recent Docker image, from the command line, run:
 
 ```
 docker pull ghcr.io/mit-ai-accelerator/magnav.jl
 docker run -p 8888:8888 ghcr.io/mit-ai-accelerator/magnav.jl
-```
-
-This will require a [personal access token](https://github.com/settings/tokens). Generate a new token (classic) with the expiration set as desired and `read:packages` checked. Generate and copy the token, then run:
-
-```
-export CR_PAT=YOUR_TOKEN
-echo $CR_PAT | docker login ghcr.io -u YOUR_USERNAME --password-stdin
 ```
 
 ## Data
