@@ -83,8 +83,9 @@ fogm_data_XO = [-0.00573724460026025
                  0.04552990438603038] # Xoshiro
 
 mapS = MagNav.MapS(map_map,map_xx,map_yy,map_alt)
-(itp_mapS,der_mapS) = map_interpolate(mapS,:linear;return_vert_deriv=true) # linear to match MATLAB
-itp_mapS3D = map_interpolate(upward_fft(mapS,[mapS.alt,mapS.alt+5]),:linear)
+(itp_mapS  ,der_mapS  ) = map_interpolate(mapS,:linear;return_vert_deriv=true) # linear to match MATLAB
+(itp_mapS3D,der_mapS3D) = map_interpolate(upward_fft(mapS,[mapS.alt,mapS.alt+5]),
+                                               :linear;return_vert_deriv=true)
 
 (P0,Qd,R) = create_model(dt,lat[1];
                          init_pos_sigma = init_pos_sigma,
@@ -142,11 +143,12 @@ end
 
 @testset "get_h tests" begin
     @test MagNav.get_h(itp_mapS,x,lat,lon,alt;core=false)[1] ≈ grid_data["h"]
-    @test MagNav.get_h(itp_mapS,[xn;0;xl[2:end]],lat,lon,alt;
-                core=false)[1] ≈ grid_data["hRBPF"]
+    @test MagNav.get_h(itp_mapS,[xn;0;xl[2:end]],lat,lon,alt;core=false)[1] ≈ grid_data["hRBPF"]
     @test_nowarn MagNav.get_h(itp_mapS3D,x,lat,lon,alt)
     @test_nowarn MagNav.get_h(itp_mapS,der_mapS,x,lat,lon,alt,map_alt;core=false)
     @test_nowarn MagNav.get_h(itp_mapS,der_mapS,x,lat,lon,alt,map_alt;core=true)
+    @test_nowarn MagNav.get_h(itp_mapS3D,der_mapS3D,x,lat,lon,alt,map_alt;core=false)
+    @test_nowarn MagNav.get_h(itp_mapS3D,der_mapS3D,x,lat,lon,alt,map_alt;core=true)
 end
 
 @testset "map_grad tests" begin
@@ -156,5 +158,9 @@ end
 
 @testset "fogm tests" begin
     fogm_data = fogm(fogm_sigma,fogm_tau,dt,length(fogm_data_MT))
-    @test (fogm_data ≈ fogm_data_MT) | (fogm_data ≈ fogm_data_XO)
+    if VERSION < v"1.7"
+        @test fogm_data ≈ fogm_data_MT
+    else
+        @test fogm_data ≈ fogm_data_XO
+    end
 end

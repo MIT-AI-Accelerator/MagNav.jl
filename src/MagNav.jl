@@ -17,7 +17,8 @@ module MagNav
     using GLMNet: glmnetcv
     using Geodesy: LLA, LLAfromUTM, UTM, UTMfromLLA, WGS84, utm_zone
     using GlobalSensitivity: Morris, gsa
-    using Interpolations: BSpline, Cubic, Line, Linear, OnGrid, Quadratic
+    using Interpolations: BSpline, BSplineInterpolation, Cubic, Line
+    using Interpolations: Linear, OnGrid, Quadratic, ScaledInterpolation
     using Interpolations: interpolate, linear_interpolation, scale
     using IterTools: ncycle
     using KernelFunctions: PolynomialKernel, kernelmatrix
@@ -28,6 +29,7 @@ module MagNav
     using Parameters: @unpack, @with_kw
     using Pkg.Artifacts: @artifact_str
     using Plots: annotate!, contourf!, heatmap, mm, plot, plot!, scatter
+    using PrecompileTools
     using Random: rand, randn, randperm, seed!, shuffle
     using RecipesBase: @recipe
     using SatelliteToolboxGeomagneticField: igrf, igrfd
@@ -97,6 +99,13 @@ module MagNav
     Point icon for optional use in path2kml(;points=true)
     """
     const icon_circle = joinpath(artifact"util_files","util_files","icon_circle.dae")
+
+    """
+        const silent_debug :: Bool
+
+    Internal flag. If true, no verbose print outs.
+    """
+    const silent_debug = true
 
     """
         sgl_fields()
@@ -1223,5 +1232,29 @@ module MagNav
     nekf,nekf_train,
     create_TL_A,create_TL_coef,fdm,
     xyz2h5
+
+    # #* tried various combinations of function calls, always worse, WIP
+    # @setup_workload begin
+    #     mapS = MapS(ones(3,3),[0.1:0.1:0.3;],[0.1:0.1:0.3;],1000.0)
+    #     xyz  = create_XYZ0(mapS;alt=mapS.alt,t=5,N_waves=0,silent=true)
+    #     @compile_workload begin
+    #         itp_mapS = map_itp(mapS)
+    #         ind      = get_ind(xyz)
+    #         terms    = [:permanent3,:induced3]
+    #         TL_coef  = create_TL_coef(xyz.flux_a,xyz.mag_1_c;terms=terms)
+    #         for model_type in [:m1,:m2c,:m3v]
+    #             comp_params = NNCompParams(model_type = model_type,
+    #                                        terms      = terms,
+    #                                        terms_A    = terms,
+    #                                        TL_coef    = TL_coef,
+    #                                        epoch_adam = 1,
+    #                                        batchsize  = 5)
+    #             comp_train_test(xyz,xyz,ind,ind;
+    #                             comp_params = comp_params,
+    #                             silent      = true)
+    #         end
+    #         ekf(xyz.ins,xyz.mag_1_c,itp_mapS;R=2.0)
+    #     end
+    # end
 
 end # module MagNav

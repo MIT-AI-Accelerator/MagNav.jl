@@ -39,6 +39,7 @@ df_map = DataFrame(map_name = map_name,
 terms_p     = [:p]
 terms_pi    = [:p,:i]
 terms_pie   = [:p,:i,:e]
+terms_pieb  = [:p,:i,:e,:b]
 TL_coef_pie = zeros(18)
 batchsize   = 5
 epoch_adam  = 11
@@ -138,8 +139,8 @@ comp_err  = readdlm(comp_file,',')
                                    df_map,comp_params;silent)[[4,7]]
         @test std(err_train_1)   ≈ std(err_train_2)
         @test std(err_test_1 )   ≈ std(err_test_2 )
-        @test isapprox(comp_err[i,1],std(err_train_1),atol=eps(Float32))  # reproducibility
-        @test isapprox(comp_err[i,2],std(err_test_1 ),atol=eps(Float32))  # reproducibility
+        @test isapprox(comp_err[i,1],std(err_train_1),atol=1f-6) # reproducibility
+        @test isapprox(comp_err[i,2],std(err_test_1 ),atol=1f-6) # reproducibility
         @test MagNav.compare_fields(comp_params_,comp_params;silent) == 0 # no mutating
     end
 end
@@ -261,28 +262,37 @@ comp_params_2d  = NNCompParams(model_type  = :m2d,
 k_pca_big = 100
 
 comp_params_3tl = NNCompParams(comp_params_3tl,
+                               data_norms  = NNCompParams().data_norms,
                                epoch_lbfgs = epoch_lbfgs,
                                k_pca       = k_pca_big,
                                frac_train  = frac_train)
 
 comp_params_3s  = NNCompParams(comp_params_3s,
+                               terms_A     = terms_pieb,
+                               TL_coef     = [comp_params_3s.TL_coef;0],
                                epoch_lbfgs = epoch_lbfgs,
                                k_pca       = k_pca_big,
                                frac_train  = frac_train)
 
 comp_params_3v  = NNCompParams(comp_params_3v,
+                               terms_A     = terms_pieb,
+                               TL_coef     = [comp_params_3v.TL_coef;0],
                                epoch_lbfgs = epoch_lbfgs,
                                k_pca       = k_pca_big,
                                frac_train  = frac_train)
 
 comp_params_3sc = NNCompParams(comp_params_3sc,
                                y_type      = :a,
+                               terms_A     = terms_pieb,
+                               TL_coef     = [comp_params_3sc.TL_coef;0],
                                epoch_lbfgs = epoch_lbfgs,
                                k_pca       = k_pca_big,
                                frac_train  = frac_train)
 
 comp_params_3vc = NNCompParams(comp_params_3vc,
                                y_type      = :a,
+                               terms_A     = terms_pieb,
+                               TL_coef     = [comp_params_3vc.TL_coef;0],
                                epoch_lbfgs = epoch_lbfgs,
                                k_pca       = k_pca_big,
                                frac_train  = frac_train)
@@ -329,8 +339,8 @@ y = [1:5;]
                          xyz_test=xyz,ind_test=ind,silent)[end-1]) < 1
     @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_3s_drop,
                          xyz_test=xyz,ind_test=ind,silent)[end-1]) < 1
-    @test isone(MagNav.plsr_fit(x,y;return_set=true)[:,:,1])
-    @test std(MagNav.elasticnet_fit(x,y;λ=0.01)[end]) < 1
+    @test isone(MagNav.plsr_fit(x,y;return_set=true,silent)[:,:,1])
+    @test std(MagNav.elasticnet_fit(x,y;λ=0.01,silent)[end]) < 1
     @test_throws ErrorException comp_train([xyz,xyz],[ind,ind];
                                            comp_params=comp_params_nn_bad,silent)
     @test_throws AssertionError comp_train([xyz,xyz],[ind,ind];

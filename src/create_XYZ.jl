@@ -35,7 +35,8 @@
                 gyro_tau       = 3600.0,
                 fogm_tau       = 600.0,
                 save_h5::Bool  = false,
-                xyz_h5::String = "xyz_data.h5")
+                xyz_h5::String = "xyz_data.h5",
+                silent::Bool   = false)
 
 Create basic flight data. Assumes constant altitude (2D flight).
 May create a trajectory that passes over map areas that are missing map data.
@@ -87,6 +88,9 @@ No required arguments, though many are available to create custom data.
 - `acc_tau`:        (optional) accelerometer time constant [s]
 - `gyro_tau`:       (optional) gyroscope time constant [s]
 
+**General Arguments:**
+- `silent`: (optional) if true, no print outs
+
 **Returns:**
 - `xyz`: `XYZ0` flight data struct
 """
@@ -126,7 +130,8 @@ function create_XYZ0(mapS::Union{MapS,MapSd,MapS3D} = get_map(namad);
                      gyro_tau       = 3600.0,
                      fogm_tau       = 600.0,
                      save_h5::Bool  = false,
-                     xyz_h5::String = "xyz_data.h5")
+                     xyz_h5::String = "xyz_data.h5",
+                     silent::Bool   = false)
 
     xyz_h5 = add_extension(xyz_h5,".h5")
 
@@ -166,13 +171,15 @@ function create_XYZ0(mapS::Union{MapS,MapSd,MapS3D} = get_map(namad);
     mag_1_c = create_mag_c(traj,mapS;
                            meas_var   = cor_var,
                            fogm_sigma = fogm_sigma,
-                           fogm_tau   = fogm_tau)
+                           fogm_tau   = fogm_tau,
+                           silent     = silent)
 
     # create compensated (clean) vector magnetometer measurements
     flux_a = create_flux(traj,mapV;
                          meas_var   = cor_var,
                          fogm_sigma = fogm_sigma,
-                         fogm_tau   = fogm_tau)
+                         fogm_tau   = fogm_tau,
+                         silent     = silent)
 
     # create uncompensated (corrupted) scalar magnetometer measurements
     (mag_1_uc,_) = corrupt_mag(mag_1_c,flux_a;
@@ -506,7 +513,7 @@ function create_ins(traj::Traj;
     fd  = fdm(vd) / dt .- g_earth
     Cnb = correct_Cnb(traj.Cnb, -err[7:9,:])
     if any(Cnb .> 1) | any(Cnb .< -1)
-        @info("create_ins() failed, likely due to bad trajectory data, re-run")
+        error("create_ins() failed, likely due to bad trajectory data, re-run")
         (roll,pitch,yaw) = (zero(lat),zero(lat),zero(lat))
     else
         (roll,pitch,yaw) = dcm2euler(Cnb,:body2nav)
@@ -536,11 +543,12 @@ end # function create_ins
 
 """
     create_mag_c(lat, lon, mapS::Union{MapS,MapSd,MapS3D} = get_map(namad);
-                 alt        = 1000,
-                 dt         = 0.1,
-                 meas_var   = 1.0^2,
-                 fogm_sigma = 1.0,
-                 fogm_tau   = 600.0)
+                 alt          = 1000,
+                 dt           = 0.1,
+                 meas_var     = 1.0^2,
+                 fogm_sigma   = 1.0,
+                 fogm_tau     = 600.0,
+                 silent::Bool = false)
 
 Create compensated (clean) scalar magnetometer measurements from a scalar
 magnetic anomaly map.
@@ -554,16 +562,18 @@ magnetic anomaly map.
 - `meas_var`:   (optional) measurement (white) noise variance [nT^2]
 - `fogm_sigma`: (optional) FOGM catch-all bias [nT]
 - `fogm_tau`:   (optional) FOGM catch-all time constant [s]
+- `silent`:     (optional) if true, no print outs
 
 **Returns:**
 - `mag_c`: compensated (clean) scalar magnetometer measurements [nT]
 """
 function create_mag_c(lat, lon, mapS::Union{MapS,MapSd,MapS3D} = get_map(namad);
-                      alt        = 1000,
-                      dt         = 0.1,
-                      meas_var   = 1.0^2,
-                      fogm_sigma = 1.0,
-                      fogm_tau   = 600.0)
+                      alt          = 1000,
+                      dt           = 0.1,
+                      meas_var     = 1.0^2,
+                      fogm_sigma   = 1.0,
+                      fogm_tau     = 600.0,
+                      silent::Bool = false)
 
     # convert MapS3D to MapS at alt
     typeof(mapS) <: MapS3D && (mapS = upward_fft(mapS,alt))
@@ -573,16 +583,16 @@ function create_mag_c(lat, lon, mapS::Union{MapS,MapSd,MapS3D} = get_map(namad);
 
     # fill map if >1% unfilled
     if sum(ind0)/sum(ind0+ind1) > 0.01
-        @info("filling in scalar map")
+        silent || @info("filling in scalar map")
         mapS = map_fill(map_trim(mapS))
     end
 
     # map values along trajectory
-    @info("getting scalar map values, possibly with upward/downward continuation")
+    silent || @info("getting scalar map values, possibly with upward/downward continuation")
     map_val = get_map_val(mapS,lat,lon,alt;α=200)
 
     # FOGM & white noise
-    @info("adding FOGM & white noise to scalar map values")
+    silent || @info("adding FOGM & white noise to scalar map values")
     mag_c = map_val + fogm(fogm_sigma,fogm_tau,dt,N) + sqrt(meas_var)*randn(N)
 
     return (mag_c)
@@ -590,9 +600,10 @@ end # function create_mag_c
 
 """
     create_mag_c(path::Path, mapS::Union{MapS,MapSd,MapS3D} = get_map(namad);
-                 meas_var   = 1.0^2,
-                 fogm_sigma = 1.0,
-                 fogm_tau   = 600.0)
+                 meas_var     = 1.0^2,
+                 fogm_sigma   = 1.0,
+                 fogm_tau     = 600.0,
+                 silent::Bool = false)
 
 Create compensated (clean) scalar magnetometer measurements from a scalar
 magnetic anomaly map.
@@ -603,20 +614,23 @@ magnetic anomaly map.
 - `meas_var`:   (optional) measurement (white) noise variance [nT^2]
 - `fogm_sigma`: (optional) FOGM catch-all bias [nT]
 - `fogm_tau`:   (optional) FOGM catch-all time constant [s]
+- `silent`:     (optional) if true, no print outs
 
 **Returns:**
 - `mag_c`: compensated (clean) scalar magnetometer measurements [nT]
 """
 function create_mag_c(path::Path, mapS::Union{MapS,MapSd,MapS3D} = get_map(namad);
-                      meas_var   = 1.0^2,
-                      fogm_sigma = 1.0,
-                      fogm_tau   = 600.0)
+                      meas_var     = 1.0^2,
+                      fogm_sigma   = 1.0,
+                      fogm_tau     = 600.0,
+                      silent::Bool = false)
     create_mag_c(path.lat,path.lon,mapS;
                  alt        = median(path.alt),
                  dt         = path.dt,
                  meas_var   = meas_var,
                  fogm_sigma = fogm_sigma,
-                 fogm_tau   = fogm_tau)
+                 fogm_tau   = fogm_tau,
+                 silent     = silent)
 end # function create_mag_c
 
 """
@@ -732,12 +746,13 @@ end # function corrupt_mag
 
 """
     create_flux(lat, lon, mapV::MapV = get_map(emm720);
-                Cnb        = repeat(I(3),1,1,length(lat)),
-                alt        = 1000,
-                dt         = 0.1,
-                meas_var   = 1.0^2,
-                fogm_sigma = 1.0,
-                fogm_tau   = 600.0)
+                Cnb          = repeat(I(3),1,1,length(lat)),
+                alt          = 1000,
+                dt           = 0.1,
+                meas_var     = 1.0^2,
+                fogm_sigma   = 1.0,
+                fogm_tau     = 600.0,
+                silent::Bool = false)
 
 Create compensated (clean) vector magnetometer measurements from a vector
 magnetic anomaly map.
@@ -752,26 +767,28 @@ magnetic anomaly map.
 - `meas_var`:   (optional) measurement (white) noise variance [nT^2]
 - `fogm_sigma`: (optional) FOGM catch-all bias [nT]
 - `fogm_tau`:   (optional) FOGM catch-all time constant [s]
+- `silent`:     (optional) if true, no print outs
 
 **Returns:**
 - `flux`: `MagV` vector magnetometer measurement struct
 """
 function create_flux(lat, lon, mapV::MapV = get_map(emm720);
-                     Cnb        = repeat(I(3),1,1,length(lat)),
-                     alt        = 1000,
-                     dt         = 0.1,
-                     meas_var   = 1.0^2,
-                     fogm_sigma = 1.0,
-                     fogm_tau   = 600.0)
+                     Cnb          = repeat(I(3),1,1,length(lat)),
+                     alt          = 1000,
+                     dt           = 0.1,
+                     meas_var     = 1.0^2,
+                     fogm_sigma   = 1.0,
+                     fogm_tau     = 600.0,
+                     silent::Bool = false)
 
     N = length(lat)
 
     # map values along trajectory
-    @info("getting vector map values, possibly with upward/downward continuation")
+    silent || @info("getting vector map values, possibly with upward/downward continuation")
     (Bx,By,Bz) = get_map_val(mapV,lat,lon,alt;α=200)
 
     # FOGM & white noise
-    @info("adding FOGM & white noise to vector map values")
+    silent || @info("adding FOGM & white noise to vector map values")
     Bx += fogm(fogm_sigma,fogm_tau,dt,N) + sqrt(meas_var)*randn(N)
     By += fogm(fogm_sigma,fogm_tau,dt,N) + sqrt(meas_var)*randn(N)
     Bz += fogm(fogm_sigma,fogm_tau,dt,N) + sqrt(meas_var)*randn(N)
@@ -787,9 +804,10 @@ end # function create_flux
 
 """
     create_flux(path::Path, mapV::MapV = get_map(emm720);
-                meas_var   = 1.0^2,
-                fogm_sigma = 1.0,
-                fogm_tau   = 600.0)
+                meas_var     = 1.0^2,
+                fogm_sigma   = 1.0,
+                fogm_tau     = 600.0,
+                silent::Bool = false)
 
 Create compensated (clean) vector magnetometer measurements from a vector
 magnetic anomaly map.
@@ -800,21 +818,24 @@ magnetic anomaly map.
 - `meas_var`:   (optional) measurement (white) noise variance [nT^2]
 - `fogm_sigma`: (optional) FOGM catch-all bias [nT]
 - `fogm_tau`:   (optional) FOGM catch-all time constant [s]
+- `silent`:     (optional) if true, no print outs
 
 **Returns:**
 - `flux`: `MagV` vector magnetometer measurement struct
 """
 function create_flux(path::Path, mapV::MapV = get_map(emm720);
-                     meas_var   = 1.0^2,
-                     fogm_sigma = 1.0,
-                     fogm_tau   = 600.0)
+                     meas_var     = 1.0^2,
+                     fogm_sigma   = 1.0,
+                     fogm_tau     = 600.0,
+                     silent::Bool = false)
     create_flux(path.lat,path.lon,mapV;
                 Cnb        = path.Cnb,
                 alt        = median(path.alt),
                 dt         = path.dt,
                 meas_var   = meas_var,
                 fogm_sigma = fogm_sigma,
-                fogm_tau   = fogm_tau)
+                fogm_tau   = fogm_tau,
+                silent     = silent)
 end # function create_flux
 
 """
@@ -898,7 +919,7 @@ end # function calculate_imputed_TL_earth
 """
     create_informed_xyz(xyz::Union{XYZ1,XYZ20,XYZ21}, ind, mapS::Union{MapS,MapSd,MapS3D},
                         use_mag::Symbol, use_vec::Symbol, TL_coef::Vector;
-                        terms    = [:permanent,:induced,:eddy],
+                        terms::Vector{Symbol} = [:permanent,:induced,:eddy],
                         disp_min = 100,
                         disp_max = 500,
                         Bt_disp  = 50,
@@ -932,7 +953,7 @@ over into `use_mag` in the new `XYZ` data.
 """
 function create_informed_xyz(xyz::Union{XYZ1,XYZ20,XYZ21}, ind, mapS::Union{MapS,MapSd,MapS3D},
                              use_mag::Symbol, use_vec::Symbol, TL_coef::Vector;
-                             terms    = [:permanent,:induced,:eddy],
+                             terms::Vector{Symbol} = [:permanent,:induced,:eddy],
                              disp_min = 100,
                              disp_max = 500,
                              Bt_disp  = 50,
@@ -941,7 +962,7 @@ function create_informed_xyz(xyz::Union{XYZ1,XYZ20,XYZ21}, ind, mapS::Union{MapS
     @assert any([:permanent,:p,:permanent3,:p3] .∈ (terms,)) "permanent terms are required"
     @assert any([:induced,:i,:induced6,:i6,:induced5,:i5,:induced3,:i3] .∈ (terms,)) "induced terms are required"
     @assert any([:eddy,:e,:eddy9,:e9,:eddy8,:e8,:eddy3,:e3] .∈ (terms,)) "eddy current terms are required"
-    @assert !any([:fdm,:f,:d,:fdm3,:f3,:d3,:bias,:b] .∈ (terms,)) "derivative and bias terms may not be used"
+    @assert !any([:fdm,:f,:fdm3,:f3,:bias,:b] .∈ (terms,)) "derivative and bias terms may not be used"
 
     N = length(TL_coef)
     A_test = create_TL_A([1.0],[1.0],[1.0];terms=terms)

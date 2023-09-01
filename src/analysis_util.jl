@@ -509,7 +509,7 @@ function get_x(lines, df_line::DataFrame, df_flight::DataFrame,
     # check if lines are in df_line, remove if not
     for l in lines
         if !(l in df_line.line)
-            @info("line $l is not in df_line, skipping")
+            silent || @info("line $l is not in df_line, skipping")
             lines = lines[lines.!=l]
         end
     end
@@ -677,7 +677,7 @@ function get_y(lines, df_line::DataFrame, df_flight::DataFrame,
     # check if lines are in df_line, remove if not
     for l in lines
         if !(l in df_line.line)
-            @info("line $l is not in df_line, skipping")
+            silent || @info("line $l is not in df_line, skipping")
             lines = lines[lines.!=l]
         end
     end
@@ -813,7 +813,7 @@ function get_Axy(lines, df_line::DataFrame,
     # check if lines are in df_line, remove if not
     for l in lines
         if !(l in df_line.line)
-            @info("line $l is not in df_line, skipping")
+            silent || @info("line $l is not in df_line, skipping")
             lines = lines[lines.!=l]
         end
     end
@@ -1030,6 +1030,7 @@ Remove mean error from multiple individual flight lines within larger dataset.
 - `y_hat`:  predicted data
 - `y`:      observed data
 - `l_segs`: vector of lengths of `lines`, sum(l_segs) == length(y)
+- `silent`: (optional) if true, no print outs
 
 **Returns:**
 - `err`: mean-corrected (per line) error

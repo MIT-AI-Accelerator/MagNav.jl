@@ -1,5 +1,9 @@
 """
-    map_interpolate(map_map, map_xx, map_yy, type::Symbol = :cubic, map_alt = [])
+    map_interpolate(map_map::AbstractArray{T},
+                    map_xx::AbstractVector{T},
+                    map_yy::AbstractVector{T},
+                    type::Symbol = :cubic,
+                    map_alt::AbstractVector = []) where T
 
 Create map interpolation function, equivalent of griddedInterpolant in MATLAB.
 
@@ -13,7 +17,11 @@ Create map interpolation function, equivalent of griddedInterpolant in MATLAB.
 **Returns:**
 - `itp_map`: map interpolation function
 """
-function map_interpolate(map_map, map_xx, map_yy, type::Symbol = :cubic, map_alt = [])
+function map_interpolate(map_map::AbstractArray{T},
+                         map_xx::AbstractVector{T},
+                         map_yy::AbstractVector{T},
+                         type::Symbol = :cubic,
+                         map_alt::AbstractVector = []) where T
 
     # uses Interpolations package rather than Dierckx or GridInterpolations,
     # as Interpolations was found to be fastest for MagNav use cases.
@@ -32,12 +40,39 @@ function map_interpolate(map_map, map_xx, map_yy, type::Symbol = :cubic, map_alt
     yy = LinRange(extrema(map_yy)...,length(map_yy))
 
     if map_alt == []
-        return scale(interpolate(map_map',spline_type),xx,yy)
+        itp_map = scale(interpolate(map_map',spline_type),xx,yy)
     else
         zz = LinRange(extrema(map_alt)...,length(map_alt))
-        return scale(interpolate(permutedims(map_map,(2,1,3)),spline_type),xx,yy,zz)
+        itp_map = scale(interpolate(permutedims(map_map,(2,1,3)),spline_type),xx,yy,zz)
     end
+
+    return map_itp_function(itp_map)
 end # function map_interpolate
+
+"""
+    map_itp_function(itp_map::ScaledInterpolation{T1}) where T1
+
+Create map interpolation function from map ScaledInterpolation.
+
+**Arguments:**
+- `itp_map`: map ScaledInterpolation
+
+**Returns:**
+- `itp_map`: map interpolation function
+"""
+function map_itp_function(itp_map::ScaledInterpolation{T1}) where T1
+    if length(size(itp_map)) == 2
+        function itp_map_2D(lon::T1,lat::T1,alt::T1=lat) where T1
+            itp_map(lon,lat)
+        end
+        return (itp_map_2D)
+    elseif length(size(itp_map)) == 3
+        function itp_map_3D(lon::T1,lat::T1,alt::T1) where T1
+            itp_map(lon,lat,alt)
+        end
+        return (itp_map_3D)
+    end
+end # function map_itp_function
 
 """
     map_interpolate(mapS::Union{MapS,MapSd,MapS3D}, type::Symbol = :cubic;
@@ -50,7 +85,7 @@ using finite differences between the map and a slightly upward continued map.
 **Arguments:**
 - `mapS`:              `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct
 - `type`:              (optional) type of interpolation {:linear,:quad,:cubic}
-- `return_vert_deriv`: (optional) if true, also return `der_map`, only valid for `MapS` or `MapSd`
+- `return_vert_deriv`: (optional) if true, also return `der_map`
 
 **Returns:**
 - `itp_map`: map interpolation function
@@ -59,14 +94,26 @@ using finite differences between the map and a slightly upward continued map.
 function map_interpolate(mapS::Union{MapS,MapSd,MapS3D}, type::Symbol = :cubic;
                          return_vert_deriv::Bool = false)
 
-    if return_vert_deriv & (typeof(mapS) <: Union{MapS,MapSd})
-        return (map_itp(mapS.map,mapS.xx,mapS.yy,type),
-                map_itp(upward_fft(mapS,mapS.alt+1).map - mapS.map,
-                                   mapS.xx,mapS.yy,type))
-    elseif typeof(mapS) <: Union{MapS,MapSd}
-        map_itp(mapS.map,mapS.xx,mapS.yy,type)
-    elseif typeof(mapS) <: Union{MapS3D}
-        map_itp(mapS.map,mapS.xx,mapS.yy,type,mapS.alt)
+    if return_vert_deriv
+        if typeof(mapS) <: Union{MapS,MapSd}
+            map_map = upward_fft(mapS,mapS.alt+1).map - mapS.map
+            return (map_itp(mapS.map,mapS.xx,mapS.yy,type),
+                    map_itp( map_map,mapS.xx,mapS.yy,type))
+        elseif typeof(mapS) <: Union{MapS3D}
+            map_map = zero.(mapS.map)
+            for i in eachindex(mapS.alt)
+                mapS_ = MapS(mapS.map[:,:,i],mapS.xx,mapS.yy,mapS.alt[i])
+                map_map[:,:,i] = upward_fft(mapS_,mapS_.alt+1).map - mapS.map[:,:,i]
+            end
+            return (map_itp(mapS.map,mapS.xx,mapS.yy,type,mapS.alt),
+                    map_itp( map_map,mapS.xx,mapS.yy,type,mapS.alt))
+        end
+    else
+        if typeof(mapS) <: Union{MapS,MapSd}
+            return map_itp(mapS.map,mapS.xx,mapS.yy,type)
+        elseif typeof(mapS) <: Union{MapS3D}
+            return map_itp(mapS.map,mapS.xx,mapS.yy,type,mapS.alt)
+        end
     end
 end # function map_interpolate
 
@@ -726,7 +773,7 @@ of a map by subtracting and/or adding the IGRF on specified date(s).
 - `map_units`:     (optional) map xx/yy units {`:rad`,`:deg`,`:utm`}
 
 **Returns:**
-- `mapS`: `MapS` or `MapSd` scalar magnetic anomaly map struct, IGRF corrected
+- `mapS`: `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct, IGRF corrected
 """
 function map_correct_igrf(mapS::Union{MapS,MapSd,MapS3D};
                           sub_igrf_date::Real = get_years(2013,293),
@@ -1013,9 +1060,10 @@ function map_utm2lla!(map_map::Matrix, map_xx::Vector, map_yy::Vector, alt;
                       save_h5::Bool  = false,
                       map_h5::String = "map_data.h5")
 
-    (_,ind1,nx,ny) = map_params(map_map,map_xx,map_yy)
+    ind1 = convert.(eltype(map_map),map_params(map_map,map_xx,map_yy)[2])
+    (ny,nx) = size(map_map)
 
-    map_drp = size(map_map) == size(alt) ? true : false
+    map_drp = (ny,nx) == size(alt) ? true : false
 
     # interpolation for original (UTM) map
     itp_ind1 = map_itp(ind1   ,map_xx,map_yy,:linear)
@@ -1488,7 +1536,11 @@ function plot_map!(p1, map_map::Matrix,
     c = map_cs(map_color)
 
     # adjust color scale and set contour limits based on map data
-    clims == (0,0) && ((c,clims) = map_clims(c,map_map))
+    if length(map_map) > length(c)
+        clims == (0,0) && ((c,clims) = map_clims(c,map_map))
+    else
+        clims = extrema(map_map)
+    end
 
     # values outside contour limits set to contour limits (plotly workaround)
     map_map .= clamp.(map_map,clims[1],clims[2])
@@ -2623,7 +2675,7 @@ function map_resample(map_map::Matrix, map_xx::Vector, map_yy::Vector,
     map_map  = zeros(eltype(map_map),length(map_yy),length(map_xx))
     map_map[ind_yy,ind_xx] = map_map_
 
-    ind1     = map_params(map_map,map_xx,map_yy)[2]
+    ind1     = convert.(eltype(map_map),map_params(map_map,map_xx,map_yy)[2])
     itp_ind1 = map_itp(ind1   ,map_xx,map_yy,:linear)
     itp_map  = map_itp(map_map,map_xx,map_yy,:linear)
     map_map  = zeros(eltype(map_map),length(map_yy_new),length(map_xx_new))

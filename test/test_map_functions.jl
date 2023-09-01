@@ -71,8 +71,9 @@ add_igrf_date = get_years(2013,293)
                            add_igrf_date=add_igrf_date,map_units=:deg)
     @test_throws ErrorException map_correct_igrf(mapS.map,mapS.alt,mapS.xx,mapS.yy;
                                                  add_igrf_date=add_igrf_date,map_units=:test)
-    @test typeof(map_correct_igrf(mapS ;add_igrf_date=add_igrf_date)) <: MapS
-    @test typeof(map_correct_igrf(mapSd;add_igrf_date=add_igrf_date)) <: MapSd
+    @test typeof(map_correct_igrf(mapS  ;add_igrf_date=add_igrf_date)) <: MapS
+    @test typeof(map_correct_igrf(mapSd ;add_igrf_date=add_igrf_date)) <: MapSd
+    @test typeof(map_correct_igrf(mapS3D;add_igrf_date=add_igrf_date)) <: MapS3D
 end
 
 @testset "map_fill tests" begin
@@ -96,11 +97,13 @@ mapUTM   = MapS( mapS.map,[utm_temp[i].x for i in eachindex(mapS.xx)],
                           [utm_temp[i].y for i in eachindex(mapS.yy)],mapS.alt)
 mapUTMd  = MapSd(mapS.map,[utm_temp[i].x for i in eachindex(mapS.xx)],
                           [utm_temp[i].y for i in eachindex(mapS.yy)],mapSd.alt)
+mapUTM3D = MapS3D(mapUTM.map[:,:,[1,1]],mapUTM.xx,mapUTM.yy,[mapUTM.alt,mapUTM.alt+5])
 
 @testset "map_utm2lla tests" begin
     @test typeof(map_utm2lla(mapUTM.map,mapUTM.xx,mapUTM.yy,mapUTM.alt)[1]) <: Matrix
-    @test typeof(map_utm2lla(mapUTM )) <: MapS
-    @test typeof(map_utm2lla(mapUTMd)) <: MapSd
+    @test typeof(map_utm2lla(mapUTM  )) <: MapS
+    @test typeof(map_utm2lla(mapUTMd )) <: MapSd
+    @test typeof(map_utm2lla(mapUTM3D)) <: MapS3D
 end
 
 @testset "map_gxf2h5 tests" begin
@@ -129,6 +132,7 @@ p1 = plot();
                           map_units=:deg,plot_units=:rad)) <: Plots.Plot
     @test typeof(plot_map(mapS.map,rad2deg.(mapS.xx),rad2deg.(mapS.yy);
                           map_units=:deg,plot_units=:m  )) <: Plots.Plot
+    @test typeof(plot_map(mapV)) <: Tuple
     @test_throws ErrorException plot_map(mapS;map_units=:test)
     @test_throws ErrorException plot_map(mapS;plot_units=:test)
 end

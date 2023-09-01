@@ -372,11 +372,11 @@ function get_pinson(nx::Int, lat, vn, ve, vd, fn, fe, fd, Cnb;
     F = zeros(nx,nx)
 
     F[1,3]   = -vn / r_earth^2
-    F[1,4]   =   1 / r_earth
+    F[1,4]   =  1  / r_earth
 
     F[2,1]   =  ve * tan_l / (r_earth * cos_l)
     F[2,3]   = -ve         / (cos_l*r_earth^2)
-    F[2,5]   =   1         / (r_earth * cos_l)
+    F[2,5]   =  1          / (r_earth * cos_l)
 
     F[3,3]   = -k1
     F[3,6]   = -1
@@ -384,49 +384,49 @@ function get_pinson(nx::Int, lat, vn, ve, vd, fn, fe, fd, Cnb;
 
     F[4,1]   = -ve * (2*ω_earth*cos_l + ve / (r_earth*cos_l^2))
     F[4,3]   = (ve^2*tan_l - vn*vd) / r_earth^2
-    F[4,4]   = vd / r_earth
+    F[4,4]   =  vd / r_earth
     F[4,5]   = -2*(ω_earth*sin_l + ve*tan_l / r_earth)
-    F[4,6]   = vn / r_earth
+    F[4,6]   =  vn / r_earth
     F[4,8]   = -fd
     F[4,9]   =  fe
 
-    F[5,1]   = 2*ω_earth*(vn*cos_l - vd*sin_l) + vn*ve / (r_earth * cos_l^2)
+    F[5,1]   =  2*ω_earth*(vn*cos_l - vd*sin_l) + vn*ve / (r_earth * cos_l^2)
     F[5,3]   = -ve*((vn*tan_l + vd) / r_earth^2)
-    F[5,4]   = 2*ω_earth*sin_l + ve * tan_l / r_earth
+    F[5,4]   =  2*ω_earth*sin_l + ve * tan_l / r_earth
     F[5,5]   =      (vn*tan_l + vd) / r_earth
-    F[5,6]   = 2*ω_earth*cos_l + ve / r_earth
+    F[5,6]   =  2*ω_earth*cos_l + ve / r_earth
     F[5,7]   =  fd
     F[5,9]   = -fn
 
     F[6,1]   =  2*ω_earth*ve*sin_l
-    F[6,3]   = (vn^2 + ve^2) / r_earth^2 + k2
+    F[6,3]   =  (vn^2 + ve^2) / r_earth^2 + k2
     F[6,4]   = -2*vn / r_earth
     F[6,5]   = -2*(ω_earth*cos_l + ve / r_earth)
     F[6,7]   = -fe
     F[6,8]   =  fn
     F[6,10]  = -k2
-    F[6,11]  = 1
+    F[6,11]  =  1
 
     F[7,1]   = -ω_earth*sin_l
     F[7,3]   = -ve^2 / r_earth^2
     F[7,5]   =  1 / r_earth
     F[7,8]   = -ω_earth*sin_l - ve*tan_l / r_earth
-    F[7,9]   = vn / r_earth
+    F[7,9]   =  vn / r_earth
 
-    F[8,3]   = vn / r_earth^2
+    F[8,3]   =  vn / r_earth^2
     F[8,4]   = -1 / r_earth
-    F[8,7]   = ω_earth*sin_l + ve*tan_l / r_earth
-    F[8,9]   = ω_earth*cos_l + ve / r_earth
+    F[8,7]   =  ω_earth*sin_l + ve*tan_l / r_earth
+    F[8,9]   =  ω_earth*cos_l + ve / r_earth
 
     F[9,1]   = -ω_earth*cos_l - ve / (r_earth*cos_l^2)
-    F[9,3]   = ve*tan_l / r_earth^2
+    F[9,3]   =  ve*tan_l / r_earth^2
     F[9,5]   = -tan_l / r_earth
     F[9,7]   = -vn / r_earth
     F[9,8]   = -ω_earth*cos_l - ve / r_earth
 
     F[10,10] = -1 / baro_tau
 
-    F[11,3]  = k3
+    F[11,3]  =  k3
     F[11,10] = -k3
 
     F[12,12] = -1 / acc_tau
@@ -559,11 +559,7 @@ function get_h(itp_mapS, x::Array, lat, lon, alt;
                date       = get_years(2020,185),
                core::Bool = false)
 
-    if length(size(itp_mapS)) == 2
-        map_val = itp_mapS.(lon.+x[2,:],lat.+x[1,:])
-    elseif length(size(itp_mapS)) == 3
-        map_val = itp_mapS.(lon.+x[2,:],lat.+x[1,:],alt.+x[3,:])
-    end
+    map_val = itp_mapS.(lon.+x[2,:],lat.+x[1,:],alt.+x[3,:])
 
     if core
         return (map_val .+ x[end,:] .+ norm.(igrf.(date,alt.+x[3,:],lat.+x[1,:],
@@ -602,13 +598,8 @@ function get_h(itp_mapS, der_mapS, x::Array, lat, lon, alt, map_alt;
                date       = get_years(2020,185),
                core::Bool = false)
 
-    if length(size(itp_mapS)) == 2
-        map_val = itp_mapS.(lon.+x[2,:],lat.+x[1,:])
-        der_val = der_mapS.(lon.+x[2,:],lat.+x[1,:])
-    elseif length(size(itp_mapS)) == 3
-        map_val = itp_mapS.(lon.+x[2,:],lat.+x[1,:],alt.+x[3,:])
-        der_val = der_mapS.(lon.+x[2,:],lat.+x[1,:],alt.+x[3,:])
-    end
+    map_val = itp_mapS.(lon.+x[2,:],lat.+x[1,:],alt.+x[3,:])
+    der_val = der_mapS.(lon.+x[2,:],lat.+x[1,:],alt.+x[3,:])
 
     if core
         return (map_val .+ x[end,:] .+ der_val .* (alt.+x[3,:] .- map_alt) .+
@@ -637,15 +628,9 @@ Internal helper function to get local map gradient.
 function map_grad(itp_mapS, lat, lon, alt; δ=1.0f-8)
     dlat = dlon = δ
     dalt = dlat2dn(δ,lat)
-    if length(size(itp_mapS)) == 2
-        return ([(itp_mapS(lon,lat+dlat) - itp_mapS(lon,lat-dlat)) /2/dlat,
-                 (itp_mapS(lon+dlon,lat) - itp_mapS(lon-dlon,lat)) /2/dlon,
-                 zero(lat)])
-    elseif length(size(itp_mapS)) == 3
-        return ([(itp_mapS(lon,lat+dlat,alt) - itp_mapS(lon,lat-dlat,alt)) /2/dlat,
-                 (itp_mapS(lon+dlon,lat,alt) - itp_mapS(lon-dlon,lat,alt)) /2/dlon,
-                 (itp_mapS(lon,lat,alt+dalt) - itp_mapS(lon,lat,alt-dalt)) /2/dalt])
-    end
+    return ([(itp_mapS(lon,lat+dlat,alt) - itp_mapS(lon,lat-dlat,alt)) /2/dlat,
+             (itp_mapS(lon+dlon,lat,alt) - itp_mapS(lon-dlon,lat,alt)) /2/dlon,
+             (itp_mapS(lon,lat,alt+dalt) - itp_mapS(lon,lat,alt-dalt)) /2/dalt])
 end # function map_grad
 
 """

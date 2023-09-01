@@ -26,6 +26,8 @@ function create_TL_A(Bx, By, Bz;
                      Bt_scale = 50000,
                      return_B = false)
 
+    terms = [terms;] # ensure vector
+
     Bx_hat = Bx ./ Bt
     By_hat = By ./ Bt
     Bz_hat = Bz ./ Bt
@@ -104,7 +106,7 @@ function create_TL_A(Bx, By, Bz;
     end
 
     # add (3) derivative terms - Bx_dot, By_dot, Bz_dot
-    if any([:fdm,:f,:d,:fdm3,:f3,:d3] .∈ (terms,))
+    if any([:fdm,:f,:fdm3,:f3] .∈ (terms,))
         A = [A Bx_dot By_dot Bz_dot]
     end
 
@@ -279,6 +281,35 @@ function create_TL_coef(flux::MagV, B, ind=trues(length(flux.x));
                    Bt=Bt,λ=λ,terms=terms,pass1=pass1,pass2=pass2,fs=fs,
                    pole=pole,trim=trim,Bt_scale=Bt_scale,return_var=return_var)
 end # function create_TL_coef
+
+"""
+    get_TL_term_ind(term::Symbol, terms)
+
+Internal helper function to find indices that correspond to `term` in TL_coef
+that are created using `terms`.
+
+**Arguments:**
+- `term`:  Tolles-Lawson term  {`:permanent`,`:induced`,`:eddy`,`:bias`}
+- `terms`: Tolles-Lawson terms {`:permanent`,`:induced`,`:eddy`,`:bias`}
+
+**Returns:**
+- `ind`: BitVector of indices corresponding to `term` in TL_coef with `terms`
+"""
+function get_TL_term_ind(term::Symbol, terms)
+
+    terms = [terms;] # ensure vector
+    @assert term in terms "term $term not in terms"
+
+    x = [1.0]
+    N_term  = length(create_TL_A(x,x,x;terms=term))
+    N_terms = length(create_TL_A(x,x,x;terms=terms))
+    i_term  = findfirst(term .== terms)
+
+    ind_ = (1:N_term) .+ length(create_TL_A(x,x,x;terms=terms[1:i_term-1]))
+    ind  = (1:N_terms .∈ (ind_,))
+
+    return (ind)
+end # function get_TL_term_ind
 
 """
     fdm(x::Vector; scheme::Symbol=:central)

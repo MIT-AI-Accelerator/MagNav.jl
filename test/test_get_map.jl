@@ -67,12 +67,13 @@ map_names = [:map_1,:map_2,:map_3,:map_4,:map_5,:map_6,:map_7,:map_8,:map_9,
 df_map    = DataFrame(map_h5=map_files,map_name=map_names)
 
 mapV   = MagNav.MapV(map_map,map_map,map_map,map_xx,map_yy,map_alt)
-mapS   = get_map(test_data_map)
+mapS   = get_map(map_files[1])
 map_h5 = joinpath(@__DIR__,"test_save_map")
 
 @testset "save_map tests" begin
     @test typeof(save_map(mapV,map_h5)) <: Nothing
     @test typeof(save_map(mapS,map_h5;map_units=:rad,file_units=:deg)) <: Nothing
+    @test typeof(save_map(mapS,map_h5;map_units=:deg,file_units=:rad)) <: Nothing
     @test typeof(save_map(mapS,map_h5;map_units=:rad,file_units=:rad)) <: Nothing
     @test_throws ErrorException save_map(mapS,map_h5;map_units=:rad,file_units=:utm)
     @test typeof(save_map(mapS,map_h5;map_units=:test,file_units=:test )) <: Nothing
@@ -91,7 +92,9 @@ map_h5 = MagNav.add_extension(map_h5,".h5")
         println(map_name)
         @test_nowarn get_map(map_name,df_map)
     end
-    @test typeof(get_map(test_data_map;map_units=:utm,file_units=:utm)) <: MagNav.MapS
+    @test typeof(get_map(map_files[6];map_units=:deg,file_units=:rad)) <: MagNav.MapS
+    @test_throws ErrorException get_map(map_files[6];map_units=:utm,file_units=:deg)
+    @test typeof(get_map(map_files[1];map_units=:utm,file_units=:utm)) <: MagNav.MapS
     @test_throws AssertionError get_map("test")
     @test_throws ErrorException get_map(test_data_map_badS)
     @test_throws ErrorException get_map(test_data_map_badV)
