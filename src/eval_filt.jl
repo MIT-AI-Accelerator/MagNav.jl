@@ -777,12 +777,7 @@ function plot_mag_map(path::Path, mag, itp_mapS;
                                            median(path.alt[i]))
     end
 
-    if length(size(itp_mapS)) == 2
-        map_val = itp_mapS.(path.lon[i],path.lat[i])
-    elseif length(size(itp_mapS)) == 3
-        map_val = itp_mapS.(path.lon[i],path.lat[i],path.alt[i])
-    end
-
+    map_val = itp_mapS.(path.lon[i],path.lat[i],path.alt[i])
     mag_val = detrend_data ? detrend(mag[i] ) : mag[i]
     map_val = detrend_data ? detrend(map_val) : map_val
 
@@ -847,11 +842,7 @@ function plot_mag_map_err(path::Path, mag, itp_mapS;
                                            median(path.alt[i]))
     end
 
-    if length(size(itp_mapS)) == 2
-        map_val = itp_mapS.(path.lon[i],path.lat[i])
-    elseif length(size(itp_mapS)) == 3
-        map_val = itp_mapS.(path.lon[i],path.lat[i],path.alt[i])
-    end
+    map_val = itp_mapS.(path.lon[i],path.lat[i],path.alt[i])
 
     plot!(p1,tt,f(mag[i] - map_val),lab=lab)
 

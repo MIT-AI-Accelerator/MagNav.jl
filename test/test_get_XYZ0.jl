@@ -52,7 +52,7 @@ write_field(xyz_h5,:mag_1_uc,xyz.mag_1_uc)
     write_field(xyz_h5,:ins_yaw,zero(ins.lat))
     @test typeof(get_XYZ0(xyz_h5;silent=true)) <: MagNav.XYZ0
     MagNav.overwrite_field(xyz_h5,:ins_alt,ins.alt*NaN)
-    @test typeof(get_XYZ0(xyz_h5;silent=true)) <: MagNav.XYZ0
+    @test_throws ErrorException get_XYZ0(xyz_h5;silent=true)
     @test_throws AssertionError get_XYZ0("test")
 end
 

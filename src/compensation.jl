@@ -17,7 +17,7 @@
                     l_segs::Vector       = [length(y)],
                     x_test::Matrix       = Array{Any}(undef,0,0),
                     y_test::Vector       = [],
-                    silent::Bool         = true)
+                    silent::Bool         = false)
 
 Train neural network-based aeromagnetic compensation, model 1.
 """
@@ -39,7 +39,7 @@ function nn_comp_1_train(x, y, no_norm;
                          l_segs::Vector       = [length(y)],
                          x_test::Matrix       = Array{Any}(undef,0,0),
                          y_test::Vector       = [],
-                         silent::Bool         = true)
+                         silent::Bool         = false)
 
     # convert to Float32 for ~50% speedup
     x      = convert.(Float32,x)
@@ -56,12 +56,12 @@ function nn_comp_1_train(x, y, no_norm;
         if k_pca > 0
             if k_pca > size(x,2)
                 k_pca = size(x,2)
-                @info("reducing k_pca to $k_pca, size(x,2)")
+                silent || @info("reducing k_pca to $k_pca, size(x,2)")
             end
             (_,S,V) = svd(cov(x_norm))
             v_scale = V[:,1:k_pca]*inv(Diagonal(sqrt.(S[1:k_pca])))
             var_ret = round(sum(sqrt.(S[1:k_pca]))/sum(sqrt.(S))*100,digits=6)
-            @info("k_pca = $k_pca of $(size(x,2)), variance retained: $var_ret %")
+            silent || @info("k_pca = $k_pca of $(size(x,2)), variance retained: $var_ret %")
         else
             v_scale = I(size(x,2))
         end
@@ -132,9 +132,9 @@ function nn_comp_1_train(x, y, no_norm;
     best_loss = loss_all(data_val)
     isempty(x_test) || (best_test_error = std(nn_comp_1_test(x_norm_test,y_test,y_bias,y_scale,m;
                                                              l_segs = l_segs_test,
-                                                             silent = silent)[2]))
+                                                             silent = silent_debug)[2]))
 
-    @info("epoch 0: loss = $best_loss")
+    silent || @info("epoch 0: loss = $best_loss")
     for i = 1:epoch_adam
         Flux.train!(loss,Flux.params(m),data_train,opt)
         current_loss = loss_all(data_val)
@@ -144,20 +144,20 @@ function nn_comp_1_train(x, y, no_norm;
                 best_loss = current_loss
                 m_store   = deepcopy(m)
             end
-            mod(i,5) == 0 && @info("epoch $i: loss = $best_loss")
+            mod(i,5) == 0 && !silent && @info("epoch $i: loss = $best_loss")
         else
             test_error = std(nn_comp_1_test(x_norm_test,y_test,y_bias,y_scale,m;
                                             l_segs = l_segs_test,
-                                            silent = silent)[2])
+                                            silent = silent_debug)[2])
             if test_error < best_test_error
                 best_test_error = test_error
                 m_store         = deepcopy(m)
             end
-            mod(i,5) == 0 && @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error,digits=2)) nT")
+            mod(i,5) == 0 && !silent && @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error,digits=2)) nT")
         end
-        if mod(i,10) == 0
+        if (mod(i,10) == 0) & !silent
             y_hat = nn_comp_1_fwd(x_norm,y_bias,y_scale,m)
-            err   = err_segs(y_hat,y,l_segs;silent=silent)
+            err   = err_segs(y_hat,y,l_segs;silent=silent_debug)
             @info("$i train error: $(round(std(err),digits=2)) nT")
             isempty(x_test) || @info("$i test  error: $(round((test_error),digits=2)) nT")
         end
@@ -168,24 +168,25 @@ function nn_comp_1_train(x, y, no_norm;
     if epoch_lbfgs > 0 # LBFGS, may overfit depending on iterations
         data = Flux.DataLoader((x_norm',y_norm'),shuffle=true,batchsize=batchsize)
 
-        function lbfgs_train!(m_l,data_l,iter)
+        function lbfgs_train!(m_l,data_l,iter,silent)
             (x_l,y_l) = data_l.data
             loss_() = loss_m1(x_l,y_l)
             refresh()
             params = Flux.params(m_l)
             opt = LBFGS()
             (_,_,fg!,p0) = optfuns(loss_,params)
-            optimize(only_fg!(fg!),p0,opt,Options(iterations=iter,show_trace=true))
+            options = Options(iterations=iter,show_every=5,show_trace=!silent)
+            optimize(only_fg!(fg!),p0,opt,options)
         end # function lbfgs_train!
 
         # train NN with LBFGS optimizer
-        lbfgs_train!(m,data,epoch_lbfgs)
+        lbfgs_train!(m,data,epoch_lbfgs,silent)
     end
 
     # get results
     y_hat = nn_comp_1_fwd(x_norm,y_bias,y_scale,m)
-    err   = err_segs(y_hat,y,l_segs;silent=silent)
-    @info("train error: $(round(std(err),digits=2)) nT")
+    err   = err_segs(y_hat,y,l_segs;silent=silent_debug)
+    silent || @info("train error: $(round(std(err),digits=2)) nT")
 
     if !isempty(x_test)
         nn_comp_1_test(x_norm_test,y_test,y_bias,y_scale,m;
@@ -260,8 +261,8 @@ function nn_comp_1_test(x_norm::AbstractMatrix, y, y_bias, y_scale, model::Chain
 
     # get results
     y_hat = nn_comp_1_fwd(x_norm,y_bias,y_scale,model)
-    err   = err_segs(y_hat,y,l_segs;silent=silent)
-    @info("test  error: $(round(std(err),digits=2)) nT")
+    err   = err_segs(y_hat,y,l_segs;silent=silent_debug)
+    silent || @info("test  error: $(round(std(err),digits=2)) nT")
 
     return (y_hat, err)
 end # function nn_comp_1_test
@@ -282,8 +283,8 @@ function nn_comp_1_test(x::Matrix, y, data_norms::Tuple, model::Chain;
 
     # get results
     y_hat = nn_comp_1_fwd(x,data_norms,model)
-    err   = err_segs(y_hat,y,l_segs;silent=silent)
-    @info("test  error: $(round(std(err),digits=2)) nT")
+    err   = err_segs(y_hat,y,l_segs;silent=silent_debug)
+    silent || @info("test  error: $(round(std(err),digits=2)) nT")
 
     return (y_hat, err)
 end # function nn_comp_1_test
@@ -311,7 +312,7 @@ end # function nn_comp_1_test
                     A_test::Matrix       = Array{Any}(undef,0,0),
                     x_test::Matrix       = Array{Any}(undef,0,0),
                     y_test::Vector       = [],
-                    silent::Bool         = true)
+                    silent::Bool         = false)
 
 Train neural network-based aeromagnetic compensation, model 2.
 """
@@ -337,7 +338,7 @@ function nn_comp_2_train(A, x, y, no_norm;
                          A_test::Matrix       = Array{Any}(undef,0,0),
                          x_test::Matrix       = Array{Any}(undef,0,0),
                          y_test::Vector       = [],
-                         silent::Bool         = true)
+                         silent::Bool         = false)
 
     # convert to Float32 for ~50% speedup
     A       = convert.(Float32,A)
@@ -358,12 +359,12 @@ function nn_comp_2_train(A, x, y, no_norm;
         if k_pca > 0
             if k_pca > size(x,2)
                 k_pca = size(x,2)
-                @info("reducing k_pca to $k_pca, size(x,2)")
+                silent || @info("reducing k_pca to $k_pca, size(x,2)")
             end
             (_,S,V) = svd(cov(x_norm))
             v_scale = V[:,1:k_pca]*inv(Diagonal(sqrt.(S[1:k_pca])))
             var_ret = round(sum(sqrt.(S[1:k_pca]))/sum(sqrt.(S))*100,digits=6)
-            @info("k_pca = $k_pca of $(size(x,2)), variance retained: $var_ret %")
+            silent || @info("k_pca = $k_pca of $(size(x,2)), variance retained: $var_ret %")
         else
             v_scale = I(size(x,2))
         end
@@ -462,9 +463,9 @@ function nn_comp_2_train(A, x, y, no_norm;
                                                              model_type   = model_type,
                                                              TL_coef_norm = TL_coef_norm,
                                                              l_segs       = l_segs_test,
-                                                             silent       = silent)[2]))
+                                                             silent       = silent_debug)[2]))
 
-    @info("epoch 0: loss = $best_loss")
+    silent || @info("epoch 0: loss = $best_loss")
     for i = 1:epoch_adam
         if model_type in [:m2a,:m2b,:m2d] # train on NN model weights only
             Flux.train!(loss,Flux.params(m),data_train,opt)
@@ -478,25 +479,25 @@ function nn_comp_2_train(A, x, y, no_norm;
                 m_store       = deepcopy(m)
                 TL_coef_store = deepcopy(TL_coef_norm)
             end
-            mod(i,5) == 0 && @info("epoch $i: loss = $best_loss")
+            mod(i,5) == 0 && !silent && @info("epoch $i: loss = $best_loss")
         else
             test_error = std(nn_comp_2_test(A_norm_test,x_norm_test,y_test,y_bias,y_scale,m;
                                             model_type   = model_type,
                                             TL_coef_norm = TL_coef_norm,
                                             l_segs       = l_segs_test,
-                                            silent       = silent)[2])
+                                            silent       = silent_debug)[2])
             if test_error < best_test_error
                 best_test_error = test_error
                 m_store         = deepcopy(m)
                 TL_coef_store   = deepcopy(TL_coef_norm)
             end
-            mod(i,5) == 0 && @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error,digits=2)) nT")
+            mod(i,5) == 0 && !silent && @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error,digits=2)) nT")
         end
-        if mod(i,10) == 0
+        if (mod(i,10) == 0) & !silent
             y_hat = nn_comp_2_fwd(A_norm,x_norm,y_bias,y_scale,m;
                                   model_type   = model_type,
                                   TL_coef_norm = TL_coef_norm)
-            err   = err_segs(y_hat,y,l_segs;silent=silent)
+            err   = err_segs(y_hat,y,l_segs;silent=silent_debug)
             @info("$i train error: $(round(std(err),digits=2)) nT")
             isempty(x_test) || @info("$i test  error: $(round((test_error),digits=2)) nT")
         end
@@ -506,10 +507,10 @@ function nn_comp_2_train(A, x, y, no_norm;
     TL_coef_norm = TL_coef_store
 
     if epoch_lbfgs > 0 # LBFGS, may overfit depending on iterations
-        model_type == :m2c && (@info ("LBFGS will only update NN model weights (not TL coef)"))
+        model_type == :m2c && !silent && @info("LBFGS will only update NN model weights (not TL coef)")
         data = Flux.DataLoader((A_norm',x_norm',y_norm'),shuffle=true,batchsize=batchsize)
 
-        function lbfgs_train!(m_l,data_l,iter,t_l,TL_coef_l)
+        function lbfgs_train!(m_l,data_l,iter,t_l,TL_coef_l,silent)
             (A_l,x_l,y_l) = data_l.data
             loss_() = loss_m2(A_l,x_l,y_l,t_l,TL_coef_l)
             refresh()
@@ -520,19 +521,20 @@ function nn_comp_2_train(A, x, y, no_norm;
             end
             opt = LBFGS()
             (_,_,fg!,p0) = optfuns(loss_,params)
-            optimize(only_fg!(fg!),p0,opt,Options(iterations=iter,show_trace=true))
+            options = Options(iterations=iter,show_every=5,show_trace=!silent)
+            optimize(only_fg!(fg!),p0,opt,options)
         end # function lbfgs_train!
 
         # train NN with LBFGS optimizer
-        lbfgs_train!(m,data,epoch_lbfgs,model_type,TL_coef_norm)
+        lbfgs_train!(m,data,epoch_lbfgs,model_type,TL_coef_norm,silent)
     end
 
     # get results
     y_hat = nn_comp_2_fwd(A_norm,x_norm,y_bias,y_scale,m;
                           model_type   = model_type,
                           TL_coef_norm = TL_coef_norm)
-    err   = err_segs(y_hat,y,l_segs;silent=silent)
-    @info("train error: $(round(std(err),digits=2)) nT")
+    err   = err_segs(y_hat,y,l_segs;silent=silent_debug)
+    silent || @info("train error: $(round(std(err),digits=2)) nT")
 
     if !isempty(x_test)
         nn_comp_2_test(A_norm_test,x_norm_test,y_test,y_bias,y_scale,m;
@@ -638,8 +640,8 @@ function nn_comp_2_test(A_norm::AbstractMatrix, x_norm::AbstractMatrix, y, y_bia
     y_hat = nn_comp_2_fwd(A_norm,x_norm,y_bias,y_scale,model;
                           model_type   = model_type,
                           TL_coef_norm = TL_coef_norm)
-    err   = err_segs(y_hat,y,l_segs;silent=silent)
-    @info("test  error: $(round(std(err),digits=2)) nT")
+    err   = err_segs(y_hat,y,l_segs;silent=silent_debug)
+    silent || @info("test  error: $(round(std(err),digits=2)) nT")
 
     return (y_hat, err)
 end # function nn_comp_2_test
@@ -666,8 +668,8 @@ function nn_comp_2_test(A::Matrix, x::Matrix, y, data_norms::Tuple, model::Chain
     y_hat = nn_comp_2_fwd(A,x,data_norms,model;
                           model_type = model_type,
                           TL_coef    = TL_coef)
-    err   = err_segs(y_hat,y,l_segs;silent=silent)
-    @info("test  error: $(round(std(err),digits=2)) nT")
+    err   = err_segs(y_hat,y,l_segs;silent=silent_debug)
+    silent || @info("test  error: $(round(std(err),digits=2)) nT")
 
     return (y_hat, err)
 end # function nn_comp_2_test
@@ -715,7 +717,7 @@ coefficients from the vector form.
 function TL_vec2mat(TL_coef::Vector, terms; Bt_scale=50000f0)
     @assert any([:permanent,:p,:permanent3,:p3] .∈ (terms,)) "permanent terms are required"
     @assert any([:induced,:i,:induced6,:i6,:induced5,:i5,:induced3,:i3] .∈ (terms,)) "induced terms are required"
-    @assert !any([:fdm,:f,:d,:fdm3,:f3,:d3,:bias,:b] .∈ (terms,)) "derivative and bias terms may not be used"
+    @assert !any([:fdm,:f,:fdm3,:f3,:bias,:b] .∈ (terms,)) "derivative and bias terms may not be used"
 
     N = length(TL_coef)
     A_test = create_TL_A([1.0],[1.0],[1.0];terms=terms)
@@ -864,7 +866,7 @@ end # function get_TL_aircraft_vec
                     B_dot_test::Matrix   = Array{Any}(undef,0,0),
                     x_test::Matrix       = Array{Any}(undef,0,0),
                     y_test::Vector       = [],
-                    silent::Bool         = true)
+                    silent::Bool         = false)
 
 Train neural network-based aeromagnetic compensation, model 3. Model 3
 architectures retain the Tolles-Lawson (TL) terms in vector form, making it
@@ -914,7 +916,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
                          B_dot_test::Matrix   = Array{Any}(undef,0,0),
                          x_test::Matrix       = Array{Any}(undef,0,0),
                          y_test::Vector       = [],
-                         silent::Bool         = true)
+                         silent::Bool         = false)
 
     @assert (α_sgl,λ_sgl) == (1,0)  "sparse group Lasso not implemented in nn_comp_3"
     @assert y_type in [:a,:b,:c,:d] "unsupported y_type = $y_type for nn_comp_3"
@@ -950,12 +952,12 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
         if k_pca > 0
             if k_pca > size(x,2)
                 k_pca = size(x,2)
-                @info("reducing k_pca to $k_pca, size(x,2)")
+                silent || @info("reducing k_pca to $k_pca, size(x,2)")
             end
             (_,S,V) = svd(cov(x_norm))
             v_scale = V[:,1:k_pca]*inv(Diagonal(sqrt.(S[1:k_pca])))
             var_ret = round(sum(sqrt.(S[1:k_pca]))/sum(sqrt.(S))*100,digits=6)
-            @info("k_pca = $k_pca of $(size(x,2)), variance retained: $var_ret %")
+            silent || @info("k_pca = $k_pca of $(size(x,2)), variance retained: $var_ret %")
         else
             v_scale = I(size(x,2))
         end
@@ -988,7 +990,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
         y_norm_val      = y_norm[p_val  ,:]
 
         if model_type in [:m3sc,:m3vc]
-            @info("making curriculum")
+            silent || @info("making curriculum")
             # calculate TL estimate in training data
             y_TL = nn_comp_3_fwd(B_unit_train,B_vec_train,B_vec_dot_train,x_norm_train,y_bias,y_scale,Chain(),
                                  TL_coef_p,TL_coef_i,TL_coef_e;
@@ -1087,9 +1089,9 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
                                                              use_nn     = use_nn,
                                                              denorm     = true,
                                                              testmode   = true,
-                                                             silent     = silent)[2]))
+                                                             silent     = silent_debug)[2]))
 
-    @info("epoch 0: loss = $best_loss")
+    silent || @info("epoch 0: loss = $best_loss")
     for i = 1:epoch_adam
         if model_type in [:m3tl,:m3s,:m3v] # train on NN model weights + TL coef
             Flux.train!(loss,Flux.params(m,TL_coef_p,TL_coef_i.data,TL_coef_e),data_train,opt)
@@ -1123,7 +1125,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
                 m_store       = deepcopy(m)
                 TL_coef_store = TL_coef
             end
-            mod(i,5) == 0 && @info("epoch $i: loss = $best_loss")
+            mod(i,5) == 0 && !silent && @info("epoch $i: loss = $best_loss")
         else
             test_error = std(nn_comp_3_test(B_unit_test,B_vec_test,B_vec_dot_test,
                                             x_norm_test,y_test,y_bias,y_scale,m,
@@ -1134,15 +1136,15 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
                                             use_nn     = use_nn,
                                             denorm     = true,
                                             testmode   = true,
-                                            silent     = silent)[2])
+                                            silent     = silent_debug)[2])
             if test_error < best_test_error
                 best_test_error = test_error
                 m_store         = deepcopy(m)
                 TL_coef_store   = TL_coef
             end
-            mod(i,5) == 0 && @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error,digits=2)) nT")
+            mod(i,5) == 0 && !silent && @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error,digits=2)) nT")
         end
-        if mod(i,10) == 0
+        if (mod(i,10) == 0) & !silent
             y_hat = nn_comp_3_fwd(B_unit,B_vec,B_vec_dot,x_norm,y_bias,y_scale,m,
                                   TL_coef_p,TL_coef_i,TL_coef_e;
                                   model_type = model_type,
@@ -1150,7 +1152,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
                                   use_nn     = use_nn,
                                   denorm     = true,
                                   testmode   = true)
-            err   = err_segs(y_hat,y,l_segs;silent=silent)
+            err   = err_segs(y_hat,y,l_segs;silent=silent_debug)
             @info("$i train error: $(round(std(err),digits=2)) nT")
             isempty(x_test) || @info("$i test  error: $(round((test_error),digits=2)) nT")
         end
@@ -1161,15 +1163,15 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
     (TL_coef_p,TL_coef_i,TL_coef_e) = TL_vec2mat(TL_coef,terms_A;Bt_scale=Bt_scale)
 
     if (epoch_lbfgs > 0) & (model_type == :m3tl)
-        @info ("LBFGS not supported with $model_type model type")
+        silent || @info("LBFGS not supported with $model_type model type")
         epoch_lbfgs = 0
     end
 
     if epoch_lbfgs > 0 # LBFGS, may overfit depending on iterations
-        @info ("LBFGS will only update NN model weights (not TL coef)")
+        silent || @info("LBFGS will only update NN model weights (not TL coef)")
         data = Flux.DataLoader((B_unit',B_vec',B_vec_dot',x_norm',y_norm'),shuffle=true,batchsize=batchsize)
 
-        function lbfgs_train!(m_l,data_l,iter,t_l,p_l,i_l,e_l)
+        function lbfgs_train!(m_l,data_l,iter,t_l,p_l,i_l,e_l,silent)
             (Bu_l,Bv_l,Bvd_l,x_l,y_l) = data_l.data
             # loss_() = loss(Bu_l,Bv_l,Bvd_l,x_l,y_l)
             loss_() = loss_m3(Bu_l,Bv_l,Bvd_l,x_l,y_l,t_l,p_l,i_l,e_l,true)
@@ -1177,11 +1179,12 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
             params = Flux.params(m_l,p_l,i_l,e_l)
             opt = LBFGS()
             (_,_,fg!,p0) = optfuns(loss_,params)
-            optimize(only_fg!(fg!),p0,opt,Options(iterations=iter,show_trace=true))
+            options = Options(iterations=iter,show_every=5,show_trace=!silent)
+            optimize(only_fg!(fg!),p0,opt,options)
         end # function lbfgs_train!
 
         # train NN with LBFGS optimizer
-        lbfgs_train!(m,data,epoch_lbfgs,model_type,TL_coef_p,TL_coef_i.data,TL_coef_e)
+        lbfgs_train!(m,data,epoch_lbfgs,model_type,TL_coef_p,TL_coef_i.data,TL_coef_e,silent)
     end
 
     TL_coef = TL_mat2vec(TL_coef_p,TL_coef_i,TL_coef_e,terms_A;Bt_scale=Bt_scale)
@@ -1195,8 +1198,8 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
                           use_nn     = use_nn,
                           denorm     = true,
                           testmode   = true)
-    err   = err_segs(y_hat,y,l_segs;silent=silent)
-    @info("train error: $(round(std(err),digits=2)) nT")
+    err   = err_segs(y_hat,y,l_segs;silent=silent_debug)
+    silent || @info("train error: $(round(std(err),digits=2)) nT")
 
     if !isempty(x_test)
         nn_comp_3_test(B_unit_test,B_vec_test,B_vec_dot_test,
@@ -1380,8 +1383,8 @@ function nn_comp_3_test(B_unit, B_vec, B_vec_dot, x_norm, y, y_bias, y_scale, mo
                           use_nn     = use_nn,
                           denorm     = denorm,
                           testmode   = testmode)
-    err   = err_segs(y_hat,y,l_segs;silent=silent)
-    @info("test  error: $(round(std(err),digits=2)) nT")
+    err   = err_segs(y_hat,y,l_segs;silent=silent_debug)
+    silent || @info("test  error: $(round(std(err),digits=2)) nT")
 
     return (y_hat, err)
 end # function nn_comp_3_test
@@ -1416,8 +1419,8 @@ function nn_comp_3_test(A, Bt, B_dot, x, y, data_norms::Tuple, model::Chain;
                           y_type     = y_type,
                           TL_coef    = TL_coef,
                           terms_A    = terms_A)
-    err   = err_segs(y_hat,y,l_segs;silent=silent)
-    @info("test  error: $(round(std(err),digits=2)) nT")
+    err   = err_segs(y_hat,y,l_segs;silent=silent_debug)
+    silent || @info("test  error: $(round(std(err),digits=2)) nT")
 
     return (y_hat, err)
 end # function nn_comp_3_test
@@ -1515,8 +1518,8 @@ function plsr_fit(x, y, k::Int=size(x,2);   # N x nx , N x ny , k
     # get results
     y_hat_norm = norm_sets(x;norm_type=:standardize)[3]*coef .+ bias
     y_hat      = denorm_sets(y_bias,y_scale,y_hat_norm)
-    err        = err_segs(y_hat,y,l_segs;silent=silent)
-    @info("fit  error: $(round(std(err),digits=2)) nT")
+    err        = err_segs(y_hat,y,l_segs;silent=silent_debug)
+    silent || @info("fit  error: $(round(std(err),digits=2)) nT")
 
     # pack data normalizations
     data_norms = (x_bias,x_scale,y_bias,y_scale)
@@ -1581,8 +1584,8 @@ function elasticnet_fit(x, y, α=0.99;  λ = -1,
     # get results
     y_hat_norm = x_norm*coef .+ bias
     y_hat      = denorm_sets(y_bias,y_scale,y_hat_norm)
-    err        = err_segs(y_hat,y,l_segs;silent=silent)
-    @info("fit  error: $(round(std(err),digits=2)) nT")
+    err        = err_segs(y_hat,y,l_segs;silent=silent_debug)
+    silent || @info("fit  error: $(round(std(err),digits=2)) nT")
 
     # pack data normalizations
     data_norms = (x_bias,x_scale,y_bias,y_scale)
@@ -1640,9 +1643,9 @@ function linear_fit(x, y;
 
     y_hat_norm = x_norm*coef .+ bias
     y_hat      = denorm_sets(y_bias,y_scale,y_hat_norm)
-    err        = err_segs(y_hat,y,l_segs;silent=silent)
-    @info("fit  error: $(round(std(err),digits=2)) nT")
-    @info("note that fit error may be misleading if using bpf")
+    err        = err_segs(y_hat,y,l_segs;silent=silent_debug)
+    silent || @info("fit  error: $(round(std(err),digits=2)) nT")
+    silent || @info("note that fit error may be misleading if using bpf")
 
     # pack data normalizations
     data_norms = (x_bias,x_scale,y_bias,y_scale)
@@ -1727,8 +1730,8 @@ function linear_test(x_norm, y, y_bias, y_scale, model;
 
     # get results
     y_hat = linear_fwd(x_norm,y_bias,y_scale,model)
-    err   = err_segs(y_hat,y,l_segs;silent=silent)
-    @info("test  error: $(round(std(err),digits=2)) nT")
+    err   = err_segs(y_hat,y,l_segs;silent=silent_debug)
+    silent || @info("test  error: $(round(std(err),digits=2)) nT")
 
     return (y_hat, err)
 end # function linear_test
@@ -1758,8 +1761,8 @@ function linear_test(x, y, data_norms::Tuple, model;
 
     # get results
     y_hat = linear_fwd(x,data_norms,model)
-    err   = err_segs(y_hat,y,l_segs;silent=silent)
-    @info("test  error: $(round(std(err),digits=2)) nT")
+    err   = err_segs(y_hat,y,l_segs;silent=silent_debug)
+    silent || @info("test  error: $(round(std(err),digits=2)) nT")
 
     return (y_hat, err)
 end # function linear_test
@@ -1769,7 +1772,7 @@ end # function linear_test
                comp_params::CompParams = NNCompParams(),
                xyz_test::XYZ           = xyz,
                ind_test::BitVector     = BitVector(),
-               silent::Bool            = true)
+               silent::Bool            = false)
 
 Train an aeromagnetic compensation model.
 
@@ -1795,7 +1798,7 @@ function comp_train(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
                     comp_params::CompParams = NNCompParams(),
                     xyz_test::XYZ           = xyz,
                     ind_test::BitVector     = BitVector(),
-                    silent::Bool            = true)
+                    silent::Bool            = false)
 
     seed!(2) # for reproducibility
     t0 = time()
@@ -1818,12 +1821,26 @@ function comp_train(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
     end
 
     if (model_type in [:TL,:mod_TL]) & (y_type != :e)
-        @info("forcing y_type = :e (BPF'd total field)")
+        silent || @info("forcing y_type $(y_type) => :e (BPF'd total field)")
         y_type = :e
     end
     if (model_type in [:map_TL]) & (y_type != :c)
-        y_type  = :c
-        @info("forcing y_type = :c (aircraft field #1, using map)")
+        silent || @info("forcing y_type $(y_type) => :c (aircraft field #1, using map)")
+        y_type = :c
+    end
+    if model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc]
+        for term in terms_A
+            if term in [:fdm,:f,:fdm3,:f3,:bias,:b]
+                silent || @info("removing $term term from terms_A")
+                A_test = create_TL_A([1.0],[1.0],[1.0];terms=terms_A)
+                if length(A_test) == length(TL_coef)
+                    ind_term = get_TL_term_ind(term,terms_A)
+                    silent || @info("removing $(sum(ind_term)) value(s) from TL_coef")
+                    TL_coef = TL_coef[.!ind_term]
+                end
+                terms_A = terms_A[terms_A .!= term]
+            end
+        end
     end
 
     # map values along trajectory (if needed)
@@ -1978,6 +1995,7 @@ function comp_train(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
             comp_params = NNCompParams(comp_params,
                                        data_norms = data_norms,
                                        model      = model,
+                                       terms_A    = terms_A,
                                        TL_coef    = TL_coef)
             save_comp_params(comp_params,drop_fi_bson*"_$i.bson")
 
@@ -2085,6 +2103,7 @@ function comp_train(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
         comp_params = NNCompParams(comp_params,
                                    data_norms = data_norms,
                                    model      = model,
+                                   terms_A    = terms_A,
                                    TL_coef    = TL_coef)
     elseif typeof(comp_params) <: LinCompParams
         comp_params = LinCompParams(comp_params,
@@ -2092,7 +2111,7 @@ function comp_train(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
                                     model      = model)
     end
 
-    print_time(time()-t0,1)
+    silent || print_time(time()-t0,1)
 
     return (comp_params, y, y_hat, err, features)
 end # function comp_train
@@ -2104,7 +2123,7 @@ end # function comp_train
                comp_params::CompParams = NNCompParams(),
                xyz_test::XYZ           = xyz_vec[1],
                ind_test::BitVector     = BitVector(),
-               silent::Bool            = true)
+               silent::Bool            = false)
 
 Train an aeromagnetic compensation model.
 
@@ -2132,7 +2151,7 @@ function comp_train(xyz_vec::Vector{XYZ20{Int64,Float64}},
                     comp_params::CompParams = NNCompParams(),
                     xyz_test::XYZ           = xyz_vec[1],
                     ind_test::BitVector     = BitVector(),
-                    silent::Bool            = true)
+                    silent::Bool            = false)
 
     seed!(2) # for reproducibility
     t0 = time()
@@ -2155,12 +2174,26 @@ function comp_train(xyz_vec::Vector{XYZ20{Int64,Float64}},
     end
 
     if (model_type in [:TL,:mod_TL]) & (y_type != :e)
-        @info("forcing y_type = :e (BPF'd total field)")
+        silent || @info("forcing y_type $(y_type) => :e (BPF'd total field)")
         y_type = :e
     end
     if (model_type in [:map_TL]) & (y_type != :c)
-        y_type  = :c
-        @info("forcing y_type = :c (aircraft field #1, using map)")
+        silent || @info("forcing y_type $(y_type) => :c (aircraft field #1, using map)")
+        y_type = :c
+    end
+    if model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc]
+        for term in terms_A
+            if term in [:fdm,:f,:fdm3,:f3,:bias,:b]
+                silent || @info("removing $term term from terms_A")
+                A_test = create_TL_A([1.0],[1.0],[1.0];terms=terms_A)
+                if length(A_test) == length(TL_coef)
+                    ind_term = get_TL_term_ind(term,terms_A)
+                    silent || @info("removing $(sum(ind_term)) value(s) from TL_coef")
+                    TL_coef = TL_coef[.!ind_term]
+                end
+                terms_A = terms_A[terms_A .!= term]
+            end
+        end
     end
 
     # initialize loop over XYZ structs and indices
@@ -2363,6 +2396,7 @@ function comp_train(xyz_vec::Vector{XYZ20{Int64,Float64}},
             comp_params = NNCompParams(comp_params,
                                        data_norms = data_norms,
                                        model      = model,
+                                       terms_A    = terms_A,
                                        TL_coef    = TL_coef)
             save_comp_params(comp_params,drop_fi_bson*"_$i.bson")
 
@@ -2470,6 +2504,7 @@ function comp_train(xyz_vec::Vector{XYZ20{Int64,Float64}},
         comp_params = NNCompParams(comp_params,
                                    data_norms = data_norms,
                                    model      = model,
+                                   terms_A    = terms_A,
                                    TL_coef    = TL_coef)
     elseif typeof(comp_params) <: LinCompParams
         comp_params = LinCompParams(comp_params,
@@ -2477,7 +2512,7 @@ function comp_train(xyz_vec::Vector{XYZ20{Int64,Float64}},
                                     model      = model)
     end
 
-    print_time(time()-t0,1)
+    silent || print_time(time()-t0,1)
 
     return (comp_params, y, y_hat, err, features)
 end # function comp_train
@@ -2485,7 +2520,7 @@ end # function comp_train
 """
     comp_train(lines, df_line::DataFrame, df_flight::DataFrame,
                df_map::DataFrame, comp_params::CompParams=NNCompParams();
-               silent::Bool=true)
+               silent::Bool=false)
 
 Train an aeromagnetic compensation model.
 
@@ -2508,7 +2543,7 @@ Train an aeromagnetic compensation model.
 """
 function comp_train(lines, df_line::DataFrame, df_flight::DataFrame,
                     df_map::DataFrame, comp_params::CompParams=NNCompParams();
-                    silent::Bool=true)
+                    silent::Bool=false)
 
     seed!(2) # for reproducibility
     t0 = time()
@@ -2531,12 +2566,26 @@ function comp_train(lines, df_line::DataFrame, df_flight::DataFrame,
     end
 
     if (model_type in [:TL,:mod_TL]) & (y_type != :e)
-        @info("forcing y_type = :e (BPF'd total field)")
+        silent || @info("forcing y_type $(y_type) => :e (BPF'd total field)")
         y_type = :e
     end
-    if (model_type in [:map_TL]) & (y_type != :c)
-        y_type  = :c
-        @info("forcing y_type = :c (aircraft field #1, using map)")
+    if (model_type in [:map_TL]) & (y_type != :c)      
+        silent || @info("forcing y_type $(y_type) => :c (aircraft field #1, using map)")
+        y_type = :c
+    end
+    if model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc]
+        for term in terms_A
+            if term in [:fdm,:f,:fdm3,:f3,:bias,:b]
+                silent || @info("removing $term term from terms_A")
+                A_test = create_TL_A([1.0],[1.0],[1.0];terms=terms_A)
+                if length(A_test) == length(TL_coef)
+                    ind_term = get_TL_term_ind(term,terms_A)
+                    silent || @info("removing $(sum(ind_term)) value(s) from TL_coef")
+                    TL_coef = TL_coef[.!ind_term]
+                end
+                terms_A = terms_A[terms_A .!= term]
+            end
+        end
     end
 
     mod_TL = model_type == :mod_TL ? true : false
@@ -2559,7 +2608,7 @@ function comp_train(lines, df_line::DataFrame, df_flight::DataFrame,
                                                            mod_TL           = mod_TL,
                                                            map_TL           = map_TL,
                                                            return_B         = true,
-                                                           silent           = true)
+                                                           silent           = silent_debug)
     else
         (A,x,y,no_norm,features,l_segs) = get_Axy(lines,df_line,df_flight,df_map,
                                                   features_setup;
@@ -2576,7 +2625,7 @@ function comp_train(lines, df_line::DataFrame, df_flight::DataFrame,
                                                   mod_TL           = mod_TL,
                                                   map_TL           = map_TL,
                                                   return_B         = false,
-                                                  silent           = true)
+                                                  silent           = silent_debug)
     end
 
     y_hat = zero(y) # initialize
@@ -2661,6 +2710,7 @@ function comp_train(lines, df_line::DataFrame, df_flight::DataFrame,
             comp_params = NNCompParams(comp_params,
                                        data_norms = data_norms,
                                        model      = model,
+                                       terms_A    = terms_A,
                                        TL_coef    = TL_coef)
             save_comp_params(comp_params,drop_fi_bson*"_$i.bson")
 
@@ -2759,20 +2809,18 @@ function comp_train(lines, df_line::DataFrame, df_flight::DataFrame,
                             mod_TL           = mod_TL,
                             map_TL           = map_TL,
                             return_B         = false,
-                            silent           = true)
+                            silent           = silent_debug)
                 (y_hat,err) = linear_test(A_no_bpf,y_no_bpf,data_norms,model;
                                           silent=silent)
             end
         elseif model_type in [:elasticnet]
-            (model,data_norms,y_hat,err) =
-                elasticnet_fit(x,y;
-                               l_segs      = l_segs,
-                               silent      = silent)
+            (model,data_norms,y_hat,err) = elasticnet_fit(x,y;
+                                                          l_segs = l_segs,
+                                                          silent = silent)
         elseif model_type in [:plsr]
-            (model,data_norms,y_hat,err) =
-                plsr_fit(x,y,k_plsr;
-                         l_segs      = l_segs,
-                         silent      = silent)
+            (model,data_norms,y_hat,err) = plsr_fit(x,y,k_plsr;
+                                                    l_segs = l_segs,
+                                                    silent = silent)
         else
             error("$model_type model type not defined")
         end
@@ -2783,6 +2831,7 @@ function comp_train(lines, df_line::DataFrame, df_flight::DataFrame,
         comp_params = NNCompParams(comp_params,
                                    data_norms = data_norms,
                                    model      = model,
+                                   terms_A    = terms_A,
                                    TL_coef    = TL_coef)
     elseif typeof(comp_params) <: LinCompParams
         comp_params = LinCompParams(comp_params,
@@ -2790,7 +2839,7 @@ function comp_train(lines, df_line::DataFrame, df_flight::DataFrame,
                                     model      = model)
     end
 
-    print_time(time()-t0,1)
+    silent || print_time(time()-t0,1)
 
     return (comp_params, y, y_hat, err, features)
 end # function comp_train
@@ -2839,17 +2888,27 @@ function comp_test(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
         perm_fi = false
     end
 
-    if y_type == :e
-        @info("forcing y_type = :d (Δmag)")
-        y_type = :d
-    end
-    if (model_type in [:TL,:mod_TL]) & (y_type != :d)
-        @info("forcing y_type = :d (Δmag)")
+    if ((model_type in [:TL,:mod_TL]) & (y_type != :d)) | (y_type == :e)
+        silent || @info("forcing y_type $(y_type) => :d (Δmag)")
         y_type = :d
     end
     if (model_type in [:map_TL]) & (y_type != :c)
-        y_type  = :c
-        @info("forcing y_type = :c (aircraft field #1, using map)")
+        silent || @info("forcing y_type $(y_type) => :c (aircraft field #1, using map)")
+        y_type = :c
+    end
+    if model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc]
+        for term in terms_A
+            if term in [:fdm,:f,:fdm3,:f3,:bias,:b]
+                silent || @info("ignoring $term term in terms_A")
+                A_test = create_TL_A([1.0],[1.0],[1.0];terms=terms_A)
+                if length(A_test) == length(TL_coef)
+                    ind_term = get_TL_term_ind(term,terms_A)
+                    silent || @info("ignoring $(sum(ind_term)) value(s) in TL_coef")
+                    TL_coef = TL_coef[.!ind_term]
+                end
+                terms_A = terms_A[terms_A .!= term]
+            end
+        end
     end
 
     # map values along trajectory (if needed)
@@ -2901,7 +2960,7 @@ function comp_test(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
                 fi_csv = perm_fi_csv
             elseif drop_fi
                 x_fi = x[:, axes(x,2) .!= i]
-                comp_params = get_comp_params(drop_fi_bson*"_$i.bson",true)
+                comp_params = get_comp_params(drop_fi_bson*"_$i.bson",silent_debug)
                 data_norms  = comp_params.data_norms
                 model       = comp_params.model
                 fi_csv      = drop_fi_csv
@@ -2938,7 +2997,7 @@ function comp_test(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
 
         end
 
-        @info("returning best feature importance results")
+        silent || @info("returning best feature importance results")
 
     else
 
@@ -2970,7 +3029,7 @@ function comp_test(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
 
     end
 
-    print_time(time()-t0,1)
+    silent || print_time(time()-t0,1)
 
     return (y, y_hat, err, features)
 end # function comp_test
@@ -3022,17 +3081,27 @@ function comp_test(lines, df_line::DataFrame, df_flight::DataFrame,
         perm_fi = false
     end
 
-    if y_type == :e
-        @info("forcing y_type = :d (Δmag)")
-        y_type = :d
-    end
-    if (model_type in [:TL,:mod_TL]) & (y_type != :d)
-        @info("forcing y_type = :d (Δmag)")
+    if ((model_type in [:TL,:mod_TL]) & (y_type != :d)) | (y_type == :e)
+        silent || @info("forcing y_type $(y_type) => :d (Δmag)")
         y_type = :d
     end
     if (model_type in [:map_TL]) & (y_type != :c)
-        y_type  = :c
-        @info("forcing y_type = :c (aircraft field #1, using map)")
+        silent || @info("forcing y_type $(y_type) => :c (aircraft field #1, using map)")
+        y_type = :c
+    end
+    if model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc]
+        for term in terms_A
+            if term in [:fdm,:f,:fdm3,:f3,:bias,:b]
+                silent || @info("ignoring $term term in terms_A")
+                A_test = create_TL_A([1.0],[1.0],[1.0];terms=terms_A)
+                if length(A_test) == length(TL_coef)
+                    ind_term = get_TL_term_ind(term,terms_A)
+                    silent || @info("ignoring $(sum(ind_term)) value(s) in TL_coef")
+                    TL_coef = TL_coef[.!ind_term]
+                end
+                terms_A = terms_A[terms_A .!= term]
+            end
+        end
     end
 
     mod_TL = model_type == :mod_TL ? true : false
@@ -3055,7 +3124,7 @@ function comp_test(lines, df_line::DataFrame, df_flight::DataFrame,
                                                      mod_TL           = mod_TL,
                                                      map_TL           = map_TL,
                                                      return_B         = true,
-                                                     silent           = true)
+                                                     silent           = silent_debug)
     else
         (A,x,y,_,features,l_segs) = get_Axy(lines,df_line,df_flight,df_map,
                                             features_setup;
@@ -3072,7 +3141,7 @@ function comp_test(lines, df_line::DataFrame, df_flight::DataFrame,
                                             mod_TL           = mod_TL,
                                             map_TL           = map_TL,
                                             return_B         = false,
-                                            silent           = true)
+                                            silent           = silent_debug)
     end
 
     y_hat = zero(y) # initialize
@@ -3092,7 +3161,7 @@ function comp_test(lines, df_line::DataFrame, df_flight::DataFrame,
                 fi_csv = perm_fi_csv
             elseif drop_fi
                 x_fi = x[:, axes(x,2) .!= i]
-                comp_params = get_comp_params(drop_fi_bson*"_$i.bson",true)
+                comp_params = get_comp_params(drop_fi_bson*"_$i.bson",silent_debug)
                 data_norms  = comp_params.data_norms
                 model       = comp_params.model
                 fi_csv      = drop_fi_csv
@@ -3132,7 +3201,7 @@ function comp_test(lines, df_line::DataFrame, df_flight::DataFrame,
 
         end
 
-        @info("returning best feature importance results")
+        silent || @info("returning best feature importance results")
 
     else
 
@@ -3169,7 +3238,7 @@ function comp_test(lines, df_line::DataFrame, df_flight::DataFrame,
 
     end
 
-    print_time(time()-t0,1)
+    silent || print_time(time()-t0,1)
 
     return (y, y_hat, err, features)
 end # function comp_test
@@ -3229,7 +3298,7 @@ function comp_m2bc_test(lines, df_line::DataFrame,
                                         bpf_mag          = bpf_mag,
                                         reorient_vec     = reorient_vec,
                                         return_B         = false,
-                                        silent           = true,)
+                                        silent           = silent_debug)
 
     # convert to Float32 for consistency with nn_comp_2_train
     A       = convert.(Float32,A)
@@ -3252,12 +3321,12 @@ function comp_m2bc_test(lines, df_line::DataFrame,
     y_nn  = vec(m(x_norm'))     .* y_scale
     y_TL  = A_norm*TL_coef_norm .* y_scale
     y_hat = y_nn + y_TL .+ y_bias
-    err   = err_segs(y_hat,y,l_segs;silent=silent)
-    @info("std    y_nn: $(round(std(y_nn),digits=2)) nT")
-    @info("std    y_TL: $(round(std(y_TL),digits=2)) nT")
-    @info("test  error: $(round(std(err),digits=2)) nT")
+    err   = err_segs(y_hat,y,l_segs;silent=silent_debug)
+    silent || @info("std    y_nn: $(round(std(y_nn),digits=2)) nT")
+    silent || @info("std    y_TL: $(round(std(y_TL),digits=2)) nT")
+    silent || @info("test  error: $(round(std(err ),digits=2)) nT")
 
-    print_time(time()-t0,1)
+    silent || print_time(time()-t0,1)
 
     return (y_nn, y_TL, y, y_hat, err, features)
 end # function comp_m2bc_test
@@ -3330,7 +3399,7 @@ function comp_m3_test(lines, df_line::DataFrame,
                                                  mod_TL           = mod_TL,
                                                  map_TL           = map_TL,
                                                  return_B         = true,
-                                                 silent           = silent)
+                                                 silent           = silent_debug)
 
     # convert to Float32 for consistency with nn_comp_3_train
     A       = convert.(Float32,A)
@@ -3384,10 +3453,10 @@ function comp_m3_test(lines, df_line::DataFrame,
                           denorm     = true,
                           testmode   = true)
 
-    err = err_segs(y_hat,y,l_segs;silent=silent)
-    @info("test  error: $(round(std(err),digits=2)) nT")
+    err = err_segs(y_hat,y,l_segs;silent=silent_debug)
+    silent || @info("test  error: $(round(std(err),digits=2)) nT")
 
-    print_time(time()-t0,1)
+    silent || print_time(time()-t0,1)
 
     return (TL_perm, TL_induced, TL_eddy, TL_aircraft,
             B_unit, B_vec, y_nn, vec_aircraft, y, y_hat, err, features)
@@ -3398,7 +3467,7 @@ end # function comp_m3_test
                     mapS_train::Union{MapS,MapSd,MapS3D} = mapS_null,
                     mapS_test::Union{MapS,MapSd,MapS3D}  = mapS_null;
                     comp_params::CompParams = NNCompParams(),
-                    silent::Bool            = true)
+                    silent::Bool            = false)
 
 Train and evaluate performance of an aeromagnetic compensation model.
 
@@ -3428,7 +3497,7 @@ function comp_train_test(xyz_train::XYZ, xyz_test::XYZ, ind_train, ind_test,
                          mapS_train::Union{MapS,MapSd,MapS3D} = mapS_null,
                          mapS_test::Union{MapS,MapSd,MapS3D}  = mapS_null;
                          comp_params::CompParams = NNCompParams(),
-                         silent::Bool            = true)
+                         silent::Bool            = false)
 
     @assert typeof(xyz_train) == typeof(xyz_test) "xyz types do no match"
 
@@ -3448,7 +3517,7 @@ end # function comp_train_test
     comp_train_test(lines_train, lines_test,
                     df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame,
                     comp_params::CompParams = NNCompParams();
-                    silent::Bool            = true)
+                    silent::Bool            = false)
 
 Train and evaluate performance of an aeromagnetic compensation model.
 
@@ -3476,7 +3545,7 @@ Train and evaluate performance of an aeromagnetic compensation model.
 function comp_train_test(lines_train, lines_test,
                          df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame,
                          comp_params::CompParams = NNCompParams();
-                         silent::Bool            = true)
+                         silent::Bool            = false)
 
     (comp_params,y_train,y_train_hat,err_train,features) =
         comp_train(lines_train,df_line,df_flight,df_map,comp_params;silent=silent)

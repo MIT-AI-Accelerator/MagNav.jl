@@ -70,11 +70,9 @@ function get_map(map_file::String   = namad;
         map_yy .= deg2rad.(map_yy)
     elseif (file_units == :rad) & (map_units == :deg)
         map_xx .= rad2deg.(map_xx)
-        map_yy .= red2deg.(map_yy)
+        map_yy .= rad2deg.(map_yy)
     elseif file_units != map_units
         error("[$file_units] map file xx/yy units ≠ [$map_units] xx/yy map units")
-    elseif file_units ∉ [:rad,:deg]
-        @info("[$file_units] map file xx/yy units not defined")
     elseif map_units ∉ [:rad,:deg]
         @info("[$map_units] map xx/yy units not defined")
     end
@@ -179,8 +177,6 @@ function save_map(map_map, map_xx, map_yy, map_alt, map_h5::String="map_data.h5"
         error("[$map_units] xx/yy map units ≠ [$file_units] map file xx/yy units")
     elseif map_units ∉ [:rad,:deg]
         @info("[$map_units] map xx/yy units not defined")
-    elseif file_units ∉ [:rad,:deg]
-        @info("[$file_units] map file xx/yy units not defined")
     end
 
     map_alt  = convert.(eltype(map_xx),map_alt)

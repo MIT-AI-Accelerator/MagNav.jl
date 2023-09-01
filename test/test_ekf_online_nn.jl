@@ -1,12 +1,13 @@
 using MagNav, Test, MAT
 
+silent    = true
 map_file  = joinpath(@__DIR__,"test_data/test_data_map.mat")
 traj_file = joinpath(@__DIR__,"test_data/test_data_traj.mat")
 
 mapS      = get_map(map_file)
 itp_mapS  = map_interpolate(mapS)
 
-xyz    = get_XYZ0(traj_file,:traj,:none;silent=true)
+xyz    = get_XYZ0(traj_file,:traj,:none;silent)
 traj   = xyz.traj
 ins    = xyz.ins
 flux_a = xyz.flux_a
@@ -14,7 +15,7 @@ flux_a = xyz.flux_a
 terms       = [:p]
 batchsize   = 5
 comp_params = NNCompParams(model_type=:m1,terms=terms,batchsize=batchsize)
-comp_params = comp_train(xyz,trues(traj.N);comp_params=comp_params)[1]
+comp_params = comp_train(xyz,trues(traj.N);comp_params=comp_params,silent)[1]
 
 x = [xyz.mag_1_uc create_TL_A(flux_a;terms=terms)]
 y = xyz.mag_1_c

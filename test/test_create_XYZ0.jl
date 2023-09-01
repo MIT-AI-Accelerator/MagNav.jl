@@ -110,7 +110,7 @@ xyz_h5 = joinpath(@__DIR__,"test_create_XYZ0.h5")
 @testset "create_XYZ0 tests" begin
     @test typeof(create_XYZ0(mapS;alt=2000,t=10,mapV=mapV,
                  save_h5=true,xyz_h5=xyz_h5)) <: MagNav.XYZ0
-    @test typeof(create_XYZ0(mapS;t=10,mapV=mapV,VRW_sigma=1e6)) <: MagNav.XYZ0
+    @test_throws ErrorException create_XYZ0(mapS;t=10,mapV=mapV,VRW_sigma=1e6)
     @test typeof(create_XYZ0(mapS_mod;N_waves=0,mapV=mapV,
                  ll1 = rad2deg.((traj.lat[1],traj.lon[1])),
                  ll2 = rad2deg.((traj.lat[end],traj.lon[end])))) <: MagNav.XYZ0
