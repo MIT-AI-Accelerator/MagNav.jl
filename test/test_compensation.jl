@@ -60,13 +60,13 @@ comp_params_2d  = NNCompParams(model_type=:m2d ,terms=terms_p,
                                terms_A=terms_pie,TL_coef=TL_coef_pie,
                                batchsize=batchsize,epoch_adam=epoch_adam)
 comp_params_3tl = NNCompParams(model_type=:m3tl,terms=terms_pi,
-                               terms_A=terms_pieb,TL_coef=TL_coef_pie,
+                               terms_A=terms_pieb,TL_coef=[TL_coef_pie;0],
                                batchsize=batchsize,epoch_adam=epoch_adam)
 comp_params_3s  = NNCompParams(model_type=:m3s ,terms=terms_pi,
-                               terms_A=terms_pieb,TL_coef=TL_coef_pie,
+                               terms_A=terms_pieb,TL_coef=[TL_coef_pie;0],
                                batchsize=batchsize,epoch_adam=epoch_adam)
 comp_params_3v  = NNCompParams(model_type=:m3v ,terms=terms_pi,
-                               terms_A=terms_pieb,TL_coef=TL_coef_pie,
+                               terms_A=terms_pieb,TL_coef=[TL_coef_pie;0],
                                batchsize=batchsize,epoch_adam=epoch_adam)
 comp_params_3sc = NNCompParams(model_type=:m3sc,terms=terms_pi,
                                terms_A=terms_pie,TL_coef=TL_coef_pie,
