@@ -60,13 +60,13 @@ comp_params_2d  = NNCompParams(model_type=:m2d ,terms=terms_p,
                                terms_A=terms_pie,TL_coef=TL_coef_pie,
                                batchsize=batchsize,epoch_adam=epoch_adam)
 comp_params_3tl = NNCompParams(model_type=:m3tl,terms=terms_pi,
-                               terms_A=terms_pie,TL_coef=TL_coef_pie,
+                               terms_A=terms_pieb,TL_coef=TL_coef_pie,
                                batchsize=batchsize,epoch_adam=epoch_adam)
 comp_params_3s  = NNCompParams(model_type=:m3s ,terms=terms_pi,
-                               terms_A=terms_pie,TL_coef=TL_coef_pie,
+                               terms_A=terms_pieb,TL_coef=TL_coef_pie,
                                batchsize=batchsize,epoch_adam=epoch_adam)
 comp_params_3v  = NNCompParams(model_type=:m3v ,terms=terms_pi,
-                               terms_A=terms_pie,TL_coef=TL_coef_pie,
+                               terms_A=terms_pieb,TL_coef=TL_coef_pie,
                                batchsize=batchsize,epoch_adam=epoch_adam)
 comp_params_3sc = NNCompParams(model_type=:m3sc,terms=terms_pi,
                                terms_A=terms_pie,TL_coef=TL_coef_pie,
@@ -268,15 +268,11 @@ comp_params_3tl = NNCompParams(comp_params_3tl,
                                frac_train  = frac_train)
 
 comp_params_3s  = NNCompParams(comp_params_3s,
-                               terms_A     = terms_pieb,
-                               TL_coef     = [comp_params_3s.TL_coef;0],
                                epoch_lbfgs = epoch_lbfgs,
                                k_pca       = k_pca_big,
                                frac_train  = frac_train)
 
 comp_params_3v  = NNCompParams(comp_params_3v,
-                               terms_A     = terms_pieb,
-                               TL_coef     = [comp_params_3v.TL_coef;0],
                                epoch_lbfgs = epoch_lbfgs,
                                k_pca       = k_pca_big,
                                frac_train  = frac_train)
@@ -301,6 +297,8 @@ x = [1:5;][:,:]
 y = [1:5;]
 
 @testset "comp_train tests" begin
+    @test std(MagNav.elasticnet_fit(x,y;λ=0.01,silent)[end]) < 1
+    @test isone(MagNav.plsr_fit(x,y;return_set=true,silent)[:,:,1])
     @test std(comp_train(xyz,ind;comp_params=comp_params_1,
                          xyz_test=xyz,ind_test=ind,silent)[end-1]) < 1
     @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_1,
@@ -334,13 +332,11 @@ y = [1:5;]
     @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_plsr,
                          xyz_test=xyz,ind_test=ind,silent)[end-1]) < 1
     @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_1_drop,
-                         xyz_test=xyz,ind_test=ind,silent)[end-1]) < 1
+                         xyz_test=xyz,ind_test=ind,silent=false)[end-1]) < 1
     @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_2c_drop,
-                         xyz_test=xyz,ind_test=ind,silent)[end-1]) < 1
+                         xyz_test=xyz,ind_test=ind,silent=false)[end-1]) < 1
     @test std(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_3s_drop,
-                         xyz_test=xyz,ind_test=ind,silent)[end-1]) < 1
-    @test isone(MagNav.plsr_fit(x,y;return_set=true,silent)[:,:,1])
-    @test std(MagNav.elasticnet_fit(x,y;λ=0.01,silent)[end]) < 1
+                         xyz_test=xyz,ind_test=ind,silent=false)[end-1]) < 1
     @test_throws ErrorException comp_train([xyz,xyz],[ind,ind];
                                            comp_params=comp_params_nn_bad,silent)
     @test_throws AssertionError comp_train([xyz,xyz],[ind,ind];
@@ -368,6 +364,8 @@ y = [1:5;]
 end
 
 @testset "comp_test tests" begin
+    @test std(comp_test(xyz,ind;comp_params=comp_params_3sc,      silent)[end-1]) < 50
+    @test std(comp_test(line,df_line,df_flight,df,comp_params_3vc;silent)[end-1]) < 50
     @test_throws ErrorException comp_test(xyz,ind;
                                           comp_params=comp_params_nn_bad,silent)
     @test_throws ErrorException comp_test(xyz,ind;
