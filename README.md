@@ -87,12 +87,15 @@ If this code or data is used in any work, please cite:
 
 ```
 [DataSet Name] provided by the United States Air Force pursuant to Cooperative Agreement Number FA8750-19-2-1000 - [dates used]
-@article{gnadt2020signal,
-  title = {Signal Enhancement for Magnetic Navigation Challenge Problem},
-  author = {Gnadt, Albert R. and Belarge, Joseph and Canciani, Aaron and Carl, Glenn and Conger, Lauren and Curro, Joseph and Edelman, Alan and Morales, Peter and Nielsen, Aaron P. and O'Keeffe, Michael F. and Rackauckas, Christopher V. and Taylor, Jonathan and Wollaber, Allan B.},
-  journal = {arXiv e-prints},
-  pages = {arXiv--2007.12158},
-  doi = {10.48550/arXiv.2007.12158},
-  year = {2020}
+@article{gnadt2023signal,
+  title={Signal Enhancement for Magnetic Navigation Challenge Problem},
+  author={Gnadt, Albert R. and Belarge, Joseph and Canciani, Aaron and Carl, Glenn and Conger, Lauren and Curro, Joseph and Edelman, Alan and Morales, Peter and Nielsen, Aaron P. and O'Keeffe, Michael F. and Rackauckas, Christopher V. and Taylor, Jonathan and Wollaber, Allan B.},
+  archivePrefix={arXiv},
+  doi={10.48550/arXiv.2007.12158},
+  eprint={2007.12158},
+  journal={arXiv},
+  pages={1--12},
+  url={https://doi.org/10.48550/arXiv.2007.12158},
+  year={2023}
 }
 ```
