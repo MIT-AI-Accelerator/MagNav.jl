@@ -15,8 +15,8 @@
                     data_norms::Tuple    = (zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),[0f0],[0f0]),
                     model::Chain         = Chain(),
                     l_segs::Vector       = [length(y)],
-                    x_test::Matrix       = Array{Any}(undef,0,0),
-                    y_test::Vector       = [],
+                    x_test::Matrix       = Matrix{eltype(x)}(undef,0,0),
+                    y_test::Vector       = Vector{eltype(y)}(undef,0),
                     silent::Bool         = false)
 
 Train neural network-based aeromagnetic compensation, model 1.
@@ -37,83 +37,82 @@ function nn_comp_1_train(x, y, no_norm;
                          data_norms::Tuple    = (zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),[0f0],[0f0]),
                          model::Chain         = Chain(),
                          l_segs::Vector       = [length(y)],
-                         x_test::Matrix       = Array{Any}(undef,0,0),
-                         y_test::Vector       = [],
+                         x_test::Matrix       = Matrix{eltype(x)}(undef,0,0),
+                         y_test::Vector       = Vector{eltype(y)}(undef,0),
                          silent::Bool         = false)
 
     # convert to Float32 for ~50% speedup
-    x      = convert.(Float32,x)
-    y      = convert.(Float32,y)
-    α      = convert.(Float32,α_sgl)
-    λ      = convert.(Float32,λ_sgl)
-    x_test = convert.(Float32,x_test)
-    y_test = convert.(Float32,y_test)
+    x      = Float32.(x)
+    y      = Float32.(y)
+    α      = Float32.(α_sgl)
+    λ      = Float32.(λ_sgl)
+    x_test = Float32.(x_test)
+    y_test = Float32.(y_test)
     l_segs_test = [length(y_test)]
+
+    Nf = size(x,2) # number of features
 
     if sum(data_norms[end]) == 0 # normalize data
         (x_bias,x_scale,x_norm) = norm_sets(x;norm_type=norm_type_x,no_norm=no_norm)
         (y_bias,y_scale,y_norm) = norm_sets(y;norm_type=norm_type_y)
         if k_pca > 0
-            if k_pca > size(x,2)
-                k_pca = size(x,2)
-                silent || @info("reducing k_pca to $k_pca, size(x,2)")
+            if k_pca > Nf
+                silent || @info("reducing k_pca from $k_pca to $Nf")
+                k_pca = Nf
             end
             (_,S,V) = svd(cov(x_norm))
             v_scale = V[:,1:k_pca]*inv(Diagonal(sqrt.(S[1:k_pca])))
             var_ret = round(sum(sqrt.(S[1:k_pca]))/sum(sqrt.(S))*100,digits=6)
-            silent || @info("k_pca = $k_pca of $(size(x,2)), variance retained: $var_ret %")
+            silent || @info("k_pca = $k_pca of $Nf, variance retained: $var_ret %")
         else
-            v_scale = I(size(x,2))
+            v_scale = I(Nf)
         end
-        x_norm = x_norm * v_scale
+        x_norm = (x_norm * v_scale)'
+        y_norm = (y_norm          )'
     else # unpack data normalizations
         (_,_,v_scale,x_bias,x_scale,y_bias,y_scale) = unpack_data_norms(data_norms)
-        x_norm = ((x .- x_bias) ./ x_scale) * v_scale
-        y_norm =  (y .- y_bias) ./ y_scale
+        x_norm = (((x .- x_bias) ./ x_scale) * v_scale)'
+        y_norm = ( (y .- y_bias) ./ y_scale           )'
     end
 
     # normalize test data if it was provided
-    isempty(x_test) || (x_norm_test = ((x_test .- x_bias) ./ x_scale) * v_scale)
+    isempty(x_test) || (x_test_norm = (((x_test .- x_bias) ./ x_scale) * v_scale)')
 
     # separate into training and validation
     if frac_train < 1
-        N = size(x_norm,1)
-        p = randperm(N)
-        N_train = floor(Int,frac_train*N)
-        p_train = p[1:N_train]
-        p_val   = p[N_train+1:end]
-        x_norm_train = x_norm[p_train,:]
-        x_norm_val   = x_norm[p_val  ,:]
-        y_norm_train = y_norm[p_train,:]
-        y_norm_val   = y_norm[p_val  ,:]
-        data_train   = Flux.DataLoader((x_norm_train',y_norm_train'),
-                                       shuffle=true,batchsize=batchsize)
-        data_val     = Flux.DataLoader((x_norm_val',y_norm_val'),
-                                       shuffle=true,batchsize=batchsize)
+        N = size(x_norm,2)
+        (p_train,p_val) = get_split(N,frac_train,:none)
+        x_train_norm    = x_norm[:,p_train]
+        x_val_norm      = x_norm[:,p_val  ]
+        y_train_norm    = y_norm[:,p_train]
+        y_val_norm      = y_norm[:,p_val  ]
+        data_train      = DataLoader((x_train_norm,y_train_norm),
+                                     shuffle=true,batchsize=batchsize)
+        data_val        = DataLoader((x_val_norm,y_val_norm),
+                                     shuffle=true,batchsize=batchsize)
     else
-        data_train   = Flux.DataLoader((x_norm',y_norm'),
-                                       shuffle=true,batchsize=batchsize)
-        data_val     = data_train
+        data_train      = DataLoader((x_norm,y_norm),
+                                     shuffle=true,batchsize=batchsize)
+        data_val        = data_train
     end
 
     # setup NN
-    xS = size(x_norm,2) # number of features
-    yS = 1 # length of output
-
-    if model == Chain() # not re-training with known model
-        m = get_nn_m(xS,yS;hidden=hidden,activation=activation)
-    else # initial model already known
-        m = deepcopy(model)
+    if model == Chain() # initialize model
+        Ny = 1 # length of output
+        m  = get_nn_m(Nf,Ny;hidden=hidden,activation=activation)
+    else # re-train on known model
+        m  = deepcopy(model)
     end
 
-    # setup optimizer and loss function
+    # setup optimizer
     opt = Adam(η_adam)
 
-    function loss_m1(x_norm,y_norm)
-        y_hat_norm = nn_comp_1_fwd(x_norm',y_bias,y_scale,m;
+    # setup loss function
+    function loss_m1(x_norm, y_norm)
+        y_hat_norm = nn_comp_1_fwd(x_norm,y_bias,y_scale,m;
                                    denorm   = false,
                                    testmode = false)
-        return mse(y_hat_norm,vec(y_norm))
+        return mse(y_hat_norm, vec(y_norm))
     end # function loss_m1
 
     loss_m1_λ(xl,yl) = loss_m1(xl,yl) + λ*sum(sparse_group_lasso(m,α))
@@ -124,13 +123,13 @@ function nn_comp_1_train(x, y, no_norm;
         for (x_l,y_l) in data_l
             l += loss(x_l,y_l)
         end
-        l/length(data_l)
+        return (l/length(data_l))
     end # function loss_all
 
     # train NN with Adam optimizer
     m_store   = deepcopy(m)
     best_loss = loss_all(data_val)
-    isempty(x_test) || (best_test_error = std(nn_comp_1_test(x_norm_test,y_test,y_bias,y_scale,m;
+    isempty(x_test) || (best_test_error = std(nn_comp_1_test(x_test_norm,y_test,y_bias,y_scale,m;
                                                              l_segs = l_segs_test,
                                                              silent = silent_debug)[2]))
 
@@ -146,7 +145,7 @@ function nn_comp_1_train(x, y, no_norm;
             end
             mod(i,5) == 0 && !silent && @info("epoch $i: loss = $best_loss")
         else
-            test_error = std(nn_comp_1_test(x_norm_test,y_test,y_bias,y_scale,m;
+            test_error = std(nn_comp_1_test(x_test_norm,y_test,y_bias,y_scale,m;
                                             l_segs = l_segs_test,
                                             silent = silent_debug)[2])
             if test_error < best_test_error
@@ -156,8 +155,7 @@ function nn_comp_1_train(x, y, no_norm;
             mod(i,5) == 0 && !silent && @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error,digits=2)) nT")
         end
         if (mod(i,10) == 0) & !silent
-            y_hat = nn_comp_1_fwd(x_norm,y_bias,y_scale,m)
-            err   = err_segs(y_hat,y,l_segs;silent=silent_debug)
+            err = nn_comp_1_test(x_norm,y,y_bias,y_scale,m;l_segs=l_segs,silent=true)[2]
             @info("$i train error: $(round(std(err),digits=2)) nT")
             isempty(x_test) || @info("$i test  error: $(round((test_error),digits=2)) nT")
         end
@@ -166,7 +164,7 @@ function nn_comp_1_train(x, y, no_norm;
     Flux.loadmodel!(m,m_store)
 
     if epoch_lbfgs > 0 # LBFGS, may overfit depending on iterations
-        data = Flux.DataLoader((x_norm',y_norm'),shuffle=true,batchsize=batchsize)
+        data = DataLoader((x_norm,y_norm),shuffle=true,batchsize=batchsize)
 
         function lbfgs_train!(m_l,data_l,iter,silent)
             (x_l,y_l) = data_l.data
@@ -184,12 +182,11 @@ function nn_comp_1_train(x, y, no_norm;
     end
 
     # get results
-    y_hat = nn_comp_1_fwd(x_norm,y_bias,y_scale,m)
-    err   = err_segs(y_hat,y,l_segs;silent=silent_debug)
+    (y_hat,err) = nn_comp_1_test(x_norm,y,y_bias,y_scale,m;l_segs=l_segs,silent=true)
     silent || @info("train error: $(round(std(err),digits=2)) nT")
 
     if !isempty(x_test)
-        nn_comp_1_test(x_norm_test,y_test,y_bias,y_scale,m;
+        nn_comp_1_test(x_test_norm,y_test,y_bias,y_scale,m;
                        l_segs = l_segs_test,
                        silent = silent)
     end
@@ -218,7 +215,7 @@ function nn_comp_1_fwd(x_norm::AbstractMatrix, y_bias, y_scale, model::Chain;
     testmode && Flux.testmode!(m)
 
     # get results
-    y_hat = vec(m(x_norm'))
+    y_hat = vec(m(x_norm))
 
     denorm && (y_hat .= denorm_sets(y_bias,y_scale,y_hat))
 
@@ -233,11 +230,11 @@ Forward pass of neural network-based aeromagnetic compensation, model 1.
 function nn_comp_1_fwd(x::Matrix, data_norms::Tuple, model::Chain)
 
     # convert to Float32 for consistency with nn_comp_1_train
-    x = convert.(Float32,x)
+    x = Float32.(x)
 
     # unpack data normalizations
     (_,_,v_scale,x_bias,x_scale,y_bias,y_scale) = unpack_data_norms(data_norms)
-    x_norm = ((x .- x_bias) ./ x_scale) * v_scale
+    x_norm = (((x .- x_bias) ./ x_scale) * v_scale)'
 
     # get results
     y_hat = nn_comp_1_fwd(x_norm,y_bias,y_scale,model)
@@ -255,9 +252,6 @@ Evaluate performance of neural network-based aeromagnetic compensation, model 1.
 function nn_comp_1_test(x_norm::AbstractMatrix, y, y_bias, y_scale, model::Chain;
                         l_segs::Vector = [length(y)],
                         silent::Bool   = false)
-
-    # convert to Float32 for consistency with nn_comp_1_train
-    y = convert.(Float32,y)
 
     # get results
     y_hat = nn_comp_1_fwd(x_norm,y_bias,y_scale,model)
@@ -279,7 +273,7 @@ function nn_comp_1_test(x::Matrix, y, data_norms::Tuple, model::Chain;
                         silent::Bool   = false)
 
     # convert to Float32 for consistency with nn_comp_1_train
-    y = convert.(Float32,y)
+    y = Float32.(y)
 
     # get results
     y_hat = nn_comp_1_fwd(x,data_norms,model)
@@ -309,9 +303,9 @@ end # function nn_comp_1_test
                     data_norms::Tuple    = (zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),[0f0],[0f0]),
                     model::Chain         = Chain(),
                     l_segs::Vector       = [length(y)],
-                    A_test::Matrix       = Array{Any}(undef,0,0),
-                    x_test::Matrix       = Array{Any}(undef,0,0),
-                    y_test::Vector       = [],
+                    A_test::Matrix       = Matrix{eltype(A)}(undef,0,0),
+                    x_test::Matrix       = Matrix{eltype(x)}(undef,0,0),
+                    y_test::Vector       = Vector{eltype(y)}(undef,0),
                     silent::Bool         = false)
 
 Train neural network-based aeromagnetic compensation, model 2.
@@ -335,101 +329,97 @@ function nn_comp_2_train(A, x, y, no_norm;
                          data_norms::Tuple    = (zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),[0f0],[0f0]),
                          model::Chain         = Chain(),
                          l_segs::Vector       = [length(y)],
-                         A_test::Matrix       = Array{Any}(undef,0,0),
-                         x_test::Matrix       = Array{Any}(undef,0,0),
-                         y_test::Vector       = [],
+                         A_test::Matrix       = Matrix{eltype(A)}(undef,0,0),
+                         x_test::Matrix       = Matrix{eltype(x)}(undef,0,0),
+                         y_test::Vector       = Vector{eltype(y)}(undef,0),
                          silent::Bool         = false)
 
     # convert to Float32 for ~50% speedup
-    A       = convert.(Float32,A)
-    x       = convert.(Float32,x)
-    y       = convert.(Float32,y)
-    α       = convert.(Float32,α_sgl)
-    λ       = convert.(Float32,λ_sgl)
-    A_test  = convert.(Float32,A_test)
-    x_test  = convert.(Float32,x_test)
-    y_test  = convert.(Float32,y_test)
-    TL_coef = convert.(Float32,TL_coef)
+    A       = Float32.(A)
+    x       = Float32.(x)
+    y       = Float32.(y)
+    α       = Float32.(α_sgl)
+    λ       = Float32.(λ_sgl)
+    A_test  = Float32.(A_test)
+    x_test  = Float32.(x_test)
+    y_test  = Float32.(y_test)
+    TL_coef = Float32.(TL_coef)
     l_segs_test = [length(y_test)]
+
+    Nf = size(x,2) # number of features
 
     if sum(data_norms[end]) == 0 # normalize data
         (A_bias,A_scale,A_norm) = norm_sets(A;norm_type=norm_type_A)
         (x_bias,x_scale,x_norm) = norm_sets(x;norm_type=norm_type_x,no_norm=no_norm)
         (y_bias,y_scale,y_norm) = norm_sets(y;norm_type=norm_type_y)
         if k_pca > 0
-            if k_pca > size(x,2)
-                k_pca = size(x,2)
-                silent || @info("reducing k_pca to $k_pca, size(x,2)")
+            if k_pca > Nf
+                silent || @info("reducing k_pca from $k_pca to $Nf")
+                k_pca = Nf
             end
             (_,S,V) = svd(cov(x_norm))
             v_scale = V[:,1:k_pca]*inv(Diagonal(sqrt.(S[1:k_pca])))
             var_ret = round(sum(sqrt.(S[1:k_pca]))/sum(sqrt.(S))*100,digits=6)
-            silent || @info("k_pca = $k_pca of $(size(x,2)), variance retained: $var_ret %")
+            silent || @info("k_pca = $k_pca of $Nf, variance retained: $var_ret %")
         else
-            v_scale = I(size(x,2))
+            v_scale = I(Nf)
         end
-        x_norm = x_norm * v_scale
+        A_norm = (A_norm          )'
+        x_norm = (x_norm * v_scale)'
+        y_norm = (y_norm          )'
     else # unpack data normalizations
         (A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale) =
             unpack_data_norms(data_norms)
-        A_norm =  (A .- A_bias) ./ A_scale
-        x_norm = ((x .- x_bias) ./ x_scale) * v_scale
-        y_norm =  (y .- y_bias) ./ y_scale
+        A_norm = ( (A .- A_bias) ./ A_scale           )'
+        x_norm = (((x .- x_bias) ./ x_scale) * v_scale)'
+        y_norm = ( (y .- y_bias) ./ y_scale           )'
     end
 
     TL_coef_norm = TL_coef ./ y_scale
 
     # normalize test data if it was provided
-    isempty(A_test) || (A_norm_test =  (A_test .- A_bias) ./ A_scale)
-    isempty(x_test) || (x_norm_test = ((x_test .- x_bias) ./ x_scale) * v_scale)
+    isempty(A_test) || (A_test_norm = ( (A_test .- A_bias) ./ A_scale           )')
+    isempty(x_test) || (x_test_norm = (((x_test .- x_bias) ./ x_scale) * v_scale)')
 
     # separate into training and validation
     if frac_train < 1
-        N = size(x_norm,1)
-        p = randperm(N)
-        N_train = floor(Int,frac_train*N)
-        p_train = p[1:N_train]
-        p_val   = p[N_train+1:end]
-        A_train = A_norm[p_train,:]
-        A_val   = A_norm[p_val  ,:]
-        x_norm_train = x_norm[p_train,:]
-        x_norm_val   = x_norm[p_val  ,:]
-        y_norm_train = y_norm[p_train,:]
-        y_norm_val   = y_norm[p_val  ,:]
-        data_train = Flux.DataLoader((A_train',x_norm_train',y_norm_train'),
+        N = size(x_norm,2)
+        (p_train,p_val) = get_split(N,frac_train,:none)
+        A_train_norm    = A_norm[:,p_train]
+        A_val_norm      = A_norm[:,p_val  ]
+        x_train_norm    = x_norm[:,p_train]
+        x_val_norm      = x_norm[:,p_val  ]
+        y_train_norm    = y_norm[:,p_train]
+        y_val_norm      = y_norm[:,p_val  ]
+        data_train      = DataLoader((A_train_norm,x_train_norm,y_train_norm),
                                      shuffle=true,batchsize=batchsize)
-        data_val   = Flux.DataLoader((A_val',x_norm_val',y_norm_val'),
+        data_val        = DataLoader((A_val_norm,x_val_norm,y_val_norm),
                                      shuffle=true,batchsize=batchsize)
     else
-        data_train = Flux.DataLoader((A_norm',x_norm',y_norm'),
+        data_train      = DataLoader((A_norm,x_norm,y_norm),
                                      shuffle=true,batchsize=batchsize)
-        data_val   = data_train
+        data_val        = data_train
     end
 
     # setup NN
-    xS = size(x_norm,2) # number of features
-    if model_type in [:m2a,:m2d]
-        yS = size(A_norm,2) # length of output
-    elseif model_type in [:m2b,:m2c]
-        yS = 1 # additive correction
+    if model == Chain() # initialize model
+        Ny = model_type in [:m2a,:m2d] ? size(A_norm,1) : 1 # length of output
+        m  = get_nn_m(Nf,Ny;hidden=hidden,activation=activation)
+    else # re-train on known model
+        m  = deepcopy(model)
     end
 
-    if model == Chain() # not re-training with known model
-        m = get_nn_m(xS,yS;hidden=hidden,activation=activation)
-    else # initial model already known
-        m = deepcopy(model)
-    end
-
-    # setup optimizer and loss function
+    # setup optimizer
     opt = Adam(η_adam)
 
-    function loss_m2(A_norm,x_norm,y_norm,model_type::Symbol,TL_coef_norm)
-        y_hat_norm = nn_comp_2_fwd(A_norm',x_norm',y_bias,y_scale,m;
+    # setup loss function
+    function loss_m2(A_norm, x_norm, y_norm, model_type::Symbol, TL_coef_norm)
+        y_hat_norm = nn_comp_2_fwd(A_norm,x_norm,y_bias,y_scale,m;
                                    model_type   = model_type,
                                    TL_coef_norm = TL_coef_norm,
                                    denorm       = false,
                                    testmode     = false)
-        return mse(y_hat_norm,vec(y_norm))
+        return mse(y_hat_norm, vec(y_norm))
     end # function loss_m2
 
     loss_m2a(Al,xl,yl) = loss_m2(Al,xl,yl,:m2a,TL_coef_norm)
@@ -452,14 +442,14 @@ function nn_comp_2_train(A, x, y, no_norm;
         for (A_l,x_l,y_l) in data_l
             l += loss(A_l,x_l,y_l)
         end
-        l/length(data_l)
+        return (l/length(data_l))
     end # function loss_all
 
     # train NN with Adam optimizer
     TL_coef_store = deepcopy(TL_coef_norm)
     m_store       = deepcopy(m)
     best_loss     = loss_all(data_val)
-    isempty(x_test) || (best_test_error = std(nn_comp_2_test(A_norm_test,x_norm_test,y_test,y_bias,y_scale,m;
+    isempty(x_test) || (best_test_error = std(nn_comp_2_test(A_test_norm,x_test_norm,y_test,y_bias,y_scale,m;
                                                              model_type   = model_type,
                                                              TL_coef_norm = TL_coef_norm,
                                                              l_segs       = l_segs_test,
@@ -481,7 +471,7 @@ function nn_comp_2_train(A, x, y, no_norm;
             end
             mod(i,5) == 0 && !silent && @info("epoch $i: loss = $best_loss")
         else
-            test_error = std(nn_comp_2_test(A_norm_test,x_norm_test,y_test,y_bias,y_scale,m;
+            test_error = std(nn_comp_2_test(A_test_norm,x_test_norm,y_test,y_bias,y_scale,m;
                                             model_type   = model_type,
                                             TL_coef_norm = TL_coef_norm,
                                             l_segs       = l_segs_test,
@@ -494,10 +484,11 @@ function nn_comp_2_train(A, x, y, no_norm;
             mod(i,5) == 0 && !silent && @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error,digits=2)) nT")
         end
         if (mod(i,10) == 0) & !silent
-            y_hat = nn_comp_2_fwd(A_norm,x_norm,y_bias,y_scale,m;
-                                  model_type   = model_type,
-                                  TL_coef_norm = TL_coef_norm)
-            err   = err_segs(y_hat,y,l_segs;silent=silent_debug)
+            err = nn_comp_2_test(A_norm,x_norm,y,y_bias,y_scale,m;
+                                 model_type   = model_type,
+                                 TL_coef_norm = TL_coef_norm,
+                                 l_segs       = l_segs,
+                                 silent       = true)[2]
             @info("$i train error: $(round(std(err),digits=2)) nT")
             isempty(x_test) || @info("$i test  error: $(round((test_error),digits=2)) nT")
         end
@@ -508,7 +499,7 @@ function nn_comp_2_train(A, x, y, no_norm;
 
     if epoch_lbfgs > 0 # LBFGS, may overfit depending on iterations
         model_type == :m2c && !silent && @info("LBFGS will only update NN model weights (not TL coef)")
-        data = Flux.DataLoader((A_norm',x_norm',y_norm'),shuffle=true,batchsize=batchsize)
+        data = DataLoader((A_norm,x_norm,y_norm),shuffle=true,batchsize=batchsize)
 
         function lbfgs_train!(m_l,data_l,iter,t_l,TL_coef_l,silent)
             (A_l,x_l,y_l) = data_l.data
@@ -530,14 +521,15 @@ function nn_comp_2_train(A, x, y, no_norm;
     end
 
     # get results
-    y_hat = nn_comp_2_fwd(A_norm,x_norm,y_bias,y_scale,m;
-                          model_type   = model_type,
-                          TL_coef_norm = TL_coef_norm)
-    err   = err_segs(y_hat,y,l_segs;silent=silent_debug)
+    (y_hat,err) = nn_comp_2_test(A_norm,x_norm,y,y_bias,y_scale,m;
+                                 model_type   = model_type,
+                                 TL_coef_norm = TL_coef_norm,
+                                 l_segs       = l_segs,
+                                 silent       = true)
     silent || @info("train error: $(round(std(err),digits=2)) nT")
 
     if !isempty(x_test)
-        nn_comp_2_test(A_norm_test,x_norm_test,y_test,y_bias,y_scale,m;
+        nn_comp_2_test(A_test_norm,x_test_norm,y_test,y_bias,y_scale,m;
                        model_type   = model_type,
                        TL_coef_norm = TL_coef_norm,
                        l_segs       = l_segs_test,
@@ -574,11 +566,11 @@ function nn_comp_2_fwd(A_norm::AbstractMatrix, x_norm::AbstractMatrix, y_bias, y
 
     # get results
     if model_type in [:m2a]
-        y_hat = vec(sum(A_norm'.*m(x_norm'), dims=1))
+        y_hat = vec(sum(A_norm.*m(x_norm), dims=1))
     elseif model_type in [:m2b,:m2c]
-        y_hat = vec(m(x_norm')) + A_norm*TL_coef_norm
+        y_hat = vec(m(x_norm)) + A_norm'*TL_coef_norm
     elseif model_type in [:m2d]
-        y_hat = vec(sum(A_norm'.*(m(x_norm') .+ TL_coef_norm), dims=1))
+        y_hat = vec(sum(A_norm.*(m(x_norm) .+ TL_coef_norm), dims=1))
     end
 
     denorm && (y_hat .= denorm_sets(y_bias,y_scale,y_hat))
@@ -598,15 +590,15 @@ function nn_comp_2_fwd(A::Matrix, x::Matrix, data_norms::Tuple, model::Chain;
                        TL_coef::Vector    = zeros(Float32,18))
 
     # convert to Float32 for consistency with nn_comp_2_train
-    A       = convert.(Float32,A)
-    x       = convert.(Float32,x)
-    TL_coef = convert.(Float32,TL_coef)
+    A       = Float32.(A)
+    x       = Float32.(x)
+    TL_coef = Float32.(TL_coef)
 
     # unpack data normalizations
     (A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale) =
         unpack_data_norms(data_norms)
-    A_norm =  (A .- A_bias) ./ A_scale
-    x_norm = ((x .- x_bias) ./ x_scale) * v_scale
+    A_norm = ( (A .- A_bias) ./ A_scale           )'
+    x_norm = (((x .- x_bias) ./ x_scale) * v_scale)'
 
     TL_coef_norm = TL_coef ./ y_scale
 
@@ -632,9 +624,6 @@ function nn_comp_2_test(A_norm::AbstractMatrix, x_norm::AbstractMatrix, y, y_bia
                         TL_coef_norm::Vector = zeros(Float32,18),
                         l_segs::Vector       = [length(y)],
                         silent::Bool         = false)
-
-    # convert to Float32 for consistency with nn_comp_2_train
-    y = convert.(Float32,y)
 
     # get results
     y_hat = nn_comp_2_fwd(A_norm,x_norm,y_bias,y_scale,model;
@@ -662,7 +651,7 @@ function nn_comp_2_test(A::Matrix, x::Matrix, y, data_norms::Tuple, model::Chain
                         silent::Bool       = false)
 
     # convert to Float32 for consistency with nn_comp_2_train
-    y = convert.(Float32,y)
+    y = Float32.(y)
 
     # get results
     y_hat = nn_comp_2_fwd(A,x,data_norms,model;
@@ -675,24 +664,24 @@ function nn_comp_2_test(A::Matrix, x::Matrix, y, data_norms::Tuple, model::Chain
 end # function nn_comp_2_test
 
 """
-    get_curriculum_ind(TL_diff::Vector, sigma=1)
+    get_curriculum_ind(TL_diff::Vector, N_sigma::Real=1)
 
 Internal helper function to get indices for curriculum learning (to train
 the Tolles-Lawson part of the loss) and indices to train the neural network.
-Curriculum learning (Tolles-Lawson) indices are those within `sigma` of the
+Curriculum learning (Tolles-Lawson) indices are those within `N_sigma` of the
 mean and neural network indices are those outside of it (i.e., outliers).
 
 **Arguments:**
 - `TL_diff`: difference of TL model to ground truth
-- `sigma`:   (optional) number of standard deviations
+- `N_sigma`: (optional) standard deviation threshold
 
 **Returns:**
-- `ind_cur`: indices for curriculum learning (within `sigma`)
-- `ind_nn`:  indices for training the neural network (outside `sigma`)
+- `ind_cur`: indices for curriculum learning (within `N_sigma`)
+- `ind_nn`:  indices for training the neural network (outside `N_sigma`)
 """
-function get_curriculum_ind(TL_diff::Vector, sigma=1)
+function get_curriculum_ind(TL_diff::Vector, N_sigma::Real=1)
     TL_diff = detrend(TL_diff;mean_only=true)
-    cutoff  = sigma*std(TL_diff)
+    cutoff  = N_sigma*std(TL_diff)
     ind_cur = -cutoff .<= TL_diff .<= cutoff
     ind_nn  = .!ind_cur
     return (ind_cur, ind_nn)
@@ -815,9 +804,9 @@ end # function TL_mat2vec
 
 **Returns:**
 - `TL_aircraft`: `3` x `N` matrix of TL aircraft vector field
-- `TL_perm`:     `3` x `N` if `return_parts = true`, matrix of TL permanent vector field
-- `TL_induced`:  `3` x `N` if `return_parts = true`, matrix of TL induced vector field
-- `TL_eddy`:     `3` x `N` if `return_parts = true`, matrix of TL eddy current vector field
+- `TL_perm`:     if `return_parts = true`, `3` x `N` matrix of TL permanent vector field
+- `TL_induced`:  if `return_parts = true`, `3` x `N` matrix of TL induced vector field
+- `TL_eddy`:     if `return_parts = true`, `3` x `N` matrix of TL eddy current vector field
 """
 function get_TL_aircraft_vec(B_vec, B_vec_dot, TL_coef_p, TL_coef_i, TL_coef_e;
                              return_parts::Bool=false)
@@ -841,32 +830,127 @@ function get_TL_aircraft_vec(B_vec, B_vec_dot, TL_coef_p, TL_coef_i, TL_coef_e;
 end # function get_TL_aircraft_vec
 
 """
+    get_temporal_data(x_norm::AbstractMatrix, l_window::Int)
+
+Internal helper function to create windowed sequence temporal data from
+original data. Adds padding to the beginning of the data.
+
+**Arguments:**
+- `x_norm`:   `Nf` x `N` normalized data matrix (`Nf` is number of features)
+- `l_window`: temporal window length
+
+**Returns:**
+- `x_w`: `Nf` x `l_window` x `N` normalized data matrix, windowed
+"""
+function get_temporal_data(x_norm::AbstractMatrix, l_window::Int)
+    (Nf,N) = size(x_norm)
+    x_w    = zeros(Float32, Nf, l_window, N)
+    for i = 1:N
+        i1 = max(1, i - l_window + 1)
+        x_w[:, i1+l_window-i:l_window, i] = x_norm[:, i1:i]
+    end
+    return (x_w)
+end # function get_temporal_data
+
+"""
+    get_split(N::Int, frac_train::Real, window_type::Symbol = :none;
+              l_window::Int = 0)
+
+Internal helper function to get training & validation data indices.
+
+**Arguments:**
+- `N`:           number of samples (instances)
+- `frac_train`:  fraction of training data used for training (remainder for validation)
+- `window_type`: (optional) type of windowing, `:none` for none, :sliding` for overlapping, or `:contiguous` for non-overlapping
+- `l_window`:    (optional) temporal window length
+
+**Returns:**
+- `p_train`: training   indices
+- `p_val`:   validation indices
+"""
+function get_split(N::Int, frac_train::Real, window_type::Symbol = :none;
+                   l_window::Int = 0)
+
+    @assert 0 <= frac_train <= 1 "frac_train must be between 0 and 1"
+    @assert l_window < N "window length of $l_window is too large for $N samples"
+
+    if window_type == :none # no windows
+        if frac_train < 1
+            p       = randperm(N)
+            N_train = floor(Int,N*frac_train)
+            p_train = p[1:N_train]
+            p_val   = p[N_train+1:end]
+        else
+            p       = 1:N
+            p_train = p
+            p_val   = p
+        end
+    elseif window_type == :sliding # sliding windows
+        p = 1:N
+        if frac_train < 1
+            N_train = floor(Int,N*frac_train)
+            @assert all(l_window .<= (N_train,N-N_train)) "window length of $l_window is too large for $N samples with frac_train = $frac_train"
+            p_train = p[1:N_train]
+            p_val   = p[N_train+l_window:end]
+        else
+            p_train = p
+            p_val   = p
+        end
+    elseif window_type == :contiguous # contiguous windows
+        ind = 1:l_window:N
+        N_  = length(ind)
+        p_  = randperm(N_)
+        if frac_train < 1
+            N_train = floor(Int,frac_train*N_)
+            @assert all(1 .<= (N_train,N_-N_train)) "window length of $l_window is too large for $N samples with frac_train = $frac_train"
+            p_train = ind[p_[1:N_train]]
+            p_val   = ind[p_[N_train+1:end]]
+        else
+            p_train = ind[p_]
+            p_val   = ind[p_]
+        end
+    else
+        error("$window_type window_type is invalid, choose :none, :sliding, or :contiguous")
+    end
+
+    return (p_train, p_val)
+end # function get_split
+
+"""
     nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
-                    model_type::Symbol   = :m3s,
-                    norm_type_x::Symbol  = :standardize,
-                    norm_type_y::Symbol  = :standardize,
-                    TL_coef::Vector      = zeros(Float32,18),
-                    terms_A              = [:permanent,:induced,:eddy],
-                    y_type::Symbol       = :d,
-                    η_adam               = 0.001,
-                    epoch_adam::Int      = 5,
-                    epoch_lbfgs::Int     = 0,
-                    hidden               = [8],
-                    activation::Function = swish,
-                    batchsize::Int       = 2048,
-                    frac_train           = 14/17,
-                    α_sgl                = 1,
-                    λ_sgl                = 0,
-                    k_pca::Int           = -1,
-                    data_norms::Tuple    = (zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),[0f0],[0f0]),
-                    model::Chain         = Chain(),
-                    l_segs::Vector       = [length(y)],
-                    A_test::Matrix       = Array{Any}(undef,0,0),
-                    Bt_test::Vector      = [],
-                    B_dot_test::Matrix   = Array{Any}(undef,0,0),
-                    x_test::Matrix       = Array{Any}(undef,0,0),
-                    y_test::Vector       = [],
-                    silent::Bool         = false)
+                    model_type::Symbol    = :m3s,
+                    norm_type_x::Symbol   = :standardize,
+                    norm_type_y::Symbol   = :standardize,
+                    TL_coef::Vector       = zeros(Float32,18),
+                    terms_A               = [:permanent,:induced,:eddy],
+                    y_type::Symbol        = :d,
+                    η_adam                = 0.001,
+                    epoch_adam::Int       = 5,
+                    epoch_lbfgs::Int      = 0,
+                    hidden                = [8],
+                    activation::Function  = swish,
+                    batchsize::Int        = 2048,
+                    frac_train            = 14/17,
+                    α_sgl                 = 1,
+                    λ_sgl                 = 0,
+                    k_pca::Int            = -1,
+                    σ_curriculum          = 1.0,
+                    l_window::Int         = 5,
+                    window_type::Symbol   = :sliding,
+                    tf_layer_type::Symbol = :postlayer,
+                    tf_norm_type::Symbol  = :batch,
+                    dropout_prob          = 0.2,
+                    N_tf_head::Int        = 8,
+                    tf_gain               = 1.0,
+                    data_norms::Tuple     = (zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),[0f0],[0f0]),
+                    model::Chain          = Chain(),
+                    l_segs::Vector        = [length(y)],
+                    A_test::Matrix        = Matrix{eltype(A)}(undef,0,0),
+                    Bt_test::Vector       = Vector{eltype(Bt)}(undef,0),
+                    B_dot_test::Matrix    = Matrix{eltype(B_dot)}(undef,0,0),
+                    x_test::Matrix        = Matrix{eltype(x)}(undef,0,0),
+                    y_test::Vector        = Vector{eltype(y)}(undef,0),
+                    silent::Bool          = false)
 
 Train neural network-based aeromagnetic compensation, model 3. Model 3
 architectures retain the Tolles-Lawson (TL) terms in vector form, making it
@@ -876,7 +960,7 @@ network corrections.
 
 Note that this model is subject to change, and not all options are supported
 (e.g., sparse group Lasso, and generally the IGRF and diurnal fields should not
-be subtracted out from the `y` target value)
+be subtracted out from the `y` target vector)
 
 Currently, it is recommended to use a low-pass (not a bandpass) filter to
 initialize the Tolles-Lawson coefficients, as a bandpass filter removes the
@@ -890,109 +974,134 @@ Earth field and leaves a large bias in the aircraft field prediction, e.g.,
     - `:m3v`  = NN determines vector correction to TL, using expanded TL vector terms for explainability
     - `:m3sc` = `:m3s` with curriculum learning based on TL error
     - `:m3vc` = `:m3v` with curriculum learning based on TL error
+    - `:m3w`  = `:m3s` with window NN for temporal dataset
+    - `:m3tf` = `:m3s` with time series transformer for temporal dataset
 """
 function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
-                         model_type::Symbol   = :m3s,
-                         norm_type_x::Symbol  = :standardize,
-                         norm_type_y::Symbol  = :standardize,
-                         TL_coef::Vector      = zeros(Float32,18),
-                         terms_A              = [:permanent,:induced,:eddy],
-                         y_type::Symbol       = :d,
-                         η_adam               = 0.001,
-                         epoch_adam::Int      = 5,
-                         epoch_lbfgs::Int     = 0,
-                         hidden               = [8],
-                         activation::Function = swish,
-                         batchsize::Int       = 2048,
-                         frac_train           = 14/17,
-                         α_sgl                = 1,
-                         λ_sgl                = 0,
-                         k_pca::Int           = -1,
-                         data_norms::Tuple    = (zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),[0f0],[0f0]),
-                         model::Chain         = Chain(),
-                         l_segs::Vector       = [length(y)],
-                         A_test::Matrix       = Array{Any}(undef,0,0),
-                         Bt_test::Vector      = [],
-                         B_dot_test::Matrix   = Array{Any}(undef,0,0),
-                         x_test::Matrix       = Array{Any}(undef,0,0),
-                         y_test::Vector       = [],
-                         silent::Bool         = false)
+                         model_type::Symbol    = :m3s,
+                         norm_type_x::Symbol   = :standardize,
+                         norm_type_y::Symbol   = :standardize,
+                         TL_coef::Vector       = zeros(Float32,18),
+                         terms_A               = [:permanent,:induced,:eddy],
+                         y_type::Symbol        = :d,
+                         η_adam                = 0.001,
+                         epoch_adam::Int       = 5,
+                         epoch_lbfgs::Int      = 0,
+                         hidden                = [8],
+                         activation::Function  = swish,
+                         batchsize::Int        = 2048,
+                         frac_train            = 14/17,
+                         α_sgl                 = 1,
+                         λ_sgl                 = 0,
+                         k_pca::Int            = -1,
+                         σ_curriculum          = 1.0,
+                         l_window::Int         = 5,
+                         window_type::Symbol   = :sliding,
+                         tf_layer_type::Symbol = :postlayer,
+                         tf_norm_type::Symbol  = :batch,
+                         dropout_prob          = 0.2,
+                         N_tf_head::Int        = 8,
+                         tf_gain               = 1.0,
+                         data_norms::Tuple     = (zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),[0f0],[0f0]),
+                         model::Chain          = Chain(),
+                         l_segs::Vector        = [length(y)],
+                         A_test::Matrix        = Matrix{eltype(A)}(undef,0,0),
+                         Bt_test::Vector       = Vector{eltype(Bt)}(undef,0),
+                         B_dot_test::Matrix    = Matrix{eltype(B_dot)}(undef,0,0),
+                         x_test::Matrix        = Matrix{eltype(x)}(undef,0,0),
+                         y_test::Vector        = Vector{eltype(y)}(undef,0),
+                         silent::Bool          = false)
 
     @assert (α_sgl,λ_sgl) == (1,0)  "sparse group Lasso not implemented in nn_comp_3"
     @assert y_type in [:a,:b,:c,:d] "unsupported y_type = $y_type for nn_comp_3"
 
     # convert to Float32 for ~50% speedup
-    A          = convert.(Float32,A)
-    Bt         = convert.(Float32,Bt)    # magnitude of total field measurements
-    B_dot      = convert.(Float32,B_dot) # finite differences of total field vector
-    x          = convert.(Float32,x)
-    y          = convert.(Float32,y)
-    A_test     = convert.(Float32,A_test)
-    Bt_test    = convert.(Float32,Bt_test)
-    B_dot_test = convert.(Float32,B_dot_test)
-    x_test     = convert.(Float32,x_test)
-    y_test     = convert.(Float32,y_test)
-    TL_coef    = convert.(Float32,TL_coef)
+    A          = Float32.(A)
+    Bt         = Float32.(Bt)    # magnitude of total field measurements
+    B_dot      = Float32.(B_dot) # finite differences of total field vector
+    x          = Float32.(x)
+    y          = Float32.(y)
+    A_test     = Float32.(A_test)
+    Bt_test    = Float32.(Bt_test)
+    B_dot_test = Float32.(B_dot_test)
+    x_test     = Float32.(x_test)
+    y_test     = Float32.(y_test)
+    TL_coef    = Float32.(TL_coef)
     l_segs_test = [length(y_test)]
+
+    Nf = size(x,2) # number of features
 
     # assume all terms are stored, but they may be zero if not trained
     Bt_scale = 50000f0
     (TL_coef_p,TL_coef_i,TL_coef_e) = TL_vec2mat(TL_coef,terms_A;Bt_scale=Bt_scale)
 
-    B_unit    = A[:,1:3]     # normalized vector magnetometer reading
-    B_vec     = B_unit .* Bt # vector magnetometer to be used in TL
-    B_vec_dot = B_dot        # not exactly true, but internally consistent
-    isempty(A_test)     || (B_unit_test    = A_test[:,1:3])
-    isempty(Bt_test)    || (B_vec_test     = B_unit_test .* Bt_test)
-    isempty(B_dot_test) || (B_vec_dot_test = B_dot_test)
+    B_unit    = A[:,1:3]'     # normalized vector magnetometer reading
+    B_vec     = B_unit .* Bt' # vector magnetometer to be used in TL
+    B_vec_dot = B_dot'        # not exactly true, but internally consistent
+    isempty(A_test)     || (B_unit_test    = A_test[:,1:3]')
+    isempty(Bt_test)    || (B_vec_test     = B_unit_test .* Bt_test')
+    isempty(B_dot_test) || (B_vec_dot_test = B_dot_test')
 
     if sum(data_norms[end]) == 0 # normalize data
         (x_bias,x_scale,x_norm) = norm_sets(x;norm_type=norm_type_x,no_norm=no_norm)
         (y_bias,y_scale,y_norm) = norm_sets(y;norm_type=norm_type_y)
         if k_pca > 0
-            if k_pca > size(x,2)
-                k_pca = size(x,2)
-                silent || @info("reducing k_pca to $k_pca, size(x,2)")
+            if k_pca > Nf
+                silent || @info("reducing k_pca from $k_pca to $Nf")
+                k_pca = Nf
             end
             (_,S,V) = svd(cov(x_norm))
             v_scale = V[:,1:k_pca]*inv(Diagonal(sqrt.(S[1:k_pca])))
             var_ret = round(sum(sqrt.(S[1:k_pca]))/sum(sqrt.(S))*100,digits=6)
-            silent || @info("k_pca = $k_pca of $(size(x,2)), variance retained: $var_ret %")
+            silent || @info("k_pca = $k_pca of $Nf, variance retained: $var_ret %")
         else
-            v_scale = I(size(x,2))
+            v_scale = I(Nf)
         end
-        x_norm = x_norm * v_scale
+        x_norm = (x_norm * v_scale)'
+        y_norm = (y_norm          )'
     else # unpack data normalizations
         (_,_,v_scale,x_bias,x_scale,y_bias,y_scale) = unpack_data_norms(data_norms)
-        x_norm = ((x .- x_bias) ./ x_scale) * v_scale
-        y_norm =  (y .- y_bias) ./ y_scale
+        x_norm = (((x .- x_bias) ./ x_scale) * v_scale)'
+        y_norm = ( (y .- y_bias) ./ y_scale           )'
     end
 
     # normalize test data if it was provided
-    isempty(x_test) || (x_norm_test = ((x_test .- x_bias) ./ x_scale) * v_scale)
+    isempty(x_test) || (x_test_norm = (((x_test .- x_bias) ./ x_scale) * v_scale)')
+
+    # get temporal data for temporal models
+    if model_type in [:m3w,:m3tf]
+        x_norm = get_temporal_data(x_norm,l_window)
+        isempty(x_test) || (x_test_norm = get_temporal_data(x_test_norm,l_window))
+    end
 
     # separate into training and validation
     if frac_train < 1
-        N = size(x_norm,1)
-        p = randperm(N)
-        N_train = floor(Int,frac_train*N)
-        p_train = p[1:N_train]
-        p_val   = p[N_train+1:end]
-        B_unit_train    = B_unit[p_train,:]
-        B_unit_val      = B_unit[p_val  ,:]
-        B_vec_train     = B_vec[ p_train,:]
-        B_vec_val       = B_vec[ p_val  ,:]
-        B_vec_dot_train = B_vec_dot[p_train,:]
-        B_vec_dot_val   = B_vec_dot[p_val  ,:]
-        x_norm_train    = x_norm[p_train,:]
-        x_norm_val      = x_norm[p_val  ,:]
-        y_norm_train    = y_norm[p_train,:]
-        y_norm_val      = y_norm[p_val  ,:]
+        if model_type in [:m3w,:m3tf]
+            N = size(x_norm,3)
+            (p_train,p_val) = get_split(N,frac_train,window_type;l_window=l_window)
+            x_train_norm    = x_norm[:,:,p_train]
+            x_val_norm      = x_norm[:,:,p_val  ]
+        else
+            N = size(x_norm,2)
+            (p_train,p_val) = get_split(N,frac_train,:none)
+            x_train_norm    = x_norm[:,p_train]
+            x_val_norm      = x_norm[:,p_val  ]
+        end
+
+        B_unit_train    = B_unit[   :,p_train]
+        B_unit_val      = B_unit[   :,p_val  ]
+        B_vec_train     = B_vec[    :,p_train]
+        B_vec_val       = B_vec[    :,p_val  ]
+        B_vec_dot_train = B_vec_dot[:,p_train]
+        B_vec_dot_val   = B_vec_dot[:,p_val  ]
+        y_train_norm    = y_norm[   :,p_train]
+        y_val_norm      = y_norm[   :,p_val  ]
 
         if model_type in [:m3sc,:m3vc]
             silent || @info("making curriculum")
             # calculate TL estimate in training data
-            y_TL = nn_comp_3_fwd(B_unit_train,B_vec_train,B_vec_dot_train,x_norm_train,y_bias,y_scale,Chain(),
+            y_TL = nn_comp_3_fwd(B_unit_train,B_vec_train,B_vec_dot_train,
+                                 x_train_norm,y_bias,y_scale,model,
                                  TL_coef_p,TL_coef_i,TL_coef_e;
                                  model_type = :m3tl,
                                  y_type     = y_type,
@@ -1000,80 +1109,87 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
                                  denorm     = true,
                                  testmode   = true)
             TL_diff = vec(y[p_train,:]) - y_TL
-            (ind_cur,_)  = get_curriculum_ind(TL_diff,1)
-            data_train   = Flux.DataLoader((B_unit_train[ind_cur,:]',
-                                            B_vec_train[ ind_cur,:]',
-                                            B_vec_dot_train[ind_cur,:]',
-                                            x_norm_train[ind_cur,:]',
-                                            y_norm_train[ind_cur,:]'),
-                                           shuffle=true,batchsize=batchsize)
-            data_train_2 = Flux.DataLoader((B_unit_train',B_vec_train',B_vec_dot_train',
-                                            x_norm_train',y_norm_train'),
-                                           shuffle=true,batchsize=batchsize)
+            (ind_cur,_)  = get_curriculum_ind(TL_diff,σ_curriculum)
+            data_train   = DataLoader((B_unit_train[   :,ind_cur],
+                                       B_vec_train[    :,ind_cur],
+                                       B_vec_dot_train[:,ind_cur],
+                                       x_train_norm[   :,ind_cur],
+                                       y_train_norm[   :,ind_cur]),
+                                      shuffle=true,batchsize=batchsize)
+            data_train_2 = DataLoader((B_unit_train,B_vec_train,B_vec_dot_train,
+                                       x_train_norm,y_train_norm),
+                                      shuffle=true,batchsize=batchsize)
         else
-            data_train   = Flux.DataLoader((B_unit_train',B_vec_train',B_vec_dot_train',
-                                            x_norm_train',y_norm_train'),
-                                           shuffle=true,batchsize=batchsize)
+            data_train   = DataLoader((B_unit_train,B_vec_train,B_vec_dot_train,
+                                       x_train_norm,y_train_norm),
+                                      shuffle=true,batchsize=batchsize)
         end
-        data_val = Flux.DataLoader((B_unit_val',B_vec_val',B_vec_dot_val',
-                                    x_norm_val',y_norm_val'),
-                                   shuffle=true,batchsize=batchsize)
+        data_val     = DataLoader((B_unit_val,B_vec_val,B_vec_dot_val,
+                                   x_val_norm,y_val_norm),
+                                  shuffle=true,batchsize=batchsize)
     else
-        data_train   = Flux.DataLoader((B_unit',B_vec',B_vec_dot',
-                                        x_norm',y_norm'),
-                                       shuffle=true,batchsize=batchsize)
+        data_train   = DataLoader((B_unit,B_vec,B_vec_dot,
+                                   x_norm,y_norm),
+                                  shuffle=true,batchsize=batchsize)
         data_train_2 = data_train
         data_val     = data_train
     end
 
     # setup NN
-    xS = size(x_norm,2) # number of features
-    if model_type in [:m3tl,:m3s,:m3sc]
-        yS = 1 # additive correction
-    elseif model_type in [:m3v,:m3vc]
-        yS = 3
+    if model == Chain() # initialize model
+        Ny = model_type in [:m3v,:m3vc] ? 3 : 1 # length of output
+        m  = get_nn_m(Nf,Ny;hidden=hidden,activation=activation,
+                      model_type    = model_type,
+                      l_window      = l_window,
+                      tf_layer_type = tf_layer_type,
+                      tf_norm_type  = tf_norm_type,
+                      dropout_prob  = dropout_prob,
+                      N_tf_head     = N_tf_head,
+                      tf_gain       = tf_gain)
+    else # re-train on known model
+        m  = deepcopy(model)
     end
 
-    if model == Chain() # not re-training with known model
-        m = get_nn_m(xS,yS;hidden=hidden,activation=activation)
-    else # initial model already known
-        m = deepcopy(model)
-    end
-
-    # setup optimizer and loss function
+    # setup optimizer
     opt = Adam(η_adam)
 
-    function loss_m3(B_unit,B_vec,B_vec_dot,x_norm,y_norm,model_type::Symbol,
-                     TL_coef_p,TL_coef_i,TL_coef_e,use_nn::Bool)
-        y_hat_norm = nn_comp_3_fwd(B_unit',B_vec',B_vec_dot',x_norm',y_bias,y_scale,m,
+    # setup loss function
+    function loss_m3(B_unit, B_vec, B_vec_dot, x_norm, y_norm, model_type::Symbol,
+                     TL_coef_p, TL_coef_i, TL_coef_e, use_nn::Bool)
+        y_hat_norm = nn_comp_3_fwd(B_unit,B_vec,B_vec_dot,
+                                   x_norm,y_bias,y_scale,m,
                                    TL_coef_p,TL_coef_i,TL_coef_e;
                                    model_type = model_type,
                                    y_type     = y_type,
                                    use_nn     = use_nn,
                                    denorm     = false,
                                    testmode   = false)
-        return mse(y_hat_norm,vec(y_norm))
+        return mse(y_hat_norm, vec(y_norm))
     end # function loss_m3
 
-    use_nn = model_type in [:m3s,:m3v] ? true : false # multiplier to include/exclude NN contribution to y_hat
+    use_nn = model_type in [:m3s,:m3v,:m3w,:m3tf] ? true : false # multiplier to include/exclude NN contribution to y_hat
     loss_m3tl(Bul,Bvl,Bvdl,xl,yl) = loss_m3(Bul,Bvl,Bvdl,xl,yl,:m3tl,TL_coef_p,TL_coef_i,TL_coef_e,use_nn) # :m3tl does not use NN
     loss_m3s( Bul,Bvl,Bvdl,xl,yl) = loss_m3(Bul,Bvl,Bvdl,xl,yl,:m3s ,TL_coef_p,TL_coef_i,TL_coef_e,use_nn) # use NN
     loss_m3v( Bul,Bvl,Bvdl,xl,yl) = loss_m3(Bul,Bvl,Bvdl,xl,yl,:m3v ,TL_coef_p,TL_coef_i,TL_coef_e,use_nn) # use NN
     loss_m3sc(Bul,Bvl,Bvdl,xl,yl) = loss_m3(Bul,Bvl,Bvdl,xl,yl,:m3tl,TL_coef_p,TL_coef_i,TL_coef_e,use_nn) # :m3sc starts without NN
     loss_m3vc(Bul,Bvl,Bvdl,xl,yl) = loss_m3(Bul,Bvl,Bvdl,xl,yl,:m3v ,TL_coef_p,TL_coef_i,TL_coef_e,use_nn) # :m3vc starts without NN
+    loss_m3w( Bul,Bvl,Bvdl,xl,yl) = loss_m3(Bul,Bvl,Bvdl,xl,yl,:m3w ,TL_coef_p,TL_coef_i,TL_coef_e,use_nn) # use NN
+    loss_m3tf(Bul,Bvl,Bvdl,xl,yl) = loss_m3(Bul,Bvl,Bvdl,xl,yl,:m3tf,TL_coef_p,TL_coef_i,TL_coef_e,use_nn) # use NN
 
     model_type == :m3tl && (loss = loss_m3tl)
     model_type == :m3s  && (loss = loss_m3s)
     model_type == :m3v  && (loss = loss_m3v)
     model_type == :m3sc && (loss = loss_m3sc)
     model_type == :m3vc && (loss = loss_m3vc)
+    model_type == :m3w  && (loss = loss_m3w)
+    model_type == :m3tf && (loss = loss_m3tf)
 
     function loss_all(data_l)
         l = 0f0
         for (B_unit_l,B_vec_l,B_vec_dot_l,x_l,y_l) in data_l
             l += loss(B_unit_l,B_vec_l,B_vec_dot_l,x_l,y_l)
         end
-        l/length(data_l)
+        return (l/length(data_l))
     end # function loss_all
 
     # train NN with ADAM optimizer
@@ -1081,7 +1197,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
     m_store       = deepcopy(m)
     best_loss     = loss_all(data_val)
     isempty(x_test) || (best_test_error = std(nn_comp_3_test(B_unit_test,B_vec_test,B_vec_dot_test,
-                                                             x_norm_test,y_test,y_bias,y_scale,m,
+                                                             x_test_norm,y_test,y_bias,y_scale,m,
                                                              TL_coef_p,TL_coef_i,TL_coef_e;
                                                              model_type = model_type,
                                                              y_type     = y_type,
@@ -1093,7 +1209,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
 
     silent || @info("epoch 0: loss = $best_loss")
     for i = 1:epoch_adam
-        if model_type in [:m3tl,:m3s,:m3v] # train on NN model weights + TL coef
+        if model_type in [:m3tl,:m3s,:m3v,:m3w,:m3tf] # train on NN model weights + TL coef
             Flux.train!(loss,Flux.params(m,TL_coef_p,TL_coef_i.data,TL_coef_e),data_train,opt)
         elseif model_type in [:m3sc,:m3vc]
             if     i < epoch_adam * (1 / 10)
@@ -1128,7 +1244,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
             mod(i,5) == 0 && !silent && @info("epoch $i: loss = $best_loss")
         else
             test_error = std(nn_comp_3_test(B_unit_test,B_vec_test,B_vec_dot_test,
-                                            x_norm_test,y_test,y_bias,y_scale,m,
+                                            x_test_norm,y_test,y_bias,y_scale,m,
                                             TL_coef_p,TL_coef_i,TL_coef_e;
                                             model_type = model_type,
                                             y_type     = y_type,
@@ -1145,14 +1261,16 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
             mod(i,5) == 0 && !silent && @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error,digits=2)) nT")
         end
         if (mod(i,10) == 0) & !silent
-            y_hat = nn_comp_3_fwd(B_unit,B_vec,B_vec_dot,x_norm,y_bias,y_scale,m,
-                                  TL_coef_p,TL_coef_i,TL_coef_e;
-                                  model_type = model_type,
-                                  y_type     = y_type,
-                                  use_nn     = use_nn,
-                                  denorm     = true,
-                                  testmode   = true)
-            err   = err_segs(y_hat,y,l_segs;silent=silent_debug)
+            err = nn_comp_3_test(B_unit,B_vec,B_vec_dot,
+                                 x_norm,y,y_bias,y_scale,m,
+                                 TL_coef_p,TL_coef_i,TL_coef_e;
+                                 model_type = model_type,
+                                 y_type     = y_type,
+                                 l_segs     = l_segs,
+                                 use_nn     = use_nn,
+                                 denorm     = true,
+                                 testmode   = true,
+                                 silent     = true)[2]
             @info("$i train error: $(round(std(err),digits=2)) nT")
             isempty(x_test) || @info("$i test  error: $(round((test_error),digits=2)) nT")
         end
@@ -1169,7 +1287,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
 
     if epoch_lbfgs > 0 # LBFGS, may overfit depending on iterations
         silent || @info("LBFGS will only update NN model weights (not TL coef)")
-        data = Flux.DataLoader((B_unit',B_vec',B_vec_dot',x_norm',y_norm'),shuffle=true,batchsize=batchsize)
+        data = DataLoader((B_unit,B_vec,B_vec_dot,x_norm,y_norm),shuffle=true,batchsize=batchsize)
 
         function lbfgs_train!(m_l,data_l,iter,t_l,p_l,i_l,e_l,silent)
             (Bu_l,Bv_l,Bvd_l,x_l,y_l) = data_l.data
@@ -1190,20 +1308,21 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
     TL_coef = TL_mat2vec(TL_coef_p,TL_coef_i,TL_coef_e,terms_A;Bt_scale=Bt_scale)
 
     # get results
-    #* y_hat = get_test_y_hat(y_bias, y_scale, m, x_norm, B_vec, B_vec_dot, B_unit) # did NOT use TL_coef_store
-    y_hat = nn_comp_3_fwd(B_unit,B_vec,B_vec_dot,x_norm,y_bias,y_scale,m,
-                          TL_coef_p,TL_coef_i,TL_coef_e;
-                          model_type = model_type,
-                          y_type     = y_type,
-                          use_nn     = use_nn,
-                          denorm     = true,
-                          testmode   = true)
-    err   = err_segs(y_hat,y,l_segs;silent=silent_debug)
+    (y_hat,err) = nn_comp_3_test(B_unit,B_vec,B_vec_dot,
+                                 x_norm,y,y_bias,y_scale,m,
+                                 TL_coef_p,TL_coef_i,TL_coef_e;
+                                 model_type = model_type,
+                                 y_type     = y_type,
+                                 l_segs     = l_segs,
+                                 use_nn     = use_nn,
+                                 denorm     = true,
+                                 testmode   = true,
+                                 silent     = true)
     silent || @info("train error: $(round(std(err),digits=2)) nT")
 
     if !isempty(x_test)
         nn_comp_3_test(B_unit_test,B_vec_test,B_vec_dot_test,
-                       x_norm_test,y_test,y_bias,y_scale,m,
+                       x_test_norm,y_test,y_bias,y_scale,m,
                        TL_coef_p,TL_coef_i,TL_coef_e;
                        model_type = model_type,
                        y_type     = y_type,
@@ -1223,7 +1342,8 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
 end # function nn_comp_3_train
 
 """
-    nn_comp_3_fwd(B_unit, B_vec, B_vec_dot, x_norm::AbstractMatrix, y_bias, y_scale, model::Chain,
+    nn_comp_3_fwd(B_unit, B_vec, B_vec_dot,
+                  x_norm, y_bias, y_scale, model::Chain,
                   TL_coef_p, TL_coef_i, TL_coef_e;
                   model_type::Symbol = :m3s,
                   y_type::Symbol     = :d,
@@ -1238,12 +1358,12 @@ for model `:m3v` or `:m3vc`, gets the scalar magnitude of the result, and
 optionally adds a scalar neural network correction for model `:m3s` or `:m3sc`.
 
 **Arguments:**
-- `B_unit`:     `3` x `N`  matrix of normalized vector magnetometer measurements
-- `B_vec`:      `3` x `N`  matrix of vector magnetometer measurements
-- `B_vec_dot`:  `3` x `N`  matrix of vector magnetometer measurement derivatives
-- `x_norm`:     `M` x `N`  normalized input data
-- `y_bias`:     observed data bias (mean, min, or zero)
-- `y_scale`:    observed data scaling factor (std dev, max-min, or one)
+- `B_unit`:     `3`  x `N` matrix of normalized vector magnetometer measurements
+- `B_vec`:      `3`  x `N` matrix of vector magnetometer measurements
+- `B_vec_dot`:  `3`  x `N` matrix of vector magnetometer measurement derivatives
+- `x_norm`:     `Nf` x `N` normalized data matrix (`Nf` is number of features)
+- `y_bias`:     `y` target vector bias (mean, min, or zero)
+- `y_scale`:    `y` target vector scaling factor (std dev, max-min, or one)
 - `model`:      neural network model
 - `TL_coef_p`:  length `3` vector of permanent field coefficients
 - `TL_coef_i`:  `3` x `3`  symmetric matrix of induced field coefficients, denormalized
@@ -1255,9 +1375,10 @@ optionally adds a scalar neural network correction for model `:m3s` or `:m3sc`.
 - `testmode`:   (optional) if true, turn on `Flux.testmode!`
 
 **Returns:**
-- `y_hat`: predicted data
+- `y_hat`: length `N` prediction vector
 """
-function nn_comp_3_fwd(B_unit, B_vec, B_vec_dot, x_norm::AbstractMatrix, y_bias, y_scale, model::Chain,
+function nn_comp_3_fwd(B_unit, B_vec, B_vec_dot,
+                       x_norm, y_bias, y_scale, model::Chain,
                        TL_coef_p, TL_coef_i, TL_coef_e;
                        model_type::Symbol = :m3s,
                        y_type::Symbol     = :d,
@@ -1272,26 +1393,26 @@ function nn_comp_3_fwd(B_unit, B_vec, B_vec_dot, x_norm::AbstractMatrix, y_bias,
     testmode && Flux.testmode!(m)
 
     # get results
-    TL_aircraft  = get_TL_aircraft_vec(B_vec',B_vec_dot',TL_coef_p,TL_coef_i,TL_coef_e)
+    TL_aircraft  = get_TL_aircraft_vec(B_vec,B_vec_dot,TL_coef_p,TL_coef_i,TL_coef_e)
     vec_aircraft = TL_aircraft
 
     if (model_type in [:m3v,:m3vc]) & use_nn # vector NN correction to TL
-        vec_aircraft += model(x_norm') .* y_scale;
+        vec_aircraft += m(x_norm) .* y_scale;
     end
 
     if y_type in [:c,:d] # aircraft field to subtract from scalar mag
-        # vec_aircraft += y_bias .* B_unit' # This was worse, overall
-        y_hat = vec(sum(vec_aircraft .* B_unit', dims=1)) # dot product
+        # vec_aircraft += y_bias .* B_unit # This was worse, overall
+        y_hat = vec(sum(vec_aircraft .* B_unit, dims=1)) # dot product
         # println("Aircraft correction = ", y_hat)
     elseif y_type in [:a,:b] # magnitude of scalar Earth field
-        B_e   = B_vec' - vec_aircraft
+        B_e   = B_vec - vec_aircraft
         y_hat = vec(sqrt.(sum(B_e.^2,dims=1)))
-        # println("Aircraft correction = ", sum(vec_aircraft .* B_unit', dims=1))
+        # println("Aircraft correction = ", sum(vec_aircraft .* B_unit, dims=1))
         # println("|B_e| = ", y_hat)
     end
 
-    if (model_type in [:m3s,:m3sc]) & use_nn # scalar NN correction to TL
-        y_hat += vec(m(x_norm')) .* y_scale; 
+    if (model_type in [:m3s,:m3sc,:m3w,:m3tf]) & use_nn # scalar NN correction to TL
+        y_hat += vec(m(x_norm)) .* y_scale
     end
 
     denorm || (y_hat = (y_hat .- y_bias) ./ y_scale)
@@ -1304,7 +1425,8 @@ end # function nn_comp_3_fwd
                   model_type::Symbol = :m3s,
                   y_type::Symbol     = :d,
                   TL_coef::Vector    = zeros(Float32,18),
-                  terms_A            = [:permanent,:induced,:eddy])
+                  terms_A            = [:permanent,:induced,:eddy],
+                  l_window::Int      = 5)
 
 Evaluate performance of neural network-based aeromagnetic compensation, model 3.
 """
@@ -1312,31 +1434,35 @@ function nn_comp_3_fwd(A, Bt, B_dot, x, data_norms::Tuple, model::Chain;
                        model_type::Symbol = :m3s,
                        y_type::Symbol     = :d,
                        TL_coef::Vector    = zeros(Float32,18),
-                       terms_A            = [:permanent,:induced,:eddy])
+                       terms_A            = [:permanent,:induced,:eddy],
+                       l_window::Int      = 5)
 
     @assert y_type in [:a,:b,:c,:d] "unsupported y_type = $y_type for nn_comp_3"
 
     # convert to Float32 for consistency with nn_comp_3_train
-    A       = convert.(Float32,A)
-    Bt      = convert.(Float32,Bt)    # magnitude of total field measurements
-    B_dot   = convert.(Float32,B_dot) # finite differences of total field vector
-    x       = convert.(Float32,x)
-    TL_coef = convert.(Float32,TL_coef)
+    A       = Float32.(A)
+    Bt      = Float32.(Bt)    # magnitude of total field measurements
+    B_dot   = Float32.(B_dot) # finite differences of total field vector
+    x       = Float32.(x)
+    TL_coef = Float32.(TL_coef)
 
     # assume all terms are stored, but they may be zero if not trained
     Bt_scale = 50000f0
     (TL_coef_p,TL_coef_i,TL_coef_e) = TL_vec2mat(TL_coef,terms_A;Bt_scale=Bt_scale)
 
-    B_unit    = A[:,1:3]     # normalized vector magnetometer reading
-    B_vec     = B_unit .* Bt # vector magnetometer to be used in TL
-    B_vec_dot = B_dot        # not exactly true, but internally consistent
+    B_unit    = A[:,1:3]'     # normalized vector magnetometer reading
+    B_vec     = B_unit .* Bt' # vector magnetometer to be used in TL
+    B_vec_dot = B_dot'        # not exactly true, but internally consistent
 
     # unpack data normalizations
     (_,_,v_scale,x_bias,x_scale,y_bias,y_scale) = unpack_data_norms(data_norms)
-    x_norm = ((x .- x_bias) ./ x_scale) * v_scale
+    x_norm = (((x .- x_bias) ./ x_scale) * v_scale)'
+
+    model_type in [:m3w,:m3tf] && (x_norm = get_temporal_data(x_norm,l_window))
 
     # get results
-    y_hat = nn_comp_3_fwd(B_unit,B_vec,B_vec_dot,x_norm,y_bias,y_scale,model,
+    y_hat = nn_comp_3_fwd(B_unit,B_vec,B_vec_dot,
+                          x_norm,y_bias,y_scale,model,
                           TL_coef_p,TL_coef_i,TL_coef_e;
                           model_type = model_type,
                           y_type     = y_type,
@@ -1348,7 +1474,8 @@ function nn_comp_3_fwd(A, Bt, B_dot, x, data_norms::Tuple, model::Chain;
 end # function nn_comp_3_fwd
 
 """
-    nn_comp_3_test(B_unit, B_vec, B_vec_dot, x_norm, y, y_bias, y_scale, model::Chain,
+    nn_comp_3_test(B_unit, B_vec, B_vec_dot,
+                   x_norm, y, y_bias, y_scale, model::Chain,
                    TL_coef_p,TL_coef_i,TL_coef_e;
                    model_type::Symbol = :m3s,
                    y_type::Symbol     = :d,
@@ -1360,7 +1487,8 @@ end # function nn_comp_3_fwd
 
 Evaluate performance of neural network-based aeromagnetic compensation, model 3.
 """
-function nn_comp_3_test(B_unit, B_vec, B_vec_dot, x_norm, y, y_bias, y_scale, model::Chain,
+function nn_comp_3_test(B_unit, B_vec, B_vec_dot,
+                        x_norm, y, y_bias, y_scale, model::Chain,
                         TL_coef_p,TL_coef_i,TL_coef_e;
                         model_type::Symbol = :m3s,
                         y_type::Symbol      = :d,
@@ -1372,11 +1500,9 @@ function nn_comp_3_test(B_unit, B_vec, B_vec_dot, x_norm, y, y_bias, y_scale, mo
 
     @assert y_type in [:a,:b,:c,:d] "unsupported y_type = $y_type for nn_comp_3"
 
-    # convert to Float32 for consistency with nn_comp_3_train
-    y = convert.(Float32,y)
-
     # get results
-    y_hat = nn_comp_3_fwd(B_unit,B_vec,B_vec_dot,x_norm,y_bias,y_scale,model,
+    y_hat = nn_comp_3_fwd(B_unit,B_vec,B_vec_dot,
+                          x_norm,y_bias,y_scale,model,
                           TL_coef_p,TL_coef_i,TL_coef_e;
                           model_type = model_type,
                           y_type     = y_type,
@@ -1396,6 +1522,7 @@ end # function nn_comp_3_test
                    TL_coef::Vector    = zeros(Float32,18),
                    terms_A            = [:permanent,:induced,:eddy],
                    l_segs::Vector     = [length(y)],
+                   l_window::Int      = 5,
                    silent::Bool       = false)
 
 Evaluate performance of neural network-based aeromagnetic compensation, model 3.
@@ -1406,19 +1533,21 @@ function nn_comp_3_test(A, Bt, B_dot, x, y, data_norms::Tuple, model::Chain;
                         TL_coef::Vector    = zeros(Float32,18),
                         terms_A            = [:permanent,:induced,:eddy],
                         l_segs::Vector     = [length(y)],
+                        l_window::Int      = 5,
                         silent::Bool       = false)
 
     @assert y_type in [:a,:b,:c,:d] "unsupported y_type = $y_type for nn_comp_3"
 
     # convert to Float32 for consistency with nn_comp_3_train
-    y = convert.(Float32,y)
+    y = Float32.(y)
 
     # get results
     y_hat = nn_comp_3_fwd(A,Bt,B_dot,x,data_norms,model;
                           model_type = model_type,
                           y_type     = y_type,
                           TL_coef    = TL_coef,
-                          terms_A    = terms_A)
+                          terms_A    = terms_A,
+                          l_window   = l_window)
     err   = err_segs(y_hat,y,l_segs;silent=silent_debug)
     silent || @info("test  error: $(round(std(err),digits=2)) nT")
 
@@ -1437,78 +1566,82 @@ linear regression where the number of components controls the strength of the
 regularization.
 
 **Arguments:**
-- `x`:          input data
-- `y`:          observed data
+- `x`:          `N` x `Nf` data matrix (`Nf` is number of features)
+- `y`:          length `N` target vector
 - `k`:          (optional) number of components
-- `l_segs`:     (optional) vector of lengths of `lines`, sum(l_segs) == length(y)
+- `l_segs`:     (optional) length `N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
 - `return_set`: (optional) if true, return `coef_set` instead of other outputs
 - `silent`:     (optional) if true, no print outs
 
 **Returns:**
-- `model`:      Tuple of PLSR-based model `(coefficients, bias=0)`
-- `data_norms`: Tuple of data normalizations, e.g., `(x_bias,x_scale,y_bias,y_scale)`
-- `y_hat`:      predicted data
-- `err`:        mean-corrected (per line) error
-- `coef_set`:   if `return_set = true`, set of coefficients (size `nx` x `ny` x `k`)
+- `model`:      tuple of PLSR-based model `(coefficients, bias=0)`
+- `data_norms`: tuple of data normalizations, e.g., `(x_bias,x_scale,y_bias,y_scale)`
+- `y_hat`:      length `N` prediction vector
+- `err`:        length `N` mean-corrected (per line) error
+- `coef_set`:   if `return_set = true`, set of coefficients (size `Nf` x `Ny` x `k`)
 """
-function plsr_fit(x, y, k::Int=size(x,2);   # N x nx , N x ny , k
+function plsr_fit(x, y, k::Int=size(x,2);   # N x Nf , N x Ny , k
                   l_segs::Vector   = [length(y)],
                   return_set::Bool = false,
                   silent::Bool     = false)
+
+	Nf = size(x,2)
+    Ny = size(y,2)
+
+    if k > Nf
+        silent || @info("reducing k from $k to $Nf")
+        k = Nf
+    end
 
     # standardize data
     (x_bias,x_scale,x_norm) = norm_sets(x;norm_type=:standardize)
     (y_bias,y_scale,y_norm) = norm_sets(y;norm_type=:standardize)
 
-    k = clamp(k,1,size(x_norm,2))
-
-	nx       = size(x_norm,2)           # nx
-    ny       = size(y_norm,2)           # ny
     x_temp   = sum(x_norm.^2)           # scalar
     y_temp   = sum(y_norm.^2)           # scalar
-    p_out    = zeros(eltype(x),nx,k)    # nx x k
-    q_out    = zeros(eltype(x),ny,k)    # ny x k
-    u_out    = zeros(eltype(x),nx,k)    # nx x k
-    coef_set = zeros(eltype(x),nx,ny,k) # nx x ny x k
+    p_out    = zeros(eltype(x),Nf,k)    # Nf x k
+    q_out    = zeros(eltype(x),Ny,k)    # Ny x k
+    u_out    = zeros(eltype(x),Nf,k)    # Nf x k
+    coef_set = zeros(eltype(x),Nf,Ny,k) # Nf x Ny x k
 
     # covariance & cross-covariance matrices
-	Cxx = cov(x_norm)                   # nx x nx
-	Cyx = collect(cov(y_norm,x_norm))   # ny x nx
+	Cxx = cov(x_norm)                   # Nf x Nf
+	Cyx = collect(cov(y_norm,x_norm))   # Ny x Nf
 
     for i = 1:k
 
         # unit vectors that maximize correlation between input & output scores
-        (U,_,V) = svd(Cyx')      # nx x ny , _ , ny x ny
-        u = U[:,1:1]             # nx                      # x'*y ./ norm(x'*y)
-        v = V[:,1:1]             # ny
+        (U,_,V) = svd(Cyx')      # Nf x Ny , _ , Ny x Ny
+        u = U[:,1:1]             # Nf                      # x'*y ./ norm(x'*y)
+        v = V[:,1:1]             # Ny
 
         # input & output scores, input & output loading vectors
         z = x_norm*u             # N
         r = y_norm*v             # N
-        p = (Cxx*u) / (u'*Cxx*u) # nx                      # x'*z ./ norm(z)^2
-        q = (Cyx*u) / (u'*Cxx*u) # ny                      # y'*z ./ norm(z)^2
+        p = (Cxx*u) / (u'*Cxx*u) # Nf                      # x'*z ./ norm(z)^2
+        q = (Cyx*u) / (u'*Cxx*u) # Ny                      # y'*z ./ norm(z)^2
 
         # deflated covariance & cross-covariance matrices
-        Cxx = (I(nx) - p*u')*Cxx # nx x nx
-        Cyx = Cyx*(I(nx) - u*p') # ny x nx
+        Cxx = (I(Nf) - p*u')*Cxx # Nf x Nf
+        Cyx = Cyx*(I(Nf) - u*p') # Ny x Nf
 
         # deflated input & output data
-        x_norm = x_norm - z*p'   # N  x nx                 # x*(u*p')
-        y_norm = y_norm - z*q'   # N  x ny                 # x*(u*q')
+        x_norm = x_norm - z*p'   # N  x Nf                 # x*(u*p')
+        y_norm = y_norm - z*q'   # N  x Ny                 # x*(u*q')
 
-        p_out[:,i] = p           # nx x k
-        q_out[:,i] = q           # ny x k
-        u_out[:,i] = u           # nx x k
+        p_out[:,i] = p           # Nf x k
+        q_out[:,i] = q           # Ny x k
+        u_out[:,i] = u           # Nf x k
 
         if return_set
-            coef_set[:,:,i] = u_out[:,1:i]*inv(p_out[:,1:i]'*u_out[:,1:i])*q_out[:,1:i]' # nx x ny x k
+            coef_set[:,:,i] = u_out[:,1:i]*inv(p_out[:,1:i]'*u_out[:,1:i])*q_out[:,1:i]' # Nf x Ny x k
         end
 
     end
 
     return_set && return (coef_set)
 
-    coef = vec(u_out*inv(p_out'*u_out)*q_out') # nx x ny
+    coef = vec(u_out*inv(p_out'*u_out)*q_out') # Nf x Ny
     bias = zero(eltype(coef))
 
     # input & output residue variance %
@@ -1544,18 +1677,18 @@ end # function plsr_fit
 Fit an elastic net (ridge regression and/or Lasso) model to data.
 
 **Arguments:**
-- `x`:      input data
-- `y`:      observed data
+- `x`:      `N` x `Nf` data matrix (`Nf` is number of features)
+- `y`:      length `N` target vector
 - `α`:      (optional) ridge regression (`α=0`) vs Lasso (`α=1`) balancing parameter {0:1}
 - `λ`:      (optional) elastic net parameter (otherwise determined with cross-validation), `-1` to ignore
-- `l_segs`: (optional) vector of lengths of `lines`, sum(l_segs) == length(y)
+- `l_segs`: (optional) length `N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
 - `silent`: (optional) if true, no print outs
 
 **Returns:**
-- `model`:      Tuple of elastic net-based model `(coefficients,bias)`
-- `data_norms`: Tuple of data normalizations, e.g., `(x_bias,x_scale,y_bias,y_scale)`
-- `y_hat`:      predicted data
-- `err`:        mean-corrected (per line) error
+- `model`:      tuple of elastic net-based model `(coefficients,bias)`
+- `data_norms`: tuple of data normalizations, e.g., `(x_bias,x_scale,y_bias,y_scale)`
+- `y_hat`:      length `N` prediction vector
+- `err`:        length `N` mean-corrected (per line) error
 """
 function elasticnet_fit(x, y, α=0.99;  λ = -1,
                         l_segs::Vector = [length(y)],
@@ -1604,20 +1737,20 @@ end # function elasticnet_fit
 Fit a linear regression model to data.
 
 **Arguments:**
-- `x`:           input data
-- `y`:           observed data
+- `x`:           `N` x `Nf` data matrix (`Nf` is number of features)
+- `y`:           length `N` target vector
 - `trim`:        (optional) number of elements to trim (e.g., due to bpf)
 - `λ`:           (optional) ridge parameter
-- `norm_type_x`: (optional) normalization for `x` matrix
+- `norm_type_x`: (optional) normalization for `x` data matrix
 - `norm_type_y`: (optional) normalization for `y` target vector
-- `l_segs`:      (optional) vector of lengths of `lines`, sum(l_segs) == length(y)
+- `l_segs`:      (optional) length `N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
 - `silent`:      (optional) if true, no print outs
 
 **Returns:**
-- `model`:      Tuple of linear regression model `(coefficients, bias=0)`
-- `data_norms`: Tuple of data normalizations, e.g., `(x_bias,x_scale,y_bias,y_scale)`
-- `y_hat`:      predicted data
-- `err`:        mean-corrected (per line) error
+- `model`:      tuple of linear regression model `(coefficients, bias=0)`
+- `data_norms`: tuple of data normalizations, e.g., `(x_bias,x_scale,y_bias,y_scale)`
+- `y_hat`:      length `N` prediction vector
+- `err`:        length `N` mean-corrected (per line) error
 """
 function linear_fit(x, y;
                     trim::Int=0, λ=0,
@@ -1637,7 +1770,7 @@ function linear_fit(x, y;
         ind = [ind;i1:i2]
     end
 
-    # linear regression to get Tolles-Lawson coefficients
+    # linear regression to get coefficients
     coef = vec(linreg(y_norm[ind,:],x_norm[ind,:];λ=λ))
     bias = zero(eltype(coef))
 
@@ -1659,13 +1792,13 @@ end # function linear_fit
 Evaluate performance of linear model.
 
 **Arguments:**
-- `x_norm`:  normalized input data
-- `y_bias`:  observed data bias (mean, min, or zero)
-- `y_scale`: observed data scaling factor (std dev, max-min, or one)
-- `model`:   Tuple of model `(coefficients,bias)`
+- `x_norm`:  `N` x `Nf` normalized data matrix (`Nf` is number of features)
+- `y_bias`:  `y` target vector bias (mean, min, or zero)
+- `y_scale`: `y` target vector scaling factor (std dev, max-min, or one)
+- `model`:   tuple of model `(coefficients,bias)`
 
 **Returns:**
-- `y_hat`: predicted data
+- `y_hat`: length `N` prediction vector
 """
 function linear_fwd(x_norm, y_bias, y_scale, model)
 
@@ -1685,12 +1818,12 @@ end # function linear_fwd
 Evaluate performance of linear model.
 
 **Arguments:**
-- `x`:          input data
-- `data_norms`: Tuple of data normalizations, e.g., `(x_bias,x_scale,y_bias,y_scale)`
-- `model`:      Tuple of model `(coefficients,bias)`
+- `x`:          `N` x `Nf` data matrix (`Nf` is number of features)
+- `data_norms`: tuple of data normalizations, e.g., `(x_bias,x_scale,y_bias,y_scale)`
+- `model`:      tuple of model `(coefficients,bias)`
 
 **Returns:**
-- `y_hat`: predicted data
+- `y_hat`: length `N` prediction vector
 """
 function linear_fwd(x, data_norms::Tuple, model)
 
@@ -1712,17 +1845,17 @@ end # function linear_fwd
 Evaluate performance of linear model.
 
 **Arguments:**
-- `x_norm`:  normalized input data
-- `y`:       observed data
-- `y_bias`:  observed data bias (mean, min, or zero)
-- `y_scale`: observed data scaling factor (std dev, max-min, or one)
-- `model`:   Tuple of model `(coefficients,bias)`
-- `l_segs`:  (optional) vector of lengths of `lines`, sum(l_segs) == length(y)
+- `x_norm`:  `N` x `Nf` normalized data matrix (`Nf` is number of features)
+- `y`:       length `N` target vector
+- `y_bias`:  `y` target vector bias bias (mean, min, or zero)
+- `y_scale`: `y` target vector bias scaling factor (std dev, max-min, or one)
+- `model`:   tuple of model `(coefficients,bias)`
+- `l_segs`:  (optional) length `N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
 - `silent`:  (optional) if true, no print outs
 
 **Returns:**
-- `y_hat`: predicted data
-- `err`:   mean-corrected (per line) error
+- `y_hat`: length `N` prediction vector
+- `err`:   length `N` mean-corrected (per line) error
 """
 function linear_test(x_norm, y, y_bias, y_scale, model;
                      l_segs::Vector = [length(y)],
@@ -1744,16 +1877,16 @@ end # function linear_test
 Evaluate performance of linear model.
 
 **Arguments:**
-- `x`:          input data
-- `y`:          observed data
-- `data_norms`: Tuple of data normalizations, e.g., `(x_bias,x_scale,y_bias,y_scale)`
-- `model`:      Tuple of model `(coefficients,bias)`
-- `l_segs`:     (optional) vector of lengths of `lines`, sum(l_segs) == length(y)
+- `x`:          `N` x `Nf` data matrix (`Nf` is number of features)
+- `y`:          length `N` target vector
+- `data_norms`: tuple of data normalizations, e.g., `(x_bias,x_scale,y_bias,y_scale)`
+- `model`:      tuple of model `(coefficients,bias)`
+- `l_segs`:     (optional) length `N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
 - `silent`:     (optional) if true, no print outs
 
 **Returns:**
-- `y_hat`: predicted data
-- `err`:   mean-corrected (per line) error
+- `y_hat`: length `N` prediction vector
+- `err`:   length `N` mean-corrected (per line) error
 """
 function linear_test(x, y, data_norms::Tuple, model;
                      l_segs::Vector = [length(y)],
@@ -1772,6 +1905,14 @@ end # function linear_test
                comp_params::CompParams = NNCompParams(),
                xyz_test::XYZ           = xyz,
                ind_test::BitVector     = BitVector(),
+               σ_curriculum            = 1.0,
+               l_window::Int           = 5,
+               window_type::Symbol     = :sliding,
+               tf_layer_type::Symbol   = :postlayer,
+               tf_norm_type::Symbol    = :batch,
+               dropout_prob            = 0.2,
+               N_tf_head::Int          = 8,
+               tf_gain                 = 1.0,
                silent::Bool            = false)
 
 Train an aeromagnetic compensation model.
@@ -1783,21 +1924,37 @@ Train an aeromagnetic compensation model.
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct, either:
     - `NNCompParams`:  neural network-based aeromagnetic compensation parameters struct
     - `LinCompParams`: linear aeromagnetic compensation parameters struct
-- `xyz_test`:    (optional) `XYZ` held-out test data struct
-- `ind_test`:    (optional) indices for test data struct
-- `silent`:      (optional) if true, no print outs
+- `xyz_test`:      (optional) `XYZ` held-out test data struct
+- `ind_test`:      (optional) indices for test data struct
+- `σ_curriculum`:  (optional) standard deviation threshold, only used for `model_type = :m3sc, :m3vc`
+- `l_window`:      (optional) temporal window length, only used for `model_type = :m3w, :m3tf`
+- `window_type`:   (optional) type of windowing, `:sliding` for overlapping or `:contiguous` for non-overlapping, only used for `model_type = :m3w, :m3tf`
+- `tf_layer_type`: (optional) transformer normalization layer before or after skip connection {`:prelayer`,`:postlayer`}, only used for `model_type = :m3tf`
+- `tf_norm_type`:  (optional) normalization for transformer encoder {`:batch`,`:layer`,`:none`}, only used for `model_type = :m3tf`
+- `dropout_prob`:  (optional) dropout rate, only used for `model_type = :m3w, :m3tf`
+- `N_tf_head`:     (optional) number of attention heads, only used for `model_type = :m3tf`
+- `tf_gain`:       (optional) weight initialization parameter, only used for `model_type = :m3tf`
+- `silent`:        (optional) if true, no print outs
 
 **Returns:**
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct
-- `y`:           observed data
-- `y_hat`:       predicted data
-- `err`:         compensation error
-- `features`:    full list of features (including components of TL `A`, etc.)
+- `y`:           length `N` target vector
+- `y_hat`:       length `N` prediction vector
+- `err`:         length `N` compensation error
+- `features`:    length `Nf` feature vector (including components of TL `A`, etc.)
 """
 function comp_train(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
                     comp_params::CompParams = NNCompParams(),
                     xyz_test::XYZ           = xyz,
                     ind_test::BitVector     = BitVector(),
+                    σ_curriculum            = 1.0,
+                    l_window::Int           = 5,
+                    window_type::Symbol     = :sliding,
+                    tf_layer_type::Symbol   = :postlayer,
+                    tf_norm_type::Symbol    = :batch,
+                    dropout_prob            = 0.2,
+                    N_tf_head::Int          = 8,
+                    tf_gain                 = 1.0,
                     silent::Bool            = false)
 
     seed!(2) # for reproducibility
@@ -1883,11 +2040,11 @@ function comp_train(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
                                                      sub_igrf    = sub_igrf))
 
     # set held-out test line
-    A_test     = Array{Any}(undef,0,0)
-    Bt_test    = []
-    B_dot_test = Array{Any}(undef,0,0)
-    x_test     = Array{Any}(undef,0,0)
-    y_test     = []
+    A_test     = Matrix{eltype(A)}(undef,0,0)
+    Bt_test    = Vector{eltype(x)}(undef,0)
+    B_dot_test = Matrix{eltype(x)}(undef,0,0)
+    x_test     = Matrix{eltype(x)}(undef,0,0)
+    y_test     = Vector{eltype(y)}(undef,0)
     if !isempty(ind_test)
         (x_test,_,_) = get_x(xyz_test,ind_test,features_setup;
                              features_no_norm = features_no_norm,
@@ -1958,31 +2115,39 @@ function comp_train(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
                                     x_test      = x_test_fi,
                                     y_test      = y_test,
                                     silent      = silent)
-            elseif model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc]
+            elseif model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc,:m3w,:m3tf]
                 (model,TL_coef,data_norms,y_hat_fi,err_fi) =
                     nn_comp_3_train(A,Bt,B_dot,x_fi,y,no_norm;
-                                    model_type  = model_type,
-                                    norm_type_x = norm_type_x,
-                                    norm_type_y = norm_type_y,
-                                    TL_coef     = TL_coef,
-                                    terms_A     = terms_A,
-                                    y_type      = y_type,
-                                    η_adam      = η_adam,
-                                    epoch_adam  = epoch_adam,
-                                    epoch_lbfgs = epoch_lbfgs,
-                                    hidden      = hidden,
-                                    activation  = activation,
-                                    batchsize   = batchsize,
-                                    frac_train  = frac_train,
-                                    α_sgl       = α_sgl,
-                                    λ_sgl       = λ_sgl,
-                                    k_pca       = k_pca,
-                                    A_test      = A_test,
-                                    Bt_test     = Bt_test,
-                                    B_dot_test  = B_dot_test,
-                                    x_test      = x_test_fi,
-                                    y_test      = y_test,
-                                    silent      = silent)
+                                    model_type    = model_type,
+                                    norm_type_x   = norm_type_x,
+                                    norm_type_y   = norm_type_y,
+                                    TL_coef       = TL_coef,
+                                    terms_A       = terms_A,
+                                    y_type        = y_type,
+                                    η_adam        = η_adam,
+                                    epoch_adam    = epoch_adam,
+                                    epoch_lbfgs   = epoch_lbfgs,
+                                    hidden        = hidden,
+                                    activation    = activation,
+                                    batchsize     = batchsize,
+                                    frac_train    = frac_train,
+                                    α_sgl         = α_sgl,
+                                    λ_sgl         = λ_sgl,
+                                    k_pca         = k_pca,
+                                    σ_curriculum  = σ_curriculum,
+                                    l_window      = l_window,
+                                    window_type   = window_type,
+                                    tf_layer_type = tf_layer_type,
+                                    tf_norm_type  = tf_norm_type,
+                                    dropout_prob  = dropout_prob,
+                                    N_tf_head     = N_tf_head,
+                                    tf_gain       = tf_gain,
+                                    A_test        = A_test,
+                                    Bt_test       = Bt_test,
+                                    B_dot_test    = B_dot_test,
+                                    x_test        = x_test_fi,
+                                    y_test        = y_test,
+                                    silent        = silent)
             else
                 error("$model_type model type not defined")
             end
@@ -2048,33 +2213,39 @@ function comp_train(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
                                 x_test      = x_test,
                                 y_test      = y_test,
                                 silent      = silent)
-        elseif model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc]
+        elseif model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc,:m3w,:m3tf]
             (model,TL_coef,data_norms,y_hat,err) =
                 nn_comp_3_train(A,Bt,B_dot,x,y,no_norm;
-                                model_type  = model_type,
-                                norm_type_x = norm_type_x,
-                                norm_type_y = norm_type_y,
-                                TL_coef     = TL_coef,
-                                terms_A     = terms_A,
-                                y_type      = y_type,
-                                η_adam      = η_adam,
-                                epoch_adam  = epoch_adam,
-                                epoch_lbfgs = epoch_lbfgs,
-                                hidden      = hidden,
-                                activation  = activation,
-                                batchsize   = batchsize,
-                                frac_train  = frac_train,
-                                α_sgl       = α_sgl,
-                                λ_sgl       = λ_sgl,
-                                k_pca       = k_pca,
-                                data_norms  = data_norms,
-                                model       = model,
-                                A_test      = A_test,
-                                Bt_test     = Bt_test,
-                                B_dot_test  = B_dot_test,
-                                x_test      = x_test,
-                                y_test      = y_test,
-                                silent      = silent)
+                                model_type    = model_type,
+                                norm_type_x   = norm_type_x,
+                                norm_type_y   = norm_type_y,
+                                TL_coef       = TL_coef,
+                                terms_A       = terms_A,
+                                y_type        = y_type,
+                                η_adam        = η_adam,
+                                epoch_adam    = epoch_adam,
+                                epoch_lbfgs   = epoch_lbfgs,
+                                hidden        = hidden,
+                                activation    = activation,
+                                batchsize     = batchsize,
+                                frac_train    = frac_train,
+                                α_sgl         = α_sgl,
+                                λ_sgl         = λ_sgl,
+                                k_pca         = k_pca,
+                                σ_curriculum  = σ_curriculum,
+                                l_window      = l_window,
+                                window_type   = window_type,
+                                tf_layer_type = tf_layer_type,
+                                tf_norm_type  = tf_norm_type,
+                                dropout_prob  = dropout_prob,
+                                N_tf_head     = N_tf_head,
+                                tf_gain       = tf_gain,
+                                A_test        = A_test,
+                                Bt_test       = Bt_test,
+                                B_dot_test    = B_dot_test,
+                                x_test        = x_test,
+                                y_test        = y_test,
+                                silent        = silent)
         elseif model_type in [:TL,:mod_TL,:map_TL]
             trim = model_type in [:TL,:mod_TL] ? 20 : 0
             (model,data_norms,y_hat,err) =
@@ -2123,6 +2294,14 @@ end # function comp_train
                comp_params::CompParams = NNCompParams(),
                xyz_test::XYZ           = xyz_vec[1],
                ind_test::BitVector     = BitVector(),
+               σ_curriculum            = 1.0,
+               l_window::Int           = 5,
+               window_type::Symbol     = :sliding,
+               tf_layer_type::Symbol   = :postlayer,
+               tf_norm_type::Symbol    = :batch,
+               dropout_prob            = 0.2,
+               N_tf_head::Int          = 8,
+               tf_gain                 = 1.0,
                silent::Bool            = false)
 
 Train an aeromagnetic compensation model.
@@ -2134,16 +2313,24 @@ Train an aeromagnetic compensation model.
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct, either:
     - `NNCompParams`:  neural network-based aeromagnetic compensation parameters struct
     - `LinCompParams`: linear aeromagnetic compensation parameters struct
-- `xyz_test`:    (optional) `XYZ` held-out test data struct
-- `ind_test`:    (optional) indices for test data struct
-- `silent`:      (optional) if true, no print outs
+- `xyz_test`:      (optional) `XYZ` held-out test data struct
+- `ind_test`:      (optional) indices for test data struct
+- `σ_curriculum`:  (optional) standard deviation threshold, only used for `model_type = :m3sc, :m3vc`
+- `l_window`:      (optional) temporal window length, only used for `model_type = :m3w, :m3tf`
+- `window_type`:   (optional) type of windowing, `:sliding` for overlapping or `:contiguous` for non-overlapping, only used for `model_type = :m3w, :m3tf`
+- `tf_layer_type`: (optional) transformer normalization layer before or after skip connection {`:prelayer`,`:postlayer`}, only used for `model_type = :m3tf`
+- `tf_norm_type`:  (optional) normalization for transformer encoder {`:batch`,`:layer`,`:none`}, only used for `model_type = :m3tf`
+- `dropout_prob`:  (optional) dropout rate, only used for `model_type = :m3w, :m3tf`
+- `N_tf_head`:     (optional) number of attention heads, only used for `model_type = :m3tf`
+- `tf_gain`:       (optional) weight initialization parameter, only used for `model_type = :m3tf`
+- `silent`:        (optional) if true, no print outs
 
 **Returns:**
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct
-- `y`:           observed data
-- `y_hat`:       predicted data
-- `err`:         compensation error
-- `features`:    full list of features (including components of TL `A`, etc.)
+- `y`:           length `N` target vector
+- `y_hat`:       length `N` prediction vector
+- `err`:         length `N` compensation error
+- `features`:    length `Nf` feature vector (including components of TL `A`, etc.)
 """
 function comp_train(xyz_vec::Vector{XYZ20{Int64,Float64}},
                     ind_vec::Vector{BitVector},
@@ -2151,6 +2338,14 @@ function comp_train(xyz_vec::Vector{XYZ20{Int64,Float64}},
                     comp_params::CompParams = NNCompParams(),
                     xyz_test::XYZ           = xyz_vec[1],
                     ind_test::BitVector     = BitVector(),
+                    σ_curriculum            = 1.0,
+                    l_window::Int           = 5,
+                    window_type::Symbol     = :sliding,
+                    tf_layer_type::Symbol   = :postlayer,
+                    tf_norm_type::Symbol    = :batch,
+                    dropout_prob            = 0.2,
+                    N_tf_head::Int          = 8,
+                    tf_gain                 = 1.0,
                     silent::Bool            = false)
 
     seed!(2) # for reproducibility
@@ -2287,18 +2482,18 @@ function comp_train(xyz_vec::Vector{XYZ20{Int64,Float64}},
     err   = 10*y    # initialize
 
     # set held-out test line
-    A_test     = Array{Any}(undef,0,0)
-    Bt_test    = []
-    B_dot_test = Array{Any}(undef,0,0)
-    x_test     = Array{Any}(undef,0,0)
-    y_test     = []
+    A_test     = Matrix{eltype(A)}(undef,0,0)
+    Bt_test    = Vector{eltype(x)}(undef,0)
+    B_dot_test = Matrix{eltype(x)}(undef,0,0)
+    x_test     = Matrix{eltype(x)}(undef,0,0)
+    y_test     = Vector{eltype(y)}(undef,0)
     if !isempty(ind_test)
         (x_test,_,_) = get_x(xyz_test,ind_test,features_setup;
                              features_no_norm = features_no_norm,
                              terms            = terms,
                              sub_diurnal      = sub_diurnal,
                              sub_igrf         = sub_igrf,
-                             bpf_mag          = bpf_mag);
+                             bpf_mag          = bpf_mag)
         y_test = get_y(xyz_test,ind_test,map_val;
                        y_type      = y_type,
                        use_mag     = use_mag,
@@ -2359,31 +2554,39 @@ function comp_train(xyz_vec::Vector{XYZ20{Int64,Float64}},
                                     x_test      = x_test_fi,
                                     y_test      = y_test,
                                     silent      = silent)
-            elseif model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc]
+            elseif model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc,:m3w,:m3tf]
                 (model,TL_coef,data_norms,y_hat_fi,err_fi) =
                     nn_comp_3_train(A,Bt,B_dot,x_fi,y,no_norm;
-                                    model_type  = model_type,
-                                    norm_type_x = norm_type_x,
-                                    norm_type_y = norm_type_y,
-                                    TL_coef     = TL_coef,
-                                    terms_A     = terms_A,
-                                    y_type      = y_type,
-                                    η_adam      = η_adam,
-                                    epoch_adam  = epoch_adam,
-                                    epoch_lbfgs = epoch_lbfgs,
-                                    hidden      = hidden,
-                                    activation  = activation,
-                                    batchsize   = batchsize,
-                                    frac_train  = frac_train,
-                                    α_sgl       = α_sgl,
-                                    λ_sgl       = λ_sgl,
-                                    k_pca       = k_pca,
-                                    A_test      = A_test,
-                                    Bt_test     = Bt_test,
-                                    B_dot_test  = B_dot_test,
-                                    x_test      = x_test_fi,
-                                    y_test      = y_test,
-                                    silent      = silent)
+                                    model_type    = model_type,
+                                    norm_type_x   = norm_type_x,
+                                    norm_type_y   = norm_type_y,
+                                    TL_coef       = TL_coef,
+                                    terms_A       = terms_A,
+                                    y_type        = y_type,
+                                    η_adam        = η_adam,
+                                    epoch_adam    = epoch_adam,
+                                    epoch_lbfgs   = epoch_lbfgs,
+                                    hidden        = hidden,
+                                    activation    = activation,
+                                    batchsize     = batchsize,
+                                    frac_train    = frac_train,
+                                    α_sgl         = α_sgl,
+                                    λ_sgl         = λ_sgl,
+                                    k_pca         = k_pca,
+                                    σ_curriculum  = σ_curriculum,
+                                    l_window      = l_window,
+                                    window_type   = window_type,
+                                    tf_layer_type = tf_layer_type,
+                                    tf_norm_type  = tf_norm_type,
+                                    dropout_prob  = dropout_prob,
+                                    N_tf_head     = N_tf_head,
+                                    tf_gain       = tf_gain,
+                                    A_test        = A_test,
+                                    Bt_test       = Bt_test,
+                                    B_dot_test    = B_dot_test,
+                                    x_test        = x_test_fi,
+                                    y_test        = y_test,
+                                    silent        = silent)
             else
                 error("$model_type model type not defined")
             end
@@ -2449,33 +2652,39 @@ function comp_train(xyz_vec::Vector{XYZ20{Int64,Float64}},
                                 x_test      = x_test,
                                 y_test      = y_test,
                                 silent      = silent)
-        elseif model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc]
+        elseif model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc,:m3w,:m3tf]
             (model,TL_coef,data_norms,y_hat,err) =
                 nn_comp_3_train(A,Bt,B_dot,x,y,no_norm;
-                                model_type  = model_type,
-                                norm_type_x = norm_type_x,
-                                norm_type_y = norm_type_y,
-                                TL_coef     = TL_coef,
-                                terms_A     = terms_A,
-                                y_type      = y_type,
-                                η_adam      = η_adam,
-                                epoch_adam  = epoch_adam,
-                                epoch_lbfgs = epoch_lbfgs,
-                                hidden      = hidden,
-                                activation  = activation,
-                                batchsize   = batchsize,
-                                frac_train  = frac_train,
-                                α_sgl       = α_sgl,
-                                λ_sgl       = λ_sgl,
-                                k_pca       = k_pca,
-                                data_norms  = data_norms,
-                                model       = model,
-                                A_test      = A_test,
-                                Bt_test     = Bt_test,
-                                B_dot_test  = B_dot_test,
-                                x_test      = x_test,
-                                y_test      = y_test,
-                                silent      = silent)
+                                model_type    = model_type,
+                                norm_type_x   = norm_type_x,
+                                norm_type_y   = norm_type_y,
+                                TL_coef       = TL_coef,
+                                terms_A       = terms_A,
+                                y_type        = y_type,
+                                η_adam        = η_adam,
+                                epoch_adam    = epoch_adam,
+                                epoch_lbfgs   = epoch_lbfgs,
+                                hidden        = hidden,
+                                activation    = activation,
+                                batchsize     = batchsize,
+                                frac_train    = frac_train,
+                                α_sgl         = α_sgl,
+                                λ_sgl         = λ_sgl,
+                                k_pca         = k_pca,
+                                σ_curriculum  = σ_curriculum,
+                                l_window      = l_window,
+                                window_type   = window_type,
+                                tf_layer_type = tf_layer_type,
+                                tf_norm_type  = tf_norm_type,
+                                dropout_prob  = dropout_prob,
+                                N_tf_head     = N_tf_head,
+                                tf_gain       = tf_gain,
+                                A_test        = A_test,
+                                Bt_test       = Bt_test,
+                                B_dot_test    = B_dot_test,
+                                x_test        = x_test,
+                                y_test        = y_test,
+                                silent        = silent)
         elseif model_type in [:TL,:mod_TL,:map_TL]
             trim = model_type in [:TL,:mod_TL] ? 20 : 0
             (model,data_norms,y_hat,err) =
@@ -2520,7 +2729,15 @@ end # function comp_train
 """
     comp_train(lines, df_line::DataFrame, df_flight::DataFrame,
                df_map::DataFrame, comp_params::CompParams=NNCompParams();
-               silent::Bool=false)
+               σ_curriculum          = 1.0,
+               l_window::Int         = 5,
+               window_type::Symbol   = :sliding,
+               tf_layer_type::Symbol = :postlayer,
+               tf_norm_type::Symbol  = :batch,
+               dropout_prob          = 0.2,
+               N_tf_head::Int        = 8,
+               tf_gain               = 1.0,
+               silent::Bool          = false)
 
 Train an aeromagnetic compensation model.
 
@@ -2532,18 +2749,34 @@ Train an aeromagnetic compensation model.
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct, either:
     - `NNCompParams`:  neural network-based aeromagnetic compensation parameters struct
     - `LinCompParams`: linear aeromagnetic compensation parameters struct
-- `silent`:      (optional) if true, no print outs
+- `σ_curriculum`:  (optional) standard deviation threshold, only used for `model_type = :m3sc, :m3vc`
+- `l_window`:      (optional) temporal window length, only used for `model_type = :m3w, :m3tf`
+- `window_type`:   (optional) type of windowing, `:sliding` for overlapping or `:contiguous` for non-overlapping, only used for `model_type = :m3w, :m3tf`
+- `tf_layer_type`: (optional) transformer normalization layer before or after skip connection {`:prelayer`,`:postlayer`}, only used for `model_type = :m3tf`
+- `tf_norm_type`:  (optional) normalization for transformer encoder {`:batch`,`:layer`,`:none`}, only used for `model_type = :m3tf`
+- `dropout_prob`:  (optional) dropout rate, only used for `model_type = :m3w, :m3tf`
+- `N_tf_head`:     (optional) number of attention heads, only used for `model_type = :m3tf`
+- `tf_gain`:       (optional) weight initialization parameter, only used for `model_type = :m3tf`
+- `silent`:        (optional) if true, no print outs
 
 **Returns:**
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct
-- `y`:           observed data
-- `y_hat`:       predicted data
-- `err`:         mean-corrected (per line) compensation error
-- `features`:    full list of features (including components of TL `A`, etc.)
+- `y`:           length `N` target vector
+- `y_hat`:       length `N` prediction vector
+- `err`:         length `N` mean-corrected (per line) compensation error
+- `features`:    length `Nf` feature vector (including components of TL `A`, etc.)
 """
 function comp_train(lines, df_line::DataFrame, df_flight::DataFrame,
                     df_map::DataFrame, comp_params::CompParams=NNCompParams();
-                    silent::Bool=false)
+                    σ_curriculum          = 1.0,
+                    l_window::Int         = 5,
+                    window_type::Symbol   = :sliding,
+                    tf_layer_type::Symbol = :postlayer,
+                    tf_norm_type::Symbol  = :batch,
+                    dropout_prob          = 0.2,
+                    N_tf_head::Int        = 8,
+                    tf_gain               = 1.0,
+                    silent::Bool          = false)
 
     seed!(2) # for reproducibility
     t0 = time()
@@ -2569,7 +2802,7 @@ function comp_train(lines, df_line::DataFrame, df_flight::DataFrame,
         silent || @info("forcing y_type $(y_type) => :e (BPF'd total field)")
         y_type = :e
     end
-    if (model_type in [:map_TL]) & (y_type != :c)      
+    if (model_type in [:map_TL]) & (y_type != :c)
         silent || @info("forcing y_type $(y_type) => :c (aircraft field #1, using map)")
         y_type = :c
     end
@@ -2592,7 +2825,7 @@ function comp_train(lines, df_line::DataFrame, df_flight::DataFrame,
     map_TL = model_type == :map_TL ? true : false
 
     # load data
-    if model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc]
+    if model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc,:m3w,:m3tf]
         (A,Bt,B_dot,x,y,no_norm,features,l_segs) = get_Axy(lines,df_line,df_flight,df_map,
                                                            features_setup;
                                                            features_no_norm = features_no_norm,
@@ -2677,27 +2910,35 @@ function comp_train(lines, df_line::DataFrame, df_flight::DataFrame,
                                     k_pca       = k_pca,
                                     l_segs      = l_segs,
                                     silent      = silent)
-            elseif model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc]
+            elseif model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc,:m3w,:m3tf]
                 (model,TL_coef,data_norms,y_hat_fi,err_fi) =
                     nn_comp_3_train(A,Bt,B_dot,x_fi,y,no_norm;
-                                    model_type  = model_type,
-                                    norm_type_x = norm_type_x,
-                                    norm_type_y = norm_type_y,
-                                    TL_coef     = TL_coef,
-                                    terms_A     = terms_A,
-                                    y_type      = y_type,
-                                    η_adam      = η_adam,
-                                    epoch_adam  = epoch_adam,
-                                    epoch_lbfgs = epoch_lbfgs,
-                                    hidden      = hidden,
-                                    activation  = activation,
-                                    batchsize   = batchsize,
-                                    frac_train  = frac_train,
-                                    α_sgl       = α_sgl,
-                                    λ_sgl       = λ_sgl,
-                                    k_pca       = k_pca,
-                                    l_segs      = l_segs,
-                                    silent      = silent)
+                                    model_type    = model_type,
+                                    norm_type_x   = norm_type_x,
+                                    norm_type_y   = norm_type_y,
+                                    TL_coef       = TL_coef,
+                                    terms_A       = terms_A,
+                                    y_type        = y_type,
+                                    η_adam        = η_adam,
+                                    epoch_adam    = epoch_adam,
+                                    epoch_lbfgs   = epoch_lbfgs,
+                                    hidden        = hidden,
+                                    activation    = activation,
+                                    batchsize     = batchsize,
+                                    frac_train    = frac_train,
+                                    α_sgl         = α_sgl,
+                                    λ_sgl         = λ_sgl,
+                                    k_pca         = k_pca,
+                                    σ_curriculum  = σ_curriculum,
+                                    l_window      = l_window,
+                                    window_type   = window_type,
+                                    tf_layer_type = tf_layer_type,
+                                    tf_norm_type  = tf_norm_type,
+                                    dropout_prob  = dropout_prob,
+                                    N_tf_head     = N_tf_head,
+                                    tf_gain       = tf_gain,
+                                    l_segs        = l_segs,
+                                    silent        = silent)
             else
                 error("$model_type model type not defined")
             end
@@ -2760,29 +3001,37 @@ function comp_train(lines, df_line::DataFrame, df_flight::DataFrame,
                                 model       = model,
                                 l_segs      = l_segs,
                                 silent      = silent)
-        elseif model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc]
+        elseif model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc,:m3w,:m3tf]
             (model,TL_coef,data_norms,y_hat,err) =
                 nn_comp_3_train(A,Bt,B_dot,x,y,no_norm;
-                                model_type  = model_type,
-                                norm_type_x = norm_type_x,
-                                norm_type_y = norm_type_y,
-                                TL_coef     = TL_coef,
-                                terms_A     = terms_A,
-                                y_type      = y_type,
-                                η_adam      = η_adam,
-                                epoch_adam  = epoch_adam,
-                                epoch_lbfgs = epoch_lbfgs,
-                                hidden      = hidden,
-                                activation  = activation,
-                                batchsize   = batchsize,
-                                frac_train  = frac_train,
-                                α_sgl       = α_sgl,
-                                λ_sgl       = λ_sgl,
-                                k_pca       = k_pca,
-                                data_norms  = data_norms,
-                                model       = model,
-                                l_segs      = l_segs,
-                                silent      = silent)
+                                model_type    = model_type,
+                                norm_type_x   = norm_type_x,
+                                norm_type_y   = norm_type_y,
+                                TL_coef       = TL_coef,
+                                terms_A       = terms_A,
+                                y_type        = y_type,
+                                η_adam        = η_adam,
+                                epoch_adam    = epoch_adam,
+                                epoch_lbfgs   = epoch_lbfgs,
+                                hidden        = hidden,
+                                activation    = activation,
+                                batchsize     = batchsize,
+                                frac_train    = frac_train,
+                                α_sgl         = α_sgl,
+                                λ_sgl         = λ_sgl,
+                                k_pca         = k_pca,
+                                σ_curriculum  = σ_curriculum,
+                                l_window      = l_window,
+                                window_type   = window_type,
+                                tf_layer_type = tf_layer_type,
+                                tf_norm_type  = tf_norm_type,
+                                dropout_prob  = dropout_prob,
+                                N_tf_head     = N_tf_head,
+                                tf_gain       = tf_gain,
+                                data_norms    = data_norms,
+                                model         = model,
+                                l_segs        = l_segs,
+                                silent        = silent)
         elseif model_type in [:TL,:mod_TL,:map_TL]
             trim = model_type in [:TL,:mod_TL] ? 20 : 0
             (model,data_norms,y_hat,err) =
@@ -2793,7 +3042,7 @@ function comp_train(lines, df_line::DataFrame, df_flight::DataFrame,
                            l_segs      = l_segs,
                            silent      = silent)
             if model_type in [:TL,:mod_TL]
-                (A_no_bpf,_,y_no_bpf,_,_,_) = 
+                (A_no_bpf,_,y_no_bpf,_,_,_) =
                     get_Axy(lines,df_line,df_flight,df_map,
                             features_setup;
                             features_no_norm = features_no_norm,
@@ -2846,7 +3095,9 @@ end # function comp_train
 
 """
     comp_test(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
-              comp_params::CompParams=NNCompParams(), silent::Bool=false)
+              comp_params::CompParams = NNCompParams(),
+              l_window::Int           = 5,
+              silent::Bool            = false)
 
 Evaluate performance of an aeromagnetic compensation model.
 
@@ -2857,16 +3108,19 @@ Evaluate performance of an aeromagnetic compensation model.
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct, either:
     - `NNCompParams`:  neural network-based aeromagnetic compensation parameters struct
     - `LinCompParams`: linear aeromagnetic compensation parameters struct
+- `l_window`:    (optional) temporal window length, only used for `model_type = :m3w, :m3tf`
 - `silent`:      (optional) if true, no print outs
 
 **Returns:**
-- `y`:        observed data
-- `y_hat`:    predicted data
-- `err`:      compensation error
-- `features`: full list of features (including components of TL `A`, etc.)
+- `y`:        length `N` target vector
+- `y_hat`:    length `N` prediction vector
+- `err`:      length `N` compensation error
+- `features`: length `Nf` feature vector (including components of TL `A`, etc.)
 """
 function comp_test(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
-                   comp_params::CompParams=NNCompParams(), silent::Bool=false)
+                   comp_params::CompParams = NNCompParams(),
+                   l_window::Int           = 5,
+                   silent::Bool            = false)
 
     seed!(2) # for reproducibility
     t0 = time()
@@ -2975,12 +3229,13 @@ function comp_test(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
                                                    model_type = model_type,
                                                    TL_coef    = TL_coef,
                                                    silent     = silent)
-            elseif model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc]
+            elseif model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc,:m3w,:m3tf]
                 (y_hat_fi,err_fi) = nn_comp_3_test(A,Bt,B_dot,x_fi,y,data_norms,model;
                                                    model_type = model_type,
                                                    y_type     = y_type,
                                                    TL_coef    = TL_coef,
                                                    terms_A    = terms_A,
+                                                   l_window   = l_window,
                                                    silent     = silent)
             else
                 error("$model_type model type not defined")
@@ -3010,12 +3265,13 @@ function comp_test(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
                                          model_type = model_type,
                                          TL_coef    = TL_coef,
                                          silent     = silent)
-        elseif model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc]
+        elseif model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc,:m3w,:m3tf]
             (y_hat,err) = nn_comp_3_test(A,Bt,B_dot,x,y,data_norms,model;
                                          model_type = model_type,
                                          y_type     = y_type,
                                          TL_coef    = TL_coef,
                                          terms_A    = terms_A,
+                                         l_window   = l_window,
                                          silent     = silent)
         elseif model_type in [:TL,:mod_TL,:map_TL]
             (y_hat,err) = linear_test(A,y,data_norms,model;
@@ -3037,7 +3293,8 @@ end # function comp_test
 """
     comp_test(lines, df_line::DataFrame, df_flight::DataFrame,
               df_map::DataFrame, comp_params::CompParams=NNCompParams();
-              silent::Bool=false)
+              l_window::Int = 5,
+              silent::Bool  = false)
 
 Evaluate performance of an aeromagnetic compensation model.
 
@@ -3049,17 +3306,19 @@ Evaluate performance of an aeromagnetic compensation model.
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct, either:
     - `NNCompParams`:  neural network-based aeromagnetic compensation parameters struct
     - `LinCompParams`: linear aeromagnetic compensation parameters struct
+- `l_window`:    (optional) temporal window length, only used for `model_type = :m3w, :m3tf`
 - `silent`:      (optional) if true, no print outs
 
 **Returns:**
-- `y`:        observed data
-- `y_hat`:    predicted data
-- `err`:      mean-corrected (per line) compensation error
-- `features`: full list of features (including components of TL `A`, etc.)
+- `y`:        length `N` target vector
+- `y_hat`:    length `N` prediction vector
+- `err`:      length `N` mean-corrected (per line) compensation error
+- `features`: length `Nf` feature vector (including components of TL `A`, etc.)
 """
 function comp_test(lines, df_line::DataFrame, df_flight::DataFrame,
                    df_map::DataFrame, comp_params::CompParams=NNCompParams();
-                   silent::Bool=false)
+                   l_window::Int = 5,
+                   silent::Bool  = false)
 
     seed!(2) # for reproducibility
     t0 = time()
@@ -3108,7 +3367,7 @@ function comp_test(lines, df_line::DataFrame, df_flight::DataFrame,
     map_TL = model_type == :map_TL ? true : false
 
     # load data
-    if model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc]
+    if model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc,:m3w,:m3tf]
         (A,Bt,B_dot,x,y,_,features,l_segs) = get_Axy(lines,df_line,df_flight,df_map,
                                                      features_setup;
                                                      features_no_norm = features_no_norm,
@@ -3178,13 +3437,14 @@ function comp_test(lines, df_line::DataFrame, df_flight::DataFrame,
                                                    TL_coef    = TL_coef,
                                                    l_segs     = l_segs,
                                                    silent     = silent)
-            elseif model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc]
+            elseif model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc,:m3w,:m3tf]
                 (y_hat_fi,err_fi) = nn_comp_3_test(A,Bt,B_dot,x_fi,y,data_norms,model;
                                                    model_type = model_type,
                                                    y_type     = y_type,
                                                    TL_coef    = TL_coef,
                                                    terms_A    = terms_A,
                                                    l_segs     = l_segs,
+                                                   l_window   = l_window,
                                                    silent     = silent)
             else
                 error("$model_type model type not defined")
@@ -3216,13 +3476,14 @@ function comp_test(lines, df_line::DataFrame, df_flight::DataFrame,
                                          TL_coef    = TL_coef,
                                          l_segs     = l_segs,
                                          silent     = silent)
-        elseif model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc]
+        elseif model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc,:m3w,:m3tf]
             (y_hat,err) = nn_comp_3_test(A,Bt,B_dot,x,y,data_norms,model;
                                          model_type = model_type,
                                          y_type     = y_type,
                                          TL_coef    = TL_coef,
                                          terms_A    = terms_A,
                                          l_segs     = l_segs,
+                                         l_window   = l_window,
                                          silent     = silent)
         elseif model_type in [:TL,:mod_TL,:map_TL]
             (y_hat,err) = linear_test(A,y,data_norms,model;
@@ -3261,12 +3522,12 @@ model 2b or 2c with additional outputs for explainability.
 - `silent`:      (optional) if true, no print outs
 
 **Returns:**
-- `y_nn`:     neural network compensation portion
-- `y_TL`:     Tolles-Lawson  compensation portion
-- `y`:        observed data
-- `y_hat`:    predicted data
-- `err`:      mean-corrected (per line) compensation error
-- `features`: full list of features (including components of TL `A`, etc.)
+- `y_nn`:     length `N` neural network compensation portion
+- `y_TL`:     length `N` Tolles-Lawson  compensation portion
+- `y`:        length `N` target vector
+- `y_hat`:    length `N` prediction vector
+- `err`:      length `N` mean-corrected (per line) compensation error
+- `features`: length `Nf` feature vector (including components of TL `A`, etc.)
 """
 function comp_m2bc_test(lines, df_line::DataFrame,
                         df_flight::DataFrame, df_map::DataFrame,
@@ -3301,16 +3562,16 @@ function comp_m2bc_test(lines, df_line::DataFrame,
                                         silent           = silent_debug)
 
     # convert to Float32 for consistency with nn_comp_2_train
-    A       = convert.(Float32,A)
-    x       = convert.(Float32,x)
-    y       = convert.(Float32,y)
-    TL_coef = convert.(Float32,TL_coef)
+    A       = Float32.(A)
+    x       = Float32.(x)
+    y       = Float32.(y)
+    TL_coef = Float32.(TL_coef)
 
     # unpack data normalizations
     (A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale) =
         unpack_data_norms(data_norms)
-    A_norm =  (A .- A_bias) ./ A_scale
-    x_norm = ((x .- x_bias) ./ x_scale) * v_scale
+    A_norm = ( (A .- A_bias) ./ A_scale           )'
+    x_norm = (((x .- x_bias) ./ x_scale) * v_scale)'
 
     TL_coef_norm = TL_coef ./ y_scale
 
@@ -3318,14 +3579,18 @@ function comp_m2bc_test(lines, df_line::DataFrame,
     m = model
     Flux.testmode!(m)
 
-    y_nn  = vec(m(x_norm'))     .* y_scale
-    y_TL  = A_norm*TL_coef_norm .* y_scale
-    y_hat = y_nn + y_TL .+ y_bias
-    err   = err_segs(y_hat,y,l_segs;silent=silent_debug)
+    y_nn  = vec(m(x_norm))       .* y_scale
+    y_TL  = A_norm'*TL_coef_norm .* y_scale
+
+    (y_hat,err) = nn_comp_2_test(A_norm,x_norm,y,y_bias,y_scale,m;
+                                 model_type   = model_type,
+                                 TL_coef_norm = TL_coef_norm,
+                                 l_segs       = l_segs,
+                                 silent       = true)
+
     silent || @info("std    y_nn: $(round(std(y_nn),digits=2)) nT")
     silent || @info("std    y_TL: $(round(std(y_TL),digits=2)) nT")
     silent || @info("test  error: $(round(std(err ),digits=2)) nT")
-
     silent || print_time(time()-t0,1)
 
     return (y_nn, y_TL, y, y_hat, err, features)
@@ -3335,7 +3600,8 @@ end # function comp_m2bc_test
     comp_m3_test(lines, df_line::DataFrame,
                  df_flight::DataFrame, df_map::DataFrame,
                  comp_params::NNCompParams=NNCompParams();
-                 silent::Bool=false)
+                 l_window::Int = 5,
+                 silent::Bool  = false)
 
 Evaluate performance of neural network-based aeromagnetic compensation, model 3
 with additional outputs for explainability.
@@ -3346,26 +3612,28 @@ with additional outputs for explainability.
 - `df_flight`:   lookup table (DataFrame) of flight data HDF5 files
 - `df_map`:      lookup table (DataFrame) of map data HDF5 files
 - `comp_params`: `NNCompParams` neural network-based aeromagnetic compensation parameters struct
+- `l_window`:    (optional) temporal window length, only used for `model_type = :m3w, :m3tf`
 - `silent`:      (optional) if true, no print outs
 
 **Returns:**
-- `TL_perm`:      TL permanent vector field
-- `TL_induced`:   TL induced vector field
-- `TL_eddy`:      TL eddy current vector field
-- `TL_aircraft`:  TL aircraft vector field
-- `B_unit`:       normalized vector magnetometer measurements
-- `B_vec`:        vector magnetometer measurements
-- `y_nn`:         vector neural network correction (for scalar models, in direction of `Bt`)
-- `vec_aircraft`: estimated vector aircraft field
-- `y`:            observed scalar magnetometer data
-- `y_hat`:        predicted scalar magnetometer data
-- `err`:          mean-corrected (per line) compensation error
-- `features`:     full list of features (including components of TL `A`, etc.)
+- `TL_perm`:      `3` x `N` matrix of TL permanent vector field
+- `TL_induced`:   `3` x `N` matrix of TL induced vector field
+- `TL_eddy`:      `3` x `N` matrix of TL eddy current vector field
+- `TL_aircraft`:  `3` x `N` matrix of TL aircraft vector field
+- `B_unit`:       `3` x `N` matrix of normalized vector magnetometer measurements
+- `B_vec`:        `3` x `N` matrix of vector magnetometer measurements
+- `y_nn`:         `3` x `N` matrix of vector neural network correction (for scalar models, in direction of `Bt`)
+- `vec_aircraft`: `3` x `N` matrix of predicted aircraft vector field
+- `y`:            length `N` target vector
+- `y_hat`:        length `N` prediction vector
+- `err`:          length `N` mean-corrected (per line) compensation error
+- `features`:     length `Nf` feature vector (including components of TL `A`, etc.)
 """
 function comp_m3_test(lines, df_line::DataFrame,
                       df_flight::DataFrame, df_map::DataFrame,
                       comp_params::NNCompParams=NNCompParams();
-                      silent::Bool=false)
+                      l_window::Int = 5,
+                      silent::Bool  = false)
 
     seed!(2) # for reproducibility
     t0 = time()
@@ -3379,7 +3647,7 @@ function comp_m3_test(lines, df_line::DataFrame,
     drop_fi, drop_fi_bson, drop_fi_csv, perm_fi, perm_fi_csv = comp_params
 
     @assert y_type in [:a,:b,:c,:d] "unsupported y_type = $y_type for nn_comp_3"
-    @assert model_type in [:m3s,:m3v,:m3sc,:m3vc] "unsupported model_type = $model_type for model 3 explainability"
+    @assert model_type in [:m3s,:m3v,:m3sc,:m3vc,:m3w,:m3tf] "unsupported model_type = $model_type for model 3 explainability"
 
     mod_TL = model_type == :mod_TL ? true : false
     map_TL = model_type == :map_TL ? true : false
@@ -3402,28 +3670,26 @@ function comp_m3_test(lines, df_line::DataFrame,
                                                  silent           = silent_debug)
 
     # convert to Float32 for consistency with nn_comp_3_train
-    A       = convert.(Float32,A)
-    Bt      = convert.(Float32,Bt)    # magnitude of total field measurements
-    B_dot   = convert.(Float32,B_dot) # finite differences of total field vector
-    x       = convert.(Float32,x)
-    y       = convert.(Float32,y)
-    TL_coef = convert.(Float32,TL_coef)
+    A       = Float32.(A)
+    Bt      = Float32.(Bt)    # magnitude of total field measurements
+    B_dot   = Float32.(B_dot) # finite differences of total field vector
+    x       = Float32.(x)
+    y       = Float32.(y)
+    TL_coef = Float32.(TL_coef)
 
     # assume all terms are stored, but they may be zero if not trained
     Bt_scale = 50000f0
     (TL_coef_p,TL_coef_i,TL_coef_e) = TL_vec2mat(TL_coef,terms_A;Bt_scale=Bt_scale)
 
-    B_unit    = A[:,1:3]     # normalized vector magnetometer reading
-    B_vec     = B_unit .* Bt # vector magnetometer to be used in TL
-    B_vec_dot = B_dot        # not exactly true, but internally consistent
-
-    B_unit    = B_unit'
-    B_vec     = B_vec'
-    B_vec_dot = B_vec_dot'
+    B_unit    = A[:,1:3]'     # normalized vector magnetometer reading
+    B_vec     = B_unit .* Bt' # vector magnetometer to be used in TL
+    B_vec_dot = B_dot'        # not exactly true, but internally consistent
 
     # unpack data normalizations
     (_,_,v_scale,x_bias,x_scale,y_bias,y_scale) = unpack_data_norms(data_norms)
-    x_norm = ((x .- x_bias) ./ x_scale) * v_scale
+    x_norm = (((x .- x_bias) ./ x_scale) * v_scale)'
+
+    model_type in [:m3w,:m3tf] && (x_norm = get_temporal_data(x_norm,l_window))
 
     # set to test mode in case model uses batchnorm or dropout
     m = model
@@ -3435,27 +3701,28 @@ function comp_m3_test(lines, df_line::DataFrame,
                             return_parts=true)
 
     # compute neural network correction
-    if model_type in [:m3s,:m3sc] # scalar-corrected
-        y_nn = vec(m(x_norm')) .* y_scale # rescale to TL [N]
+    if model_type in [:m3s,:m3sc,:m3w,:m3tf] # scalar-corrected
+        y_nn = vec(m(x_norm)) .* y_scale # rescale to TL [N]
         y_nn = y_nn' .* B_unit # assume same direction [3xN]
     elseif model_type in [:m3v,:m3vc] # vector-corrected
-        y_nn = m(x_norm') .* y_scale # rescale to TL [3xN]
+        y_nn = m(x_norm) .* y_scale # rescale to TL [3xN]
     end
 
     vec_aircraft = TL_aircraft + y_nn # [3xN]
 
     # compute aircraft field correction or Earth field target
-    y_hat = nn_comp_3_fwd(B_unit',B_vec',B_vec_dot',x_norm,y_bias,y_scale,m,
-                          TL_coef_p,TL_coef_i,TL_coef_e;
-                          model_type = model_type,
-                          y_type     = y_type,
-                          use_nn     = true,
-                          denorm     = true,
-                          testmode   = true)
+    (y_hat,err) = nn_comp_3_test(B_unit,B_vec,B_vec_dot,
+                                 x_norm,y,y_bias,y_scale,m,
+                                 TL_coef_p,TL_coef_i,TL_coef_e;
+                                 model_type = model_type,
+                                 y_type     = y_type,
+                                 l_segs     = l_segs,
+                                 use_nn     = true,
+                                 denorm     = true,
+                                 testmode   = true,
+                                 silent     = true)
 
-    err = err_segs(y_hat,y,l_segs;silent=silent_debug)
     silent || @info("test  error: $(round(std(err),digits=2)) nT")
-
     silent || print_time(time()-t0,1)
 
     return (TL_perm, TL_induced, TL_eddy, TL_aircraft,
@@ -3467,6 +3734,14 @@ end # function comp_m3_test
                     mapS_train::Union{MapS,MapSd,MapS3D} = mapS_null,
                     mapS_test::Union{MapS,MapSd,MapS3D}  = mapS_null;
                     comp_params::CompParams = NNCompParams(),
+                    σ_curriculum            = 1.0,
+                    l_window::Int           = 5,
+                    window_type::Symbol     = :sliding,
+                    tf_layer_type::Symbol   = :postlayer,
+                    tf_norm_type::Symbol    = :batch,
+                    dropout_prob            = 0.2,
+                    N_tf_head::Int          = 8,
+                    tf_gain                 = 1.0,
                     silent::Bool            = false)
 
 Train and evaluate performance of an aeromagnetic compensation model.
@@ -3481,33 +3756,58 @@ Train and evaluate performance of an aeromagnetic compensation model.
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct, either:
     - `NNCompParams`:  neural network-based aeromagnetic compensation parameters struct
     - `LinCompParams`: linear aeromagnetic compensation parameters struct
-- `silent`:      (optional) if true, no print outs
+- `σ_curriculum`:  (optional) standard deviation threshold, only used for `model_type = :m3sc, :m3vc`
+- `l_window`:      (optional) temporal window length, only used for `model_type = :m3w, :m3tf`
+- `window_type`:   (optional) type of windowing, `:sliding` for overlapping or `:contiguous` for non-overlapping, only used for `model_type = :m3w, :m3tf`
+- `tf_layer_type`: (optional) transformer normalization layer before or after skip connection {`:prelayer`,`:postlayer`}, only used for `model_type = :m3tf`
+- `tf_norm_type`:  (optional) normalization for transformer encoder {`:batch`,`:layer`,`:none`}, only used for `model_type = :m3tf`
+- `dropout_prob`:  (optional) dropout rate, only used for `model_type = :m3w, :m3tf`
+- `N_tf_head`:     (optional) number of attention heads, only used for `model_type = :m3tf`
+- `tf_gain`:       (optional) weight initialization parameter, only used for `model_type = :m3tf`
+- `silent`:        (optional) if true, no print outs
 
 **Returns:**
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct
-- `y_train`:     training observed data
-- `y_train_hat`: training predicted data
-- `err_train`:   training compensation error
-- `y_test`:      testing observed data
-- `y_test_hat`:  testing predicted data
-- `err_test`:    testing compensation error
-- `features`:    full list of features (including components of TL `A`, etc.)
+- `y_train`:     length `N_train` training target vector
+- `y_train_hat`: length `N_train` training prediction vector
+- `err_train`:   length `N_train` training compensation error
+- `y_test`:      length `N_test` testing target vector
+- `y_test_hat`:  length `N_test` testing prediction vector
+- `err_test`:    length `N_test` testing compensation error
+- `features`:    length `Nf` feature vector (including components of TL `A`, etc.)
 """
 function comp_train_test(xyz_train::XYZ, xyz_test::XYZ, ind_train, ind_test,
                          mapS_train::Union{MapS,MapSd,MapS3D} = mapS_null,
                          mapS_test::Union{MapS,MapSd,MapS3D}  = mapS_null;
                          comp_params::CompParams = NNCompParams(),
+                         σ_curriculum            = 1.0,
+                         l_window::Int           = 5,
+                         window_type::Symbol     = :sliding,
+                         tf_layer_type::Symbol   = :postlayer,
+                         tf_norm_type::Symbol    = :batch,
+                         dropout_prob            = 0.2,
+                         N_tf_head::Int          = 8,
+                         tf_gain                 = 1.0,
                          silent::Bool            = false)
 
     @assert typeof(xyz_train) == typeof(xyz_test) "xyz types do no match"
 
     (comp_params,y_train,y_train_hat,err_train,features) =
         comp_train(xyz_train,ind_train,mapS_train;
-                   comp_params=comp_params,silent=silent)
+                   comp_params   = comp_params,
+                   σ_curriculum  = σ_curriculum,
+                   l_window      = l_window,
+                   window_type   = window_type,
+                   tf_layer_type = tf_layer_type,
+                   tf_norm_type  = tf_norm_type,
+                   dropout_prob  = dropout_prob,
+                   N_tf_head     = N_tf_head,
+                   tf_gain       = tf_gain,
+                   silent        = silent)
 
     (y_test,y_test_hat,err_test,_) =
         comp_test(xyz_test,ind_test,mapS_test;
-                  comp_params=comp_params,silent=silent)
+                  comp_params=comp_params,l_window=l_window,silent=silent)
 
     return (comp_params, y_train, y_train_hat, err_train,
                          y_test , y_test_hat , err_test , features)
@@ -3517,7 +3817,15 @@ end # function comp_train_test
     comp_train_test(lines_train, lines_test,
                     df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame,
                     comp_params::CompParams = NNCompParams();
-                    silent::Bool            = false)
+                    σ_curriculum          = 1.0,
+                    l_window::Int         = 5,
+                    window_type::Symbol   = :sliding,
+                    tf_layer_type::Symbol = :postlayer,
+                    tf_norm_type::Symbol  = :batch,
+                    dropout_prob          = 0.2,
+                    N_tf_head::Int        = 8,
+                    tf_gain               = 1.0,
+                    silent::Bool          = false)
 
 Train and evaluate performance of an aeromagnetic compensation model.
 
@@ -3530,28 +3838,53 @@ Train and evaluate performance of an aeromagnetic compensation model.
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct, either:
     - `NNCompParams`:  neural network-based aeromagnetic compensation parameters struct
     - `LinCompParams`: linear aeromagnetic compensation parameters struct
-- `silent`:      (optional) if true, no print outs
+- `σ_curriculum`:  (optional) standard deviation threshold, only used for `model_type = :m3sc, :m3vc`
+- `l_window`:      (optional) temporal window length, only used for `model_type = :m3w, :m3tf`
+- `window_type`:   (optional) type of windowing, `:sliding` for overlapping or `:contiguous` for non-overlapping, only used for `model_type = :m3w, :m3tf`
+- `tf_layer_type`: (optional) transformer normalization layer before or after skip connection {`:prelayer`,`:postlayer`}, only used for `model_type = :m3tf`
+- `tf_norm_type`:  (optional) normalization for transformer encoder {`:batch`,`:layer`,`:none`}, only used for `model_type = :m3tf`
+- `dropout_prob`:  (optional) dropout rate, only used for `model_type = :m3w, :m3tf`
+- `N_tf_head`:     (optional) number of attention heads, only used for `model_type = :m3tf`
+- `tf_gain`:       (optional) weight initialization parameter, only used for `model_type = :m3tf`
+- `silent`:        (optional) if true, no print outs
 
 **Returns:**
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct
-- `y_train`:     training observed data
-- `y_train_hat`: training predicted data
-- `err_train`:   mean-corrected (per line) training compensation error
-- `y_test`:      testing observed data
-- `y_test_hat`:  testing predicted data
-- `err_test`:    mean-corrected (per line) testing compensation error
-- `features`:    full list of features (including components of TL `A`, etc.)
+- `y_train`:     length `N_train` training target vector
+- `y_train_hat`: length `N_train` training prediction vector
+- `err_train`:   length `N_train` mean-corrected (per line) training compensation error
+- `y_test`:      length `N_test` testing target vector
+- `y_test_hat`:  length `N_test` testing prediction vector
+- `err_test`:    length `N_test` mean-corrected (per line) testing compensation error
+- `features`:    length `Nf` feature vector (including components of TL `A`, etc.)
 """
 function comp_train_test(lines_train, lines_test,
                          df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame,
                          comp_params::CompParams = NNCompParams();
-                         silent::Bool            = false)
+                         σ_curriculum          = 1.0,
+                         l_window::Int         = 5,
+                         window_type::Symbol   = :sliding,
+                         tf_layer_type::Symbol = :postlayer,
+                         tf_norm_type::Symbol  = :batch,
+                         dropout_prob          = 0.2,
+                         N_tf_head::Int        = 8,
+                         tf_gain               = 1.0,
+                         silent::Bool          = false)
 
     (comp_params,y_train,y_train_hat,err_train,features) =
-        comp_train(lines_train,df_line,df_flight,df_map,comp_params;silent=silent)
+        comp_train(lines_train,df_line,df_flight,df_map,comp_params;
+                   σ_curriculum  = σ_curriculum,
+                   l_window      = l_window,
+                   window_type   = window_type,
+                   tf_layer_type = tf_layer_type,
+                   tf_norm_type  = tf_norm_type,
+                   dropout_prob  = dropout_prob,
+                   N_tf_head     = N_tf_head,
+                   tf_gain       = tf_gain,
+                   silent        = silent)
 
     (y_test,y_test_hat,err_test,_) =
-        comp_test(lines_test,df_line,df_flight,df_map,comp_params;silent=silent)
+        comp_test(lines_test,df_line,df_flight,df_map,comp_params;l_window=l_window,silent=silent)
 
     return (comp_params, y_train, y_train_hat, err_train,
                          y_test , y_test_hat , err_test , features)

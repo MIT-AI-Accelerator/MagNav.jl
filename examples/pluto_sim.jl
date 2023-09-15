@@ -19,7 +19,7 @@ begin
 end;
 
 # ╔═╡ d9ac0df2-3d79-11ee-0869-73b7f6649d95
-md"# Using the MagNav Package with Simulated Data Example
+md"# Using the MagNav Package with Simulated Data
 This file is best viewed in a [Pluto](https://plutojl.org/) notebook. To run it this way, from the MagNav.jl directory, do:
 ```julia
 julia> using Pluto
@@ -29,15 +29,30 @@ julia> Pluto.run() # select & open notebook
 This is a reactive notebook, so feel free to change any parameters of interest.
 "
 
-# ╔═╡ 3ffae734-b7b2-45bf-9843-171b6e2deb13
-md"## Import Map Data & Create Flight Data
+# ╔═╡ b1d3b1b3-db8d-4bb0-a884-d57f217fef24
+md"## Import packages & DataFrames
 
-The built-in NAMAD map is used to create flight data.
+The DataFrames listed below provide useful information about the flight data (collected by Sander Geophysics Ltd. (SGL) in 2020) & magnetic anomaly maps.
+
+Dataframe  | Description
+:--------- | :----------
+`df_map`   | map files relevant for SGL flights
+`df_comp`  | SGL calibration flight lines
+`df_flight`| SGL flight files
+`df_all`   | all flight lines
+`df_nav`   | all *navigation-capable* flight lines
+`df_event` | pilot-recorded in-flight events
+"
+
+# ╔═╡ 3ffae734-b7b2-45bf-9843-171b6e2deb13
+md"## Load map data & create flight data
+
+The built-in [NAMAD](https://mrdata.usgs.gov/magnetic/map-us.html) map is used to create flight data.
 "
 
 # ╔═╡ ff29f1c4-74ef-43cb-95be-14b5518e2cc6
 begin
-	t    = 1800 # flight time [s]
+	t    = 600 # flight time [s]
 	mapS = get_map(MagNav.namad) # load map data
 	xyz  = create_XYZ0(mapS;alt=mapS.alt,t=t,N_waves=2) # create flight data
 	traj = xyz.traj # trajectory (GPS) struct
@@ -2638,6 +2653,7 @@ version = "1.4.1+0"
 
 # ╔═╡ Cell order:
 # ╟─d9ac0df2-3d79-11ee-0869-73b7f6649d95
+# ╟─b1d3b1b3-db8d-4bb0-a884-d57f217fef24
 # ╠═f799c623-3802-491b-9709-6c1a01ac3978
 # ╟─3ffae734-b7b2-45bf-9843-171b6e2deb13
 # ╠═ff29f1c4-74ef-43cb-95be-14b5518e2cc6

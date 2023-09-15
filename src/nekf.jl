@@ -1,6 +1,6 @@
 """
     nekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS,
-         nn_x::Matrix = meas[:,:],
+         x_nn::Matrix = meas[:,:],
          m            = Dense(1,1);
          P0           = create_P0(),
          Qd           = create_Qd(),
@@ -12,7 +12,7 @@
          date         = get_years(2020,185),
          core::Bool   = false)
 
-Measurement noise covariance-adaptive neural extended Kalman filter (nEKF) 
+Measurement noise covariance-adaptive neural extended Kalman filter (nEKF)
 for airborne magnetic anomaly navigation.
 
 **Arguments:**
@@ -29,7 +29,7 @@ for airborne magnetic anomaly navigation.
 - `meas`:     scalar magnetometer measurement [nT]
 - `dt`:       measurement time step [s]
 - `itp_mapS`: scalar map interpolation function
-- `nn_x`:     `x` matrix for neural network
+- `x_nn`:     `N` x `Nf` data matrix for neural network (`Nf` is number of features)
 - `m`:        neural network model
 - `P0`:       (optional) initial covariance matrix
 - `Qd`:       (optional) discrete time process/system noise matrix
@@ -45,7 +45,7 @@ for airborne magnetic anomaly navigation.
 - `filt_res`: `FILTres` filter results struct
 """
 function nekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS,
-              nn_x::Matrix = meas[:,:],
+              x_nn::Matrix = meas[:,:],
               m            = Dense(1,1);
               P0           = create_P0(),
               Qd           = create_Qd(),
@@ -63,7 +63,7 @@ function nekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS,
     x_out  = zeros(nx,N)
     P_out  = zeros(nx,nx,N)
     r_out  = zeros(ny,N)
-    x_seqs = Flux.unstack(convert.(Float32,nn_x);dims=1)
+    x_seqs = Flux.unstack(Float32.(x_nn);dims=1)
 
     x = zeros(nx) # state estimate
     P = P0        # covariance matrix
@@ -107,7 +107,7 @@ function nekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS,
         P = Phi*P*Phi' + Qd     # P_t|t-1 [nx x nx]
     end
 
-    nn_samp = [m(x_seqs[t])[1] for t in 1:round(Int,N/5):N]
+    nn_samp = [m(x_seqs[t])[1] for t = 1:round(Int,N/5):N]
     println("sample NN output: ",round.(nn_samp,digits=5))
 
     return FILTres(x_out, P_out, r_out, true)
@@ -115,7 +115,7 @@ end # function nekf
 
 """
     nekf(ins::INS, meas, itp_mapS,
-         nn_x::Matrix = meas[:,:],
+         x_nn::Matrix = meas[:,:],
          m            = Dense(1,1);
          P0           = create_P0(),
          Qd           = create_Qd(),
@@ -127,14 +127,14 @@ end # function nekf
          date         = get_years(2020,185),
          core::Bool   = false)
 
-Measurement noise covariance-adaptive neural extended Kalman filter (nEKF) 
+Measurement noise covariance-adaptive neural extended Kalman filter (nEKF)
 for airborne magnetic anomaly navigation.
 
 **Arguments:**
 - `ins`:      `INS` inertial navigation system struct
 - `meas`:     scalar magnetometer measurement [nT]
 - `itp_mapS`: scalar map interpolation function
-- `nn_x`:     `x` matrix for neural network
+- `x_nn`:     `N` x `Nf` data matrix for neural network (`Nf` is number of features)
 - `m`:        neural network model
 - `P0`:       (optional) initial covariance matrix
 - `Qd`:       (optional) discrete time process/system noise matrix
@@ -150,7 +150,7 @@ for airborne magnetic anomaly navigation.
 - `filt_res`: `FILTres` filter results struct
 """
 function nekf(ins::INS, meas, itp_mapS,
-              nn_x::Matrix = meas[:,:],
+              x_nn::Matrix = meas[:,:],
               m            = Dense(1,1);
               P0           = create_P0(),
               Qd           = create_Qd(),
@@ -162,7 +162,7 @@ function nekf(ins::INS, meas, itp_mapS,
               date         = get_years(2020,185),
               core::Bool   = false)
     nekf(ins.lat,ins.lon,ins.alt,ins.vn,ins.ve,ins.vd,
-         ins.fn,ins.fe,ins.fd,ins.Cnb,meas,ins.dt,itp_mapS,nn_x,m;
+         ins.fn,ins.fe,ins.fd,ins.Cnb,meas,ins.dt,itp_mapS,x_nn,m;
          P0       = P0,
          Qd       = Qd,
          R        = R,
@@ -176,7 +176,7 @@ end # function nekf
 
 """
     ekf_single(lat, lon, alt, Phi, meas, itp_mapS,
-               nn_x::Vector = meas,
+               x_nn::Vector = meas,
                m            = Dense(1,1),
                P            = create_P0(),
                Qd           = create_Qd(),
@@ -185,7 +185,7 @@ end # function nekf
                date         = get_years(2020,185),
                core::Bool   = false)
 
-Internal helper function to run an extended Kalman filter (EKF) for a single 
+Internal helper function to run an extended Kalman filter (EKF) for a single
 time step with a pre-computed `Phi` dynamics matrix.
 
 **Arguments:**
@@ -194,7 +194,7 @@ time step with a pre-computed `Phi` dynamics matrix.
 - `alt`:      altitude  [m]
 - `meas`:     scalar magnetometer measurement [nT]
 - `itp_mapS`: scalar map interpolation function
-- `nn_x`:     `x` matrix for neural network
+- `x_nn`:     `N` x `Nf` data matrix for neural network (`Nf` is number of features)
 - `m`:        neural network model
 - `P`:        non-linear covariance matrix
 - `Qd`:       discrete time process/system noise matrix
@@ -208,7 +208,7 @@ time step with a pre-computed `Phi` dynamics matrix.
 - `x`: filtered states, i.e., E(x_t | y_1,..,y_t)
 """
 function ekf_single(lat, lon, alt, Phi, meas, itp_mapS,
-                    nn_x::Vector = meas,
+                    x_nn::Vector = meas,
                     m            = Dense(1,1),
                     P            = create_P0(),
                     Qd           = create_Qd(),
@@ -231,7 +231,7 @@ function ekf_single(lat, lon, alt, Phi, meas, itp_mapS,
     H = repeat(get_H(itp_mapS,x,lat,lon,alt;date=date,core=core)',ny,1)
 
     # measurement residual covariance
-    S = H*P*H' .+ R .* (1 .+ m(nn_x)) # S_t [ny x ny]
+    S = H*P*H' .+ R .* (1 .+ m(x_nn)) # S_t [ny x ny]
 
     # Kalman gain
     K = (P*H') / S          # K_t [nx x ny]
@@ -249,7 +249,7 @@ end # function ekf_single
 
 """
     nekf_train(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt,
-               itp_mapS, nn_x::Matrix, nn_y::Matrix;
+               itp_mapS, x_nn::Matrix, y_nn::Matrix;
                P0                   = create_P0(),
                Qd                   = create_Qd(),
                R                    = 1.0,
@@ -260,11 +260,11 @@ end # function ekf_single
                epoch_adam::Int      = 10,
                hidden::Int          = 1,
                activation::Function = swish,
-               l_seq::Int           = 50,
+               l_window::Int        = 50,
                date                 = get_years(2020,185),
                core::Bool           = false)
 
-Train a measurement noise covariance-adaptive neural extended Kalman filter 
+Train a measurement noise covariance-adaptive neural extended Kalman filter
 (nEKF) model for airborne magnetic anomaly navigation.
 
 **Arguments:**
@@ -281,8 +281,8 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
 - `meas`:       scalar magnetometer measurement [nT]
 - `dt`:         measurement time step [s]
 - `itp_mapS`:   scalar map interpolation function
-- `nn_x`:       `x` matrix for neural network
-- `nn_y`:       `y` target for neural network (`[latitude longitude]`)
+- `x_nn`:       `N` x `Nf` data matrix for neural network (`Nf` is number of features)
+- `y_nn`:       `y` target matrix for neural network (`[latitude longitude]`)
 - `P0`:         (optional) initial covariance matrix
 - `Qd`:         (optional) discrete time process/system noise matrix
 - `R`:          (optional) measurement (white) noise variance
@@ -298,7 +298,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
     - `swish` = self-gated
     - `tanh`  = hyperbolic tan
     - run `plot_activation()` for a visual
-- `l_seq`:      (optional) sequence length (length of sliding window)
+- `l_window`:   (optional) temporal window length
 - `date`:       (optional) measurement date for IGRF [yr]
 - `core`:       (optional) if true, include core magnetic field in measurement
 
@@ -306,7 +306,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
 - `m`: neural network model
 """
 function nekf_train(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt,
-                    itp_mapS, nn_x::Matrix, nn_y::Matrix;
+                    itp_mapS, x_nn::Matrix, y_nn::Matrix;
                     P0                   = create_P0(),
                     Qd                   = create_Qd(),
                     R                    = 1.0,
@@ -317,16 +317,16 @@ function nekf_train(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt,
                     epoch_adam::Int      = 10,
                     hidden::Int          = 1,
                     activation::Function = swish,
-                    l_seq::Int           = 50,
+                    l_window::Int        = 50,
                     date                 = get_years(2020,185),
                     core::Bool           = false)
 
-    x_seqs = chunk_data(convert.(Float32,nn_x),zero(lat),l_seq)[1]
-    y_seqs = chunk_data(nn_y,zero(lat),l_seq)[1]
+    x_seqs = chunk_data(Float32.(x_nn),zero(lat),l_window)[1]
+    y_seqs = chunk_data(y_nn,zero(lat),l_window)[1]
 
-    xS = size(nn_x,2)
-    yS = 1
-    m  = Chain(LSTM(xS,hidden),Dense(hidden,yS,activation))
+    Nf = size(x_nn,2) # number of features
+    Ny = 1 # length of output
+    m  = Chain(LSTM(Nf,hidden),Dense(hidden,Ny,activation))
 
     # pre-compute Phi
     N = length(lat)
@@ -337,18 +337,18 @@ function nekf_train(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt,
                              baro_tau,acc_tau,gyro_tau,fogm_tau,dt)
     end
 
-    # lat  = convert.(Float32,lat)
-    # lon  = convert.(Float32,lon)
-    # alt  = convert.(Float32,alt)
-    # meas = convert.(Float32,meas)
-    # P    = convert.(Float32,P0)
-    # Qd   = convert.(Float32,Qd)
-    # R    = convert.(Float32,R)
+    # lat  = Float32.(lat)
+    # lon  = Float32.(lon)
+    # alt  = Float32.(alt)
+    # meas = Float32.(meas)
+    # P    = Float32.(P0)
+    # Qd   = Float32.(Qd)
+    # R    = Float32.(R)
 
     P = P0
 
     # create loss function
-    function loss(x_nn,y_nn)
+    function loss(x_nn, y_nn)
         N = size(y_nn,1)
         x = zero(P[:,1])
 
@@ -358,7 +358,7 @@ function nekf_train(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt,
                                itp_mapS,x_nn[t],m,
                                P,Qd,R,x;date=date,core=core)
 
-            l += dlat2dn(y_nn[t][1] - (lat[t]+x[1]), lat[t]+x[1])^2 + 
+            l += dlat2dn(y_nn[t][1] - (lat[t]+x[1]), lat[t]+x[1])^2 +
                  dlon2de(y_nn[t][2] - (lon[t]+x[2]), lat[t]+x[1])^2
         end
 
@@ -378,7 +378,7 @@ function nekf_train(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt,
 end # function nekf_train
 
 """
-    nekf_train(ins::INS, meas, itp_mapS, nn_x::Matrix, nn_y::Matrix;
+    nekf_train(ins::INS, meas, itp_mapS, x_nn::Matrix, y_nn::Matrix;
                P0                   = create_P0(),
                Qd                   = create_Qd(),
                R                    = 1.0,
@@ -389,19 +389,19 @@ end # function nekf_train
                epoch_adam::Int      = 10,
                hidden::Int          = 1,
                activation::Function = swish,
-               l_seq::Int           = 50,
+               l_window::Int        = 50,
                date                 = get_years(2020,185),
                core::Bool           = false)
 
-Train a measurement noise covariance-adaptive neural extended Kalman filter 
+Train a measurement noise covariance-adaptive neural extended Kalman filter
 (nEKF) model for airborne magnetic anomaly navigation.
 
 **Arguments:**
 - `ins`:        `INS` inertial navigation system struct
 - `meas`:       scalar magnetometer measurement [nT]
 - `itp_mapS`:   scalar map interpolation function
-- `nn_x`:       `x` matrix for neural network
-- `nn_y`:       `y` target for neural network (`[latitude longitude]`)
+- `x_nn`:       `N` x `Nf` data matrix for neural network (`Nf` is number of features)
+- `y_nn`:       `y` target matrix for neural network (`[latitude longitude]`)
 - `P0`:         (optional) initial covariance matrix
 - `Qd`:         (optional) discrete time process/system noise matrix
 - `R`:          (optional) measurement (white) noise variance
@@ -417,14 +417,14 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
     - `swish` = self-gated
     - `tanh`  = hyperbolic tan
     - run `plot_activation()` for a visual
-- `l_seq`:      (optional) sequence length (length of sliding window)
+- `l_window`:   (optional) temporal window length
 - `date`:       (optional) measurement date for IGRF [yr]
 - `core`:       (optional) if true, include core magnetic field in measurement
 
 **Returns:**
 - `m`: neural network model
 """
-function nekf_train(ins::INS, meas, itp_mapS, nn_x::Matrix, nn_y::Matrix;
+function nekf_train(ins::INS, meas, itp_mapS, x_nn::Matrix, y_nn::Matrix;
                     P0                   = create_P0(),
                     Qd                   = create_Qd(),
                     R                    = 1.0,
@@ -435,11 +435,11 @@ function nekf_train(ins::INS, meas, itp_mapS, nn_x::Matrix, nn_y::Matrix;
                     epoch_adam::Int      = 10,
                     hidden::Int          = 1,
                     activation::Function = swish,
-                    l_seq::Int           = 50,
+                    l_window::Int        = 50,
                     date                 = get_years(2020,185),
                     core::Bool           = false)
     nekf_train(ins.lat,ins.lon,ins.alt,ins.vn,ins.ve,ins.vd,
-               ins.fn,ins.fe,ins.fd,ins.Cnb,meas,ins.dt,itp_mapS,nn_x,nn_y;
+               ins.fn,ins.fe,ins.fd,ins.Cnb,meas,ins.dt,itp_mapS,x_nn,y_nn;
                P0=P0,Qd=Qd,R=R,
                baro_tau   = baro_tau,
                acc_tau    = acc_tau,
@@ -448,7 +448,7 @@ function nekf_train(ins::INS, meas, itp_mapS, nn_x::Matrix, nn_y::Matrix;
                epoch_adam = epoch_adam,
                hidden     = hidden,
                activation = activation,
-               l_seq      = l_seq,
+               l_window   = l_window,
                date       = date,
                core       = core);
 end # function nekf_train
@@ -465,11 +465,11 @@ end # function nekf_train
                epoch_adam::Int      = 10,
                hidden::Int          = 1,
                activation::Function = swish,
-               l_seq::Int           = 50,
+               l_window::Int        = 50,
                date                 = get_years(2020,185),
                core::Bool           = false)
 
-Train a measurement noise covariance-adaptive neural extended Kalman filter 
+Train a measurement noise covariance-adaptive neural extended Kalman filter
 (nEKF) model for airborne magnetic anomaly navigation.
 
 **Arguments:**
@@ -477,7 +477,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
 - `ind`:        selected data indices
 - `meas`:       scalar magnetometer measurement [nT]
 - `itp_mapS`:   scalar map interpolation function
-- `x`:          input data
+- `x`:          `N` x `Nf` data matrix (`Nf` is number of features)
 - `P0`:         (optional) initial covariance matrix
 - `Qd`:         (optional) discrete time process/system noise matrix
 - `R`:          (optional) measurement (white) noise variance
@@ -493,13 +493,13 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
     - `swish` = self-gated
     - `tanh`  = hyperbolic tan
     - run `plot_activation()` for a visual
-- `l_seq`:      (optional) sequence length (length of sliding window)
+- `l_window`:   (optional) temporal window length
 - `date`:       (optional) measurement date for IGRF [yr]
 - `core`:       (optional) if true, include core magnetic field in measurement
 
 **Returns:**
 - `m`:          neural network model
-- `data_norms`: Tuple of data normalizations, e.g., `(v_scale,x_bias,x_scale)`
+- `data_norms`: tuple of data normalizations, e.g., `(v_scale,x_bias,x_scale)`
 """
 function nekf_train(xyz::XYZ, ind, meas, itp_mapS, x::Matrix;
                     P0                   = create_P0(),
@@ -512,22 +512,22 @@ function nekf_train(xyz::XYZ, ind, meas, itp_mapS, x::Matrix;
                     epoch_adam::Int      = 10,
                     hidden::Int          = 1,
                     activation::Function = swish,
-                    l_seq::Int           = 50,
+                    l_window::Int        = 50,
                     date                 = get_years(2020,185),
                     core::Bool           = false)
 
-    # get traj, ins, and nn_y (position)
+    # get traj, ins, and y_nn (position)
     traj = get_traj(xyz,ind)
     ins  = get_ins(xyz,ind;N_zero_ll=1)
-    nn_y = [traj.lat traj.lon]
+    y_nn = [traj.lat traj.lon]
 
     # normalize x
     (x_bias,x_scale,x_norm) = norm_sets(x;norm_type=:standardize)
     (_,S,V) = svd(cov(x_norm))
     v_scale = V[:,1:1]*inv(Diagonal(sqrt.(S[1:1])))
-    nn_x = x_norm * v_scale
+    x_nn = x_norm * v_scale
 
-    m = nekf_train(ins,meas,itp_mapS,nn_x,nn_y;
+    m = nekf_train(ins,meas,itp_mapS,x_nn,y_nn;
                    P0=P0,Qd=Qd,R=R,
                    baro_tau   = baro_tau,
                    acc_tau    = acc_tau,
@@ -536,7 +536,7 @@ function nekf_train(xyz::XYZ, ind, meas, itp_mapS, x::Matrix;
                    epoch_adam = epoch_adam,
                    hidden     = hidden,
                    activation = activation,
-                   l_seq      = l_seq,
+                   l_window   = l_window,
                    date       = date,
                    core       = core)
 

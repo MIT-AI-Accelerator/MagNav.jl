@@ -146,8 +146,8 @@ using declination and inclination.
 - `map_map`: `ny` x `nx` 2D gridded map data
 - `dx`:      x-direction map step size [m]
 - `dy`:      y-direction map step size [m]
-- `D`:       map declination (earth core field) [rad]
-- `I`:       map inclination (earth core field) [rad]
+- `D`:       map declination (Earth core field) [rad]
+- `I`:       map inclination (Earth core field) [rad]
 
 **Returns:**
 - `Bx, By, Bz`: map vector components

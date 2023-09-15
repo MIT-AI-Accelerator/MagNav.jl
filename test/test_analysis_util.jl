@@ -223,8 +223,8 @@ end
     @test_throws AssertionError get_ind(tt[ind],line[ind];splits=(1,1,1))
     @test_throws AssertionError get_ind(tt[ind],line[ind];splits=(1,0,0,0))
     @test sum(get_ind(xyz;lines=lines,tt_lim=(tt[ind][5]))) ≈ 5
-    @test sum(get_ind(xyz,lines[2],df_line;l_seq=15)) ≈ 45
-    @test sum.(get_ind(xyz,lines[2],df_line;splits=(0.5,0.5),l_seq=15)) == (15,15)
+    @test sum(get_ind(xyz,lines[2],df_line;l_window=15)) ≈ 45
+    @test sum.(get_ind(xyz,lines[2],df_line;splits=(0.5,0.5),l_window=15)) == (15,15)
     @test sum(get_ind(xyz,lines,df_line)) ≈ 50
     @test sum.(get_ind(xyz,lines,df_line;splits=(0.5,0.5))) == (25,25)
     @test sum.(get_ind(xyz,lines,df_line;splits=(0.7,0.2,0.1))) == (35,10,5)
@@ -276,28 +276,30 @@ end
 
 @testset "project_body_field_to_2d_igrf tests" begin
     @test_nowarn project_body_field_to_2d_igrf(vec_body,igrf_in,dcm)
-    # Create a "north" vector in the body frame
-    north_vec_nav = vec([1.0, 0.0, 0.0]);
-    dcms = xyz.ins.Cnb[:,:,ind] #
-    # Check that North in 3-D stays as North in 2-D (repeat below for cardinal dirs)
+
+    # create "north" vector in body frame
+    north_vec_nav = vec([1.0, 0.0, 0.0])
+    dcms = xyz.ins.Cnb[:,:,ind]
+
+    # check that north in 3D stays north in 2D (repeated for cardinal directions)
     north_vec_body = [dcms[:,:,i]'*north_vec_nav for i=1:size(dcms)[3]];
     n2ds = [project_body_field_to_2d_igrf(north_vec_body[i], north_vec_nav, dcms[:,:,i])
-             for i=1:size(dcms)[3]];
+            for i=1:size(dcms)[3]]
     @test all(map(v -> v ≈ [1.0, 0.0], n2ds))
 
-    east_vec_nav = vec([0.0, 1.0, 0.0])
+    east_vec_nav  = vec([0.0, 1.0, 0.0])
     east_vec_body = [dcms[:,:,i]'*east_vec_nav for i=1:size(dcms)[3]]
     e2ds = [project_body_field_to_2d_igrf(east_vec_body[i], north_vec_nav, dcms[:,:,i])
             for i=1:size(dcms)[3]]
     @test all(map(v -> v ≈ [0.0, 1.0], e2ds))
 
-    west_vec_nav = vec([0.0, -1.0, 0.0])
+    west_vec_nav  = vec([0.0, -1.0, 0.0])
     west_vec_body = [dcms[:,:,i]'*west_vec_nav for i=1:size(dcms)[3]]
     w2ds = [project_body_field_to_2d_igrf(west_vec_body[i], north_vec_nav, dcms[:,:,i])
             for i=1:size(dcms)[3]]
     @test all(map(v -> v ≈ [0.0, -1.0], w2ds))
 
-    south_vec_nav = vec([-1.0, 0.0, 0.0])
+    south_vec_nav  = vec([-1.0, 0.0, 0.0])
     south_vec_body = [dcms[:,:,i]'*south_vec_nav for i=1:size(dcms)[3]]
     s2ds = [project_body_field_to_2d_igrf(south_vec_body[i], north_vec_nav, dcms[:,:,i])
             for i=1:size(dcms)[3]]
@@ -333,8 +335,8 @@ mag_gif = joinpath(@__DIR__,"comp_xai")
 @testset "gif_animation_m3 tests" begin
     ENV["GKSwstype"] = "100"
     @test typeof(gif_animation_m3(TL_perm, TL_induced, TL_eddy,
-                 TL_aircraft, B_unit', y_nn,
-				 y, y_hat, xyz.ins.lat[ind], xyz.ins.lon[ind], xyz;
+                 TL_aircraft, B_unit', y_nn, y, y_hat, xyz,
+				 xyz.ins.lat[ind], xyz.ins.lon[ind];
                  ind=ind, save_plot=true, mag_gif=mag_gif)) <: Plots.AnimatedGif
 end
 

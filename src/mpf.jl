@@ -12,12 +12,12 @@
         date       = get_years(2020,185),
         core::Bool = false)
 
-Rao-Blackwellized (marginalized) particle filter (MPF) for airborne magnetic 
-anomaly navigation. This simplified MPF works only with LINEAR dynamics. 
-This allows the same Kalman filter covariance matrices to be used with 
-each particle, simplifying the filter and reducing the computational load. 
-It is especially suited for map-matching navigation in which there is a 
-highly non-linear, non-Gaussian MEASUREMENT, but NOT non-linear dynamics. 
+Rao-Blackwellized (marginalized) particle filter (MPF) for airborne magnetic
+anomaly navigation. This simplified MPF works only with LINEAR dynamics.
+This allows the same Kalman filter covariance matrices to be used with
+each particle, simplifying the filter and reducing the computational load.
+It is especially suited for map-matching navigation in which there is a
+highly non-linear, non-Gaussian MEASUREMENT, but NOT non-linear dynamics.
 The filter also assumes NON-correlated measurements to speed up computation.
 
 **Arguments:**
@@ -194,12 +194,12 @@ end # function mpf
         date       = get_years(2020,185),
         core::Bool = false)
 
-Rao-Blackwellized (marginalized) particle filter (MPF) for airborne magnetic 
-anomaly navigation. This simplified MPF works only with LINEAR dynamics. 
-This allows the same Kalman filter covariance matrices to be used with 
-each particle, simplifying the filter and reducing the computational load. 
-It is especially suited for map-matching navigation in which there is a 
-highly non-linear, non-Gaussian MEASUREMENT, but NOT non-linear dynamics. 
+Rao-Blackwellized (marginalized) particle filter (MPF) for airborne magnetic
+anomaly navigation. This simplified MPF works only with LINEAR dynamics.
+This allows the same Kalman filter covariance matrices to be used with
+each particle, simplifying the filter and reducing the computational load.
+It is especially suited for map-matching navigation in which there is a
+highly non-linear, non-Gaussian MEASUREMENT, but NOT non-linear dynamics.
 The filter also assumes NON-correlated measurements to speed up computation.
 
 **Arguments:**

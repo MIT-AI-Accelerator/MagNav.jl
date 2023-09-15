@@ -69,7 +69,7 @@ end # function dlon2de
 """
     linreg(y, x; λ=0)
 
-Linear regression with input data matrix.
+Linear regression with data matrix.
 
 **Arguments:**
 - `y`: observed data
@@ -80,9 +80,7 @@ Linear regression with input data matrix.
 - `coef`: linear regression coefficients
 """
 function linreg(y, x; λ=0)
-    coef = (x'*x + λ*I) \ (x'*y)
-    length(coef) > 1 && (coef = vec(coef))
-    return (coef)
+    (x'*x + λ*I) \ (x'*y)
 end # function linreg
 
 """
@@ -95,36 +93,37 @@ Linear regression to determine best fit line for x = eachindex(y).
 - `λ`: (optional) ridge parameter
 
 **Returns:**
-- `coef`: (2) linear regression coefficients
+- `coef`: length `2` linear regression coefficients
 """
 function linreg(y; λ=0)
-    x = [one.(y) eachindex(y)]
+    x    = [one.(y) eachindex(y)]
     coef = linreg(y,x;λ=λ)
     return (coef)
 end # function linreg
 
 """
-    detrend(y, x=[eachindex(y);]; mean_only::Bool=false)
+    detrend(y, x=[eachindex(y);]; λ=0, mean_only::Bool=false)
 
 Detrend signal (remove mean and optionally slope).
 
 **Arguments:**
 - `y`:         observed data
 - `x`:         (optional) input data
+- `λ`:         (optional) ridge parameter
 - `mean_only`: (optional) if true, only remove mean (not slope)
 
 **Returns:**
-- `y_new`: detrended observed data
+- `y`: observed data, detrended
 """
-function detrend(y, x=[eachindex(y);]; mean_only::Bool=false)
+function detrend(y, x=[eachindex(y);]; λ=0, mean_only::Bool=false)
     if mean_only
-        y_new = y .- mean(y)
+        y = y .- mean(y)
     else
-        x = [one.(y) x]
-        coef = (x'*x) \ (x'*y)
-        y_new = y - x*coef
+        x    = [one.(y) x]
+        coef = linreg(y,x;λ=λ)
+        y    = y - x*coef
     end
-    return (y_new)
+    return (y)
 end # function detrend
 
 """
@@ -150,7 +149,7 @@ function get_bpf(; pass1=0.1, pass2=0.9, fs=10.0, pole::Int=4)
     elseif ((pass1 >  0) & (pass1 <  fs/2)) & ((pass2 <= 0) | (pass2 >= fs/2))
         p = Highpass(pass1;fs=fs)       # high-pass
     else
-        error("$pass1 & $pass2 passband frequencies are not valid")
+        error("$pass1 & $pass2 passband frequencies are invalid")
     end
     return (digitalfilter(p,Butterworth(pole)))
 end # function get_bpf
@@ -161,7 +160,7 @@ end # function get_bpf
 Bandpass (or low-pass or high-pass) filter columns of matrix.
 
 **Arguments:**
-- `x`:   matrix of input data (e.g., Tolles-Lawson `A` matrix)
+- `x`:   data matrix (e.g., Tolles-Lawson `A` matrix)
 - `bpf`: (optional) filter object
 
 **Returns:**
@@ -181,11 +180,11 @@ end # function bpf_data
 Bandpass (or low-pass or high-pass) filter vector.
 
 **Arguments:**
-- `x`:   input data (e.g., magnetometer measurements)
+- `x`:   data vector (e.g., magnetometer measurements)
 - `bpf`: (optional) filter object
 
 **Returns:**
-- `x_f`: filtered data
+- `x_f`: data vector, filtered
 """
 function bpf_data(x::Vector; bpf=get_bpf())
     filtfilt(bpf,x)
@@ -197,7 +196,7 @@ end # function bpf_data
 Bandpass (or low-pass or high-pass) filter vector or columns of matrix.
 
 **Arguments:**
-- `x`:   vector or matrix of input data
+- `x`:   data vector or matrix
 - `bpf`: (optional) filter object
 
 **Returns:**
@@ -213,7 +212,7 @@ end # function bpf_data!
 Downsample data `x` to `Nmax` (or fewer) data points.
 
 **Arguments:**
-- `x`:    vector or matrix of input data
+- `x`:    data vector or matrix
 - `Nmax`: (optional) maximum number of data points
 
 **Returns:**
@@ -235,22 +234,22 @@ end # function downsample
           sub_igrf::Bool    = false,
           bpf_mag::Bool     = false)
 
-Get `x` matrix.
+Get `x` data matrix.
 
 **Arguments:**
 - `xyz`:              `XYZ` flight data struct
 - `ind`:              selected data indices
-- `features_setup`:   list of features to include
-- `features_no_norm`: (optional) list of features to not normalize
+- `features_setup`:   vector of features to include
+- `features_no_norm`: (optional) vector of features to not normalize
 - `terms`:            (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
 - `sub_diurnal`:      (optional) if true, subtract diurnal from scalar magnetometer measurements
 - `sub_igrf`:         (optional) if true, subtract IGRF from scalar magnetometer measurements
 - `bpf_mag`:          (optional) if true, bpf scalar magnetometer measurements
 
 **Returns:**
-- `x`:        `x` matrix
-- `no_norm`:  indices of features to not be normalized
-- `features`: full list of features (including components of TL `A`, etc.)
+- `x`:        `N` x `Nf` data matrix (`Nf` is number of features)
+- `no_norm`:  length `Nf` Boolean indices of features to not be normalized
+- `features`: length `Nf` feature vector (including components of TL `A`, etc.)
 """
 function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
                features_setup::Vector{Symbol}   = [:mag_1_uc,:TL_A_flux_a];
@@ -260,15 +259,15 @@ function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
                sub_igrf::Bool    = false,
                bpf_mag::Bool     = false)
 
-    d = Dict{Symbol,Any}()
-    N = length(xyz.traj.lat[ind])
-    x        = Array{eltype(xyz.traj.lat)}(undef,N,0)
-    no_norm  = Array{eltype(ind)}(undef,0,1)
-    features = Array{Symbol}(undef,0,1)
+    d        = Dict{Symbol,Any}()
+    N        = length(xyz.traj.lat[ind])
+    x        = Matrix{eltype(xyz.traj.lat)}(undef,N,0)
+    no_norm  = Vector{Bool}(undef,0)
+    features = Vector{Symbol}(undef,0)
 
     for use_vec in field_check(xyz,MagV)
-        TL_A = create_TL_A(getfield(xyz,use_vec),ind;terms=terms)
-        push!(d,Symbol("TL_A_",use_vec)=>TL_A)
+        A = create_TL_A(getfield(xyz,use_vec),ind;terms=terms)
+        push!(d,Symbol("TL_A_",use_vec)=>A)
     end
 
     # subtract diurnal and/or IGRF as specified
@@ -396,9 +395,9 @@ function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
             error("$f feature is invalid, remove")
         end
 
-        nf = size(u,2)
-        v  = f in features_no_norm ? trues(nf) : falses(nf)
-        w  = nf > 1 ? [Symbol(f,"_",i) for i = 1:nf] : f
+        Nf = size(u,2)
+        v  = f in features_no_norm ? trues(Nf) : falses(Nf)
+        w  = Nf > 1 ? [Symbol(f,"_",i) for i = 1:Nf] : f
 
         if isnan(sum(u))
             error("$f feature contains NaNs, remove")
@@ -409,7 +408,7 @@ function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
         end
     end
 
-    return (x, vec(no_norm), vec(features))
+    return (x, no_norm, features)
 end # function get_x
 
 """
@@ -421,22 +420,22 @@ end # function get_x
           sub_igrf::Bool    = false,
           bpf_mag::Bool     = false)
 
-Get `x` matrix from multiple `XYZ` flight data structs.
+Get `x` data matrix from multiple `XYZ` flight data structs.
 
 **Arguments:**
 - `xyz_vec`:          vector of `XYZ` flight data structs
 - `ind_vec`:          vector of selected data indices
-- `features_setup`:   list of features to include
-- `features_no_norm`: (optional) list of features to not normalize
+- `features_setup`:   vector of features to include
+- `features_no_norm`: (optional) vector of features to not normalize
 - `terms`:            (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
 - `sub_diurnal`:      (optional) if true, subtract diurnal from scalar magnetometer measurements
 - `sub_igrf`:         (optional) if true, subtract IGRF from scalar magnetometer measurements
 - `bpf_mag`:          (optional) if true, bpf scalar magnetometer measurements
 
 **Returns:**
-- `x`:        `x` matrix
-- `no_norm`:  indices of features to not be normalized
-- `features`: full list of features (including components of TL `A`, etc.)
+- `x`:        `N` x `Nf` data matrix (`Nf` is number of features)
+- `no_norm`:  length `Nf` Boolean indices of features to not be normalized
+- `features`: length `Nf` feature vector (including components of TL `A`, etc.)
 """
 function get_x(xyz_vec::Vector, ind_vec::Vector,
                features_setup::Vector{Symbol}   = [:mag_1_uc,:TL_A_flux_a];
@@ -473,28 +472,28 @@ end # function get_x
           sub_diurnal::Bool = false,
           sub_igrf::Bool    = false,
           bpf_mag::Bool     = false,
-          l_seq::Int        = -1,
+          l_window::Int     = -1,
           silent::Bool      = true)
 
-Get `x` matrix for multiple lines, possibly multiple flights.
+Get `x` data matrix from multiple flight lines, possibly multiple flights.
 
 **Arguments:**
 - `lines`:            selected line number(s)
 - `df_line`:          lookup table (DataFrame) of `lines`
 - `df_flight`:        lookup table (DataFrame) of flight data HDF5 files
-- `features_setup`:   list of features to include
-- `features_no_norm`: (optional) list of features to not normalize
+- `features_setup`:   vector of features to include
+- `features_no_norm`: (optional) vector of features to not normalize
 - `terms`:            (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
 - `sub_diurnal`:      (optional) if true, subtract diurnal from scalar magnetometer measurements
 - `sub_igrf`:         (optional) if true, subtract IGRF from scalar magnetometer measurements
 - `bpf_mag`:          (optional) if true, bpf scalar magnetometer measurements
-- `l_seq`:            (optional) trim data by `mod(N,l_seq)`, `-1` to ignore
+- `l_window`:         (optional) trim data by `mod(N,l_window)`, `-1` to ignore
 - `silent`:           (optional) if true, no print outs
 
 **Returns:**
-- `x`:        `x` matrix
-- `no_norm`:  indices of features to not be normalized
-- `features`: full list of features (including components of TL `A`, etc.)
+- `x`:        `N` x `Nf` data matrix (`Nf` is number of features)
+- `no_norm`:  length `Nf` Boolean indices of features to not be normalized
+- `features`: length `Nf` feature vector (including components of TL `A`, etc.)
 """
 function get_x(lines, df_line::DataFrame, df_flight::DataFrame,
                features_setup::Vector{Symbol}   = [:mag_1_uc,:TL_A_flux_a];
@@ -503,7 +502,7 @@ function get_x(lines, df_line::DataFrame, df_flight::DataFrame,
                sub_diurnal::Bool = false,
                sub_igrf::Bool    = false,
                bpf_mag::Bool     = false,
-               l_seq::Int        = -1,
+               l_window::Int     = -1,
                silent::Bool      = true)
 
     # check if lines are in df_line, remove if not
@@ -536,7 +535,7 @@ function get_x(lines, df_line::DataFrame, df_flight::DataFrame,
         end
         flt_old = flt
 
-        ind = get_ind(xyz,line,df_line;l_seq=l_seq)
+        ind = get_ind(xyz,line,df_line;l_window=l_window)
 
         if x === nothing
             (x,no_norm,features) = get_x(xyz,ind,features_setup;
@@ -585,7 +584,7 @@ Get `y` target vector.
 - `sub_igrf`:    (optional) if true, subtract IGRF from scalar magnetometer measurements
 
 **Returns:**
-- `y`: `y` target vector
+- `y`: length `N` target vector
 """
 function get_y(xyz::XYZ, ind = trues(xyz.traj.N),
                map_val           = -1;
@@ -624,7 +623,7 @@ function get_y(xyz::XYZ, ind = trues(xyz.traj.N),
         fs   = 1 / xyz.traj.dt
         y = bpf_data(mag_uc - sub; bpf=get_bpf(;fs=fs))
     else
-        error("$y_type target type is not valid")
+        error("$y_type target type is invalid")
     end
 
     return (y)
@@ -638,10 +637,10 @@ end # function get_y
           use_mag_c::Symbol = :mag_1_c,
           sub_diurnal::Bool = false,
           sub_igrf::Bool    = false,
-          l_seq::Int        = -1,
+          l_window::Int     = -1,
           silent::Bool      = true)
 
-Get `y` target vector for multiple lines, possibly multiple flights.
+Get `y` target vector from multiple flight lines, possibly multiple flights.
 
 **Arguments:**
 - `lines`:     selected line number(s)
@@ -658,11 +657,11 @@ Get `y` target vector for multiple lines, possibly multiple flights.
 - `use_mag_c`:   (optional) compensated scalar magnetometer to use {`:mag_1_c`, etc.}, only used for `y_type = :a, :d`
 - `sub_diurnal`: (optional) if true, subtract diurnal from scalar magnetometer measurements
 - `sub_igrf`:    (optional) if true, subtract IGRF from scalar magnetometer measurements
-- `l_seq`:       (optional) trim data by `mod(N,l_seq)`, `-1` to ignore
+- `l_window`:    (optional) trim data by `mod(N,l_window)`, `-1` to ignore
 - `silent`:      (optional) if true, no print outs
 
 **Returns:**
-- `y`: `y` target vector
+- `y`: length `N` target vector
 """
 function get_y(lines, df_line::DataFrame, df_flight::DataFrame,
                df_map::DataFrame;
@@ -671,7 +670,7 @@ function get_y(lines, df_line::DataFrame, df_flight::DataFrame,
                use_mag_c::Symbol = :mag_1_c,
                sub_diurnal::Bool = false,
                sub_igrf::Bool    = false,
-               l_seq::Int        = -1,
+               l_window::Int     = -1,
                silent::Bool      = true)
 
     # check if lines are in df_line, remove if not
@@ -697,7 +696,7 @@ function get_y(lines, df_line::DataFrame, df_flight::DataFrame,
         end
         flt_old = flt
 
-        ind = get_ind(xyz,line,df_line;l_seq=l_seq)
+        ind = get_ind(xyz,line,df_line;l_window=l_window)
 
         # map values along trajectory (if needed)
         if y_type in [:b,:c]
@@ -742,23 +741,23 @@ end # function get_y
             sub_igrf::Bool     = false,
             bpf_mag::Bool      = false,
             reorient_vec::Bool = false,
-            l_seq::Int         = -1,
+            l_window::Int      = -1,
             mod_TL::Bool       = false,
             map_TL::Bool       = false,
             return_B::Bool     = false,
             silent::Bool       = true)
 
-Get "external" Tolles-Lawson `A` matrix, `x` matrix, and `y` target vector for
-multiple lines, possibly multiple flights. Optionally return `Bt` and `B_dot`
-used to create the "external" Tolles-Lawson `A` matrix.
+Get "external" Tolles-Lawson `A` matrix, `x` data matrix, and `y` target vector
+from multiple flight lines, possibly multiple flights. Optionally return `Bt`
+and `B_dot` used to create the "external" Tolles-Lawson `A` matrix.
 
 **Arguments:**
 - `lines`:            selected line number(s)
 - `df_line`:          lookup table (DataFrame) of `lines`
 - `df_flight`:        lookup table (DataFrame) of flight data HDF5 files
 - `df_map`:           lookup table (DataFrame) of map data HDF5 files
-- `features_setup`:   list of features to include
-- `features_no_norm`: (optional) list of features to not normalize
+- `features_setup`:   vector of features to include
+- `features_no_norm`: (optional) vector of features to not normalize
 - `y_type`:           (optional) `y` target type
     - `:a` = anomaly field  #1, compensated tail stinger total field scalar magnetometer measurements
     - `:b` = anomaly field  #2, interpolated `magnetic anomaly map` values
@@ -768,27 +767,27 @@ used to create the "external" Tolles-Lawson `A` matrix.
 - `use_mag`:      (optional) scalar magnetometer to use {`:mag_1_uc`, etc.}, only used for `y_type = :c, :d, :e`
 - `use_mag_c`:    (optional) compensated scalar magnetometer to use {`:mag_1_c`, etc.}, only used for `y_type = :a, :d`
 - `use_vec`:      (optional) vector magnetometer (fluxgate) to use for "external" Tolles-Lawson `A` matrix {`:flux_a`, etc.}
-- `terms`:        (optional) Tolles-Lawson terms to use for `A` within `x` matrix {`:permanent`,`:induced`,`:eddy`,`:bias`}
+- `terms`:        (optional) Tolles-Lawson terms to use for `A` within `x` data matrix {`:permanent`,`:induced`,`:eddy`,`:bias`}
 - `terms_A`:      (optional) Tolles-Lawson terms to use for "external" Tolles-Lawson `A` matrix {`:permanent`,`:induced`,`:eddy`,`:bias`}
 - `sub_diurnal`:  (optional) if true, subtract diurnal from scalar magnetometer measurements
 - `sub_igrf`:     (optional) if true, subtract IGRF from scalar magnetometer measurements
-- `bpf_mag`:      (optional) if true, bpf scalar magnetometer measurements in `x` matrix
+- `bpf_mag`:      (optional) if true, bpf scalar magnetometer measurements in `x` data matrix
 - `reorient_vec`: (optional) if true, align vector magnetometer with body frame
-- `l_seq`:        (optional) trim data by `mod(N,l_seq)`, `-1` to ignore
+- `l_window`:     (optional) trim data by `mod(N,l_window)`, `-1` to ignore
 - `mod_TL`:       (optional) if true, create modified  "external" Tolles-Lawson `A` matrix with `use_mag`
 - `map_TL`:       (optional) if true, create map-based "external" Tolles-Lawson `A` matrix
 - `return_B`:     (optional) if true, also return `Bt` & `B_dot`
 - `silent`:       (optional) if true, no print outs
 
 **Returns:**
-- `A`:        "external" Tolles-Lawson `A` matrix
-- `x`:        `x` matrix
-- `y`:        `y` target vector
-- `no_norm`:  indices of features to not be normalized
-- `features`: full list of features (including components of TL `A`, etc.)
-- `l_segs`:   vector of lengths of `lines`, sum(l_segs) == length(y)
-- `Bt`:       if `return_B = true`, magnitude of total field measurements used to create `A` [nT]
-- `B_dot`:    if `return_B = true`, finite differences of total field vector used to create `A` [nT]
+- `A`:        `N` x `N_TL` "external" Tolles-Lawson `A` matrix (`N_TL` is number of Tolles-Lawson coefficients)
+- `x`:        `N` x `Nf` data matrix (`Nf` is number of features)
+- `y`:        length `N` target vector
+- `no_norm`:  length `Nf` Boolean indices of features to not be normalized
+- `features`: length `Nf` feature vector (including components of TL `A`, etc.)
+- `l_segs`:   length `N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
+- `Bt`:       if `return_B = true`, length `N` magnitude of total field measurements used to create `A` [nT]
+- `B_dot`:    if `return_B = true`, `N` x `3` finite differences of total field vector used to create `A` [nT]
 """
 function get_Axy(lines, df_line::DataFrame,
                  df_flight::DataFrame, df_map::DataFrame,
@@ -804,7 +803,7 @@ function get_Axy(lines, df_line::DataFrame,
                  sub_igrf::Bool     = false,
                  bpf_mag::Bool      = false,
                  reorient_vec::Bool = false,
-                 l_seq::Int         = -1,
+                 l_window::Int      = -1,
                  mod_TL::Bool       = false,
                  map_TL::Bool       = false,
                  return_B::Bool     = false,
@@ -829,9 +828,9 @@ function get_Axy(lines, df_line::DataFrame,
     # initial values
     flt_old  = :FltInitial
     A_test   = create_TL_A([1.0],[1.0],[1.0];terms=terms_A)
-    A        = Array{eltype(A_test)}(undef,0,length(A_test))
-    Bt       = Array{eltype(A_test)}(undef,0,1)
-    B_dot    = Array{eltype(A_test)}(undef,0,3)
+    A        = Matrix{eltype(A_test)}(undef,0,length(A_test))
+    Bt       = Vector{eltype(A_test)}(undef,0)
+    B_dot    = Matrix{eltype(A_test)}(undef,0,3)
     x        = nothing
     y        = nothing
     no_norm  = nothing
@@ -846,7 +845,7 @@ function get_Axy(lines, df_line::DataFrame,
         end
         flt_old = flt
 
-        ind = get_ind(xyz,line,df_line;l_seq=l_seq)
+        ind = get_ind(xyz,line,df_line;l_window=l_window)
         l_segs[findfirst(l_segs .== 0)] = length(xyz.traj.lat[ind])
 
         # x matrix
@@ -924,62 +923,253 @@ function get_Axy(lines, df_line::DataFrame,
 end # function get_Axy
 
 """
-    get_nn_m(xS::Int=10, yS::Int=1;
-             hidden               = [8],
-             activation::Function = swish,
-             final_bias::Bool     = true,
-             skip_con::Bool       = false)
+    LPE{T2 <: AbstractFloat}
 
-Get neural network model. Valid for 0-3 hidden layers.
+Learnable positional encoding (LPE) struct used for transformer encoder.
+
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+|`embeddings`|Matrix{`T2`}| embeddings
+|`dropout`   |`Dropout`   | dropout layer
+"""
+struct LPE{T2 <: AbstractFloat}
+    embeddings :: Matrix{T2}
+    dropout    :: Dropout
+end # struct LPE
+
+@functor LPE
+
+"""
+    LPE(N_head::Int, l_window::Int, dropout_prob)
+
+Internal helper function to create learnable positional encoding struct.
 
 **Arguments:**
-- `xS`:         size (length) of input layer
-- `yS`:         size (length) of output layer
-- `hidden`:     (optional) hidden layers & nodes (e.g., `[8,8]` for 2 hidden layers, 8 nodes each)
-- `activation`: (optional) activation function
+- `N_head`:       number of attention heads
+- `l_window`:     temporal window length
+- `dropout_prob`: dropout rate
+
+**Returns:**
+- `lpe`: `LPE` learnable positional encoding struct
+"""
+function LPE(N_head::Int, l_window::Int, dropout_prob)
+    embeddings = Float32.(rand(Uniform(-0.02, 0.02), N_head, l_window))
+    return LPE(embeddings, Dropout(dropout_prob))
+end # function LPE
+
+"""
+    (lpe::LPE)(x::AbstractArray)
+
+Internal helper function to operate on learnable positional encoding struct.
+
+**Arguments:**
+- `lpe`: `LPE` learnable positional encoding struct
+- `x`:   data tensor
+
+**Returns:**
+- `x`: data tensor with learnable positional encoding applied
+"""
+function (lpe::LPE)(x::AbstractArray)
+    lpe.dropout(x .+ lpe.embeddings)
+end # function LPE
+
+"""
+    batchnorm(x::AbstractArray)
+
+Internal helper function to apply batch normalization across the first
+dimension of a tensor.
+
+**Arguments**
+- `x`: data tensor (e.g., number of features, window length, mini-batch size)
+
+**Returns**
+- `x_b`: `x` with batch normalization applied across the first dimension
+"""
+function batchnorm(x::AbstractArray)
+    c   = size(x,1)
+    d   = (2,1,3)
+    x_b = permutedims(BatchNorm(c)(permutedims(x,d)), d)
+    return (x_b)
+end # function batchnorm
+
+"""
+    get_nn_m(Nf::Int, Ny::Int=1;
+             hidden                = [8],
+             activation::Function  = swish,
+             final_bias::Bool      = true,
+             skip_con::Bool        = false,
+             model_type::Symbol    = :m1
+             l_window::Int         = 5,
+             tf_layer_type::Symbol = :postlayer,
+             tf_norm_type::Symbol  = :batch,
+             dropout_prob          = 0.2,
+             N_tf_head::Int        = 8,
+             tf_gain               = 1.0)
+
+Get neural network model. Valid for 0-3 hidden layers, except for
+`model_type = :m3w, :m3tf`, which are only valid for 1 or 2 hidden layers.
+
+**Arguments:**
+- `Nf`:            length of input (feature) layer
+- `Ny`:            (optional) length of output layer
+- `hidden`:        (optional) hidden layers & nodes (e.g., `[8,8]` for 2 hidden layers, 8 nodes each)
+- `activation`:    (optional) activation function
     - `relu`  = rectified linear unit
     - `σ`     = sigmoid (logistic function)
     - `swish` = self-gated
     - `tanh`  = hyperbolic tan
     - run `plot_activation()` for a visual
-- `final_bias`: (optional) if true, include final layer bias
-- `skip_con`:   (optional) if true, use skip connections, must have length(`hidden`) == 1
+- `final_bias`:    (optional) if true, include final layer bias
+- `skip_con`:      (optional) if true, use skip connections, must have length(`hidden`) == 1
+- `model_type`:    (optional) aeromagnetic compensation model type
+- `l_window`:      (optional) temporal window length, only used for `model_type = :m3w, :m3tf`
+- `tf_layer_type`: (optional) transformer normalization layer before or after skip connection {`:prelayer`,`:postlayer`}, only used for `model_type = :m3tf`
+- `tf_norm_type`:  (optional) normalization for transformer encoder {`:batch`,`:layer`,`:none`}, only used for `model_type = :m3tf`
+- `dropout_prob`:  (optional) dropout rate, only used for `model_type = :m3w, :m3tf`
+- `N_tf_head`:     (optional) number of attention heads, only used for `model_type = :m3tf`
+- `tf_gain`:       (optional) weight initialization parameter, only used for `model_type = :m3tf`
 
 **Returns:**
 - `m`: neural network model
 """
-function get_nn_m(xS::Int=10, yS::Int=1;
-                  hidden               = [8],
-                  activation::Function = swish,
-                  final_bias::Bool     = true,
-                  skip_con::Bool       = false)
+function get_nn_m(Nf::Int, Ny::Int=1;
+                  hidden                = [8],
+                  activation::Function  = swish,
+                  final_bias::Bool      = true,
+                  skip_con::Bool        = false,
+                  model_type::Symbol    = :m1,
+                  l_window::Int         = 5,
+                  tf_layer_type::Symbol = :postlayer,
+                  tf_norm_type::Symbol  = :batch,
+                  dropout_prob          = 0.2,
+                  N_tf_head::Int        = 8,
+                  tf_gain               = 1.0)
 
     l = length(hidden)
 
-    if l == 0
-        m = Chain(Dense(xS,yS;bias=final_bias))
-    elseif skip_con
-        if l == 1
-            m = Chain(SkipConnection(Dense(xS,hidden[1],activation),
-                                     (mx, x) -> cat(mx, x, dims=1)),
-                      Dense(xS+hidden[1],yS;bias=final_bias))
+    if model_type == :m3tf
+
+        # pre & post layer normalization transformer architectures
+        # https://tnq177.github.io/data/transformers_without_tears.pdf
+
+        N_head = hidden[1]
+        init   = Flux.glorot_uniform(gain=tf_gain)
+
+        if tf_norm_type == :layer
+            norm_layer1 = LayerNorm(N_head)
+            norm_layer2 = LayerNorm(N_head)
+        elseif tf_norm_type == :batch
+            norm_layer1 = x -> batchnorm(x)
+            norm_layer2 = x -> batchnorm(x)
+        elseif tf_norm_type == :none
+            norm_layer1 = identity
+            norm_layer2 = identity
         else
-            error("$l hidden layers not valid with skip connections")
+            error("tf_norm_type $tf_norm_type is invalid, choose {:layer,:batch,:none}")
         end
-    elseif l == 1
-        m = Chain(Dense(xS,hidden[1],activation),
-                  Dense(hidden[1],yS;bias=final_bias))
-    elseif l == 2
-        m = Chain(Dense(xS,hidden[1],activation),
-                  Dense(hidden[1],hidden[2],activation),
-                  Dense(hidden[2],yS;bias=final_bias))
-    elseif l == 3
-        m = Chain(Dense(xS,hidden[1],activation),
-                  Dense(hidden[1],hidden[2],activation),
-                  Dense(hidden[2],hidden[3],activation),
-                  Dense(hidden[3],yS;bias=final_bias))
+
+        multi_head_attention = MultiHeadAttention(N_head => N_head => N_head;
+                                                  nheads       = N_tf_head,
+                                                  dropout_prob = dropout_prob,
+                                                  init         = init)
+
+        # only add activation to final feedforward NN, change for stacked encoders
+        if l == 0
+            error("hidden must have at least 1 element")
+        elseif l == 1
+            ffnn = Chain(Dense(N_head, N_head, activation; init=init),
+                               Dropout(dropout_prob))
+        elseif l == 2
+            ffnn = Chain(Dense(N_head, hidden[2], activation; init=init),
+                               Dropout(dropout_prob),
+                               Dense(hidden[2], N_head, activation; init=init),
+                               Dropout(dropout_prob))
+        else
+            error("$l > 2 hidden layers is invalid with transformer")
+        end
+
+        if tf_layer_type == :prelayer
+            sublayer1 = SkipConnection(Chain(norm_layer1, x-> multi_head_attention(x,x,x)[1]), +)
+            sublayer2 = SkipConnection(Chain(norm_layer2, ffnn), +)
+            encoder_layer = Chain(sublayer1, sublayer2)
+        elseif tf_layer_type == :postlayer
+            sublayer1 = SkipConnection(x-> multi_head_attention(x,x,x)[1], +)
+            sublayer2 = SkipConnection(ffnn, +)
+            encoder_layer = Chain(sublayer1, norm_layer1, sublayer2, norm_layer2)
+        else
+            error("tf_layer_type $tf_layer_type is invalid, choose {:prelayer,:postlayer}")
+        end
+
+        # initial_layer = Dense(Nf, N_head, init=init)
+        final_layer   = Chain(flatten, Dense(N_head*l_window, Ny; bias=final_bias, init=init))
+
+        # encoder layer
+        m = Chain(Dense(Nf, N_head, init=init),
+                  x -> x .* sqrt(N_head),
+                  LPE(N_head, l_window, dropout_prob),
+                  encoder_layer,
+                  final_layer)
+
+    elseif model_type == :m3w
+
+        if l == 0
+            error("hidden must have at least 1 element")
+        elseif l == 1
+            if 0 < dropout_prob < 1
+                m = Chain(flatten,
+                          Dense(Nf*l_window,hidden[1],activation),
+                          Dropout(dropout_prob),
+                          Dense(hidden[1],Ny;bias=final_bias))
+            else
+                m = Chain(flatten,
+                          Dense(Nf*l_window,hidden[1],activation),
+                          Dense(hidden[1],Ny;bias=final_bias))
+            end
+        elseif l == 2
+            if 0 < dropout_prob < 1
+                m = Chain(flatten,
+                          Dense(Nf*l_window,hidden[1],activation),
+                          Dropout(dropout_prob),
+                          Dense(hidden[1],hidden[2],activation),
+                          Dense(hidden[2],Ny;bias=final_bias))
+            else
+                m = Chain(flatten,
+                          Dense(Nf*l_window,hidden[1],activation),
+                          Dense(hidden[1],hidden[2],activation),
+                          Dense(hidden[2],Ny;bias=final_bias))
+            end
+        else
+            error("$l > 2 hidden layers is invalid with windowing")
+        end
+
     else
-        error("$l hidden layers not valid")
+
+        if l == 0
+            m = Chain(Dense(Nf,Ny;bias=final_bias))
+        elseif skip_con
+            if l == 1
+                m = Chain(SkipConnection(Dense(Nf,hidden[1],activation),
+                                         (mx, x) -> cat(mx, x, dims=1)),
+                          Dense(Nf+hidden[1],Ny;bias=final_bias))
+            else
+                error("$l > 1 hidden layers is invalid with skip connections")
+            end
+        elseif l == 1
+            m = Chain(Dense(Nf,hidden[1],activation),
+                      Dense(hidden[1],Ny;bias=final_bias))
+        elseif l == 2
+            m = Chain(Dense(Nf,hidden[1],activation),
+                      Dense(hidden[1],hidden[2],activation),
+                      Dense(hidden[2],Ny;bias=final_bias))
+        elseif l == 3
+            m = Chain(Dense(Nf,hidden[1],activation),
+                      Dense(hidden[1],hidden[2],activation),
+                      Dense(hidden[2],hidden[3],activation),
+                      Dense(hidden[3],Ny;bias=final_bias))
+        else
+            error("$l > 3 hidden layers is invalid")
+        end
+
     end
 
     return (m)
@@ -1027,13 +1217,13 @@ end # function sparse_group_lasso
 Remove mean error from multiple individual flight lines within larger dataset.
 
 **Arguments:**
-- `y_hat`:  predicted data
-- `y`:      observed data
-- `l_segs`: vector of lengths of `lines`, sum(l_segs) == length(y)
+- `y_hat`:  length `N` prediction vector
+- `y`:      length `N` target vector
+- `l_segs`: length `N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
 - `silent`: (optional) if true, no print outs
 
 **Returns:**
-- `err`: mean-corrected (per line) error
+- `err`: length `N` mean-corrected (per line) error
 """
 function err_segs(y_hat, y, l_segs; silent::Bool=true)
     err = y_hat - y
@@ -1054,18 +1244,18 @@ end # function err_segs
 Normalize (or standardize) features (columns) of training data.
 
 **Arguments:**
-- `train`:     training data
+- `train`:     `N_train` x `Nf` training data
 - `norm_type`: (optional) normalization type:
     - `:standardize` = Z-score normalization
     - `:normalize`   = min-max normalization
     - `:scale`       = scale by maximum absolute value, bias = 0
     - `:none`        = scale by 1, bias = 0
-- `no_norm`: (optional) indices of features to not be normalized
+- `no_norm`: (optional) length `Nf` Boolean indices of features to not be normalized
 
 **Returns:**
-- `train_bias`:  training data biases (means, mins, or zeros)
-- `train_scale`: training data scaling factors (std devs, maxs-mins, or ones)
-- `train`:       normalized training data
+- `train_bias`:  `1` x `Nf` training data biases (means, mins, or zeros)
+- `train_scale`: `1` x `Nf` training data scaling factors (std devs, maxs-mins, or ones)
+- `train`:       `N_train` x `Nf` training data, normalized
 """
 function norm_sets(train;
                    norm_type::Symbol = :standardize,
@@ -1109,20 +1299,20 @@ end # function norm_sets
 Normalize (or standardize) features (columns) of training and testing data.
 
 **Arguments:**
-- `train`:     training data
-- `test`:      testing data
+- `train`:     `N_train` x `Nf` training data
+- `test`:      `N_test`  x `Nf` testing data
 - `norm_type`: (optional) normalization type:
     - `:standardize` = Z-score normalization
     - `:normalize`   = min-max normalization
     - `:scale`       = scale by maximum absolute value, bias = 0
     - `:none`        = scale by 1, bias = 0
-- `no_norm`: (optional) indices of features to not be normalized
+- `no_norm`: (optional) length `Nf` Boolean indices of features to not be normalized
 
 **Returns:**
-- `train_bias`:  training data biases (means, mins, or zeros)
-- `train_scale`: training data scaling factors (std devs, maxs-mins, or ones)
-- `train`:       normalized training data
-- `test`:        normalized testing data
+- `train_bias`:  `1` x `Nf` training data biases (means, mins, or zeros)
+- `train_scale`: `1` x `Nf` training data scaling factors (std devs, maxs-mins, or ones)
+- `train`:       `N_train` x `Nf` training data, normalized
+- `test`:        `N_test`  x `Nf` testing  data, normalized
 """
 function norm_sets(train, test;
                    norm_type::Symbol = :standardize,
@@ -1150,22 +1340,22 @@ Normalize (or standardize) features (columns) of training, validation, and
 testing data.
 
 **Arguments:**
-- `train`:     training data
-- `val`:       validation data
-- `test`:      testing data
+- `train`:     `N_train` x `Nf` training data
+- `val`:       `N_val`   x `Nf` validation data
+- `test`:      `N_test`  x `Nf` testing data
 - `norm_type`: (optional) normalization type:
     - `:standardize` = Z-score normalization
     - `:normalize`   = min-max normalization
     - `:scale`       = scale by maximum absolute value, bias = 0
     - `:none`        = scale by 1, bias = 0
-- `no_norm`: (optional) indices of features to not be normalized
+- `no_norm`: (optional) length `Nf` Boolean indices of features to not be normalized
 
 **Returns:**
-- `train_bias`:  training data biases (means, mins, or zeros)
-- `train_scale`: training data scaling factors (std devs, maxs-mins, or ones)
-- `train`:       normalized training data
-- `val`:         normalized validation data
-- `test`:        normalized testing data
+- `train_bias`:  `1` x `Nf` training data biases (means, mins, or zeros)
+- `train_scale`: `1` x `Nf` training data scaling factors (std devs, maxs-mins, or ones)
+- `train`:       `N_train` x `Nf` training   data, normalized
+- `val`:         `N_val`   x `Nf` validation data, normalized
+- `test`:        `N_test`  x `Nf` testing    data, normalized
 """
 function norm_sets(train, val, test;
                    norm_type::Symbol = :standardize,
@@ -1191,12 +1381,12 @@ end # function norm_sets
 Denormalize (or destandardize) features (columns) of training data.
 
 **Arguments:**
-- `train_bias`:  training data biases (means, mins, or zeros)
-- `train_scale`: training data scaling factors (std devs, maxs-mins, or ones)
-- `train`:       normalized training data
+- `train_bias`:  `1` x `Nf` training data biases (means, mins, or zeros)
+- `train_scale`: `1` x `Nf` training data scaling factors (std devs, maxs-mins, or ones)
+- `train`:       `N_train` x `Nf` training data, normalized
 
 **Returns:**
-- `train`: training data
+- `train`: `N_train` x `Nf` training data, denormalized
 """
 function denorm_sets(train_bias, train_scale, train)
     train = train .* train_scale .+ train_bias
@@ -1209,14 +1399,14 @@ end # function denorm_sets
 Denormalize (or destandardize) features (columns) of training and testing data.
 
 **Arguments:**
-- `train_bias`:  training data biases (means, mins, or zeros)
-- `train_scale`: training data scaling factors (std devs, maxs-mins, or ones)
-- `train`:       normalized training data
-- `test`:        normalized testing data
+- `train_bias`:  `1` x `Nf` training data biases (means, mins, or zeros)
+- `train_scale`: `1` x `Nf` training data scaling factors (std devs, maxs-mins, or ones)
+- `train`:       `N_train` x `Nf` training data, normalized
+- `test`:        `N_test`  x `Nf` testing  data, normalized
 
 **Returns:**
-- `train`: training data
-- `test`: testing data
+- `train`: `N_train` x `Nf` training data, denormalized
+- `test`:  `N_test`  x `Nf` testing  data, denormalized
 """
 function denorm_sets(train_bias, train_scale, train, test)
     train = train .* train_scale .+ train_bias
@@ -1231,16 +1421,16 @@ Denormalize (or destandardize) features (columns) of training, validation,
 and testing data.
 
 **Arguments:**
-- `train_bias`:  training data biases (means, mins, or zeros)
-- `train_scale`: training data scaling factors (std devs, maxs-mins, or ones)
-- `train`:       normalized training data
-- `val`:         normalized validation data
-- `test`:        normalized testing data
+- `train_bias`:  `1` x `Nf` training data biases (means, mins, or zeros)
+- `train_scale`: `1` x `Nf` training data scaling factors (std devs, maxs-mins, or ones)
+- `train`:       `N_train` x `Nf` training   data, normalized
+- `val`:         `N_val`   x `Nf` validation data, normalized
+- `test`:        `N_test`  x `Nf` testing    data, normalized
 
 **Returns:**
-- `train`: training data
-- `val`:   validation data
-- `test`:  testing data
+- `train`: `N_train` x `Nf` training   data, denormalized
+- `val`:   `N_val`   x `Nf` validation data, denormalized
+- `test`:  `N_test`  x `Nf` testing    data, denormalized
 """
 function denorm_sets(train_bias, train_scale, train, val, test)
     train = train .* train_scale .+ train_bias
@@ -1256,10 +1446,10 @@ Internal helper function to unpack data normalizations, some of which may
 not be present due to earlier package versions being used.
 
 **Arguments:**
-- `data_norms`: Tuple of data normalizations, e.g., `(A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale)`
+- `data_norms`: tuple of data normalizations, e.g., `(A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale)`
 
 **Returns:**
-- `data_norms`: length-7 Tuple of data normalizations, `(A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale)`
+- `data_norms`: length-7 tuple of data normalizations, `(A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale)`
 """
 function unpack_data_norms(data_norms::Tuple)
     if length(data_norms) == 7
@@ -1391,24 +1581,24 @@ end # function get_ind
 
 """
     get_ind(xyz::XYZ, line::Real, df_line::DataFrame;
-            splits     = (1),
-            l_seq::Int = -1)
+            splits        = (1),
+            l_window::Int = -1)
 
 Get BitVector of indices for further analysis via DataFrame lookup.
 
 **Arguments:**
-- `xyz`:     `XYZ` flight data struct
-- `line`:    line number
-- `df_line`: lookup table (DataFrame) of `lines`
-- `splits`:  (optional) data splits, must sum to 1
-- `l_seq`:   (optional) trim data by `mod(N,l_seq)`, `-1` to ignore
+- `xyz`:      `XYZ` flight data struct
+- `line`:     line number
+- `df_line`:  lookup table (DataFrame) of `lines`
+- `splits`:   (optional) data splits, must sum to 1
+- `l_window`: (optional) trim data by `mod(N,l_window)`, `-1` to ignore
 
 **Returns:**
 - `ind`: BitVector (or tuple of BitVector) of selected data indices
 """
 function get_ind(xyz::XYZ, line::Real, df_line::DataFrame;
-                 splits     = (1),
-                 l_seq::Int = -1)
+                 splits        = (1),
+                 l_window::Int = -1)
 
     tt_lim = [df_line.t_start[df_line.line .== line][1],
               df_line.t_end[  df_line.line .== line][end]]
@@ -1419,15 +1609,15 @@ function get_ind(xyz::XYZ, line::Real, df_line::DataFrame;
                      tt_lim = tt_lim,
                      splits = splits)
 
-    if l_seq > 0
+    if l_window > 0
         if typeof((inds)) <: Tuple
             for ind in inds
-                for _ = 1:mod(length(xyz.traj.lat[ind]),l_seq)
+                for _ = 1:mod(length(xyz.traj.lat[ind]),l_window)
                     ind[findlast(ind.==1)] = 0
                 end
             end
         else
-            for _ = 1:mod(sum(inds),l_seq)
+            for _ = 1:mod(sum(inds),l_window)
                 inds[findlast(inds.==1)] = 0
             end
         end
@@ -1438,24 +1628,24 @@ end # function get_ind
 
 """
     get_ind(xyz::XYZ, lines, df_line::DataFrame;
-            splits     = (1),
-            l_seq::Int = -1)
+            splits        = (1),
+            l_window::Int = -1)
 
 Get BitVector of selected data indices for further analysis via DataFrame lookup.
 
 **Arguments:**
-- `xyz`:     `XYZ` flight data struct
-- `lines`:   selected line number(s)
-- `df_line`: lookup table (DataFrame) of `lines`
-- `splits`:  (optional) data splits, must sum to 1
-- `l_seq`:   (optional) trim data by `mod(N,l_seq)`, `-1` to ignore
+- `xyz`:        `XYZ` flight data struct
+- `lines`:      selected line number(s)
+- `df_line`:    lookup table (DataFrame) of `lines`
+- `splits`:     (optional) data splits, must sum to 1
+- `l_window`:   (optional) trim data by `mod(N,l_window)`, `-1` to ignore
 
 **Returns:**
 - `ind`: BitVector (or tuple of BitVector) of selected data indices
 """
 function get_ind(xyz::XYZ, lines, df_line::DataFrame;
-                 splits     = (1),
-                 l_seq::Int = -1)
+                 splits        = (1),
+                 l_window::Int = -1)
 
     @assert sum(splits) ≈ 1 "sum of splits = $(sum(splits)) ≠ 1"
     @assert length(splits) <= 3 "number of splits = $(length(splits)) > 3"
@@ -1463,7 +1653,7 @@ function get_ind(xyz::XYZ, lines, df_line::DataFrame;
     ind = falses(xyz.traj.N)
     for line in lines
         if line in df_line.line
-            ind .= ind .| get_ind(xyz,line,df_line;l_seq=l_seq)
+            ind .= ind .| get_ind(xyz,line,df_line;l_window=l_window)
         end
     end
 
@@ -1483,28 +1673,28 @@ function get_ind(xyz::XYZ, lines, df_line::DataFrame;
 end # function get_ind
 
 """
-    chunk_data(x, y, l_seq::Int)
+    chunk_data(x, y, l_window::Int)
 
-Break data into non-overlapping sequences of length `l_seq`.
+Break data into non-overlapping sequences of length `l_window`.
 
 **Arguments:**
-- `x`:     input data
-- `y`:     observed data
-- `l_seq`: sequence length (length of sliding window)
+- `x`:        `N` x `Nf` data matrix (`Nf` is number of features)
+- `y`:        length `N` target vector
+- `l_window`: temporal window length
 
 **Returns:**
 - `x_seqs`: vector of vector of vector of values, i.e., each sequence is a vector of feature vectors
 - `y_seqs`: vector of vector of values, i.e., each sequence is a vector of scalar targets
 """
-function chunk_data(x, y, l_seq::Int)
+function chunk_data(x, y, l_window::Int)
 
-    nx = size(x,1)
-    ns = floor(Int,nx/l_seq)
+    N = size(x,1)
+    N_window = floor(Int,N/l_window)
 
-    mod(nx,l_seq) == 0 || @info("data was not trimmed for l_seq = $l_seq, may result in worse performance")
+    mod(N,l_window) == 0 || @info("data was not trimmed for l_window = $l_window, may result in worse performance")
 
-    x_seqs = [[convert.(Float32,x[(j-1)*l_seq+i,:]) for i = 1:l_seq]  for j = 1:ns]
-    y_seqs = [ convert.(Float32,y[(j-1)*l_seq       .+    (1:l_seq)]) for j = 1:ns]
+    x_seqs = [[Float32.(x[(j-1)*l_window+i,:]) for i = 1:l_window]  for j = 1:N_window]
+    y_seqs = [ Float32.(y[(j-1)*l_window       .+    (1:l_window)]) for j = 1:N_window]
 
     return (x_seqs, y_seqs)
 end # function chunk_data
@@ -1526,38 +1716,38 @@ function predict_rnn_full(m, x)
     Flux.reset!(m)
 
     # apply model to sequence and convert output to vector
-    y_hat = [yi[1] for yi in m.([convert.(Float32,x[i,:]) for i in axes(x,1)])]
+    y_hat = [yi[1] for yi in m.([Float32.(x[i,:]) for i in axes(x,1)])]
 
     return (y_hat)
 end # function predict_rnn_full
 
 """
-    predict_rnn_windowed(m, x, l_seq)
+    predict_rnn_windowed(m, x, l_window::Int)
 
-Apply model `m` to inputs by sliding window of size `l_seq` along `x`.
+Apply model `m` to inputs by sliding a window of length `l_window` along `x`.
 
 **Arguments:**
-- `m`:     recurrent neural network model
-- `x`:     input sequence (of features)
-- `l_seq`: sequence length (length of sliding window)
+- `m`:        recurrent neural network model
+- `x`:        input sequence (of features)
+- `l_window`: temporal window length
 
 **Returns:**
 - `y_hat`: vector of scalar targets for each input in `x`
 """
-function predict_rnn_windowed(m, x, l_seq)
-    nx = size(x,1)
-    y_hat = zeros(Float32,nx)
+function predict_rnn_windowed(m, x, l_window::Int)
+    N = size(x,1)
+    y_hat = zeros(Float32,N)
 
-    # assume l_seq = 4
+    # assume l_window = 4
     # 1 2 3 4 5 6 7 8
     #     i     j
 
-    for j = 1:nx
+    for j = 1:N
 
         # create window
-        i = j < l_seq ? 1 : j - l_seq + 1
+        i = j < l_window ? 1 : j - l_window + 1
 
-        x_seq = [convert.(Float32,x[k,:]) for k = i:j]
+        x_seq = [Float32.(x[k,:]) for k = i:j]
 
         # apply model
         Flux.reset!(m)
@@ -1577,16 +1767,16 @@ end # function predict_rnn_windowed
 Kernel ridge regression (KRR).
 
 **Arguments:**
-- `x_train`: training input data
-- `y_train`: training observed data
-- `x_test`:  testing input data
-- `y_test`:  testing observed data
+- `x_train`: `N_train` x `Nf` training data matrix (`Nf` is number of features)
+- `y_train`: length `N_train` training target vector
+- `x_test`:  `N_test` x `Nf`  testing  data matrix (`Nf` is number of features)
+- `y_test`:  length `N_test`  testing  target vector
 - `k`:       (optional) kernel
 - `λ`:       (optional) ridge parameter
 
 **Returns:**
-- `y_train_hat`: training predicted data
-- `y_test_hat`:  testing  predicted data
+- `y_train_hat`: length `N_train` training prediction vector
+- `y_test_hat`:  length `N_train` testing  prediction vector
 """
 function krr(x_train, y_train, x_test, y_test;
              k=PolynomialKernel(;degree=1), λ=0.5)
@@ -1604,20 +1794,20 @@ function krr(x_train, y_train, x_test, y_test;
 end # function krr
 
 """
-    predict_shapley(m, x::DataFrame)
+    predict_shapley(m, df::DataFrame)
 
 Internal helper function to wrap a neural network model to create a DataFrame
 of predictions.
 
 **Arguments:**
-- `m`: neural network model
-- `x`: input data DataFrame
+- `m`:  neural network model
+- `df`: `N` x `Nf` DataFrame (`Nf` is number of features)
 
 **Returns:**
-- `y_hat`: 1-column DataFrame of predictions from `m` using `x`
+- `y_hat`: 1-column DataFrame of predictions from `m` using `df`
 """
-function predict_shapley(m, x::DataFrame)
-    DataFrame(y_hat=vec(m(collect(Matrix(x)'))))
+function predict_shapley(m, df::DataFrame)
+    DataFrame(y_hat=vec(m(collect(Matrix(df)'))))
 end # function predict_shapley
 
 """
@@ -1631,8 +1821,8 @@ Reference: https://nredell.github.io/ShapML.jl/dev/#Examples-1
 
 **Arguments:**
 - `m`:        neural network model
-- `x`:        input data
-- `features`: full list of features in `x`
+- `x`:        `N` x `Nf` data matrix (`Nf` is number of features)
+- `features`: length `Nf` feature vector (including components of TL `A`, etc.)
 - `N`:        (optional) number of samples (instances) to use for explanation
 - `num_mc`:   (optional) number of Monte Carlo simulations
 
@@ -1646,7 +1836,7 @@ function eval_shapley(m, x, features::Vector{Symbol},
 
     seed!(2) # for reproducibility
 
-    # put input data into DataFrame
+    # put data matrix into DataFrame
     df = DataFrame(x,features)
 
     # compute stochastic Shapley values
@@ -1709,7 +1899,7 @@ function plot_shapley(df_shap, baseline_shap,
 end # function plot_shapley
 
 """
-    eval_gsa(m, x, N::Int=min(10000,size(x,1)))
+    eval_gsa(m, x, n::Int=min(10000,size(x,1)))
 
 Global sensitivity analysis (GSA) with the Morris Method.
 
@@ -1719,19 +1909,19 @@ Reference: https://docs.sciml.ai/GlobalSensitivity/stable/methods/morris/
 
 **Arguments:**
 - `m`: neural network model
-- `x`: input data
-- `N`: (optional) number of samples (instances) to use for explanation
+- `x`: `N` x `Nf` data matrix (`Nf` is number of features)
+- `n`: (optional) number of samples (instances) to use for explanation
 
 **Returns:**
 - `means`: means of elementary effects
 """
-function eval_gsa(m, x, N::Int=min(10000,size(x,1)))
+function eval_gsa(m, x, n::Int=min(10000,size(x,1)))
 
     seed!(2) # for reproducibility
 
-    method      = Morris(num_trajectory=N,relative_scale=true)
+    method      = Morris(relative_scale=true,num_trajectory=n)
     param_range = vec(extrema(x,dims=1))
-    means       = vec(gsa(m,method,param_range;N=N).means)
+    means       = vec(gsa(m,method,param_range;samples=n).means)
     #* note: produces Float32 warning even if param_range is Float32
 
     return (means)
@@ -1887,7 +2077,7 @@ function get_optimal_rotation_matrix(v1s, v2s)
     d = sign(det(V*transpose(U)))
     R = V*diagm([1.0,1.0,d])*transpose(U)
 
-    @assert det(R) ≈ 1 "rotation matrix shouldn't scale"
+    @assert det(R) ≈ 1 "rotation matrix should not scale"
     @assert R*R' ≈ diagm([1.0,1.0,1.0]) "rotation matrix transpose should be its inverse"
     return (R)
 end # function get_optimal_rotation_matrix
@@ -2022,30 +2212,31 @@ end # function filter_events
 """
     gif_animation_m3(TL_perm::AbstractMatrix, TL_induced::AbstractMatrix, TL_eddy::AbstractMatrix,
                      TL_aircraft::AbstractMatrix, B_unit::AbstractMatrix, y_nn::AbstractMatrix,
-                     y::Vector, y_hat::Vector, filt_lat::Vector, filt_lon::Vector,
-                     xyz::Union{XYZ1,XYZ20,XYZ21};
-                     ind             = trues(xyz.traj.N),
-                     tt_lim::Tuple   = (0.0, (xyz.traj.tt[ind][end]-xyz.traj.tt[ind][1])/60.0),
-                     skip_every::Int = 5,
-                     save_plot::Bool = false,
-                     mag_gif::String = "comp_xai.gif")
+                     y::Vector, y_hat::Vector, xyz::Union{XYZ1,XYZ20,XYZ21},
+                     filt_lat::Vector = [],
+                     filt_lon::Vector = [];
+                     ind              = trues(xyz.traj.N),
+                     tt_lim::Tuple    = (0, (xyz.traj(ind).N-1)*xyz.traj.dt/60),
+                     skip_every::Int  = 5,
+                     save_plot::Bool  = false,
+                     mag_gif::String  = "comp_xai.gif")
 
 After calling `comp_m3_test` to generate the individual model components,
 this function makes a GIF animation of the model components and the true and
-estimated scalar magnetic field.
+predicted scalar magnetic field.
 
 **Arguments**
-- `TL_perm`:     TL permanent vector field
-- `TL_induced`:  TL induced vector field
-- `TL_eddy`:     TL eddy current vector field
-- `TL_aircraft`: TL aircraft vector field
-- `B_unit`:      normalized vector magnetometer measurements
-- `y_nn`:        vector neural network correction (for scalar models, in direction of `Bt`)
-- `y`:           observed scalar magnetometer data
-- `y_hat`:       predicted scalar magnetometer data
-- `filt_lat`:    filter output latitude  [rad]
-- `filt_lon`:    filter output longitude [rad]
+- `TL_perm`:     `3` x `N` matrix of TL permanent vector field
+- `TL_induced`:  `3` x `N` matrix of TL induced vector field
+- `TL_eddy`:     `3` x `N` matrix of TL eddy current vector field
+- `TL_aircraft`: `3` x `N` matrix of TL aircraft vector field
+- `B_unit`:      `3` x `N` matrix of normalized vector magnetometer measurements
+- `y_nn`:        `3` x `N` matrix of vector neural network correction (for scalar models, in direction of `Bt`)
+- `y`:           length `N` target vector
+- `y_hat`:       length `N` prediction vector
 - `xyz`:         `XYZ` flight data struct
+- `filt_lat`:    (optional) length `N` filter output latitude  [rad]
+- `filt_lon`:    (optional) length `N` filter output longitude [rad]
 - `ind`:         (optional) selected data indices
 - `tt_lim`:      (optional) 2-element (inclusive) start and stop time limits, in minutes. Defaults to use full time range
 - `skip_every`:  (optional) number of time steps to skip between frames
@@ -2058,102 +2249,111 @@ estimated scalar magnetic field.
 **Example**
 ```julia
 gif_animation_m3(TL_perm, TL_induced, TL_eddy, TL_aircraft, B_unit,
-                 y_nn, y, y_hat, filt_lat, filt_lon, xyz; ind=ind, tt_lim=(0.0,10.0),
+                 y_nn, y, y_hat, xyz, filt_lat, filt_lon; ind=ind, tt_lim=(0.0,10.0),
                  skip_every=5, save_plot=false, mag_gif="comp_xai.gif")
 ```
 """
 function gif_animation_m3(TL_perm::AbstractMatrix, TL_induced::AbstractMatrix, TL_eddy::AbstractMatrix,
                           TL_aircraft::AbstractMatrix, B_unit::AbstractMatrix, y_nn::AbstractMatrix,
-                          y::Vector, y_hat::Vector, filt_lat::Vector, filt_lon::Vector,
-                          xyz::Union{XYZ1,XYZ20,XYZ21};
-                          ind             = trues(xyz.traj.N),
-                          tt_lim::Tuple   = (0.0, (xyz.traj.tt[ind][end]-xyz.traj.tt[ind][1])/60.0),
-                          skip_every::Int = 5,
-                          save_plot::Bool = false,
-                          mag_gif::String = "comp_xai.gif")
+                          y::Vector, y_hat::Vector, xyz::Union{XYZ1,XYZ20,XYZ21},
+                          filt_lat::Vector = [],
+                          filt_lon::Vector = [];
+                          ind              = trues(xyz.traj.N),
+                          tt_lim::Tuple    = (0, (xyz.traj(ind).N-1)*xyz.traj.dt/60),
+                          skip_every::Int  = 5,
+                          save_plot::Bool  = false,
+                          mag_gif::String  = "comp_xai.gif")
 
     @assert size(TL_perm,2) == size(TL_induced,2) == size(TL_eddy,2) == size(TL_aircraft,2) == size(B_unit,2)
-    @assert size(y_nn,2) == length(y) == length(y_hat) == length(xyz.traj.tt[ind]) == length(filt_lat) == length(filt_lon)
-    @assert skip_every > 0 && skip_every < length(xyz.traj.tt)
+    @assert size(y_nn,2) == length(y) == length(y_hat) == xyz.traj(ind).N
+    @assert 0 < skip_every < xyz.traj(ind).N
 
-    traj = get_traj(xyz,ind);
-    # Get lat/longitude for plotting
-    filt_lat = rad2deg.(filt_lat);
-    filt_lon = rad2deg.(filt_lon);
-    gps_lat  = rad2deg.(traj.lat);
-    gps_lon  = rad2deg.(traj.lon);
+    show_ins  = false
+    show_filt = length(filt_lat) == length(filt_lon) == xyz.traj(ind).N
 
-    xlim = get_lim(gps_lon,0.2);
-    ylim = get_lim(gps_lat,0.2);
-    ves  = traj.ve;
-    vns  = traj.vn;
-    directions = atand.(vns,ves);
+    # get lat & lon for plotting
+    traj     = xyz.traj(ind)
+    filt_lat = rad2deg.(filt_lat)
+    filt_lon = rad2deg.(filt_lon)
+    gps_lat  = rad2deg.(traj.lat)
+    gps_lon  = rad2deg.(traj.lon)
 
-    # Convert fields to 2D "compass" projections
-    igrf_nav = get_igrf(xyz,ind;frame=:nav,norm_igrf=true);
-    # Compute the dot product component of each field
-    NN_component = vec(sum(y_nn .* B_unit, dims=1))
+    xlim = get_lim(gps_lon,0.2)
+    ylim = get_lim(gps_lat,0.2)
+    ves  = traj.ve
+    vns  = traj.vn
+    dir  = atand.(vns,ves)
+
+    # convert fields to 2D "compass" projections
+    igrf_nav = get_igrf(xyz,ind;frame=:nav,norm_igrf=true)
+
+    # compute dot product component of each field
+    NN_component = vec(sum(y_nn        .* B_unit, dims=1))
     TL_component = vec(sum(TL_aircraft .* B_unit, dims=1))
 
-    # Note that we can project onto the 3D IGRF vector to get the full picture, although for this flight,
-    # most of the 3D vector is in the "down" direction, which makes the 2D plane tilt down towards the
-    # North pole. A remedy is to drop the Z-dimension and treat it like a compass, which is shown here.
-    igrf_nav_2D = reduce(hcat, igrf_nav);
-    igrf_nav_2D[3,:] .= 0.0;
-    normalize!.(eachcol(igrf_nav_2D));
+    # note that we can project onto the 3D IGRF vector to get the full picture,
+    # although most of the 3D vector may be in the "down" direction, which makes
+    # the 2D plane tilt down towards the north pole. A remedy is to drop the
+    # z-dimension and treat it like a compass, which is shown here
+    igrf_nav_2D = reduce(hcat, igrf_nav)
+    igrf_nav_2D[3,:] .= 0.0
+    normalize!.(eachcol(igrf_nav_2D))
 
     dcms = xyz.ins.Cnb[:,:,ind]
-    aircraft_2D_NN   = project_body_field_to_2d_igrf.(eachcol(y_nn),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
-    aircraft_2D_TL   = project_body_field_to_2d_igrf.(eachcol(TL_aircraft),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
+    aircraft_2D_NN = project_body_field_to_2d_igrf.(eachcol(y_nn       ),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
+    aircraft_2D_TL = project_body_field_to_2d_igrf.(eachcol(TL_aircraft),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
+    perm_field_2D  = project_body_field_to_2d_igrf.(eachcol(TL_perm    ),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
+    ind_field_2D   = project_body_field_to_2d_igrf.(eachcol(TL_induced ),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
+    eddy_field_2D  = project_body_field_to_2d_igrf.(eachcol(TL_eddy    ),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
 
-    perm_field_2D    = project_body_field_to_2d_igrf.(eachcol(TL_perm),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
-    induced_field_2D = project_body_field_to_2d_igrf.(eachcol(TL_induced),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
-    eddy_field_2D    = project_body_field_to_2d_igrf.(eachcol(TL_eddy),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
+    aircraft_2D_NN = reduce(hcat,aircraft_2D_NN)
+    aircraft_2D_TL = reduce(hcat,aircraft_2D_TL)
+    perm_field_2D  = reduce(hcat,perm_field_2D)
+    ind_field_2D   = reduce(hcat,ind_field_2D)
+    eddy_field_2D  = reduce(hcat,eddy_field_2D)
 
-    aircraft_2D_NN   = reduce(hcat,aircraft_2D_NN)
-    aircraft_2D_TL   = reduce(hcat,aircraft_2D_TL)
-    perm_field_2D    = reduce(hcat,perm_field_2D)
-    induced_field_2D = reduce(hcat,induced_field_2D)
-    eddy_field_2D    = reduce(hcat,eddy_field_2D)
+    tt      = (traj.tt .- traj.tt[1]) / 60
+    i_start = findfirst(tt .>= tt_lim[1])
+    i_end   = findlast( tt .<= tt_lim[2])
 
-    tts = (traj.tt .- traj.tt[1]) ./ 60
-    ## Create the gif
-    l= @layout[
-           a{0.6w} [b;c] ]
+    # create gif
+    l  = @layout[ a{0.6w} [b;c] ]
+    p1 = plot(layout=l, size=(800,500), margin=5*mm)
+    a1 = Animation()
 
-    i_start = findfirst(tts .>= tt_lim[1])
-    i_end   = findlast( tts .<= tt_lim[2])
+    for i in i_start:skip_every:i_end
+        p1 = plot(layout=l, size=(800,500), margin=5*mm)
 
-    p = plot(layout=l, size=(800,500),margin=5*mm)
-    anim = Animation();
-    for i ∈ i_start:skip_every:i_end
-           # Move a vertical line across the sensor data
-           p = plot(layout=l, size=(800,500),margin=5*mm)
+        # move a vertical line across the magnetic field data
+        plot!(p1[1],xlab="time [min]",ylab=" magnetic field [nT]",xlim=tt_lim, legend=:bottomleft)
+        plot!(p1[1],tt,y           ,lab="true compensation"   ,color=:gray, style=:dash)
+        plot!(p1[1],tt,y_hat       ,lab="model 3 compensation",color=:black)
+        plot!(p1[1],tt,TL_component,lab="TL component"        ,color=:blue)
+        plot!(p1[1],tt,NN_component,lab="NN component"        ,color=:red)
+        plot!(p1[1], [tt[i]], linetype=:vline, lab="", color=:black)
 
-           plot!(p[1],tts,y           ,lab="True Compensation"   ,color=:gray, style=:dash)
-           plot!(p[1],tts,y_hat       ,lab="Model 3 Compensation",color=:black)
-           plot!(p[1],tts,TL_component,lab="TL component"        ,color=:blue)
-           plot!(p[1],tts,NN_component,lab="NN component"        ,color=:red,ylab="nT",xlab="Time,min",xlims=tt_lim)
-           plot!(p[1], [tts[i]], linetype=:vline, color=:black, lab="", legend=:bottomleft)
+        # draw compass plot for each field
+        plot!(p1[1],xlab="east [nT]",ylab=" north [nT]",
+              xlim=(-2500,2500),ylim=(-2500,2500),legend=:topright)
+        plot!(p1[2],[0.0,aircraft_2D_TL[2,i]],[0.0,aircraft_2D_TL[1,i]],arrow=true,lab="TL",color=:blue)
+        plot!(p1[2],[0.0,aircraft_2D_NN[2,i]],[0.0,aircraft_2D_NN[1,i]],arrow=true,lab="NN",color=:red)
+        plot!(p1[2],[0.0,perm_field_2D[ 2,i]],[0.0,perm_field_2D[ 1,i]],arrow=true,lab="perm.")
+        plot!(p1[2],[0.0,ind_field_2D[  2,i]],[0.0,ind_field_2D[  1,i]],arrow=true,lab="ind.")
+        plot!(p1[2],[0.0,eddy_field_2D[ 2,i]],[0.0,eddy_field_2D[ 1,i]],arrow=true,lab="eddy")
 
-           # Draw the compass plot for each field
-           plot!(p[2],[0.0,aircraft_2D_TL[2,i]]  ,[0.0,aircraft_2D_TL[1,i]]  ,arrow=true,lab="TL",xlab="nT, East",ylab="nT, North",color=:blue)
-           plot!(p[2],[0.0,aircraft_2D_NN[2,i]]  ,[0.0,aircraft_2D_NN[1,i]]  ,arrow=true,lab="NN",color=:red)
-           plot!(p[2],[0.0,perm_field_2D[2,i]]   ,[0.0,perm_field_2D[1,i]]   ,arrow=true,lab="Perm.")
-           plot!(p[2],[0.0,induced_field_2D[2,i]],[0.0,induced_field_2D[1,i]],arrow=true,lab="Ind.")
-           plot!(p[2],[0.0,eddy_field_2D[2,i]]   ,[0.0,eddy_field_2D[1,i]]   ,arrow=true,lab="Eddy",xlim=(-2500,2500),ylim=(-2500,2500),legend=:topright)
+        # plot airplane on map
+        plot!(p1[3],xlab="longitude [deg]",ylab="latitude [deg]")
+        plot!(p1[3],gps_lon[1:i] ,gps_lat[1:i] ,xlim=xlim,ylim=ylim,lab="GPS")
+        show_ins  && (plot!(p1[3],ins_lon[1:i] ,ins_lat[1:i] ,xlim=xlim,ylim=ylim,lab="INS"))
+        show_filt && (plot!(p1[3],filt_lon[1:i],filt_lat[1:i],xlim=xlim,ylim=ylim,lab="EKF",xrotation=18))
+        annotate!(gps_lon[i], gps_lat[i], Plots.text("✈", 20, rotation=dir[i]), subplot=3)
 
-           # Plot the plane on the map
-           plot!(p[3],gps_lon[1:i] ,gps_lat[1:i] ,xlim=xlim,ylim=ylim,lab="GPS",xlab="longitude [deg]",ylab="latitude [deg]")
-           # plot!(p[3],ins_lon[1:i] ,ins_lat[1:i] ,xlim=xlim,ylim=ylim,lab="INS",xlab="longitude [deg]",ylab="latitude [deg]")
-           plot!(p[3],filt_lon[1:i],filt_lat[1:i],xlim=xlim,ylim=ylim,lab="EKF",xlab="longitude [deg]",ylab="latitude [deg]",xrotation=18)
-           annotate!(gps_lon[i], gps_lat[i], Plots.text("✈", 20, rotation=directions[i]), subplot=3)
-
-           frame(anim,p)
+        frame(a1,p1)
     end
 
     # Show or save the plot
     mag_gif = add_extension(mag_gif,".gif")
-    g = save_plot ? gif(anim,mag_gif,fps=15) : gif(anim,fps=15)
-    return (g)
-end
+    g1 = save_plot ? gif(a1,mag_gif,fps=15) : gif(a1,fps=15)
+
+    return (g1)
+end # function gif_animation_m3

@@ -514,7 +514,6 @@ function create_ins(traj::Traj;
     Cnb = correct_Cnb(traj.Cnb, -err[7:9,:])
     if any(Cnb .> 1) | any(Cnb .< -1)
         error("create_ins() failed, likely due to bad trajectory data, re-run")
-        (roll,pitch,yaw) = (zero(lat),zero(lat),zero(lat))
     else
         (roll,pitch,yaw) = dcm2euler(Cnb,:body2nav)
     end

@@ -180,7 +180,7 @@ function save_map(map_map, map_xx, map_yy, map_alt, map_h5::String="map_data.h5"
     end
 
     map_alt  = convert.(eltype(map_xx),map_alt)
-    map_mask = convert.(Int8,map_mask)
+    map_mask = Int8.(map_mask)
 
     @info("saving map with [$file_units] map xx/yy units")
 

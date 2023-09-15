@@ -48,7 +48,7 @@ ZipFile = "a5390f91-8eb1-5f08-bee0-b1d1ffed6cea"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
-ArchGDAL = "0.10"
+ArchGDAL = "0.9"
 BSON = "0.3"
 BenchmarkTools = "1"
 CSV = "0.10"

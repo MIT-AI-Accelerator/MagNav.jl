@@ -7,19 +7,19 @@ using InteractiveUtils
 # ╔═╡ 22982d8e-240c-11ee-2e0c-bda2a93a4ab0
 begin
 	cd(@__DIR__)
-    # uncomment line below to use local MagNav.jl (downloaded folder)
-    # using Pkg; Pkg.activate("../"); Pkg.instantiate()
+	# uncomment line below to use local MagNav.jl (downloaded folder)
+	# using Pkg; Pkg.activate("../"); Pkg.instantiate()
 	using MagNav
-    using CSV, DataFrames
-    using Plots: plot, plot!
+	using CSV, DataFrames
+	using Plots: plot, plot!
 	using Random: seed!
 	using Statistics: mean, median, std
 	seed!(33); # for reproducibility
-    include("dataframes_setup.jl"); # setup DataFrames
+	include("dataframes_setup.jl"); # setup DataFrames
 end;
 
 # ╔═╡ e289486a-57ed-4eeb-9ec9-6500f0bc563b
-md"# Magnetic Anomaly Maps Example
+md"# Magnetic Anomaly Maps
 This file is best viewed in a [Pluto](https://plutojl.org/) notebook. To run it this way, from the MagNav.jl directory, do:
 ```julia
 julia> using Pluto
@@ -29,8 +29,23 @@ julia> Pluto.run() # select & open notebook
 This is a reactive notebook, so feel free to change any parameters.
 "
 
+# ╔═╡ b1d3b1b3-db8d-4bb0-a884-d57f217fef24
+md"## Import packages & DataFrames
+
+The DataFrames listed below provide useful information about the flight data (collected by Sander Geophysics Ltd. (SGL) in 2020) & magnetic anomaly maps.
+
+Dataframe  | Description
+:--------- | :----------
+`df_map`   | map files relevant for SGL flights
+`df_comp`  | SGL calibration flight lines
+`df_flight`| SGL flight files
+`df_all`   | all flight lines
+`df_nav`   | all *navigation-capable* flight lines
+`df_event` | pilot-recorded in-flight events
+"
+
 # ╔═╡ 3a55962c-bd1b-410c-b98a-3130fc11ee11
-md"## Import Perth map
+md"## Load Perth map
 
 This is the Perth map (at 800 m) as provided by Sander Geophysics Ltd.
 "
@@ -45,41 +60,41 @@ end
 # ╔═╡ 438f2f01-5cbe-4088-b365-571de4f9539a
 md"## Display Perth map in Google Earth
 
-The map may be exported to a KMZ file & opened in Google Earth.
+Display the Perth map in Google Earth by uncommenting below to generate a KMZ file, then open in Google Earth.
 "
 
 # ╔═╡ d7d5fa3e-0c00-4d0b-b9e0-b6d8b0e917cf
-# map2kmz(p_mapS_plot,"Perth") # uncomment to generate KMZ file
+# map2kmz(p_mapS_plot,"Perth")
 
 # ╔═╡ 32d385fd-1a78-47f8-b748-41e77f680da0
 md"## Overlay Perth mini-survey
 
-Overlaid on the Perth map are most of the flight lines used to generate the map.
+Overlaid on the Perth map are most of the flight lines used to generate the map, which were collected during Flight 1004 (see [readme](https://github.com/MIT-AI-Accelerator/MagNav.jl/blob/master/readmes/Flt1004_readme.txt)) & Flight 1005 (see [readme](https://github.com/MIT-AI-Accelerator/MagNav.jl/blob/master/readmes/Flt1005_readme.txt)).
 "
 
 # ╔═╡ 9d11d4be-9ba7-44ab-a4ff-f0fdf95b2171
 begin
-	xyz_1004 = get_XYZ(:Flt1004,df_flight;silent=true)
-	xyz_1005 = get_XYZ(:Flt1005,df_flight;silent=true)
+	xyz_1004 = get_XYZ(:Flt1004,df_flight;silent=true) # load flight data
+	xyz_1005 = get_XYZ(:Flt1005,df_flight;silent=true) # load flight data
 	lines = [4019,4018,4017,4016,4015,4012,4011,4010,4009,4008,4007,4004,
 	         4003,4002,4001,421,419,417,415,413,411,409,408,407,405,403,401]
 	for line in lines
 	    xyz = line in xyz_1004.line ? xyz_1004 : xyz_1005
-	    ind = get_ind(xyz,line,df_nav)
+	    ind = get_ind(xyz,line,df_nav) # get Boolean indices
 	    plot_path!(p1,xyz.traj,ind;show_plot=false,path_color=:black)
 	end
 	p1
 end
 
 # ╔═╡ b21e0015-367e-44e2-89b9-841867b6299d
-md"## Import previously processed maps
+md"## Load previously processed maps
 
 Eastern Ontario & NAMAD maps have been processed & saved previously.
 "
 
 # ╔═╡ 663f7b8c-dfc6-445d-9c54-1141856f2a66
-begin # e_mask contains indices with "real" map data (not filled-in)
-	e_mapS_395  = get_map(:Eastern_395,df_map)
+begin # e_mask contains Boolean indices with "real" map data (not filled-in)
+	e_mapS_395  = get_map(:Eastern_395,df_map) # load map data
 	e_mask      = MagNav.map_params(get_map(:Eastern_plot,df_map))[2]
 	e_mapS_plot = deepcopy(e_mapS_395)
 	e_mapS_plot.map .*= e_mask
@@ -102,7 +117,7 @@ md"## Plot all Ottawa area maps
 # ╔═╡ 6d4a87c8-41d7-4478-b52a-4dc5a1ae18ea
 begin
 	p2 = plot_map(n_mapS_395;legend=false,clims=(-500,500),map_color=:magma) # 395 m
-	plot_map!(p2,e_mapS_plot;legend=false,clims=(-500,500),map_color=:usgs) # 395 m
+	plot_map!(p2,e_mapS_plot;legend=false,clims=(-500,500),map_color=:usgs ) # 395 m
 	plot_map!(p2,p_mapS_plot;legend=false,clims=(-500,500),map_color=:gray2) # 800 m
 end
 
@@ -113,8 +128,8 @@ Most of the map data was collected at altitudes between 215 & 395 m.
 "
 
 # ╔═╡ c5b6b439-e962-4c9d-9b02-339657fb266b
-begin
-	e_mapS_drp = get_map(:Eastern_drape,df_map) # drape map (with altitude map)
+begin # the Eastern drape map contains an additional drape (altitude) map
+	e_mapS_drp = get_map(:Eastern_drape,df_map) # load map data
 	e_alts  = e_mapS_drp.alt[e_mask]
 	alt_avg = round(Int,mean(e_alts))
 	alt_med = round(Int,median(e_alts))
@@ -127,7 +142,7 @@ end
 # ╔═╡ 3f6b725b-f1c7-41fb-9854-c737b9698a40
 md"## Plot Eastern Ontario altitude map
 
-Minimal areas have map data collected at 395 m or higher, so a level map can be generated at 395 m with almost entirely upward continuation & minimal downward continuation.
+Minimal areas have map data collected at 395 m or higher (colored spots), so a level map can be generated at 395 m using almost entirely upward continuation & minimal downward continuation.
 "
 
 # ╔═╡ ae1acc31-19db-4e94-85dc-e6274186978e
@@ -141,7 +156,7 @@ end
 # ╔═╡ 504842a2-61e0-4154-a1e9-5182c97b6090
 md"## Plot expanded Eastern Ontario map
 
-During upward (or downward) continuation, the map is temporarily expanded with \"wrapped\" edges for a more accurate result.
+The original map area is show with a black outline. During upward (or downward) continuation, the map is temporarily expanded with \"wrapped\" edges for a more accurate result.
 "
 
 # ╔═╡ 39bdbe6a-52ae-44d2-8e80-2e7d2a75e322
@@ -167,7 +182,7 @@ md"## Plot combined Eastern Ontario & NAMAD maps together
 # ╔═╡ 9ed61357-346b-49de-a1ed-8849db041ade
 begin
 	mapS_combined = map_combine(e_mapS_plot,n_mapS_395)
-	mapS_upward   = upward_fft(mapS_combined,395) # 408773
+	mapS_upward   = upward_fft(mapS_combined,395)
 	p6 = plot_map(mapS_upward)
 	plot_path!(p6,lat,lon,path_color=:black)
 end
@@ -2717,6 +2732,7 @@ version = "1.4.1+0"
 
 # ╔═╡ Cell order:
 # ╟─e289486a-57ed-4eeb-9ec9-6500f0bc563b
+# ╟─b1d3b1b3-db8d-4bb0-a884-d57f217fef24
 # ╠═22982d8e-240c-11ee-2e0c-bda2a93a4ab0
 # ╟─3a55962c-bd1b-410c-b98a-3130fc11ee11
 # ╠═bf9f72f0-c351-48d3-a811-418ee965073c
