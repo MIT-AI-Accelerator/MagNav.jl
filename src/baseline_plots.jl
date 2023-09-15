@@ -7,7 +7,7 @@
 
 **Arguments:**
 - `tt`:   time [s]
-- `y`:    observed data
+- `y`:    data vector
 - `ind`:  (optional) selected data indices
 - `xlab`: (optional) x-axis label
 - `ylab`: (optional) y-axis label
@@ -21,7 +21,7 @@ function plot_basic(tt::Vector, y::Vector;
                     xlab::String = "time [min]",
                     ylab::String = "",
                     lab::String  = "")
-    plot((tt[ind] .- tt[ind][1])/60, y[ind], xlab=xlab, ylab=ylab, lab=lab)
+    plot((tt[ind] .- tt[ind][1]) / 60, y[ind], xlab=xlab, ylab=ylab, lab=lab)
 end # function plot_basic
 
 """
@@ -150,7 +150,7 @@ function plot_mag(xyz::XYZ;
         end
 
         for i in eachindex(mags_c_)
-            val = (getfield(xyz,list_uc[mags_uc_[i]]) - 
+            val = (getfield(xyz,list_uc[mags_uc_[i]]) -
                    getfield(xyz,list_c[ mags_c_[ i]]))[ind]
             detrend_data && (val = detrend(val))
             plot!(p1,tt,val,lab="mag_$i comp")
@@ -175,7 +175,7 @@ function plot_mag(xyz::XYZ;
         for use_mag in use_mags[use_mags .∈ (field_check(xyz,MagV),)]
 
             flux = getfield(xyz,use_mag)(ind)
-    
+
             for vec_term in vec_terms
                 val = getfield(flux,vec_term)
                 detrend_data && (val = detrend(val))
@@ -248,7 +248,7 @@ end # function plot_mag
                save_plot::Bool          = false,
                plot_png::String         = "scalar_mags_comp.png")
 
-Plot compensated magnetometer(s) data from a given flight test. Assumes `mag_1` 
+Plot compensated magnetometer(s) data from a given flight test. Assumes Mag 1
 (i.e., `:mag_1_uc` & `:mag_1_c`) is the best magnetometer (i.e., stinger).
 
 **Arguments:**
@@ -338,7 +338,7 @@ function plot_mag_c(xyz::XYZ,xyz_comp::XYZ;
             use_mag == :mag_8_uc && (color = :brown )
             use_mag == :mag_9_uc && (color = :pink  )
         else
-            error("$use_mag scalar magnetometer is not valid")
+            error("$use_mag scalar magnetometer is invalid")
         end
 
         TL_coef = create_TL_coef(getfield(xyz_comp,use_vec),
@@ -355,7 +355,7 @@ function plot_mag_c(xyz::XYZ,xyz_comp::XYZ;
         lab = plot_diff ? "Δ $lab"        : lab
         val = plot_diff ? mag_c - mag_1_c : mag_c
         plot!(p1,tt[1:end-1],val[1:end-1],lab=lab,color=color)
-        
+
         if plot_diff
             @info("=== $lab ===")
             println("avg diff = $(round(mean_diff,digits=3)) nT")
@@ -386,7 +386,7 @@ end # function plot_mag_c
 Plot the Welch power spectral density (PSD) for signal `x`.
 
 **Arguments:**
-- `x`:         input data
+- `x`:         data vector
 - `fs`:        (optional) sampling frequency [Hz]
 - `window`:    (optional) type of window used
 - `dpi`:       (optional) dots per inch (image resolution)
@@ -426,7 +426,7 @@ end # function plot_PSD
 Create a spectrogram for signal `x`.
 
 **Arguments:**
-- `x`:         input data
+- `x`:         data vector
 - `fs`:        (optional) sampling frequency [Hz]
 - `window`:    (optional) type of window used
 - `dpi`:       (optional) dots per inch (image resolution)

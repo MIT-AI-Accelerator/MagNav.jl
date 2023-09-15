@@ -7,12 +7,12 @@ module MagNav
     using BSON: bson, load
     using DataFrames: DataFrame, combine, groupby, order, sort
     using DelimitedFiles: readdlm, writedlm
-    using Distributions: MvNormal, Normal
+    using Distributions: MvNormal, Normal, Uniform
     using DSP: Bandpass, Butterworth, Highpass, Lowpass
     using DSP: digitalfilter, fft, fftfreq, filtfilt, hamming, ifft
     using DSP: pow2db, rms, spectrogram, welch_pgram
     using ExponentialUtilities: exponential!
-    using Flux: Chain, Dense, destructure, mse
+    using Flux: @functor, Chain, DataLoader, Dense, destructure, flatten, mse
     using FluxOptTools: optfuns
     using GLMNet: glmnetcv
     using Geodesy: LLA, LLAfromUTM, UTM, UTMfromLLA, WGS84, utm_zone
@@ -58,28 +58,28 @@ module MagNav
     """
         const e_earth = 0.0818191908426
 
-    First eccentricity of earth [-]
+    First eccentricity of Earth [-]
     """
     const e_earth = 0.0818191908426
 
     """
         const g_earth = 9.80665
 
-    Gravity of earth [m/s^2]
+    Gravity of Earth [m/s^2]
     """
     const g_earth = 9.80665
 
     """
         const r_earth = 6378137
 
-    WGS-84 radius of earth [m]
+    WGS-84 radius of Earth [m]
     """
     const r_earth = 6378137
 
     """
         const ω_earth = 7.2921151467e-5
 
-    Rotation rate of earth [rad/s]
+    Rotation rate of Earth [rad/s]
     """
     const ω_earth = 7.2921151467e-5
 
@@ -925,22 +925,22 @@ module MagNav
     |**Parameter**|**Description**
     |:--|:--
     |`version`         | MagNav.jl version used to generate this struct
-    |`features_setup`  | list of features to include
-    |`features_no_norm`| list of features to not normalize
+    |`features_setup`  | vector of features to include, not used for `model_type = :TL, :mod_TL, :map_TL`
+    |`features_no_norm`| vector of features to not normalize, not used for `model_type = :TL, :mod_TL, :map_TL`
     |`model_type`      | aeromagnetic compensation model type (`see below`)
     |`y_type`          | `y` target type (`see below`)
     |`use_mag`         | scalar magnetometer to use {`:mag_1_uc`, etc.}, only used for `y_type = :c, :d, :e`
     |`use_vec`         | vector magnetometer (fluxgate) to use for "external" Tolles-Lawson `A` matrix {`:flux_a`, etc.}, not used for `model_type = :elasticnet, :plsr`
-    |`data_norms`      | Tuple of data normalizations, e.g., `(A_bias,A_scale,x_bias,x_scale,y_bias,y_scale)`
+    |`data_norms`      | tuple of data normalizations, e.g., `(A_bias,A_scale,x_bias,x_scale,y_bias,y_scale)`
     |`model`           | linear model coefficients
-    |`terms`           | Tolles-Lawson terms to use for Tolles-Lawson `A` matrix (or matrices) within `x` matrix {`:permanent`,`:induced`,`:eddy`}
+    |`terms`           | Tolles-Lawson terms to use for Tolles-Lawson `A` matrix (or matrices) within `x` data matrix {`:permanent`,`:induced`,`:eddy`}, not used for `model_type = :TL, :mod_TL, :map_TL`
     |`terms_A`         | Tolles-Lawson terms to use for "external" Tolles-Lawson `A` matrix {`:permanent`,`:induced`,`:eddy`,`:bias`}, not used for `model_type = :elasticnet, :plsr`
     |`sub_diurnal`     | if true, subtract diurnal from scalar magnetometer measurements
     |`sub_igrf`        | if true, subtract IGRF from scalar magnetometer measurements
-    |`bpf_mag`         | if true, bpf scalar magnetometer measurements in `x` matrix
+    |`bpf_mag`         | if true, bpf scalar magnetometer measurements in `x` data matrix, not used for `model_type = :TL, :mod_TL, :map_TL`
     |`reorient_vec`    | if true, align vector magnetometers (fluxgates) with body frame
     |`norm_type_A`     | normalization for "external" Tolles-Lawson `A` matrix, not used for `model_type = :elasticnet, :plsr` (`see below`)
-    |`norm_type_x`     | normalization for `x` matrix (`see below`)
+    |`norm_type_x`     | normalization for `x` data matrix, not used for `model_type = :TL, :mod_TL, :map_TL` (`see below`)
     |`norm_type_y`     | normalization for `y` target vector (`see below`)
 
     - `model_type` options:
@@ -1006,22 +1006,22 @@ module MagNav
     |**Parameter**|**Description**
     |:--|:--
     |`version`         | MagNav.jl version used to generate this struct
-    |`features_setup`  | list of features to include
-    |`features_no_norm`| list of features to not normalize
+    |`features_setup`  | vector of features to include
+    |`features_no_norm`| vector of features to not normalize
     |`model_type`      | aeromagnetic compensation model type (`see below`)
     |`y_type`          | `y` target type (`see below`)
     |`use_mag`         | scalar magnetometer to use {`:mag_1_uc`, etc.}, only used for `y_type = :c, :d, :e`
     |`use_vec`         | vector magnetometer (fluxgate) to use for "external" Tolles-Lawson `A` matrix {`:flux_a`, etc.}, not used for `model_type = :m1`
-    |`data_norms`      | Tuple of data normalizations, e.g., `(A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale)`
+    |`data_norms`      | tuple of data normalizations, e.g., `(A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale)`
     |`model`           | neural network model
-    |`terms`           | Tolles-Lawson terms to use for Tolles-Lawson `A` matrix (or matrices) within `x` matrix {`:permanent`,`:induced`,`:eddy`}
+    |`terms`           | Tolles-Lawson terms to use for Tolles-Lawson `A` matrix (or matrices) within `x` data matrix {`:permanent`,`:induced`,`:eddy`}
     |`terms_A`         | Tolles-Lawson terms to use for "external" Tolles-Lawson `A` matrix {`:permanent`,`:induced`,`:eddy`,`:bias`}, not used for `model_type = :m1`
     |`sub_diurnal`     | if true, subtract diurnal from scalar magnetometer measurements
     |`sub_igrf`        | if true, subtract IGRF from scalar magnetometer measurements
-    |`bpf_mag`         | if true, bpf scalar magnetometer measurements in `x` matrix
+    |`bpf_mag`         | if true, bpf scalar magnetometer measurements in `x` data matrix
     |`reorient_vec`    | if true, align vector magnetometers (fluxgates) with body frame
     |`norm_type_A`     | normalization for "external" Tolles-Lawson `A` matrix, only used for `model_type = :m2*` (`see below`)
-    |`norm_type_x`     | normalization for `x` matrix (`see below`)
+    |`norm_type_x`     | normalization for `x` data matrix (`see below`)
     |`norm_type_y`     | normalization for `y` target vector (`see below`)
 
     - `model_type` options are broken into 3 architectures, with `1` being a standard feedforward neural network and `2,3` being used in conjunction with Tolles-Lawson
@@ -1035,6 +1035,8 @@ module MagNav
         - `:m3v`  = NN determines vector correction to TL, using expanded TL vector terms for explainability
         - `:m3sc` = `:m3s` with curriculum learning based on TL error
         - `:m3vc` = `:m3v` with curriculum learning based on TL error
+        - `:m3w`  = `:m3s` with window NN for temporal dataset
+        - `:m3tf` = `:m3s` with time series transformer for temporal dataset
 
     - `y_type` options:
         - `:a` = anomaly field  #1, compensated tail stinger total field scalar magnetometer measurements
@@ -1136,20 +1138,20 @@ module MagNav
     |`r`       |Vector{`Float64`}| measurement residual
     """
     @with_kw mutable struct EKF_RT
-        P        ::Matrix{Float64} = create_P0()
-        Qd       ::Matrix{Float64} = create_Qd()
-        R        ::Float64         = 1.0
-        baro_tau ::Float64         = 3600.0
-        acc_tau  ::Float64         = 3600.0
-        gyro_tau ::Float64         = 3600.0
-        fogm_tau ::Float64         = 600.0
-        date     ::Float64         = get_years(2020,185)
-        core     ::Bool            = false
-        nx       ::Int64           = size(P,1)
-        ny       ::Int64           = 1
-        t        ::Float64         = -1
-        x        ::Vector{Float64} = zeros(nx)
-        r        ::Vector{Float64} = zeros(ny)
+        P        :: Matrix{Float64} = create_P0()
+        Qd       :: Matrix{Float64} = create_Qd()
+        R        :: Float64         = 1.0
+        baro_tau :: Float64         = 3600.0
+        acc_tau  :: Float64         = 3600.0
+        gyro_tau :: Float64         = 3600.0
+        fogm_tau :: Float64         = 600.0
+        date     :: Float64         = get_years(2020,185)
+        core     :: Bool            = false
+        nx       :: Int64           = size(P,1)
+        ny       :: Int64           = 1
+        t        :: Float64         = -1
+        x        :: Vector{Float64} = zeros(nx)
+        r        :: Vector{Float64} = zeros(ny)
     end # mutable struct EKF_RT
 
     """

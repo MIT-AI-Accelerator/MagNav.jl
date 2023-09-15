@@ -692,7 +692,7 @@ end # function fogm
 """
     chol(M)
 
-Internal helper function to get the Cholesky factorization of matrix `M`, 
+Internal helper function to get the Cholesky factorization of matrix `M`,
 ignoring roundoff errors that cause the matrix to be (slightly) non-symmetric
 or indefinite. The matrix is assumed to be exactly Hermitian and only the
 entries in the upper triangle are used.

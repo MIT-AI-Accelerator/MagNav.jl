@@ -1,29 +1,29 @@
 """
     euler2dcm(roll, pitch, yaw, order::Symbol=:body2nav)
 
-Converts a (Euler) roll-pitch-yaw (`X`-`Y`-`Z`) right-handed body to navigation 
-frame rotation (or the opposite rotation), to a DCM (direction cosine matrix). 
-Yaw is synonymous with azimuth and heading here. 
-If frame 1 is rotated to frame 2, then the returned DCM, when pre-multiplied, 
+Converts a (Euler) roll-pitch-yaw (`X`-`Y`-`Z`) right-handed body to navigation
+frame rotation (or the opposite rotation), to a DCM (direction cosine matrix).
+Yaw is synonymous with azimuth and heading here.
+If frame 1 is rotated to frame 2, then the returned DCM, when pre-multiplied,
 rotates a vector in frame 1 into frame 2. There are 2 use cases:
 
-1) With `order = :body2nav`, the body frame is rotated in the standard 
--roll, -pitch, -yaw sequence to the navigation frame. For example, if v1 is 
-a 3x1 vector in the body frame [nose, right wing, down], then that vector 
+1) With `order = :body2nav`, the body frame is rotated in the standard
+-roll, -pitch, -yaw sequence to the navigation frame. For example, if v1 is
+a 3x1 vector in the body frame [nose, right wing, down], then that vector
 rotated into the navigation frame [north, east, down] would be v2 = dcm * v1.
 
-2) With `order = :nav2body`, the navigation frame is rotated in the standard 
-yaw, pitch, roll sequence to the body frame. For example, if v1 is a 3x1 
-vector in the navigation frame [north, east, down], then that vector rotated 
+2) With `order = :nav2body`, the navigation frame is rotated in the standard
+yaw, pitch, roll sequence to the body frame. For example, if v1 is a 3x1
+vector in the navigation frame [north, east, down], then that vector rotated
 into the body frame [nose, right wing, down] would be v2 = dcm * v1.
 
-Reference: Titterton & Weston, Strapdown Inertial Navigation Technology, 2004, 
+Reference: Titterton & Weston, Strapdown Inertial Navigation Technology, 2004,
 Section 3.6 (pg. 36-41 & 537).
 
 **Arguments:**
-- `roll`:  `N` roll  angles [rad], right-handed rotation about x-axis
-- `pitch`: `N` pitch angles [rad], right-handed rotation about y-axis
-- `yaw`:   `N` yaw   angles [rad], right-handed rotation about z-axis
+- `roll`:  length `N` roll  angles [rad], right-handed rotation about x-axis
+- `pitch`: length `N` pitch angles [rad], right-handed rotation about y-axis
+- `yaw`:   length `N` yaw   angles [rad], right-handed rotation about z-axis
 - `order`: (optional) rotation order {`:body2nav`,`:nav2body`}
 
 **Returns:**
@@ -31,16 +31,18 @@ Section 3.6 (pg. 36-41 & 537).
 """
 function euler2dcm(roll, pitch, yaw, order::Symbol=:body2nav)
 
-    size(roll ,2) > 1 && (roll  = roll')
-    size(pitch,2) > 1 && (pitch = pitch')
-    size(yaw  ,2) > 1 && (yaw   = yaw')
+    @assert length(roll) == length(pitch) == length(yaw) "roll, pitch, and yaw must be the same length"
 
-    cr = cos.(roll)
-    sr = sin.(roll)
-    cp = cos.(pitch)
-    sp = sin.(pitch)
-    cy = cos.(yaw)
-    sy = sin.(yaw)
+    r = vec([roll ;])
+    p = vec([pitch;])
+    y = vec([yaw  ;])
+
+    cr = cos.(r)
+    sr = sin.(r)
+    cp = cos.(p)
+    sp = sin.(p)
+    cy = cos.(y)
+    sy = sin.(y)
 
     dcm = zeros(3,3,length(roll))
 
@@ -79,22 +81,22 @@ end # function euler2dcm
 """
     dcm2euler(dcm, order::Symbol=:body2nav)
 
-Converts a DCM (direction cosine matrix) to yaw, pitch, and roll Euler angles. 
+Converts a DCM (direction cosine matrix) to yaw, pitch, and roll Euler angles.
 Yaw is synonymous with azimuth and heading here. There are 2 use cases:
 
-1) With `order = :body2nav`, the provided DCM is assumed to rotate from the 
-body frame in the standard -roll, -pitch, -yaw sequence to the navigation 
-frame. For example, if v1 is a 3x1 vector in the body frame [nose, right wing, 
-down], then that vector rotated into the navigation frame [north, east, down] 
+1) With `order = :body2nav`, the provided DCM is assumed to rotate from the
+body frame in the standard -roll, -pitch, -yaw sequence to the navigation
+frame. For example, if v1 is a 3x1 vector in the body frame [nose, right wing,
+down], then that vector rotated into the navigation frame [north, east, down]
 would be v2 = dcm * v1.
 
-2) With `order = :nav2body`, the provided DCM is assumed to rotate from the 
-navigation frame in the standard yaw, pitch, roll sequence to the body frame. 
-For example, if v1 is a 3x1 vector in the navigation frame [north, east, down], 
-then that vector rotated into the body frame [nose, right wing, down] would be 
+2) With `order = :nav2body`, the provided DCM is assumed to rotate from the
+navigation frame in the standard yaw, pitch, roll sequence to the body frame.
+For example, if v1 is a 3x1 vector in the navigation frame [north, east, down],
+then that vector rotated into the body frame [nose, right wing, down] would be
 v2 = dcm * v1.
 
-Reference: Titterton & Weston, Strapdown Inertial Navigation Technology, 2004, 
+Reference: Titterton & Weston, Strapdown Inertial Navigation Technology, 2004,
 Section 3.6 (pg. 36-41 & 537).
 
 **Arguments:**
@@ -102,9 +104,9 @@ Section 3.6 (pg. 36-41 & 537).
 - `order`: (optional) rotation order {`:body2nav`,`:nav2body`}
 
 **Returns:**
-- `roll`:  `N` roll  angles [rad], right-handed rotation about x-axis
-- `pitch`: `N` pitch angles [rad], right-handed rotation about y-axis
-- `yaw`:   `N` yaw   angles [rad], right-handed rotation about z-axis
+- `roll`:  length `N` roll  angles [rad], right-handed rotation about x-axis
+- `pitch`: length `N` pitch angles [rad], right-handed rotation about y-axis
+- `yaw`:   length `N` yaw   angles [rad], right-handed rotation about z-axis
 """
 function dcm2euler(dcm, order::Symbol=:body2nav)
 
@@ -141,7 +143,7 @@ right-handed body to navigation frame rotation DCM (direction cosine matrix)
 with [`X`,`Y`,`Z`] tilt angle errors. The resulting DCM is `in error`, such
 as INS data.
 
-Reference: Titterton & Weston, Strapdown Inertial Navigation Technology, 2004,  
+Reference: Titterton & Weston, Strapdown Inertial Navigation Technology, 2004,
 eq. 10.10 (pg. 284) and eq. 12.6 (pg. 342).
 
 **Arguments:**

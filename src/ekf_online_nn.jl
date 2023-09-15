@@ -1,6 +1,6 @@
 """
     ekf_online_nn(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
-                  dt, itp_mapS, nn_x, m, y_norms, P0, Qd, R;
+                  dt, itp_mapS, x_nn, m, y_norms, P0, Qd, R;
                   baro_tau   = 3600.0,
                   acc_tau    = 3600.0,
                   gyro_tau   = 3600.0,
@@ -25,9 +25,9 @@ Extended Kalman filter (EKF) with online learning of neural network weights.
 - `meas`:     scalar magnetometer measurement [nT]
 - `dt`:       measurement time step [s]
 - `itp_mapS`: scalar map interpolation function
-- `nn_x`:     `x` matrix for neural network
+- `x_nn`:     `N` x `Nf` data matrix for neural network (`Nf` is number of features)
 - `m`:        neural network model, does not work with skip connections
-- `y_norms`:  Tuple of `y` normalizations, i.e., `(y_bias,y_scale)`
+- `y_norms`:  tuple of `y` normalizations, i.e., `(y_bias,y_scale)`
 - `P0`:       initial covariance matrix
 - `Qd`:       discrete time process/system noise matrix
 - `R`:        measurement (white) noise variance
@@ -43,7 +43,7 @@ Extended Kalman filter (EKF) with online learning of neural network weights.
 - `filt_res`: `FILTres` filter results struct
 """
 function ekf_online_nn(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
-                       dt, itp_mapS, nn_x, m, y_norms, P0, Qd, R;
+                       dt, itp_mapS, x_nn, m, y_norms, P0, Qd, R;
                        baro_tau   = 3600.0,
                        acc_tau    = 3600.0,
                        gyro_tau   = 3600.0,
@@ -81,11 +81,11 @@ function ekf_online_nn(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
 
         # measurement residual [ny]
         m     = re(x[end-nx_nn:end-1])
-        resid = meas[t,:] .- (m(nn_x[t,:]).*y_scale.+y_bias) .-
+        resid = meas[t,:] .- (m(x_nn[t,:]).*y_scale.+y_bias) .-
                 get_h(itp_mapS,x,lat[t],lon[t],alt[t];date=date,core=core)
 
         # measurement Jacobian (repeated gradient here) [ny x nx]
-        Hnn = get_Hnn(nn_grad(m,nn_x[t,:]))
+        Hnn = get_Hnn(nn_grad(m,x_nn[t,:]))
         Hll = get_H(itp_mapS,x,lat[t],lon[t],alt[t];date=date,core=core)'
         H1  = [Hll[1:2]; zeros(nx-3-nx_nn); Hnn.*y_scale; 1]
         H   = repeat(H1',ny,1)
@@ -120,10 +120,10 @@ Internal helper function to get neural network gradients.
 
 **Arguments:**
 - `m`: neural network model
-- `x`: `x` matrix for neural network
+- `x`: `N` x `Nf` data matrix for neural network (`Nf` is number of features)
 
 **Returns:**
-- `g`: Tuple of gradients of `m` using `x`
+- `g`: tuple of gradients of `m` using `x`
 """
 nn_grad(m::Chain,x) = gradient(m -> sum(m(x)), m)[1].layers # function nn_grad
 
@@ -133,7 +133,7 @@ nn_grad(m::Chain,x) = gradient(m -> sum(m(x)), m)[1].layers # function nn_grad
 Internal helper function to reshape neural network gradients.
 
 **Arguments:**
-- `g`: Tuple of gradients
+- `g`: tuple of gradients
 
 **Returns:**
 - `Hnn`: vector of gradients
@@ -148,7 +148,7 @@ function get_Hnn(g::Tuple)
 end # function get_Hnn
 
 """
-    ekf_online_nn(ins::INS, meas, itp_mapS, nn_x, m, y_norms, P0, Qd, R;
+    ekf_online_nn(ins::INS, meas, itp_mapS, x_nn, m, y_norms, P0, Qd, R;
                   baro_tau   = 3600.0,
                   acc_tau    = 3600.0,
                   gyro_tau   = 3600.0,
@@ -162,9 +162,9 @@ Extended Kalman filter (EKF) with online learning of neural network weights.
 - `ins`:      `INS` inertial navigation system struct
 - `meas`:     scalar magnetometer measurement [nT]
 - `itp_mapS`: scalar map interpolation function
-- `nn_x`:     `x` matrix for neural network
+- `x_nn`:     `N` x `Nf` data matrix for neural network (`Nf` is number of features)
 - `m`:        neural network model, does not work with skip connections
-- `y_norms`:  Tuple of `y` normalizations, i.e., `(y_bias,y_scale)`
+- `y_norms`:  tuple of `y` normalizations, i.e., `(y_bias,y_scale)`
 - `P0`:       initial covariance matrix
 - `Qd`:       discrete time process/system noise matrix
 - `R`:        measurement (white) noise variance
@@ -178,7 +178,7 @@ Extended Kalman filter (EKF) with online learning of neural network weights.
 **Returns:**
 - `filt_res`: `FILTres` filter results struct
 """
-function ekf_online_nn(ins::INS, meas, itp_mapS, nn_x, m, y_norms, P0, Qd, R;
+function ekf_online_nn(ins::INS, meas, itp_mapS, x_nn, m, y_norms, P0, Qd, R;
                        baro_tau   = 3600.0,
                        acc_tau    = 3600.0,
                        gyro_tau   = 3600.0,
@@ -187,7 +187,7 @@ function ekf_online_nn(ins::INS, meas, itp_mapS, nn_x, m, y_norms, P0, Qd, R;
                        core::Bool = false)
     ekf_online_nn(ins.lat,ins.lon,ins.alt,ins.vn,ins.ve,ins.vd,
                   ins.fn,ins.fe,ins.fd,ins.Cnb,meas,
-                  ins.dt,itp_mapS,nn_x,m,y_norms,P0,Qd,R;
+                  ins.dt,itp_mapS,x_nn,m,y_norms,P0,Qd,R;
                   baro_tau = baro_tau,
                   acc_tau  = acc_tau,
                   gyro_tau = gyro_tau,
@@ -212,7 +212,7 @@ end # function ekf_online_nn
 #     for i = 1:N_sigma
 #         ind = ((i-1)*floor(Int,(N-1)/N_sigma)).+(1:1)
 #         # ind = (i-1)*bS+1:i*bS
-#         d = Flux.DataLoader((x[ind,:]',y[ind]'),shuffle=true,batchsize=1) # bs
+#         d = DataLoader((x[ind,:]',y[ind]'),shuffle=true,batchsize=1) # bs
 #         Flux.train!(loss,Flux.params(m),d,opt)
 #         coef_set[:,i] = deepcopy(destructure(m)[1])
 #     end
@@ -231,10 +231,10 @@ end # function ekf_online_nn
 Setup for extended Kalman filter (EKF) with online learning of neural network weights.
 
 **Arguments:**
-- `x`:       input data
-- `y`:       observed data
+- `x`:       `N` x `Nf` data matrix (`Nf` is number of features)
+- `y`:       length `N` target vector
 - `m`:       neural network model, does not work with skip connections
-- `y_norms`: Tuple of `y` normalizations, i.e., `(y_bias,y_scale)`
+- `y_norms`: tuple of `y` normalizations, i.e., `(y_bias,y_scale)`
 - `N_sigma`: (optional) number of neural network weights sets to use to create `nn_sigma`
 
 **Returns:**
@@ -246,7 +246,7 @@ function ekf_online_nn_setup(x, y, m, y_norms; N_sigma::Int=1000)
     @assert N_sigma >= N_sigma_min "increase N_sigma to $N_sigma_min"
     (y_bias,y_scale) = y_norms # unpack normalizations
     m = deepcopy(m) # don't modify original NN model
-    (w_nn,re) = destructure(m) # weights, restucture
+    (w_nn,re) = destructure(m) # weights, restructure
     w_nn_store = zeros(length(w_nn),N_sigma) # initialize weights matrix
     P = I(length(w_nn)) # initialize covariance matrix
     for i = 1:N_sigma   # run recursive least squares

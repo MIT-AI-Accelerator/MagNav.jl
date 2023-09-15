@@ -1,8 +1,9 @@
 using MagNav, Test, MAT, DataFrames, Flux, Statistics, Zygote
-using DelimitedFiles: readdlm
+using DelimitedFiles: readdlm, writedlm
 
-silent = true
-df = DataFrame() # empty dataframe
+generate = false       # to generate comp_csv
+silent   = true        # to suppress print outs
+df       = DataFrame() # empty dataframe
 
 flight   = :Flt1007
 line     = 1007.06
@@ -46,34 +47,42 @@ epoch_adam  = 11
 
 comp_params_1   = NNCompParams(model_type=:m1  ,terms=terms_p,
                                terms_A=terms_pie,TL_coef=TL_coef_pie,
-                               batchsize=batchsize,epoch_adam=epoch_adam)
+                               epoch_adam=epoch_adam,batchsize=batchsize)
 comp_params_2a  = NNCompParams(model_type=:m2a ,terms=terms_p,
                                terms_A=terms_pie,TL_coef=TL_coef_pie,
-                               batchsize=batchsize,epoch_adam=epoch_adam)
+                               epoch_adam=epoch_adam,batchsize=batchsize)
 comp_params_2b  = NNCompParams(model_type=:m2b ,terms=terms_p,
                                terms_A=terms_pie,TL_coef=TL_coef_pie,
-                               batchsize=batchsize,epoch_adam=epoch_adam)
+                               epoch_adam=epoch_adam,batchsize=batchsize)
 comp_params_2c  = NNCompParams(model_type=:m2c ,terms=terms_p,
                                terms_A=terms_pie,TL_coef=TL_coef_pie,
-                               batchsize=batchsize,epoch_adam=epoch_adam)
+                               epoch_adam=epoch_adam,batchsize=batchsize)
 comp_params_2d  = NNCompParams(model_type=:m2d ,terms=terms_p,
                                terms_A=terms_pie,TL_coef=TL_coef_pie,
-                               batchsize=batchsize,epoch_adam=epoch_adam)
+                               epoch_adam=epoch_adam,batchsize=batchsize)
 comp_params_3tl = NNCompParams(model_type=:m3tl,terms=terms_pi,
                                terms_A=terms_pieb,TL_coef=[TL_coef_pie;0],
-                               batchsize=batchsize,epoch_adam=epoch_adam)
+                               epoch_adam=epoch_adam,batchsize=batchsize)
 comp_params_3s  = NNCompParams(model_type=:m3s ,terms=terms_pi,
                                terms_A=terms_pieb,TL_coef=[TL_coef_pie;0],
-                               batchsize=batchsize,epoch_adam=epoch_adam)
+                               epoch_adam=epoch_adam,batchsize=batchsize)
 comp_params_3v  = NNCompParams(model_type=:m3v ,terms=terms_pi,
                                terms_A=terms_pieb,TL_coef=[TL_coef_pie;0],
-                               batchsize=batchsize,epoch_adam=epoch_adam)
+                               epoch_adam=epoch_adam,batchsize=batchsize)
 comp_params_3sc = NNCompParams(model_type=:m3sc,terms=terms_pi,
                                terms_A=terms_pie,TL_coef=TL_coef_pie,
-                               batchsize=batchsize,epoch_adam=epoch_adam)
+                               epoch_adam=epoch_adam,batchsize=batchsize)
 comp_params_3vc = NNCompParams(model_type=:m3vc,terms=terms_pi,
                                terms_A=terms_pie,TL_coef=TL_coef_pie,
-                               batchsize=batchsize,epoch_adam=epoch_adam)
+                               epoch_adam=epoch_adam,batchsize=batchsize)
+comp_params_3w =  NNCompParams(model_type=:m3w,terms=terms_pi,
+                               terms_A=terms_pie,TL_coef=TL_coef_pie,
+                               epoch_adam=epoch_adam,batchsize=batchsize,
+                               frac_train=0.6)
+comp_params_3tf = NNCompParams(model_type=:m3tf,terms=terms_pi,
+                               terms_A=terms_pie,TL_coef=TL_coef_pie,
+                               epoch_adam=epoch_adam,batchsize=batchsize,
+                               frac_train=0.6)
 
 comp_params_TL         = LinCompParams(model_type=:TL,y_type=:a)
 comp_params_mod_TL     = LinCompParams(model_type=:mod_TL,y_type=:a)
@@ -105,33 +114,42 @@ comp_params_nn_bad_drop = NNCompParams(model_type=:test,drop_fi=true,
                                        drop_fi_bson=drop_fi_bson,
                                        drop_fi_csv=drop_fi_csv)
 
-major     = VERSION.major
-minor     = VERSION.minor
-comp_file = joinpath(@__DIR__,"test_data/comp_err_$major.$minor.csv")
-comp_err  = readdlm(comp_file,',')
+comp_params_list = [comp_params_1,
+                    comp_params_2a,
+                    comp_params_2b,
+                    comp_params_2c,
+                    comp_params_2d,
+                    comp_params_3tl,
+                    comp_params_3s,
+                    comp_params_3v,
+                    comp_params_3sc,
+                    comp_params_3vc,
+                    comp_params_3w,
+                    comp_params_3tf,
+                    comp_params_TL,
+                    comp_params_mod_TL,
+                    comp_params_map_TL,
+                    comp_params_elasticnet,
+                    comp_params_plsr,
+                    comp_params_1_drop,
+                    comp_params_1_perm,
+                    comp_params_2c_drop,
+                    comp_params_2c_perm,
+                    comp_params_3s_drop,
+                    comp_params_3s_perm]
+
+major    = VERSION.major
+minor    = VERSION.minor
+comp_csv = joinpath(@__DIR__,"test_data/comp_err_$major.$minor.csv")
+
+if generate
+    comp_err = zeros(Float32,length(comp_params_list),2)
+else
+    comp_err = readdlm(comp_csv,',')
+end
 
 @testset "comp_train_test tests" begin
-    for (i,comp_params) in enumerate([comp_params_1,
-                                      comp_params_2a,
-                                      comp_params_2b,
-                                      comp_params_2c,
-                                      comp_params_2d,
-                                      comp_params_3tl,
-                                      comp_params_3s,
-                                      comp_params_3v,
-                                      comp_params_3sc,
-                                      comp_params_3vc,
-                                      comp_params_TL,
-                                      comp_params_mod_TL,
-                                      comp_params_map_TL,
-                                      comp_params_elasticnet,
-                                      comp_params_plsr,
-                                      comp_params_1_drop,
-                                      comp_params_1_perm,
-                                      comp_params_2c_drop,
-                                      comp_params_2c_perm,
-                                      comp_params_3s_drop,
-                                      comp_params_3s_perm])
+    for (i,comp_params) in enumerate(comp_params_list)
         comp_params_ = deepcopy(comp_params)
         (err_train_1,err_test_1) = comp_train_test(xyz,xyz,ind,ind,mapS,mapS;
                                    comp_params=comp_params,silent)[[4,7]]
@@ -139,11 +157,18 @@ comp_err  = readdlm(comp_file,',')
                                    df_map,comp_params;silent)[[4,7]]
         @test std(err_train_1)   ≈ std(err_train_2)
         @test std(err_test_1 )   ≈ std(err_test_2 )
-        @test isapprox(comp_err[i,1],std(err_train_1),atol=1f-6) # reproducibility
-        @test isapprox(comp_err[i,2],std(err_test_1 ),atol=1f-6) # reproducibility
+        if generate # store compensation reproducibility results
+            comp_err[i,1] = std(err_train_1)
+            comp_err[i,2] = std(err_test_1 )
+        else # test compensation reproducibility
+            @test isapprox(comp_err[i,1],std(err_train_1),atol=1f-6)
+            @test isapprox(comp_err[i,2],std(err_test_1 ),atol=1f-6)
+        end
         @test MagNav.compare_fields(comp_params_,comp_params;silent) == 0 # no mutating
     end
 end
+
+generate && (writedlm(comp_csv,comp_err,','))
 
 comp_params_1   = comp_train(xyz,ind;comp_params=comp_params_1  ,silent)[1]
 comp_params_2a  = comp_train(xyz,ind;comp_params=comp_params_2a ,silent)[1]
@@ -214,32 +239,32 @@ comp_params_1   = NNCompParams(model_type  = :m1,
                                y_type      = :a,
                                terms       = terms_p,
                                terms_A     = terms_pie,
-                               TL_coef     = TL_coef_pie,
                                sub_igrf    = true,
+                               TL_coef     = TL_coef_pie,
                                epoch_lbfgs = epoch_lbfgs,
                                batchsize   = batchsize,
-                               k_pca       = k_pca,
-                               frac_train  = frac_train)
+                               frac_train  = frac_train,
+                               k_pca       = k_pca)
 comp_params_2a  = NNCompParams(model_type  = :m2a,
                                y_type      = :a,
                                terms       = terms_p,
                                terms_A     = terms_pie,
-                               TL_coef     = TL_coef_pie,
                                sub_igrf    = true,
+                               TL_coef     = TL_coef_pie,
                                epoch_lbfgs = epoch_lbfgs,
                                batchsize   = batchsize,
-                               k_pca       = k_pca,
-                               frac_train  = frac_train)
+                               frac_train  = frac_train,
+                               k_pca       = k_pca)
 comp_params_2b  = NNCompParams(model_type  = :m2b,
                                y_type      = :a,
                                terms       = terms_p,
                                terms_A     = terms_pie,
-                               TL_coef     = TL_coef_pie,
                                sub_igrf    = true,
+                               TL_coef     = TL_coef_pie,
                                epoch_lbfgs = epoch_lbfgs,
                                batchsize   = batchsize,
-                               k_pca       = k_pca,
-                               frac_train  = frac_train)
+                               frac_train  = frac_train,
+                               k_pca       = k_pca)
 comp_params_2c  = NNCompParams(model_type  = :m2c,
                                y_type      = :e,
                                terms       = terms_p,
@@ -247,8 +272,8 @@ comp_params_2c  = NNCompParams(model_type  = :m2c,
                                TL_coef     = TL_coef_pie,
                                epoch_lbfgs = epoch_lbfgs,
                                batchsize   = batchsize,
-                               k_pca       = k_pca,
-                               frac_train  = frac_train)
+                               frac_train  = frac_train,
+                               k_pca       = k_pca)
 comp_params_2d  = NNCompParams(model_type  = :m2d,
                                y_type      = :e,
                                terms       = terms_p,
@@ -256,42 +281,42 @@ comp_params_2d  = NNCompParams(model_type  = :m2d,
                                TL_coef     = TL_coef_pie,
                                epoch_lbfgs = epoch_lbfgs,
                                batchsize   = batchsize,
-                               k_pca       = k_pca,
-                               frac_train  = frac_train)
+                               frac_train  = frac_train,
+                               k_pca       = k_pca)
 
 k_pca_big = 100
 
 comp_params_3tl = NNCompParams(comp_params_3tl,
                                data_norms  = NNCompParams().data_norms,
                                epoch_lbfgs = epoch_lbfgs,
-                               k_pca       = k_pca_big,
-                               frac_train  = frac_train)
+                               frac_train  = frac_train,
+                               k_pca       = k_pca_big)
 
 comp_params_3s  = NNCompParams(comp_params_3s,
                                epoch_lbfgs = epoch_lbfgs,
-                               k_pca       = k_pca_big,
-                               frac_train  = frac_train)
+                               frac_train  = frac_train,
+                               k_pca       = k_pca_big)
 
 comp_params_3v  = NNCompParams(comp_params_3v,
                                epoch_lbfgs = epoch_lbfgs,
-                               k_pca       = k_pca_big,
-                               frac_train  = frac_train)
+                               frac_train  = frac_train,
+                               k_pca       = k_pca_big)
 
 comp_params_3sc = NNCompParams(comp_params_3sc,
                                y_type      = :a,
                                terms_A     = terms_pieb,
                                TL_coef     = [comp_params_3sc.TL_coef;0],
                                epoch_lbfgs = epoch_lbfgs,
-                               k_pca       = k_pca_big,
-                               frac_train  = frac_train)
+                               frac_train  = frac_train,
+                               k_pca       = k_pca_big)
 
 comp_params_3vc = NNCompParams(comp_params_3vc,
                                y_type      = :a,
                                terms_A     = terms_pieb,
                                TL_coef     = [comp_params_3vc.TL_coef;0],
                                epoch_lbfgs = epoch_lbfgs,
-                               k_pca       = k_pca_big,
-                               frac_train  = frac_train)
+                               frac_train  = frac_train,
+                               k_pca       = k_pca_big)
 
 x = [1:5;][:,:]
 y = [1:5;]

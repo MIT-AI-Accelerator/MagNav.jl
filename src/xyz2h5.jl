@@ -29,7 +29,7 @@ process using a 64 GB MacBook Pro.
 - `xyz_xyz`:        path/name of flight data .xyz file (`.xyz` extension optional)
 - `xyz_h5`:         path/name of flight data HDF5 file to save (`.h5` extension optional)
 - `flight`:         flight name (e.g., `:Flt1001`)
-- `lines`:          (optional) selected line number(s) to ONLY include or exclude, must be a vector of 3-element (`line`,`start_time`,`stop_time`) Tuple(s)
+- `lines`:          (optional) selected line number(s) to ONLY include or exclude, must be a vector of 3-element (`line`,`start_time`,`stop_time`) tuple(s)
 - `lines_type`:     (optional) whether to ONLY `:include` (i.e., to generate testing data) or `:exclude` (i.e., to generate training data) `lines`
 - `tt_sort`:        (optional) if true, sort data by time (instead of line)
 - `downsample_160`: (optional) if true, downsample 160 Hz data to 10 Hz (only for 160 Hz data files)
@@ -48,7 +48,7 @@ function xyz2h5(xyz_xyz::String, xyz_h5::String, flight::Symbol;
     xyz_xyz = add_extension(xyz_xyz,".xyz")
     xyz_h5  = add_extension(xyz_h5 ,".h5")
 
-    fields   = xyz_fields(flight) # list of data field names
+    fields   = xyz_fields(flight) # vector of data field names
     Nf       = length(fields)     # number of data fields (columns)
     ind_tt   = findfirst(fields .== :tt)   # time index (column)
     ind_line = findfirst(fields .== :line) # line index (column)
@@ -64,8 +64,8 @@ function xyz2h5(xyz_xyz::String, xyz_h5::String, flight::Symbol;
         end
     end
 
-    Nd   = sum(ind)     # number of valid data rows
-    data = zeros(Nd,Nf) # initialize data matrix
+    N    = sum(ind)     # number of valid data rows
+    data = zeros(N,Nf) # initialize data matrix
 
     @info("reading in file: $xyz_xyz")
 
@@ -80,7 +80,7 @@ function xyz2h5(xyz_xyz::String, xyz_h5::String, flight::Symbol;
     # check for duplicated data
     N_tt   = length(unique(data[:,ind_tt  ]))
     N_line = length(unique(data[:,ind_line]))
-    Nd > N_tt + N_line && @info("xyz file may contain duplicated data")
+    N > N_tt + N_line && @info("xyz file may contain duplicated data")
 
     if return_data
         return (data)
@@ -103,25 +103,27 @@ function xyz2h5(data::Array, xyz_h5::String, flight::Symbol;
                 lines::Vector      = [()],
                 lines_type::Symbol = :exclude)
 
-    fields   = xyz_fields(flight) # list of field names
+    fields   = xyz_fields(flight) # vector of data field names
     Nf_chk   = length(fields)     # number of data fields (columns)
     ind_tt   = findfirst(fields .== :tt)   # time index (column)
     ind_line = findfirst(fields .== :line) # line index (column)
 
     # number of valid data rows & data fields
-    (Nd,Nf) = size(data)
+    (N,Nf) = size(data)
 
-    @assert Nf == Nf_chk "xyz fields don't match up, $Nf ≂̸ $Nf_chk"
+    @assert Nf == Nf_chk "xyz fields are of different dimensions, $N ≂̸ $Nf_chk"
 
     # check for duplicated data
     N_tt   = length(unique(data[:,ind_tt  ]))
     N_line = length(unique(data[:,ind_line]))
-    Nd - N_tt > N_line && @info("xyz file may contain duplicated data")
+    N - N_tt > N_line && @info("xyz file may contain duplicated data")
 
-    if !isempty(lines[1])
+    if isempty(lines[1])
+        ind = trues(N)
+    else
 
         # get ind for all lines
-        ind = falses(Nd)
+        ind = falses(N)
         for line in lines
             ind = ind .| get_ind(data[:,ind_tt],data[:,ind_line];
                                  lines=[line[1]],tt_lim=[line[2],line[3]])
@@ -134,17 +136,15 @@ function xyz2h5(data::Array, xyz_h5::String, flight::Symbol;
             error("$lines_type lines type not defined")
         end
 
-    else
-        ind = trues(Nd)
     end
 
     # write N & dt data fields
-    Nd = sum(ind) # number of used data rows
-    dt = Nd > 1 ? round(data[ind,ind_tt][2]-data[ind,ind_tt][1],digits=9) : 0.1 # measurement time step
-    write_field(xyz_h5,:N ,Nd)
+    N  = sum(ind) # number of used data rows
+    dt = N > 1 ? round(data[ind,ind_tt][2]-data[ind,ind_tt][1],digits=9) : 0.1 # measurement time step
+    write_field(xyz_h5,:N ,N)
     write_field(xyz_h5,:dt,dt)
 
-    ind_sort = tt_sort ? sortperm(data[ind,ind_tt]) : 1:Nd # sorting order
+    ind_sort = tt_sort ? sortperm(data[ind,ind_tt]) : 1:N # sorting order
 
     # write other data fields
     for i = 1:Nf
@@ -528,14 +528,14 @@ Internal helper function to get field names for given SGL flight.
 - `flight`: flight name (e.g., `:Flt1001`)
 
 **Returns:**
-- `fields`: list of data field names (Symbols)
+- `fields`: vector of data field names (Symbols)
 """
 function xyz_fields(flight::Symbol)
 
     # get csv files containing fields from sgl_flight_data_fields artifact
     fields20  = sgl_fields()*"/fields_sgl_2020.csv"
     fields21  = sgl_fields()*"/fields_sgl_2021.csv"
-    fields160 = sgl_fields()*"/fields_sgl_160.csv" 
+    fields160 = sgl_fields()*"/fields_sgl_160.csv"
 
     d = Dict{Symbol,Any}()
     push!(d, :fields20  => Symbol.(vec(readdlm(fields20 ,','))))

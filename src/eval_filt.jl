@@ -12,7 +12,7 @@
              date           = get_years(2020,185),
              core::Bool     = false,
              map_alt        = 0,
-             nn_x           = nothing,
+             x_nn           = nothing,
              m              = nothing,
              y_norms        = nothing,
              terms          = [:permanent,:induced,:eddy,:bias],
@@ -41,9 +41,9 @@ Run navigation filter and optionally compute Cramér–Rao lower bound (CRLB).
 - `date`:      (optional) measurement date for IGRF [yr]
 - `core`:      (optional) if true, include core magnetic field in measurement
 - `map_alt`:   (optional) map altitude [m]
-- `nn_x`:      (optional) `x` matrix for neural network
+- `x_nn`:      (optional) `N` x `Nf` data matrix for neural network (`Nf` is number of features)
 - `m`:         (optional) neural network model
-- `y_norms`:   (optional) Tuple of `y` normalizations, i.e., `(y_bias,y_scale)`
+- `y_norms`:   (optional) tuple of `y` normalizations, i.e., `(y_bias,y_scale)`
 - `terms`:     (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
 - `flux`:      (optional) `MagV` vector magnetometer measurement struct
 - `x0_TL`:     (optional) initial Tolles-Lawson coefficient states
@@ -76,7 +76,7 @@ function run_filt(traj::Traj, ins::INS, meas, itp_mapS, filt_type::Symbol=:ekf;
                   date           = get_years(2020,185),
                   core::Bool     = false,
                   map_alt        = 0,
-                  nn_x           = nothing,
+                  x_nn           = nothing,
                   m              = nothing,
                   y_norms        = nothing,
                   terms          = [:permanent,:induced,:eddy,:bias],
@@ -107,7 +107,7 @@ function run_filt(traj::Traj, ins::INS, meas, itp_mapS, filt_type::Symbol=:ekf;
                               core     = core,
                               terms    = terms);
     elseif filt_type == :ekf_online_nn
-        filt_res = ekf_online_nn(ins,meas,itp_mapS,nn_x,m,y_norms,P0,Qd,R;
+        filt_res = ekf_online_nn(ins,meas,itp_mapS,x_nn,m,y_norms,P0,Qd,R;
                                  baro_tau = baro_tau,
                                  acc_tau  = acc_tau,
                                  gyro_tau = gyro_tau,
@@ -128,7 +128,7 @@ function run_filt(traj::Traj, ins::INS, meas, itp_mapS, filt_type::Symbol=:ekf;
                        date     = date,
                        core     = core);
     elseif filt_type == :nekf
-        filt_res = nekf(ins,meas,itp_mapS,nn_x,m;
+        filt_res = nekf(ins,meas,itp_mapS,x_nn,m;
                         P0       = P0,
                         Qd       = Qd,
                         R        = R,
@@ -190,7 +190,7 @@ function run_filt(traj::Traj, ins::INS, meas, itp_mapS,
                   date       = get_years(2020,185),
                   core::Bool = false,
                   map_alt    = 0,
-                  nn_x       = nothing,
+                  x_nn       = nothing,
                   m          = nothing,
                   y_norms    = nothing,
                   terms      = [:permanent,:induced,:eddy,:bias],
@@ -212,7 +212,7 @@ function run_filt(traj::Traj, ins::INS, meas, itp_mapS,
                  date        = date,
                  core        = core,
                  map_alt     = map_alt,
-                 nn_x        = nn_x,
+                 x_nn        = x_nn,
                  m           = m,
                  y_norms     = y_norms,
                  terms       = terms,
@@ -280,7 +280,7 @@ function eval_crlb(traj::Traj, crlb_P::Array)
     crlb_out.e_std    .= dlon2de.(crlb_out.lon_std,traj.lat)
 
     crlb_DRMS = round(Int,sqrt(mean(crlb_out.n_std.^2+crlb_out.e_std.^2)))
-    @info("CRLB DRMS Error = $crlb_DRMS m")
+    @info("CRLB DRMS error = $crlb_DRMS m")
 
     return (crlb_out)
 end # function eval_crlb
@@ -421,7 +421,7 @@ function eval_filt(traj::Traj, ins::INS, filt_res::FILTres)
     filt_out.e_err  .= dlon2de.(filt_out.lon_err,filt_out.lat)
 
     filt_DRMS = round(Int,sqrt(mean(filt_out.n_err.^2+filt_out.e_err.^2)))
-    @info("FILT DRMS Error = $filt_DRMS m")
+    @info("FILT DRMS error = $filt_DRMS m")
 
     return (filt_out)
 end # function eval_filt
@@ -860,7 +860,7 @@ end # function plot_mag_map_err
 Get autocorrelation of data (e.g., actual - expected measurements).
 
 **Arguments:**
-- `x`:      input data
+- `x`:      data vector
 - `dt`:     (optional) measurement time step [s]
 - `dt_max`: (optional) maximum time step to evaluate [s]
 
@@ -885,7 +885,7 @@ Plot autocorrelation of data (e.g., actual - expected measurements). Prints out
 `σ` = standard deviation & `τ` = autocorrelation decay to e^-1 of `x`.
 
 **Arguments:**
-- `x`:         input data
+- `x`:         data vector
 - `dt`:        (optional) measurement time step [s]
 - `dt_max`:    (optional) maximum time step to evaluate [s]
 - `show_plot`: (optional) if true, `p1` will be shown

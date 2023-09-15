@@ -5,7 +5,7 @@
                 Bt_scale = 50000,
                 return_B = false)
 
-Create Tolles-Lawson `A` matrix using vector magnetometer measurements. 
+Create Tolles-Lawson `A` matrix using vector magnetometer measurements.
 Optionally returns the magnitude and derivatives of total field.
 
 **Arguments:**
@@ -64,7 +64,7 @@ function create_TL_A(Bx, By, Bz;
     # Bz_hat_By_dot = Bz_hat .* fdm(By_hat) .* Bt ./ Bt_scale
     # Bz_hat_Bz_dot = Bz_hat .* fdm(Bz_hat) .* Bt ./ Bt_scale
 
-    A = Array{eltype(Bt)}(undef,size(Bt,1),0)
+    A = Matrix{eltype(Bt)}(undef,length(Bt),0)
 
     # add (3) permanent field terms - all
     if any([:permanent,:p,:permanent3,:p3] .∈ (terms,))
@@ -112,8 +112,10 @@ function create_TL_A(Bx, By, Bz;
 
     # add (1) bias term
     if any([:bias,:b] .∈ (terms,))
-        A = [A ones(eltype(Bt),size(Bt))]
+        A = [A ones(eltype(Bt),length(Bt))]
     end
+
+    iszero(A) && error("$terms terms are invalid")
 
     if return_B
         B_dot = [Bx_dot By_dot Bz_dot]
@@ -130,7 +132,7 @@ end # function create_TL_A
                 Bt_scale = 50000,
                 return_B = false)
 
-Create Tolles-Lawson `A` matrix using vector magnetometer measurements. 
+Create Tolles-Lawson `A` matrix using vector magnetometer measurements.
 Optionally returns the magnitude and derivatives of total field.
 
 **Arguments:**
@@ -169,7 +171,7 @@ end # function create_TL_A
                    Bt_scale   = 50000,
                    return_var = false)
 
-Create Tolles-Lawson coefficients using vector and scalar magnetometer 
+Create Tolles-Lawson coefficients using vector and scalar magnetometer
 measurements and a bandpass, low-pass or high-pass filter.
 
 **Arguments:**
@@ -243,7 +245,7 @@ end # function create_TL_coef
                    Bt_scale   = 50000,
                    return_var = false)
 
-Create Tolles-Lawson coefficients using vector and scalar magnetometer 
+Create Tolles-Lawson coefficients using vector and scalar magnetometer
 measurements and a bandpass, low-pass or high-pass filter.
 
 **Arguments:**
@@ -314,10 +316,10 @@ end # function get_TL_term_ind
 """
     fdm(x::Vector; scheme::Symbol=:central)
 
-Finite difference method (FDM) on vector of input data.
+Finite difference method (FDM) applied to `x`.
 
 **Arguments:**
-- `x`:      input data
+- `x`:      data vector
 - `scheme`: (optional) finite difference method scheme used
     - `backward`:  1st derivative 1st-order backward difference
     - `forward`:   1st derivative 1st-order forward  difference
@@ -327,7 +329,7 @@ Finite difference method (FDM) on vector of input data.
     - `fourth`:    4th derivative central difference
 
 **Returns:**
-- `dif`: length of `x` finite differences
+- `dif`: vector of finite differences (length of `x`)
 """
 function fdm(x::Vector; scheme::Symbol=:central)
 
@@ -356,10 +358,10 @@ function fdm(x::Vector; scheme::Symbol=:central)
     elseif (scheme in [:fourth,:central4]) & (N > 4)
         dif_1   = zeros(eltype(x),2)
         dif_end = zeros(eltype(x),2)
-        dif_mid = (   x[1:end-4] + 
-                   -4*x[2:end-3] + 
-                    6*x[3:end-2] + 
-                   -4*x[4:end-1] + 
+        dif_mid = (   x[1:end-4] +
+                   -4*x[2:end-3] +
+                    6*x[3:end-2] +
+                   -4*x[4:end-1] +
                       x[5:end  ] ) ./ 16 # divided by dx^4
     else
         return zero(x)

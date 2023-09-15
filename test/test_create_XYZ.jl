@@ -100,7 +100,7 @@ mapS_mod   = deepcopy(mapS)
 N_mod      = ceil(Int,length(mapS.map)*0.01)
 ind_xx_mod = rand(1:size(mapS.map,2),N_mod)
 ind_yy_mod = rand(1:size(mapS.map,1),N_mod)
-[mapS_mod.map[ind_yy_mod[i],ind_xx_mod[i]] = 0 for i in 1:N_mod]
+[mapS_mod.map[ind_yy_mod[i],ind_xx_mod[i]] = 0 for i = 1:N_mod]
 
 mapV = get_map(MagNav.emm720)
 mapV = map_trim(mapV,traj)

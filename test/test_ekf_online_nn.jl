@@ -36,5 +36,5 @@ m = comp_params.model
     @test_nowarn ekf_online_nn_setup(x_norm,y_norm,m,y_norms;N_sigma=10)
     @test_nowarn ekf_online_nn(ins,xyz.mag_1_c,itp_mapS,x_norm,m,y_norms,P0,Qd,R)
     @test typeof(run_filt(traj,ins,xyz.mag_1_c,itp_mapS,:ekf_online_nn;
-                 P0=P0,Qd=Qd,R=R,nn_x=x_norm,m=m,y_norms=y_norms)) <: Tuple{MagNav.CRLBout,MagNav.INSout,MagNav.FILTout}
+                 P0=P0,Qd=Qd,R=R,x_nn=x_norm,m=m,y_norms=y_norms)) <: Tuple{MagNav.CRLBout,MagNav.INSout,MagNav.FILTout}
 end

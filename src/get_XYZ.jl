@@ -91,7 +91,7 @@ function get_XYZ0(xyz_file::String,
         xyz_data = h5open(xyz_file,"r") # read-only
 
         # if needed, create INS struct
-        if any(isnan.(read_check(xyz_data,:ins_lat,1,true))) | 
+        if any(isnan.(read_check(xyz_data,:ins_lat,1,true))) |
            any(isnan.(read_check(xyz_data,:ins_lon,1,true))) |
            any(isnan.(read_check(xyz_data,:ins_alt,1,true)))
             ins = create_ins(traj)
@@ -397,7 +397,7 @@ function get_flux(flux_file::String,
     end
 
     # ensure vectors
-    l = ones(eltype(x),maximum(length.([x,y,z,t]))) 
+    l = ones(eltype(x),maximum(length.([x,y,z,t])))
     x = length(x) > 1 ? vec(x) : one.(l)*x[1]
     y = length(y) > 1 ? vec(y) : one.(l)*y[1]
     z = length(z) > 1 ? vec(z) : one.(l)*z[1]
@@ -417,7 +417,7 @@ get_MagV = get_magv = get_flux
 Get trajectory data from saved HDF5 or MAT file. The only required fields are
 `lat`, `lon`, and `alt` (position).
 
-If an HDF5 file is provided, the possible fields in the file are: 
+If an HDF5 file is provided, the possible fields in the file are:
 
 |**Field**|**Type**|**Description**
 |:--|:--|:--
@@ -875,7 +875,7 @@ Get trajectory data at specific indices.
 """
 function get_traj(xyz::XYZ, ind=trues(xyz.traj.N))
     xyz.traj(ind)
-end # 
+end # function get_traj
 
 get_Traj = get_traj
 
@@ -950,7 +950,7 @@ function get_XYZ20(xyz_h5::String; tt_sort::Bool=true, silent::Bool=false)
 
     close(xyz)
 
-    dt = N > 1 ? round(d[:tt][2] - d[:tt][1]; digits=9) : 0.1
+    dt = N > 1 ? round(d[:tt][2] - d[:tt][1], digits=9) : 0.1
 
     # using [rad] exclusively
     for field in [:lat,:lon,:ins_roll,:ins_pitch,:ins_yaw,
@@ -981,7 +981,7 @@ function get_XYZ20(xyz_h5::String; tt_sort::Bool=true, silent::Bool=false)
     # INS specific forces from measurements, rotated wander angle (CW for NED)
     ins_f = zeros(N,3)
     for i = 1:N
-        ins_f[i,:] = euler2dcm(0,0,-d[:ins_wander][i],:body2nav) * 
+        ins_f[i,:] = euler2dcm(0,0,-d[:ins_wander][i],:body2nav) *
                      [d[:ins_acc_x][i],-d[:ins_acc_y][i],-d[:ins_acc_z][i]]
     end
 
@@ -1026,8 +1026,8 @@ end # function get_XYZ20
 """
     get_XYZ20(xyz_160_h5::String, xyz_h5::String; silent::Bool=false)
 
-Get 160 Hz (partial) `XYZ20` flight data from saved HDF5 file and 
-combine with 10 Hz `XYZ20` flight data from another saved HDF5 file. 
+Get 160 Hz (partial) `XYZ20` flight data from saved HDF5 file and
+combine with 10 Hz `XYZ20` flight data from another saved HDF5 file.
 Data is time sorted to ensure data is aligned.
 
 **Arguments:**
@@ -1118,7 +1118,7 @@ function get_XYZ21(xyz_h5::String; tt_sort::Bool=true, silent::Bool=false)
 
     close(xyz)
 
-    dt = N > 1 ? round(d[:tt][2] - d[:tt][1]; digits=9) : 0.1
+    dt = N > 1 ? round(d[:tt][2] - d[:tt][1], digits=9) : 0.1
 
     # using [rad] exclusively
     for field in [:lat,:lon,:ins_roll,:ins_pitch,:ins_yaw]
@@ -1148,7 +1148,7 @@ function get_XYZ21(xyz_h5::String; tt_sort::Bool=true, silent::Bool=false)
     # INS specific forces from measurements, rotated wander angle (CW for NED)
     ins_f = zeros(N,3)
     for i = 1:N
-        ins_f[i,:] = euler2dcm(0,0,-d[:ins_wander][i],:body2nav) * 
+        ins_f[i,:] = euler2dcm(0,0,-d[:ins_wander][i],:body2nav) *
                      [d[:ins_acc_x][i],-d[:ins_acc_y][i],-d[:ins_acc_z][i]]
     end
 

@@ -4,7 +4,7 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ c18afc43-9df3-45a1-b6e5-283ca8b26872
+# ╔═╡ d2d82208-6c6b-4f1d-9798-6bbb884185c8
 begin
 	cd(@__DIR__)
 	# uncomment line below to use local MagNav.jl (downloaded folder)
@@ -18,15 +18,22 @@ begin
 	include("dataframes_setup.jl"); # setup DataFrames
 end;
 
-# ╔═╡ 13ac32f0-3d77-11ee-3009-e70e93e2e71b
-md"# Using the MagNav Package with Real SGL Flight Data
+# ╔═╡ f0f58d36-a2a9-4cd6-a549-352a726c76d0
+begin
+	using MagNav: elasticnet_fit, plsr_fit, linear_test
+	using LinearAlgebra
+	using Statistics: cov
+end;
+
+# ╔═╡ e336e668-4d9f-11ee-2517-b3a384f42e23
+md"# Linear Models
 This file is best viewed in a [Pluto](https://plutojl.org/) notebook. To run it this way, from the MagNav.jl directory, do:
 ```julia
 julia> using Pluto
 julia> Pluto.run() # select & open notebook
 ```
 
-This is a reactive notebook, so feel free to change any parameters of interest.
+This is a reactive notebook, so feel free to change any parameters of interest, like adding/removing features to the model, switching between linear models (`:TL`, `:TL_mod`, `:elasticnet`, `:plsr`), or different training & testing lines.
 "
 
 # ╔═╡ b1d3b1b3-db8d-4bb0-a884-d57f217fef24
@@ -44,328 +51,210 @@ Dataframe  | Description
 `df_event` | pilot-recorded in-flight events
 "
 
-# ╔═╡ 2f1e71ff-8f7f-4704-8e7d-b4fd2846f7ed
-md"## Load flight & map data
-
-Select Flight 1006 (see [readme](https://github.com/MIT-AI-Accelerator/MagNav.jl/blob/master/readmes/Flt1006_readme.txt)) & load the flight data. The full list of available SGL flights is in `df_flight`.
+# ╔═╡ fa4f5698-8524-47c4-9a79-c5ee8462d517
+md"Select magnetometers & parameters for compensation.
 "
 
-# ╔═╡ da75fd96-1e6a-46bc-bcea-cdcc8c5f2a86
-begin
-	flight = :Flt1006 # select flight, full list of SGL flights is in df_flight
-	xyz    = get_XYZ(flight,df_flight) # load flight data
+# ╔═╡ 512d9c80-ce7a-42ad-aff2-98575ccd94d8
+begin # try modifying these parameters
+	features = [:mag_4_uc,:mag_4_uc_dot,:mag_4_uc_dot4,:TL_A_flux_d]
+	use_mag  = :mag_4_uc
+	use_vec  = :flux_d
+	terms    = [:permanent,:induced,:fdm]
+	terms_A  = [:permanent,:induced,:eddy,:bias]
+	k_plsr   = 10
 end;
 
-# ╔═╡ 6824d21a-acca-4657-9a1e-18571ce6bdce
-df_flight
+# ╔═╡ d92d1039-5f01-4f3b-b53a-dd579e78f136
+comp_params_1_init = LinCompParams(features_setup = features,
+                                   model_type     = :plsr,
+                                   y_type         = :d,
+                                   use_mag        = use_mag,
+                                   terms          = terms,
+                                   k_plsr         = k_plsr);
 
-# ╔═╡ a2dafd09-e9f7-4a58-b269-32fee40d602d
-md"The `xyz` flight data struct is type `MagNav.XYZ20`, which is subtype of `MagNav.XYZ` (the abstract type for any flight data in MagNav.jl) for the 2020 SGL flight data collection. There are 76 fields, which are described in the docs, which are easily accessed by searching `MagNav.XYZ20` in the Live Docs in the lower right within Pluto.
+# ╔═╡ ceea652f-ce1b-4ae9-9b90-0fb538d11b9f
+md"Select training & testing flights from Flight 1006 (see [readme](https://github.com/MIT-AI-Accelerator/MagNav.jl/blob/master/readmes/Flt1006_readme.txt)).
 "
 
-# ╔═╡ 57aeef2a-2b7e-44f7-b1b7-c40736c38063
-typeof(xyz)
-
-# ╔═╡ a750b1aa-04d9-4f7a-a380-219ac69e8a0d
-fieldnames(MagNav.XYZ20)
-
-# ╔═╡ 1a3aba8d-3aa8-454b-9fb0-708f0bd38c42
-md"Select the map & view the flight line options (`df_options`) for the selected flight & map. The full list of SGL flights is in `df_flight`. The full list of maps is in `df_map` & the full list of navigation-capable flight lines is in `df_nav`.
-"
-
-# ╔═╡ c192c83b-deb3-4b6e-b0d9-97357e0b554c
+# ╔═╡ f6822aeb-ff22-4662-8210-f72db9647c65
 begin
-	map_name = :Eastern_395 # select map, full list of maps in df_map
-	df_options = df_nav[(df_nav.flight   .== flight  ) .&
-	                    (df_nav.map_name .== map_name),:]
-end
-
-# ╔═╡ e001a13c-2662-4c2f-a89a-de6658fa81db
-md"Select a flight line (row of `df_options`) & get the flight data Boolean indices (mask).
-"
-
-# ╔═╡ 7390ee91-6a92-4070-af8b-e3c003c3b5fb
-begin
-	line = df_options.line[1]
-	ind  = get_ind(xyz,line,df_nav) # get Boolean indices
-	# ind = get_ind(xyz;lines=[line]) # alternative
+	lines_train = [1006.03, 1006.04, 1006.05, 1006.06]
+	lines_test  = [1006.08]
 end;
 
-# ╔═╡ f665ea95-dac3-4823-94af-c7ba58cd4401
-md"Select a flight line (row of `df_comp`) & get the flight data Boolean indices (mask) for Tolles-Lawson calibration. The full list of calibration flight line portions is in `df_comp`.
+# ╔═╡ dc519bdb-c501-443a-b7e5-26e6071650fe
+md"## PLSR-based calibration & compensation
+
+Perform PLSR-based calibration using training data.
 "
 
-# ╔═╡ 5346a989-cf32-436c-9181-d7aff6dd44a1
+# ╔═╡ dc05737c-4ce8-49aa-809d-e58046fe546c
+(comp_params_1,_,_,_,feats) =
+    comp_train(lines_train,df_all,df_flight,df_map,comp_params_1_init);
+
+# ╔═╡ a82ddaa5-265b-411a-bff2-17587388e848
+md"Perform PLSR-based compensation on testing data.
+"
+
+# ╔═╡ 8759f021-c416-47b9-8ecf-196197d34919
+comp_test(lines_test,df_nav,df_flight,df_map,comp_params_1);
+
+# ╔═╡ 800fbc33-2c64-496a-8a6e-f2c9bf463692
+md"Setup data for Tolles-Lawson.
+"
+
+# ╔═╡ 8eebdfaa-22d2-4466-8092-d62a6392c49b
 begin
 	TL_i   = 6 # select first calibration box of 1006.04
-	TL_ind = get_ind(xyz;tt_lim=[df_comp.t_start[TL_i],df_comp.t_end[TL_i]]) # get Boolean indices
+	TL_xyz = get_XYZ(df_comp.flight[TL_i],df_flight;silent=true) # load flight data
+	TL_ind = get_ind(TL_xyz;tt_lim=[df_comp.t_start[TL_i],df_comp.t_end[TL_i]]) # get Boolean indices
 end;
 
-# ╔═╡ db7dc866-b889-4fb7-81d4-97cd8435636e
-md"## Baseline plots of scalar & vector (fluxgate) magnetometer data
+# ╔═╡ d6efdf23-1a67-4e3e-b8d8-162b706032f6
+comp_params_2_init = LinCompParams(features_setup = features,
+                                   model_type     = :TL,
+                                   y_type         = :d,
+                                   use_mag        = use_mag,
+                                   use_vec        = use_vec,
+                                   terms_A        = terms_A);
 
-Setup for the baseline plots.
+# ╔═╡ 8d1ae89d-65ba-4f4b-9fb9-4a717cc8b8f7
+md"Perform Tolles-Lawson calibration using training data.
 "
 
-# ╔═╡ 3db31fc5-9ec2-4ca2-a5e0-6b478a7b29f9
+# ╔═╡ 5ac7765d-eca9-42bd-b298-28d2ef67ab75
+(comp_params_2,_,_,_,_) =
+	comp_train(TL_xyz,TL_ind;comp_params=comp_params_2_init);
+
+# ╔═╡ b204f694-8101-4d14-a497-b5a1a8f8381f
+md"Perform Tolles-Lawson compensation on testing data.
+"
+
+# ╔═╡ edcd19a1-0479-423c-b4e0-1434de5fb04c
+comp_test(lines_test,df_all,df_flight,df_map,comp_params_2);
+
+# ╔═╡ b8ae2d27-ae5c-421b-9b2e-c378bdccf542
+md"Get training & testing data & normalize by feature (columns). Typically this is done internally, but shown here to better explain PLSR.
+"
+
+# ╔═╡ ed991fd4-05d9-4bee-b58b-547d63e5d199
 begin
-	show_plot    = false
-	save_plot    = false
-	detrend_data = true
+	(_,x_train,y_train,_,_,l_segs_train) =
+	    get_Axy(lines_train,df_all,df_flight,df_map,features;
+	            use_mag=use_mag,use_vec=use_vec,terms=terms)
+	(_,x_test,y_test,_,_,l_segs_test) =
+	    get_Axy(lines_test,df_nav,df_flight,df_map,features;
+	            use_mag=use_mag,use_vec=use_vec,terms=terms)
+	(x_bias,x_scale,x_train_norm,x_test_norm) = norm_sets(x_train,x_test)
+	(y_bias,y_scale,y_train_norm,y_test_norm) = norm_sets(y_train,y_test)
+	x   = x_train_norm # for conciseness
+	y   = y_train_norm # for conciseness
+	x_t = x_test_norm  # for conciseness
+	y_t = y_test_norm  # for conciseness
 end;
 
-# ╔═╡ 6796c1ee-74a1-4d21-b68d-bd08929a817f
-md"Uncompensated (raw) scalar magnetometers.
-
-The goal of compensation is to remove the magnetic field corruption caused by the platform (aircraft). Here, Magnetometer 1 is placed on a stinger (boom), & has low noise before compensation. Magnetometers 4 & 5 look like good candidates, while 3 is far more challenging.
+# ╔═╡ 6ab67536-d481-4027-b835-105f14480f1e
+md"Training data matrix decomposition & reconstruction with SVD.
 "
 
-# ╔═╡ d02f285c-389c-4b9d-8fef-243253fcc8bb
-b1 = plot_mag(xyz;ind,show_plot,save_plot,detrend_data,
-              use_mags = [:mag_1_uc,:mag_3_uc,:mag_4_uc,:mag_5_uc])
-
-# ╔═╡ 3f69ee39-d3cb-4458-8381-345b289f5d3f
-md"Vector (fluxgate) magnetometer `d`.
-"
-
-# ╔═╡ 18189264-9abf-464a-9101-3f7f4f312690
-b2 = plot_mag(xyz;ind,show_plot,save_plot,detrend_data,
-              use_mags = [:flux_d]) # try changing to :flux_a, :flux_b, :flux_c
-
-# ╔═╡ 5401fd57-4ac0-4ee3-ab9c-63746ebfd854
-md"Magnetometer 1 compensation as provided in dataset by SGL.
-"
-
-# ╔═╡ 15a1e17a-fd89-486d-9ad9-0ae73c0c2b79
-b3 = plot_mag(xyz;ind,show_plot,save_plot,
-              use_mags = [:comp_mags])
-
-# ╔═╡ ee2119b5-b61f-4bad-87ed-abb4c88194bc
-md"Magnetometer 1 compensation using Tolles-Lawson with vector (fluxgate) magnetometer `d`.
-"
-
-# ╔═╡ 05ebfbab-deaa-43f3-965a-aeb91fec9e67
-b4 = plot_mag_c(xyz,xyz;ind,show_plot,save_plot,detrend_data,
-                ind_comp  = TL_ind,
-                use_mags  = [:mag_1_uc],
-                use_vec   = :flux_d,
-                plot_diff = true)
-
-# ╔═╡ ab8b23b1-63f8-4306-97a8-2e9d6f2707c4
-md"Magnetometer 1 Welch power spectral density (PSD).
-"
-
-# ╔═╡ 1eee0857-1278-412b-89fe-f6c3dc094f6f
-b5 = plot_frequency(xyz;ind,show_plot,save_plot,detrend_data,
-                    field     = :mag_1_uc,
-                    freq_type = :PSD)
-
-# ╔═╡ 0d362625-7d94-4131-9254-a336e6a791b1
-md"Magnetometer 1 spectrogram.
-"
-
-# ╔═╡ 90db7042-37b7-4751-ad7d-b1fabb305a5a
-b6 = plot_frequency(xyz;ind,show_plot,save_plot,detrend_data,
-                    field     = :mag_1_uc,
-                    freq_type = :spec)
-
-# ╔═╡ 1233e336-3f11-44e3-b136-08c724f12e0f
-md"## Tolles-Lawson calibration & compensation
-
-Fit the Tolles-Lawson coefficients for uncompensated scalar magnetometers `1-5` with vector (fluxgate) magnetometer `d`.
-"
-
-# ╔═╡ 162f9444-146b-41dd-ba2c-729beff44306
+# ╔═╡ d600ded5-d6dc-43f2-8c00-7b1fb45c6f0f
 begin
-	λ       = 0.025   # ridge parameter for ridge regression
-	use_vec = :flux_d # selected vector (flux) magnetometer
-	flux    = getfield(xyz,use_vec) # load Flux D data
-	TL_d_1  = create_TL_coef(flux,xyz.mag_1_uc,TL_ind;λ=λ) # Flux D & Mag 1
-	TL_d_2  = create_TL_coef(flux,xyz.mag_2_uc,TL_ind;λ=λ) # Flux D & Mag 2
-	TL_d_3  = create_TL_coef(flux,xyz.mag_3_uc,TL_ind;λ=λ) # Flux D & Mag 3
-	TL_d_4  = create_TL_coef(flux,xyz.mag_4_uc,TL_ind;λ=λ) # Flux D & Mag 4
-	TL_d_5  = create_TL_coef(flux,xyz.mag_5_uc,TL_ind;λ=λ) # Flux D & Mag 5
+	(U,S,V) = svd(x)
+	Vt      = V'
+	x_err   = [std(U[:,1:i]*Diagonal(S[1:i])*Vt[1:i,:]-x) for i in eachindex(S)]
+	x_var   = [sum(S[1:i])/sum(S) for i in eachindex(S)]
 end;
 
-# ╔═╡ ebf894ec-5140-42cb-b2b5-1b85f96b7a75
-md"Get the relevant scalar magnetometer data.
+# ╔═╡ 94faaf70-6eb9-485b-b05e-8685265a612f
+md"Plot PLSR error & variance retained.
 "
 
-# ╔═╡ c54b97cd-565f-4d5a-980a-44a3e1d18355
+# ╔═╡ 8ecaeb47-af94-47f9-bfed-2c3b5789375e
 begin
-	A = create_TL_A(flux,ind)
-	mag_1_sgl = xyz.mag_1_c[ind]
-	mag_1_uc  = xyz.mag_1_uc[ind]
-	mag_2_uc  = xyz.mag_2_uc[ind]
-	mag_3_uc  = xyz.mag_3_uc[ind]
-	mag_4_uc  = xyz.mag_4_uc[ind]
-	mag_5_uc  = xyz.mag_5_uc[ind]
-end;
-
-# ╔═╡ d83b4b7a-e8c9-4dbe-8682-592f0ac5e1b6
-md"Create the Tolles-Lawson `A` matrices & perform Tolles-Lawson compensation.
-"
-
-# ╔═╡ 9116a5b5-7b5f-4c38-8a48-e854584a8ada
-begin
-	mag_1_c = mag_1_uc - detrend(A*TL_d_1;mean_only=true)
-	mag_2_c = mag_2_uc - detrend(A*TL_d_2;mean_only=true)
-	mag_3_c = mag_3_uc - detrend(A*TL_d_3;mean_only=true)
-	mag_4_c = mag_4_uc - detrend(A*TL_d_4;mean_only=true)
-	mag_5_c = mag_5_uc - detrend(A*TL_d_5;mean_only=true)
-end;
-
-# ╔═╡ 01779ec7-0088-4b37-bda4-7fccf4dbb548
-md"Prepare the flight data for the navigation filter, load the map data, & get the map interpolation function & map values along the selected flight line. The map values are then corrected for diurnal & core ([IGRF](https://www.ncei.noaa.gov/products/international-geomagnetic-reference-field)) magnetic fields.
-"
-
-# ╔═╡ 3f2dd431-6c5b-403f-9a96-320d8ab6ef17
-begin
-	traj = get_traj(xyz,ind) # trajectory (GPS) struct
-	ins  = get_ins( xyz,ind;N_zero_ll=1) # INS struct, "zero" lat/lon to match first `traj` data point
-	mapS = get_map(map_name,df_map) # load map data
-	# get map values & map interpolation function
-	(map_val,itp_mapS) = get_map_val(mapS,traj;return_itp=true)
-	map_val += (xyz.diurnal + xyz.igrf)[ind] # add in diurnal & core (IGRF)
-end;
-
-# ╔═╡ 50a6302c-b1ed-4be3-8af7-1c641715b25f
-md"Map to magnetometer (standard deviation) errors. Magnetometer `1` is great (stinger), while `2` is unusable & `3-5` are in-between.
-"
-
-# ╔═╡ 110e5de7-9011-4ba6-83d6-3443b6845dc6
-begin
-	println("Mag 1: ",round(std(map_val-mag_1_c),digits=2))
-	println("Mag 2: ",round(std(map_val-mag_2_c),digits=2))
-	println("Mag 3: ",round(std(map_val-mag_3_c),digits=2))
-	println("Mag 4: ",round(std(map_val-mag_4_c),digits=2))
-	println("Mag 5: ",round(std(map_val-mag_5_c),digits=2))
+	p1 = plot(xlab="k (number of compenents)",ylim=(0,1.01),dpi=200)
+	plot!(p1,eachindex(S),x_err,lab="error",lc=:blue)
+	plot!(p1,eachindex(S),x_var,lab="variance retained" ,lc=:red)
 end
 
-# ╔═╡ e5adfd84-4727-4839-bef0-9365d035249f
-md"## Navigation
-
-Create a navigation filter model. Only the most relevant navigation filter parameters are shown.
+# ╔═╡ d46c62a2-9368-4ec3-b305-ab4e56b27f6b
+md"Determine training & testing error with different numbers of components.
 "
 
-# ╔═╡ 1c3579bc-bf1f-45ad-bdfb-df4683ace128
-(P0,Qd,R) = create_model(traj.dt,traj.lat[1];
-                         init_pos_sigma = 0.1,
-                         init_alt_sigma = 1.0,
-                         init_vel_sigma = 1.0,
-                         meas_var       = 5^2, # increase if mag_use is bad
-                         fogm_sigma     = 3,
-                         fogm_tau       = 180);
-
-# ╔═╡ 690c1b98-4201-4a7a-8c1d-04984c3e0307
-md"Run the navigation filter (EKF), determine the Cramér–Rao lower bound (CRLB), & extract output data.
-"
-
-# ╔═╡ 74b69225-a541-49b8-98fc-cacbf22f187a
+# ╔═╡ e9d26d61-a7dd-4531-9238-0bdfde6d2c05
 begin
-	mag_use = mag_1_c # selected magnetometer, modify & see what happens
-	(crlb_out,ins_out,filt_out) = run_filt(traj,ins,mag_use,itp_mapS,:ekf;
-	                                       P0,Qd,R,core=true)
+	k_max     = size(x,2) # maximum number of compenents (features)
+	err_train = zeros(k_max)
+	err_test  = zeros(k_max)
+	coef_set  = plsr_fit(x,y,k_max;return_set=true)
+	for k = 1:k_max
+	    y_train_hat_norm = vec(x  *coef_set[:,:,k])
+	    y_test_hat_norm  = vec(x_t*coef_set[:,:,k])
+	    (y_train_hat,y_test_hat) = denorm_sets(y_bias,y_scale,
+	                                           y_train_hat_norm,
+	                                           y_test_hat_norm)
+	    err_train[k] = std(err_segs(y_train_hat,y_train,l_segs_train))
+	    err_test[k]  = std(err_segs(y_test_hat ,y_test ,l_segs_test ))
+	end
 end;
 
-# ╔═╡ f01997d2-0ea7-4be3-acd8-533580ccb82d
-md"Plotting setup.
+# ╔═╡ 8874fd97-aad0-454b-b425-d66208752449
+md"Plot PLSR-based training & testing error with different numbers of components.
 "
 
-# ╔═╡ 8167ba6a-fff4-4c79-9ee6-57d6f594bb18
+# ╔═╡ 15839dc6-cbe0-4fb9-b60a-1eed9dd4941c
 begin
-	t0  = traj.tt[1]/60    # [min]
-	tt  = traj.tt/60 .- t0 # [min]
-	dpi = 200
+	p2 = plot(xlab="k (number of compenents)",ylab="PLSR error [nT]",ylim=(0,150))
+	plot!(p2,1:k_max,err_train,lab="train")
+	plot!(p2,1:k_max,err_test ,lab="test")
+end
+
+# ╔═╡ c5e34922-977c-4cad-9e9a-94bb242daa7c
+md"## Elastic net-based calibration & compensation
+"
+
+# ╔═╡ 3e2d9612-203b-4403-b51e-59480eaf83de
+begin
+	α = 0.99 # tradeoff between ridge regression (0) & Lasso (1)
+	(model,data_norms,y_train_hat,_) =
+	    elasticnet_fit(x_train,y_train,α;l_segs=l_segs_train)
+	(y_test_hat,_) = linear_test(x_test,y_test,data_norms,model;l_segs=l_segs_test)
+	(coef,bias) = model
 end;
 
-# ╔═╡ 8c92cea8-5cec-42a6-838d-ebc083e0d9b4
-md"Compensated scalar magnetometers.
+# ╔═╡ 897eb9a9-e84b-412a-852a-70981b01ddc7
+md"Features with largest elastic net coefficients. 
 "
 
-# ╔═╡ e0a21a3c-b48c-458e-a4eb-7a726e77b2b2
+# ╔═╡ 774ab47b-1fee-4911-b1d9-9725aee11848
+feats[sortperm(abs.(coef),rev=true)]
+
+# ╔═╡ 70d67179-a688-4401-8248-ad4a3256f5d4
+md"## Principal component analysis (PCA) 
+Look at how `k_pca` is used in neural network-based calibration & compensation.
+
+Note that reduced-dimension data uses: x \* V = U \* Diagonal(S)
+"
+
+# ╔═╡ ee7a6b3e-cd13-44ba-87fa-ccd461c12921
 begin
-	p1 = plot(xlab="time [min]",ylab="magnetic field [nT]",legend=:topleft,dpi=dpi)
-	plot!(p1,tt,detrend(mag_1_uc ),lab="SGL raw Mag 1" ,color=:cyan,lw=2)
-	plot!(p1,tt,detrend(mag_1_sgl),lab="SGL comp Mag 1",color=:blue,lw=2)
-	plot!(p1,tt,detrend(mag_1_c  ),lab="MIT comp Mag 1",color=:red ,lw=2,ls=:dash)
-	# plot!(p1,tt,detrend(mag_2_c  ),lab="MIT comp Mag 2",color=:purple) # bad
-	plot!(p1,tt,detrend(mag_3_c  ),lab="MIT comp Mag 3",color=:green)
-	plot!(p1,tt,detrend(mag_4_c  ),lab="MIT comp Mag 4",color=:black)
-	plot!(p1,tt,detrend(mag_5_c  ),lab="MIT comp Mag 5",color=:orange)
-	# png(p1,"comp_prof_1") # to save figure
-end
-
-# ╔═╡ 4036432b-2bea-4463-908a-5f5dcc5544cf
-md"Position (lat & lot) for trajectory (GPS), INS (after zeroing), & navigation filter.
-"
-
-# ╔═╡ 228b18b7-6374-4ceb-a2b1-b188aa2f593f
-begin
-	p2 = plot_map(mapS;map_color=:gray) # map background
-	plot_filt!(p2,traj,ins,filt_out;show_plot=false) # overlay GPS, INS, & filter
-	plot!(p2,legend=:topleft) # move as needed
-end
-
-# ╔═╡ 60c2bb16-a0d4-42f2-ba4a-f42dd70f2611
-md"Northing & easting INS error (after zeroing).
-"
-
-# ╔═╡ 9bc21e37-9911-4b2e-8460-99ebd8256673
-begin
-	p3 = plot(xlab="time [min]",ylab="error [m]",legend=:topleft,dpi=dpi)
-	plot!(p3,tt,ins_out.n_err,lab="northing")
-	plot!(p3,tt,ins_out.e_err,lab="easting")
-end
-
-# ╔═╡ de62fdda-a107-4283-9140-43dcf2dfb4bc
-(p4,p5) = plot_filt_err(traj,filt_out,crlb_out;show_plot,save_plot);
-
-# ╔═╡ 5a71c032-287a-4c70-90dc-e922cf11c606
-md"Northing navigation filter residuals.
-"
-
-# ╔═╡ 6439d401-07a5-4d31-81e3-411e3aacd0bb
-p4
-
-# ╔═╡ 0cf07d89-6be4-491c-9c07-9ce4d94dee46
-md"Easting navigation filter residuals.
-"
-
-# ╔═╡ 6c4bf761-18f9-4724-8101-910f4f5ad65e
-p5
-
-# ╔═╡ 123a6d91-8950-40ef-804b-86021f9a0207
-md"Map values vs magnetometer measurements.
-"
-
-# ╔═╡ 4bb44a93-c17d-4667-b160-57b62c4c2914
-p6 = plot_mag_map(traj,mag_use,itp_mapS)
-
-# ╔═╡ d813053b-d74a-448c-b25e-465c9e883394
-md"## In-flight events
-"
-
-# ╔═╡ 4c1c21b1-6ee8-4099-893f-9a473cba2d2d
-md"Magnetometers with in-flight event(s) marked. This may be useful for understanding errors in the magnetic signal compared to the map.
-"
-
-# ╔═╡ 289d9265-a8a0-410b-a858-3698bd4cae37
-begin
-	p7 = plot(xlab="time [min]",ylab="magnetic field [nT]",dpi=dpi)
-	plot!(p7,tt,mag_1_uc,lab="mag_1_uc")
-	# plot!(p7,tt,mag_2_uc,lab="mag_2_uc") # bad
-	plot!(p7,tt,mag_3_uc,lab="mag_3_uc")
-	plot!(p7,tt,mag_4_uc,lab="mag_4_uc")
-	plot!(p7,tt,mag_5_uc,lab="mag_5_uc")
-	plot_events!(p7,df_event,flight;t0=t0)
-end
+	k_pca = 3 # select k (order reduction factor)
+	println("std dev error with k = $k_pca: ",round(x_err[k_pca],digits=2))
+	println("var  retained with k = $k_pca: ",round(x_var[k_pca],digits=2))
+	(_,S_pca,V_pca) = svd(cov(x))
+	x_new   = x*V_pca[:,1:k_pca]
+	x_t_new = x_t*V_pca[:,1:k_pca]
+	v_scale = V_pca[:,1:k_pca]*inv(Diagonal(sqrt.(S_pca[1:k_pca])))
+	x_use   = x*v_scale   #* this could be trained on
+	x_t_use = x_t*v_scale #* this could be tested  on
+end;
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MagNav = "f91b31a4-be4d-40e3-b767-4b8c09c10076"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -374,8 +263,8 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 [compat]
 CSV = "~0.10.11"
 DataFrames = "~1.6.1"
-MagNav = "~1.1.1"
-Plots = "~1.38.17"
+MagNav = "~1.1.3"
+Plots = "~1.39.0"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -384,7 +273,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.9.3"
 manifest_format = "2.0"
-project_hash = "590d1622e1796bf504b36b11857c0a4f3f4ad57c"
+project_hash = "ab204037e0d518360dd5deedebc95aa88ac2566c"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -585,10 +474,10 @@ uuid = "49dc2e85-a5d0-5ad3-a950-438e2897f1b9"
 version = "0.5.1"
 
 [[deps.ChainRules]]
-deps = ["Adapt", "ChainRulesCore", "Compat", "Distributed", "GPUArraysCore", "IrrationalConstants", "LinearAlgebra", "Random", "RealDot", "SparseArrays", "Statistics", "StructArrays"]
-git-tree-sha1 = "f98ae934cd677d51d2941088849f0bf2f59e6f6e"
+deps = ["Adapt", "ChainRulesCore", "Compat", "Distributed", "GPUArraysCore", "IrrationalConstants", "LinearAlgebra", "Random", "RealDot", "SparseArrays", "SparseInverseSubset", "Statistics", "StructArrays", "SuiteSparse"]
+git-tree-sha1 = "dbeca245b0680f5393b4e6c40dcead7230ab0b3b"
 uuid = "082447d4-558c-5d27-93f4-14fc19e9eca2"
-version = "1.53.0"
+version = "1.54.0"
 
 [[deps.ChainRulesCore]]
 deps = ["Compat", "LinearAlgebra", "SparseArrays"]
@@ -800,9 +689,9 @@ version = "1.15.1"
 
 [[deps.DiskArrays]]
 deps = ["OffsetArrays"]
-git-tree-sha1 = "7e8dcba9d1d1ba8aa576f7d899d42e04d76431b2"
+git-tree-sha1 = "1eb57cdbf33f945ccfaf27f45bff461c47d9cab7"
 uuid = "3c3547ce-8d99-4f5e-a174-61eb10b00ae3"
-version = "0.3.15"
+version = "0.3.16"
 
 [[deps.Distances]]
 deps = ["LinearAlgebra", "Statistics", "StatsAPI"]
@@ -975,9 +864,9 @@ version = "0.8.4"
 
 [[deps.Flux]]
 deps = ["Adapt", "ChainRulesCore", "Functors", "LinearAlgebra", "MLUtils", "MacroTools", "NNlib", "OneHotArrays", "Optimisers", "Preferences", "ProgressLogging", "Random", "Reexport", "SparseArrays", "SpecialFunctions", "Statistics", "Zygote"]
-git-tree-sha1 = "863218453b276cad81ab750579cf429bfe6a62c9"
+git-tree-sha1 = "723a8ec75b26fe278256c89c363e370ba733c12e"
 uuid = "587475ba-b771-5e3f-ad9e-33799f191a9c"
-version = "0.14.2"
+version = "0.14.4"
 
     [deps.Flux.extensions]
     FluxAMDGPUExt = "AMDGPU"
@@ -1079,9 +968,9 @@ version = "0.7.0"
 
 [[deps.GPUArrays]]
 deps = ["Adapt", "GPUArraysCore", "LLVM", "LinearAlgebra", "Printf", "Random", "Reexport", "Serialization", "Statistics"]
-git-tree-sha1 = "2e57b4a4f9cc15e85a24d603256fe08e527f48d1"
+git-tree-sha1 = "8ad8f375ae365aa1eb2f42e2565a40b55a4b69a8"
 uuid = "0c68f7d7-f131-5f86-a1c3-88cf8149b2d7"
-version = "8.8.1"
+version = "9.0.0"
 
 [[deps.GPUArraysCore]]
 deps = ["Adapt"]
@@ -1386,15 +1275,15 @@ version = "3.0.0+1"
 
 [[deps.LLVM]]
 deps = ["CEnum", "LLVMExtra_jll", "Libdl", "Printf", "Unicode"]
-git-tree-sha1 = "8695a49bfe05a2dc0feeefd06b4ca6361a018729"
+git-tree-sha1 = "a9d2ce1d5007b1e8f6c5b89c5a31ff8bd146db5c"
 uuid = "929cbde3-209d-540e-8aea-75f648917ca0"
-version = "6.1.0"
+version = "6.2.1"
 
 [[deps.LLVMExtra_jll]]
 deps = ["Artifacts", "JLLWrappers", "LazyArtifacts", "Libdl", "TOML"]
-git-tree-sha1 = "c35203c1e1002747da220ffc3c0762ce7754b08c"
+git-tree-sha1 = "7ca6850ae880cc99b59b88517545f91a52020afa"
 uuid = "dad2f222-ce93-54a1-a47d-0025e8a3acab"
-version = "0.0.23+0"
+version = "0.0.25+0"
 
 [[deps.LLVMOpenMP_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1495,10 +1384,10 @@ uuid = "7add5ba3-2f88-524e-9cd5-f83b8a55f7b8"
 version = "1.42.0+0"
 
 [[deps.Libiconv_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "c7cb1f5d892775ba13767a87c7ada0b980ea0a71"
+deps = ["Artifacts", "JLLWrappers", "Libdl"]
+git-tree-sha1 = "f9557a255370125b405568f9767d6d195822a175"
 uuid = "94ce4f54-9a6c-5748-9c1c-f9c7231a4531"
-version = "1.16.1+2"
+version = "1.17.0+0"
 
 [[deps.Libmount_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1567,9 +1456,9 @@ uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
 
 [[deps.LoggingExtras]]
 deps = ["Dates", "Logging"]
-git-tree-sha1 = "a03c77519ab45eb9a34d3cfe2ca223d79c064323"
+git-tree-sha1 = "0d097476b6c381ab7906460ef1ef1638fbce1d91"
 uuid = "e6f89c97-d47a-5376-807f-9c37f3926c36"
-version = "1.0.1"
+version = "1.0.2"
 
 [[deps.LoweredCodeUtils]]
 deps = ["JuliaInterpreter"]
@@ -1578,10 +1467,10 @@ uuid = "6f1432cf-f94c-5a45-995e-cdbf5db27b0b"
 version = "2.3.0"
 
 [[deps.Lz4_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "5d494bc6e85c4c9b626ee0cab05daa4085486ab1"
+deps = ["Artifacts", "JLLWrappers", "Libdl"]
+git-tree-sha1 = "6c26c5e8a4203d43b5497be3ec5d4e0c3cde240a"
 uuid = "5ced341a-0733-55b8-9ab6-a4889d929147"
-version = "1.9.3+0"
+version = "1.9.4+0"
 
 [[deps.MAT]]
 deps = ["BufferedStreams", "CodecZlib", "HDF5", "SparseArrays"]
@@ -1630,10 +1519,10 @@ uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 version = "0.5.11"
 
 [[deps.MagNav]]
-deps = ["ArchGDAL", "BSON", "BenchmarkTools", "CSV", "DSP", "DataFrames", "DelimitedFiles", "Distributions", "ExponentialUtilities", "Flux", "FluxOptTools", "ForwardDiff", "GLMNet", "GR", "Geodesy", "GlobalSensitivity", "HDF5", "Inflate", "Interpolations", "IterTools", "KernelFunctions", "LazyArtifacts", "LinearAlgebra", "MAT", "MLJLinearModels", "NearestNeighbors", "Optim", "Parameters", "Pkg", "Plots", "Pluto", "Random", "RecipesBase", "Revise", "SatelliteToolbox", "ShapML", "SpecialFunctions", "Statistics", "StatsBase", "TOML", "ZipFile", "Zygote"]
-git-tree-sha1 = "45610920d2759bccb1d9806e1a1da9e095997767"
+deps = ["ArchGDAL", "BSON", "BenchmarkTools", "CSV", "DSP", "DataFrames", "DelimitedFiles", "Distributions", "ExponentialUtilities", "Flux", "FluxOptTools", "ForwardDiff", "GLMNet", "GR", "Geodesy", "GlobalSensitivity", "HDF5", "Inflate", "Interpolations", "IterTools", "KernelFunctions", "LazyArtifacts", "LinearAlgebra", "MAT", "MLJLinearModels", "NearestNeighbors", "Optim", "Parameters", "Pkg", "Plots", "Pluto", "PrecompileTools", "Random", "RecipesBase", "Revise", "SatelliteToolboxGeomagneticField", "ShapML", "SpecialFunctions", "Statistics", "StatsBase", "TOML", "ZipFile", "Zygote"]
+git-tree-sha1 = "51ac3c82c63efbbd30039d9d3740f15356f2d062"
 uuid = "f91b31a4-be4d-40e3-b767-4b8c09c10076"
-version = "1.1.1"
+version = "1.1.3"
 
 [[deps.MappedArrays]]
 git-tree-sha1 = "2dab0221fe2b0f2cb6754eaa743cc266339f527e"
@@ -1705,9 +1594,9 @@ version = "7.8.3"
 
 [[deps.NNlib]]
 deps = ["Adapt", "Atomix", "ChainRulesCore", "GPUArraysCore", "KernelAbstractions", "LinearAlgebra", "Pkg", "Random", "Requires", "Statistics"]
-git-tree-sha1 = "3d42748c725c3f088bcda47fa2aca89e74d59d22"
+git-tree-sha1 = "3b29fafcdfa66d6673306cf116a2dc243933e2c5"
 uuid = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
-version = "0.9.4"
+version = "0.9.5"
 
     [deps.NNlib.extensions]
     NNlibAMDGPUExt = "AMDGPU"
@@ -1819,14 +1708,9 @@ version = "1.7.7"
 
 [[deps.Optimisers]]
 deps = ["ChainRulesCore", "Functors", "LinearAlgebra", "Random", "Statistics"]
-git-tree-sha1 = "c1fc26bab5df929a5172f296f25d7d08688fd25b"
+git-tree-sha1 = "34205b1204cc83c43cd9cfe53ffbd3b310f6e8c5"
 uuid = "3bd65402-5787-11e9-1adc-39752487f4e2"
-version = "0.2.20"
-
-[[deps.OptionalData]]
-git-tree-sha1 = "d047cc114023e12292533bb822b45c23cb51d310"
-uuid = "fbd9d27c-2d1c-5c1c-99f2-7497d746985d"
-version = "1.0.0"
+version = "0.3.1"
 
 [[deps.Opus_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1904,9 +1788,9 @@ version = "1.3.5"
 
 [[deps.Plots]]
 deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "JLFzf", "JSON", "LaTeXStrings", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "Pkg", "PlotThemes", "PlotUtils", "PrecompileTools", "Preferences", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "RelocatableFolders", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "UUIDs", "UnicodeFun", "UnitfulLatexify", "Unzip"]
-git-tree-sha1 = "9f8675a55b37a70aa23177ec110f6e3f4dd68466"
+git-tree-sha1 = "ccee59c6e48e6f2edf8a5b64dc817b6729f99eb5"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-version = "1.38.17"
+version = "1.39.0"
 
     [deps.Plots.extensions]
     FileIOExt = "FileIO"
@@ -1927,11 +1811,6 @@ deps = ["Base64", "Configurations", "Dates", "Distributed", "FileWatching", "Fuz
 git-tree-sha1 = "06fec2244568a4641e3352d20d0a0a608df6fa92"
 uuid = "c3e4b0f8-55cb-11ea-2926-15256bba5781"
 version = "0.19.27"
-
-[[deps.PolynomialRoots]]
-git-tree-sha1 = "5f807b5345093487f733e520a1b7395ee9324825"
-uuid = "3a141323-8675-5d76-9d11-e1df1406c778"
-version = "1.0.0"
 
 [[deps.Polynomials]]
 deps = ["LinearAlgebra", "RecipesBase"]
@@ -2159,33 +2038,15 @@ version = "0.7.0"
 
 [[deps.SQLite_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Zlib_jll"]
-git-tree-sha1 = "4619dd3363610d94fb42a95a6dc35b526a26d0ef"
+git-tree-sha1 = "81f7d934b52b2441f7b44520bd982fdb3607b0da"
 uuid = "76ed43ae-9a5d-5a62-8c75-30186b810ce8"
-version = "3.42.0+0"
-
-[[deps.SatelliteToolbox]]
-deps = ["Dates", "Reexport", "SatelliteToolboxAtmosphericModels", "SatelliteToolboxBase", "SatelliteToolboxCelestialBodies", "SatelliteToolboxGeomagneticField", "SatelliteToolboxGravityModels", "SatelliteToolboxPropagators", "SatelliteToolboxSgp4", "SatelliteToolboxTle", "SatelliteToolboxTransformations"]
-git-tree-sha1 = "c2fd9099fb1e1f770d9f111d923f3406dc2e2e6a"
-uuid = "6ac157d9-b43d-51bb-8fab-48bf53814f4a"
-version = "0.11.1"
-
-[[deps.SatelliteToolboxAtmosphericModels]]
-deps = ["Accessors", "Crayons", "PolynomialRoots", "Printf", "Reexport", "SatelliteToolboxBase", "SatelliteToolboxCelestialBodies", "SatelliteToolboxLegendre", "SpaceIndices"]
-git-tree-sha1 = "ec25599402edb6fd0afd8e7e572e26c35494d9e9"
-uuid = "5718ef0a-a30f-426d-bcd9-4cf31dd12909"
-version = "0.1.1"
+version = "3.43.0+0"
 
 [[deps.SatelliteToolboxBase]]
 deps = ["Crayons", "Dates", "LinearAlgebra", "PrecompileTools", "Printf", "ReferenceFrameRotations", "StaticArrays"]
-git-tree-sha1 = "9652189ca82b7c3fee94c6cc030df70d0664dc74"
+git-tree-sha1 = "3f05208953c53b2c13c418cd43cbba589ef57c37"
 uuid = "9e17983a-0463-41a7-9a16-1682db6d8b66"
-version = "0.2.5"
-
-[[deps.SatelliteToolboxCelestialBodies]]
-deps = ["Dates", "Reexport", "SatelliteToolboxBase", "StaticArrays"]
-git-tree-sha1 = "c366cdeb0301d97cd1ff9cb36497ad0eb873e13c"
-uuid = "b0edd99f-a7ca-4aa6-9a1e-a53e8f506046"
-version = "0.1.1"
+version = "0.3.0"
 
 [[deps.SatelliteToolboxGeomagneticField]]
 deps = ["LinearAlgebra", "ReferenceFrameRotations", "SatelliteToolboxLegendre", "SatelliteToolboxTransformations", "StaticArrays"]
@@ -2193,34 +2054,10 @@ git-tree-sha1 = "8d0329074d41c692bd60b0a818304dda731405b7"
 uuid = "9fc549ba-b5d7-49a2-b268-8171e5fb6e89"
 version = "0.1.0"
 
-[[deps.SatelliteToolboxGravityModels]]
-deps = ["Crayons", "Dates", "Downloads", "ReferenceFrameRotations", "SatelliteToolboxBase", "SatelliteToolboxLegendre", "Scratch", "StaticArrays"]
-git-tree-sha1 = "a145726bc306d2d928b3069bda25b6ebccd0dea5"
-uuid = "bd9e9728-6f7b-4d28-9e50-c765cb1b7c8c"
-version = "0.1.2"
-
 [[deps.SatelliteToolboxLegendre]]
 git-tree-sha1 = "8151c3d6e18e6b1e0417960f5e44286b722e033a"
 uuid = "7fa26607-a272-47b2-9aa2-a6c1d419d9d2"
 version = "1.0.1"
-
-[[deps.SatelliteToolboxPropagators]]
-deps = ["Crayons", "Dates", "LinearAlgebra", "PrecompileTools", "Printf", "Reexport", "SatelliteToolboxBase", "SatelliteToolboxSgp4", "SatelliteToolboxTle", "StaticArrays"]
-git-tree-sha1 = "0f6244c2ee653a8dc3a892ca8e8ac759ba57641e"
-uuid = "c2b69894-ea78-4e2b-9ba6-cedbbc3d14d7"
-version = "0.2.1"
-
-[[deps.SatelliteToolboxSgp4]]
-deps = ["Crayons", "Dates", "LinearAlgebra", "PrecompileTools", "Printf", "Reexport", "SatelliteToolboxBase", "SatelliteToolboxTle", "StaticArrays"]
-git-tree-sha1 = "66b246e63b6e00a60861a55110361c263994fa17"
-uuid = "ba14ac17-bfc9-4710-a76f-b32930ef2339"
-version = "2.1.2"
-
-[[deps.SatelliteToolboxTle]]
-deps = ["Crayons", "Dates", "Downloads", "PrecompileTools", "Printf", "URIs"]
-git-tree-sha1 = "0bf1d32269942154d6289ac664e0e1b528eaf664"
-uuid = "7ff27aeb-5fff-4337-a9ee-a9fe6b7ed35e"
-version = "1.0.4"
 
 [[deps.SatelliteToolboxTransformations]]
 deps = ["Crayons", "Dates", "DelimitedFiles", "Downloads", "Interpolations", "LinearAlgebra", "Reexport", "ReferenceFrameRotations", "SatelliteToolboxBase", "Scratch", "StaticArrays"]
@@ -2312,15 +2149,15 @@ git-tree-sha1 = "c60ec5c62180f27efea3ba2908480f8055e17cee"
 uuid = "a2af1166-a08f-5f64-846c-94a0d3cef48c"
 version = "1.1.1"
 
-[[deps.SpaceIndices]]
-deps = ["Dates", "DelimitedFiles", "OptionalData", "Reexport", "Scratch"]
-git-tree-sha1 = "0329173419328166fd0eae5ec92fa40f98f19a79"
-uuid = "5a540a4e-639f-452a-b107-23ea09ed4d36"
-version = "1.1.0"
-
 [[deps.SparseArrays]]
 deps = ["Libdl", "LinearAlgebra", "Random", "Serialization", "SuiteSparse_jll"]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+
+[[deps.SparseInverseSubset]]
+deps = ["LinearAlgebra", "SparseArrays", "SuiteSparse"]
+git-tree-sha1 = "91402087fd5d13b2d97e3ef29bbdf9d7859e678a"
+uuid = "dc90abb0-5640-4711-901d-7e5b23a2fada"
+version = "0.1.1"
 
 [[deps.SpecialFunctions]]
 deps = ["IrrationalConstants", "LogExpFunctions", "OpenLibm_jll", "OpenSpecFun_jll"]
@@ -2601,10 +2438,10 @@ uuid = "76eceee3-57b5-4d4a-8e66-0e911cebbf60"
 version = "1.6.1"
 
 [[deps.XML2_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Libiconv_jll", "Pkg", "Zlib_jll"]
-git-tree-sha1 = "93c41695bc1c08c46c5899f4fe06d6ead504bb73"
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Libiconv_jll", "Zlib_jll"]
+git-tree-sha1 = "04a51d15436a572301b5abbb9d099713327e9fc4"
 uuid = "02c8fc9c-b97f-50b9-bbe4-9be30ff0a78a"
-version = "2.10.3+0"
+version = "2.10.4+0"
 
 [[deps.XSLT_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libgcrypt_jll", "Libgpg_error_jll", "Libiconv_jll", "Pkg", "XML2_jll", "Zlib_jll"]
@@ -2757,9 +2594,9 @@ version = "1.5.5+0"
 
 [[deps.Zygote]]
 deps = ["AbstractFFTs", "ChainRules", "ChainRulesCore", "DiffRules", "Distributed", "FillArrays", "ForwardDiff", "GPUArrays", "GPUArraysCore", "IRTools", "InteractiveUtils", "LinearAlgebra", "LogExpFunctions", "MacroTools", "NaNMath", "PrecompileTools", "Random", "Requires", "SparseArrays", "SpecialFunctions", "Statistics", "ZygoteRules"]
-git-tree-sha1 = "e2fe78907130b521619bc88408c859a472c4172b"
+git-tree-sha1 = "b97c927497c1de55a78dc9030f6068be5d83ef80"
 uuid = "e88e6eb3-aa80-5325-afca-941959d7151f"
-version = "0.6.63"
+version = "0.6.64"
 
     [deps.Zygote.extensions]
     ZygoteColorsExt = "Colors"
@@ -2872,66 +2709,41 @@ version = "1.4.1+0"
 """
 
 # ╔═╡ Cell order:
-# ╟─13ac32f0-3d77-11ee-3009-e70e93e2e71b
+# ╟─e336e668-4d9f-11ee-2517-b3a384f42e23
 # ╟─b1d3b1b3-db8d-4bb0-a884-d57f217fef24
-# ╠═c18afc43-9df3-45a1-b6e5-283ca8b26872
-# ╟─2f1e71ff-8f7f-4704-8e7d-b4fd2846f7ed
-# ╠═da75fd96-1e6a-46bc-bcea-cdcc8c5f2a86
-# ╠═6824d21a-acca-4657-9a1e-18571ce6bdce
-# ╟─a2dafd09-e9f7-4a58-b269-32fee40d602d
-# ╠═57aeef2a-2b7e-44f7-b1b7-c40736c38063
-# ╠═a750b1aa-04d9-4f7a-a380-219ac69e8a0d
-# ╟─1a3aba8d-3aa8-454b-9fb0-708f0bd38c42
-# ╠═c192c83b-deb3-4b6e-b0d9-97357e0b554c
-# ╟─e001a13c-2662-4c2f-a89a-de6658fa81db
-# ╠═7390ee91-6a92-4070-af8b-e3c003c3b5fb
-# ╟─f665ea95-dac3-4823-94af-c7ba58cd4401
-# ╠═5346a989-cf32-436c-9181-d7aff6dd44a1
-# ╟─db7dc866-b889-4fb7-81d4-97cd8435636e
-# ╠═3db31fc5-9ec2-4ca2-a5e0-6b478a7b29f9
-# ╟─6796c1ee-74a1-4d21-b68d-bd08929a817f
-# ╠═d02f285c-389c-4b9d-8fef-243253fcc8bb
-# ╟─3f69ee39-d3cb-4458-8381-345b289f5d3f
-# ╠═18189264-9abf-464a-9101-3f7f4f312690
-# ╟─5401fd57-4ac0-4ee3-ab9c-63746ebfd854
-# ╠═15a1e17a-fd89-486d-9ad9-0ae73c0c2b79
-# ╟─ee2119b5-b61f-4bad-87ed-abb4c88194bc
-# ╠═05ebfbab-deaa-43f3-965a-aeb91fec9e67
-# ╟─ab8b23b1-63f8-4306-97a8-2e9d6f2707c4
-# ╠═1eee0857-1278-412b-89fe-f6c3dc094f6f
-# ╟─0d362625-7d94-4131-9254-a336e6a791b1
-# ╠═90db7042-37b7-4751-ad7d-b1fabb305a5a
-# ╟─1233e336-3f11-44e3-b136-08c724f12e0f
-# ╠═162f9444-146b-41dd-ba2c-729beff44306
-# ╟─ebf894ec-5140-42cb-b2b5-1b85f96b7a75
-# ╠═c54b97cd-565f-4d5a-980a-44a3e1d18355
-# ╟─d83b4b7a-e8c9-4dbe-8682-592f0ac5e1b6
-# ╠═9116a5b5-7b5f-4c38-8a48-e854584a8ada
-# ╟─01779ec7-0088-4b37-bda4-7fccf4dbb548
-# ╠═3f2dd431-6c5b-403f-9a96-320d8ab6ef17
-# ╟─50a6302c-b1ed-4be3-8af7-1c641715b25f
-# ╠═110e5de7-9011-4ba6-83d6-3443b6845dc6
-# ╟─e5adfd84-4727-4839-bef0-9365d035249f
-# ╠═1c3579bc-bf1f-45ad-bdfb-df4683ace128
-# ╟─690c1b98-4201-4a7a-8c1d-04984c3e0307
-# ╠═74b69225-a541-49b8-98fc-cacbf22f187a
-# ╟─f01997d2-0ea7-4be3-acd8-533580ccb82d
-# ╠═8167ba6a-fff4-4c79-9ee6-57d6f594bb18
-# ╟─8c92cea8-5cec-42a6-838d-ebc083e0d9b4
-# ╠═e0a21a3c-b48c-458e-a4eb-7a726e77b2b2
-# ╟─4036432b-2bea-4463-908a-5f5dcc5544cf
-# ╠═228b18b7-6374-4ceb-a2b1-b188aa2f593f
-# ╟─60c2bb16-a0d4-42f2-ba4a-f42dd70f2611
-# ╠═9bc21e37-9911-4b2e-8460-99ebd8256673
-# ╠═de62fdda-a107-4283-9140-43dcf2dfb4bc
-# ╟─5a71c032-287a-4c70-90dc-e922cf11c606
-# ╠═6439d401-07a5-4d31-81e3-411e3aacd0bb
-# ╟─0cf07d89-6be4-491c-9c07-9ce4d94dee46
-# ╠═6c4bf761-18f9-4724-8101-910f4f5ad65e
-# ╟─123a6d91-8950-40ef-804b-86021f9a0207
-# ╠═4bb44a93-c17d-4667-b160-57b62c4c2914
-# ╟─d813053b-d74a-448c-b25e-465c9e883394
-# ╟─4c1c21b1-6ee8-4099-893f-9a473cba2d2d
-# ╠═289d9265-a8a0-410b-a858-3698bd4cae37
+# ╠═d2d82208-6c6b-4f1d-9798-6bbb884185c8
+# ╠═f0f58d36-a2a9-4cd6-a549-352a726c76d0
+# ╟─fa4f5698-8524-47c4-9a79-c5ee8462d517
+# ╠═512d9c80-ce7a-42ad-aff2-98575ccd94d8
+# ╠═d92d1039-5f01-4f3b-b53a-dd579e78f136
+# ╟─ceea652f-ce1b-4ae9-9b90-0fb538d11b9f
+# ╠═f6822aeb-ff22-4662-8210-f72db9647c65
+# ╟─dc519bdb-c501-443a-b7e5-26e6071650fe
+# ╠═dc05737c-4ce8-49aa-809d-e58046fe546c
+# ╟─a82ddaa5-265b-411a-bff2-17587388e848
+# ╠═8759f021-c416-47b9-8ecf-196197d34919
+# ╟─800fbc33-2c64-496a-8a6e-f2c9bf463692
+# ╠═8eebdfaa-22d2-4466-8092-d62a6392c49b
+# ╠═d6efdf23-1a67-4e3e-b8d8-162b706032f6
+# ╟─8d1ae89d-65ba-4f4b-9fb9-4a717cc8b8f7
+# ╠═5ac7765d-eca9-42bd-b298-28d2ef67ab75
+# ╟─b204f694-8101-4d14-a497-b5a1a8f8381f
+# ╠═edcd19a1-0479-423c-b4e0-1434de5fb04c
+# ╟─b8ae2d27-ae5c-421b-9b2e-c378bdccf542
+# ╠═ed991fd4-05d9-4bee-b58b-547d63e5d199
+# ╟─6ab67536-d481-4027-b835-105f14480f1e
+# ╠═d600ded5-d6dc-43f2-8c00-7b1fb45c6f0f
+# ╟─94faaf70-6eb9-485b-b05e-8685265a612f
+# ╠═8ecaeb47-af94-47f9-bfed-2c3b5789375e
+# ╟─d46c62a2-9368-4ec3-b305-ab4e56b27f6b
+# ╠═e9d26d61-a7dd-4531-9238-0bdfde6d2c05
+# ╟─8874fd97-aad0-454b-b425-d66208752449
+# ╠═15839dc6-cbe0-4fb9-b60a-1eed9dd4941c
+# ╟─c5e34922-977c-4cad-9e9a-94bb242daa7c
+# ╠═3e2d9612-203b-4403-b51e-59480eaf83de
+# ╟─897eb9a9-e84b-412a-852a-70981b01ddc7
+# ╠═774ab47b-1fee-4911-b1d9-9725aee11848
+# ╟─70d67179-a688-4401-8248-ad4a3256f5d4
+# ╠═ee7a6b3e-cd13-44ba-87fa-ccd461c12921
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

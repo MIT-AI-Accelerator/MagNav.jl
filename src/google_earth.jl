@@ -6,7 +6,7 @@
             opacity           = 0.75,
             clims::Tuple      = (0,0))
 
-Create KMZ file of map for use with Google Earth. Generates an "icon" overlay, 
+Create KMZ file of map for use with Google Earth. Generates an "icon" overlay,
 and is thus not meant for large maps (e.g., > 5 deg x 5 deg).
 
 **Arguments:**
@@ -116,7 +116,7 @@ end # function map2kmz
             opacity         = 0.75,
             clims::Tuple    = (0,0))
 
-Create KMZ file of map for use with Google Earth. Generates an "icon" overlay, 
+Create KMZ file of map for use with Google Earth. Generates an "icon" overlay,
 and is thus not meant for large maps (e.g., > 5 deg x 5 deg).
 
 **Arguments:**

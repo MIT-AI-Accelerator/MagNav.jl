@@ -8,7 +8,7 @@ The Air Force Acceptable Use Agreement (AUA) applies to all Air Force datasets, 
 
 The following terms comprise the Acceptable Use Policy (AUP) and Data License Agreement (collectively, the "AGREEMENT") for all Air Force Data, herein after referred to as “Data”, made available to You. Certain Data may have additional Supplemental provisions. References to this AGREEMENT shall include any and all relevant Supplemental provisions. “You” or “Your” means an individual who is authorized to accept the terms of this AGREEMENT on behalf of themselves, or a group, an organization, or an institution for research, education, or government purposes.
 
-Notwithstanding this AGREEMENT, the Air Force reserves the right, in its sole discretion, to refuse requests for access to Data and/or to revoke authority to use and access Data by anyone. If You feel Your request is inappropriately denied or access terminated, You may submit relevant information to the Air Force by sending a message to the owners of the USAF-MIT Artificial Intelligence Accelerator GitHub Organization. The additional information provided will be reviewed and a final decision will be issued by the owners of the GitHub Organization without other means for recourse.
+Notwithstanding this AGREEMENT, the Air Force reserves the right, in its sole discretion, to refuse requests for access to Data and/or to revoke authority to use and access Data by anyone. If You feel Your request is inappropriately denied or access terminated, You may submit relevant information to the Air Force by sending a message to the owners of the DAF-MIT Artificial Intelligence Accelerator GitHub Organization. The additional information provided will be reviewed and a final decision will be issued by the owners of the GitHub Organization without other means for recourse.
 
 In consideration for requesting and receiving access to Data under Cooperative Agreement Number FA8750-19-2-1000, You acknowledge that You understand and agree to be bound by the terms and conditions of this AGREEMENT. Any violation of this AGREEMENT may result in the immediate suspension or termination of this AGREEMENT, termination of your access to Data, and/or other actions authorized by law, such as injunctive or equitable relief. By entering into this AGREEMENT, You acknowledge that You are personally and individually liable and responsible for compliance with this AGREEMENT and are liable for any violations of this AGREEMENT, which is a legally binding contract between You and the United States Government. You may terminate this Agreement by contacting the owners of the GitHub Organization in writing and receiving return written acknowledgement of such request. All Data provided to You remain(s) “Air Force Data” at all times, as defined by the Committee on National Security Systems (CNSS) Instruction Number 4009, 26 April 2010, and the Department of Defense Instruction (DoDI) 8320.02, Sharing Data, Information, and Technology (IT) Services in the Department of Defense, dated 5 August 2013, and this AGREEMENT does not convey any ownership right to You in any Data under United States copyright or other applicable law, nor any equitable or other claim of right or title of any kind whatsoever. 
 
@@ -36,16 +36,20 @@ By granting You access to Data, the Air Force grants You a limited personal, non
 
 ```
 [DataSet Name] provided by the United States Air Force pursuant to Cooperative Agreement Number FA8750-19-2-1000 - [dates used]
-@article{gnadt2020signal,
+@article{gnadt2023signal,
   title={Signal Enhancement for Magnetic Navigation Challenge Problem},
-  author={Gnadt, Albert R and Belarge, Joseph and Canciani, Aaron and Conger, Lauren and Curro, Joseph and Edelman, Alan and Morales, Peter and O'Keeffe, Michael F and Taylor, Jonathan and Rackauckas, Christopher},
-  journal={arXiv e-prints},
-  pages={arXiv--2007},
-  year={2020}
+  author={Gnadt, Albert R. and Belarge, Joseph and Canciani, Aaron and Carl, Glenn and Conger, Lauren and Curro, Joseph and Edelman, Alan and Morales, Peter and Nielsen, Aaron P. and O'Keeffe, Michael F. and Rackauckas, Christopher V. and Taylor, Jonathan and Wollaber, Allan B.},
+  archivePrefix={arXiv},
+  doi={10.48550/arXiv.2007.12158},
+  eprint={2007.12158},
+  journal={arXiv},
+  pages={1--12},
+  url={https://doi.org/10.48550/arXiv.2007.12158},
+  year={2023}
 }
 ```
 
 ## Point of Contact
 
-- Name: USAF-MIT Artificial Intelligence Accelerator Program Administrators
+- Name: DAF-MIT Artificial Intelligence Accelerator Program Administrators
 - Email: aia.contact@mit.edu

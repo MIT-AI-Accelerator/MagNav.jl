@@ -360,7 +360,7 @@ end # function map_lla_lim
              map_units::Symbol = :rad,
              silent::Bool      = true)
 
-Trim map by removing large areas that are missing map data. Returns 
+Trim map by removing large areas that are missing map data. Returns
 indices for the original map that will produce the appropriate trimmed map.
 
 **Arguments:**
@@ -403,9 +403,9 @@ function map_trim(map_map::Matrix,
     yy_ny  = findlast(yy_sum  .!= 0)
 
     # (optional) user-specified limits
-    xx_lim = extrema(findall((map_xx .> minimum(xx_lim)) .& 
+    xx_lim = extrema(findall((map_xx .> minimum(xx_lim)) .&
                              (map_xx .< maximum(xx_lim))))
-    yy_lim = extrema(findall((map_yy .> minimum(yy_lim)) .& 
+    yy_lim = extrema(findall((map_yy .> minimum(yy_lim)) .&
                              (map_yy .< maximum(yy_lim))))
 
     # smallest possible data-containing & user-specified map
@@ -430,7 +430,7 @@ function map_trim(map_map::Matrix,
         utms    = lla2utm.(LLA.(lats[[1,1,end,end]],lons[[1,end,1,end]]))
 
         # xx/yy limits at 4 corners of UTM map for no data loss
-        # due to earth's curvature, xx/yy limits are further out
+        # due to Earth's curvature, xx/yy limits are further out
         xxs = sort([utm.x for utm in utms])
         yys = sort([utm.y for utm in utms])
 
@@ -489,7 +489,7 @@ end # function map_trim
              map_units::Symbol = :rad,
              silent::Bool      = true)
 
-Trim map by removing large areas that are missing map data. Returns 
+Trim map by removing large areas that are missing map data. Returns
 trimmed magnetic anomaly map struct.
 
 **Arguments:**
@@ -550,8 +550,8 @@ end # function map_trim
              map_units::Symbol = :rad,
              silent::Bool      = true)
 
-Trim map by removing large areas far away from `path`. Do not use prior to 
-upward continuation, as it will result in edge effect errors. Returns trimmed 
+Trim map by removing large areas far away from `path`. Do not use prior to
+upward continuation, as it will result in edge effect errors. Returns trimmed
 magnetic anomaly map struct.
 
 **Arguments:**
@@ -591,7 +591,7 @@ end # function map_trim
                       is_north::Bool      = true,
                       map_units::Symbol   = :rad)
 
-Correct the International Geomagnetic Reference Field (IGRF), i.e., core field, 
+Correct the International Geomagnetic Reference Field (IGRF), i.e., core field,
 of a map by subtracting and/or adding the IGRF on specified date(s).
 
 **Arguments:**
@@ -670,7 +670,7 @@ end # function map_correct_igrf!
                       is_north::Bool      = true,
                       map_units::Symbol   = :rad)
 
-Correct the International Geomagnetic Reference Field (IGRF), i.e., core field, 
+Correct the International Geomagnetic Reference Field (IGRF), i.e., core field,
 of a map by subtracting and/or adding the IGRF on specified date(s).
 
 **Arguments:**
@@ -719,7 +719,7 @@ end # function map_correct_igrf!
                      is_north::Bool      = true,
                      map_units::Symbol   = :rad)
 
-Correct the International Geomagnetic Reference Field (IGRF), i.e., core field, 
+Correct the International Geomagnetic Reference Field (IGRF), i.e., core field,
 of a map by subtracting and/or adding the IGRF on specified date(s).
 
 **Arguments:**
@@ -761,7 +761,7 @@ end # function map_correct_igrf
                      is_north::Bool      = true,
                      map_units::Symbol   = :rad)
 
-Correct the International Geomagnetic Reference Field (IGRF), i.e., core field, 
+Correct the International Geomagnetic Reference Field (IGRF), i.e., core field,
 of a map by subtracting and/or adding the IGRF on specified date(s).
 
 **Arguments:**
@@ -898,11 +898,11 @@ end # function map_fill
                     down_max        = 150,
                     α               = 200)
 
-The `chessboard method`, which upward (and possibly downward) continues a map 
-to multiple altitudes to create a 3D map, then vertically interpolates at each 
+The `chessboard method`, which upward (and possibly downward) continues a map
+to multiple altitudes to create a 3D map, then vertically interpolates at each
 horizontal grid point.
 
-Reference: Cordell, Phillips, & Godson, U.S. Geological Survey Potential-Field 
+Reference: Cordell, Phillips, & Godson, U.S. Geological Survey Potential-Field
 Software Version 2.0, 1992.
 
 **Arguments:**
@@ -941,7 +941,7 @@ function map_chessboard!(map_map::Matrix, map_alt::Matrix, map_xx::Vector,
     alt_max = ceil( maximum(map_alt[ind1]))
     alt_dif_down = clamp(alt_max - alt, 0, down_max)
     alt_dif_up   = clamp(alt - alt_min, 0, 500)
-    alt_lev_down = 0:dz:alt_dif_down+dz # downward continuation levels 
+    alt_lev_down = 0:dz:alt_dif_down+dz # downward continuation levels
     alt_lev_up   = 0:dz:alt_dif_up+dz   # upward   continuation levels
 
     if down_cont
@@ -991,11 +991,11 @@ end # function map_chessboard!
                    down_max        = 150,
                    α               = 200)
 
-The `chessboard method`, which upward (and possibly downward) continues a map 
-to multiple altitudes to create a 3D map, then vertically interpolates at each 
+The `chessboard method`, which upward (and possibly downward) continues a map
+to multiple altitudes to create a 3D map, then vertically interpolates at each
 horizontal grid point.
 
-Reference: Cordell, Phillips, & Godson, U.S. Geological Survey Potential-Field 
+Reference: Cordell, Phillips, & Godson, U.S. Geological Survey Potential-Field
 Software Version 2.0, 1992.
 
 **Arguments:**
@@ -1242,16 +1242,16 @@ end # function map_utm2lla
                save_h5::Bool       = false,
                map_h5::String      = "map_data.h5")
 
-Convert map data file (with assumed `UTM` grid) from GXF to HDF5. 
-The order of operations is: 
-- original map from `map_gxf` => 
-- trim away large areas that are missing map data => 
-- subtract and/or add IGRF to map data => 
-- fill remaining areas that are missing map data => 
-- upward/downward continue to `alt` => 
+Convert map data file (with assumed `UTM` grid) from GXF to HDF5.
+The order of operations is:
+- original map from `map_gxf` =>
+- trim away large areas that are missing map data =>
+- subtract and/or add IGRF to map data =>
+- fill remaining areas that are missing map data =>
+- upward/downward continue to `alt` =>
 - convert map grid from `UTM` to `LLA`
-This can be memory intensive, largely depending on the map size and `dz`. If 
-`up_cont = true`, a `MapS` struct is returned. If `up_cont = false`, a `MapSd` 
+This can be memory intensive, largely depending on the map size and `dz`. If
+`up_cont = true`, a `MapS` struct is returned. If `up_cont = false`, a `MapSd`
 struct is returned, which has an included altitude map.
 
 **Arguments:**
@@ -1371,11 +1371,11 @@ end # function map_gxf2h5
                save_h5::Bool  = false,
                map_h5::String = "map_data.h5")
 
-Convert map data file (with assumed `UTM` grid) from GXF to HDF5. 
-The order of operations is: 
-- original map from `map_gxf` => 
-- trim away large areas that are missing map data => 
-- fill remaining areas that are missing map data => 
+Convert map data file (with assumed `UTM` grid) from GXF to HDF5.
+The order of operations is:
+- original map from `map_gxf` =>
+- trim away large areas that are missing map data =>
+- fill remaining areas that are missing map data =>
 - convert map grid from `UTM` to `LLA`
 Specifically meant for SMALL and LEVEL maps ONLY.
 
@@ -2651,7 +2651,7 @@ function map_border_clean(ind::BitMatrix)
 end # map_border_clean
 
 """
-    map_resample(map_map::Matrix, map_xx::Vector, map_yy::Vector, 
+    map_resample(map_map::Matrix, map_xx::Vector, map_yy::Vector,
                  map_xx_new::Vector, map_yy_new::Vector)
 
 Resample map with new grid.
@@ -2666,7 +2666,7 @@ Resample map with new grid.
 **Returns:**
 - `map_map`: `ny_new` x `nx_new` 2D gridded map data, resampled
 """
-function map_resample(map_map::Matrix, map_xx::Vector, map_yy::Vector, 
+function map_resample(map_map::Matrix, map_xx::Vector, map_yy::Vector,
                       map_xx_new::Vector, map_yy_new::Vector)
 
     map_map_ = deepcopy(map_map)
