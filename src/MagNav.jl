@@ -37,7 +37,7 @@ module MagNav
     using SpecialFunctions: gamma, gamma_inc, gamma_inc_inv
     using Statistics: cor, cov, mean, median, std, var
     using StatsBase: autocor, skewness
-    using Zygote: Params, refresh
+    using Zygote: Params, gradient, refresh
 
     project_toml = normpath(joinpath(@__DIR__,"../Project.toml"))
 
@@ -1251,9 +1251,7 @@ module MagNav
     #                                        TL_coef    = TL_coef,
     #                                        epoch_adam = 1,
     #                                        batchsize  = 5)
-    #             comp_train_test(xyz,xyz,ind,ind;
-    #                             comp_params = comp_params,
-    #                             silent      = true)
+    #             comp_train_test(comp_params,xyz,xyz,ind,ind;silent=true)
     #         end
     #         ekf(xyz.ins,xyz.mag_1_c,itp_mapS;R=2.0)
     #     end

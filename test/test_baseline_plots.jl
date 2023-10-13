@@ -57,18 +57,19 @@ ind = trues(N)
 ind[51:end] .= false
 
 @testset "plot_basic tests" begin
-    @test_nowarn plot_basic(tt,mag_1_c);
-    @test_nowarn plot_basic(tt,mag_1_c;
-                            ind  = ind,
-                            xlab = "time [min]",
-                            ylab = "mag_1_c [nT]",
-                            lab  = "mag_1_c vs time");
+    @test_nowarn plot_basic(tt,mag_1_c;show_plot=false);
+    @test_nowarn plot_basic(tt,mag_1_c,ind;
+                            lab       = "mag_1_c",
+                            xlab      = "time [min]",
+                            ylab      = "magnetic field [nT]",
+                            show_plot = false);
 end
 
 @testset "plot_activation tests" begin
-    @test_nowarn plot_activation();
+    @test_nowarn plot_activation(;show_plot=false);
     @test_nowarn plot_activation([:relu,:swish];
                                  plot_deriv = true,
+                                 show_plot  = false,
                                  save_plot  = false);
 end
 

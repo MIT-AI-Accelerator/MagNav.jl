@@ -15,7 +15,7 @@ flux_a = xyz.flux_a
 terms       = [:p]
 batchsize   = 5
 comp_params = NNCompParams(model_type=:m1,terms=terms,batchsize=batchsize)
-comp_params = comp_train(xyz,trues(traj.N);comp_params=comp_params,silent)[1]
+comp_params = comp_train(comp_params,xyz,trues(traj.N);silent)[1]
 
 x = [xyz.mag_1_uc create_TL_A(flux_a;terms=terms)]
 y = xyz.mag_1_c

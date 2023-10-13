@@ -144,8 +144,22 @@ end
     @test_nowarn get_nn_m(1,1;hidden=[1,1,1])
     @test_nowarn get_nn_m(1,1;hidden=[1],final_bias=false)
     @test_nowarn get_nn_m(1,1;hidden=[1],skip_con=true)
+    @test_nowarn get_nn_m(1,1;hidden=[1]  ,model_type=:m3w,dropout_prob=0)
+    @test_nowarn get_nn_m(1,1;hidden=[1]  ,model_type=:m3w,dropout_prob=0.5)
+    @test_nowarn get_nn_m(1,1;hidden=[1,1],model_type=:m3w,dropout_prob=0)
+    @test_nowarn get_nn_m(1,1;hidden=[1,1],model_type=:m3w,dropout_prob=0.5)
+    @test_nowarn get_nn_m(1,1;hidden=[1]  ,model_type=:m3tf,tf_layer_type=:prelayer ,tf_norm_type=:layer,N_tf_head=1)
+    @test_nowarn get_nn_m(1,1;hidden=[1]  ,model_type=:m3tf,tf_layer_type=:postlayer,tf_norm_type=:layer,N_tf_head=1)
+    @test_nowarn get_nn_m(1,1;hidden=[1,1],model_type=:m3tf,tf_layer_type=:prelayer ,tf_norm_type=:batch,N_tf_head=1)
+    @test_nowarn get_nn_m(1,1;hidden=[1,1],model_type=:m3tf,tf_layer_type=:postlayer,tf_norm_type=:none ,N_tf_head=1)
     @test_throws ErrorException get_nn_m(1,1;hidden=[1,1,1,1])
     @test_throws ErrorException get_nn_m(1,1;hidden=[1,1],skip_con=true)
+    @test_throws ErrorException get_nn_m(1,1;hidden=[],model_type=:m3w)
+    @test_throws ErrorException get_nn_m(1,1;hidden=[1,1,1],model_type=:m3w)
+    @test_throws AssertionError get_nn_m(1,1;hidden=[],model_type=:m3tf,N_tf_head=1)
+    @test_throws ErrorException get_nn_m(1,1;hidden=[1,1,1],model_type=:m3tf,N_tf_head=1)
+    @test_throws ErrorException get_nn_m(1,1;hidden=[1],model_type=:m3tf,tf_layer_type=:test,N_tf_head=1)
+    @test_throws ErrorException get_nn_m(1,1;hidden=[1],model_type=:m3tf,tf_norm_type=:test,N_tf_head=1)
 end
 
 m = get_nn_m(3,1;hidden=[1])
@@ -262,47 +276,46 @@ end
     @test_nowarn get_igrf(xyz,ind;frame=:nav,norm_igrf=true)
 end
 
-vec_in   = randn(3)
+vec_nav  = randn(3)
 vec_body = randn(3)
-igrf_in  = vec_in ./ norm(vec_in)
-dcm      = xyz.ins.Cnb[:,:,1]
+igrf_nav = vec_nav ./ norm(vec_nav)
+Cnb      = xyz.ins.Cnb[:,:,ind]
 
 @testset "project_vec_to_2d tests" begin
-    @test_throws AssertionError project_vec_to_2d(vec_in,[1,0,0],[1,0,0])
-    @test_throws AssertionError project_vec_to_2d(vec_in,[1,1,0],[0,1,0])
-    @test_throws AssertionError project_vec_to_2d(vec_in,[1,0,0],[1,1,0])
-    @test_nowarn project_vec_to_2d(vec_in,[1,0,0],[0,1,0])
+    @test_throws AssertionError project_vec_to_2d(vec_nav,[1,0,0],[1,0,0])
+    @test_throws AssertionError project_vec_to_2d(vec_nav,[1,1,0],[0,1,0])
+    @test_throws AssertionError project_vec_to_2d(vec_nav,[1,0,0],[1,1,0])
+    @test_nowarn project_vec_to_2d(vec_nav,[1,0,0],[0,1,0])
 end
 
 @testset "project_body_field_to_2d_igrf tests" begin
-    @test_nowarn project_body_field_to_2d_igrf(vec_body,igrf_in,dcm)
+    @test_nowarn project_body_field_to_2d_igrf(vec_body,igrf_nav,Cnb[:,:,1])
 
-    # create "north" vector in body frame
+    # create "north" vector in navigation frame
     north_vec_nav = vec([1.0, 0.0, 0.0])
-    dcms = xyz.ins.Cnb[:,:,ind]
 
     # check that north in 3D stays north in 2D (repeated for cardinal directions)
-    north_vec_body = [dcms[:,:,i]'*north_vec_nav for i=1:size(dcms)[3]];
-    n2ds = [project_body_field_to_2d_igrf(north_vec_body[i], north_vec_nav, dcms[:,:,i])
-            for i=1:size(dcms)[3]]
+    north_vec_body = [Cnb[:,:,i]'*north_vec_nav for i=1:size(Cnb)[3]];
+    n2ds = [project_body_field_to_2d_igrf(north_vec_body[i], north_vec_nav, Cnb[:,:,i])
+            for i=1:size(Cnb)[3]]
     @test all(map(v -> v ≈ [1.0, 0.0], n2ds))
 
     east_vec_nav  = vec([0.0, 1.0, 0.0])
-    east_vec_body = [dcms[:,:,i]'*east_vec_nav for i=1:size(dcms)[3]]
-    e2ds = [project_body_field_to_2d_igrf(east_vec_body[i], north_vec_nav, dcms[:,:,i])
-            for i=1:size(dcms)[3]]
+    east_vec_body = [Cnb[:,:,i]'*east_vec_nav for i=1:size(Cnb)[3]]
+    e2ds = [project_body_field_to_2d_igrf(east_vec_body[i], north_vec_nav, Cnb[:,:,i])
+            for i=1:size(Cnb)[3]]
     @test all(map(v -> v ≈ [0.0, 1.0], e2ds))
 
     west_vec_nav  = vec([0.0, -1.0, 0.0])
-    west_vec_body = [dcms[:,:,i]'*west_vec_nav for i=1:size(dcms)[3]]
-    w2ds = [project_body_field_to_2d_igrf(west_vec_body[i], north_vec_nav, dcms[:,:,i])
-            for i=1:size(dcms)[3]]
+    west_vec_body = [Cnb[:,:,i]'*west_vec_nav for i=1:size(Cnb)[3]]
+    w2ds = [project_body_field_to_2d_igrf(west_vec_body[i], north_vec_nav, Cnb[:,:,i])
+            for i=1:size(Cnb)[3]]
     @test all(map(v -> v ≈ [0.0, -1.0], w2ds))
 
     south_vec_nav  = vec([-1.0, 0.0, 0.0])
-    south_vec_body = [dcms[:,:,i]'*south_vec_nav for i=1:size(dcms)[3]]
-    s2ds = [project_body_field_to_2d_igrf(south_vec_body[i], north_vec_nav, dcms[:,:,i])
-            for i=1:size(dcms)[3]]
+    south_vec_body = [Cnb[:,:,i]'*south_vec_nav for i=1:size(Cnb)[3]]
+    s2ds = [project_body_field_to_2d_igrf(south_vec_body[i], north_vec_nav, Cnb[:,:,i])
+            for i=1:size(Cnb)[3]]
     @test all(map(v -> v ≈ [-1.0, 0.0], s2ds))
 end
 
@@ -310,7 +323,7 @@ end
     @test_throws AssertionError get_optimal_rotation_matrix([1 0],vec_body')
     @test_throws AssertionError get_optimal_rotation_matrix([1 0],[1 0 0])
     @test_throws AssertionError get_optimal_rotation_matrix([1 0 0],[1 0])
-    @test_nowarn get_optimal_rotation_matrix(vec_in',vec_body')
+    @test_nowarn get_optimal_rotation_matrix(vec_nav',vec_body')
 end
 
 x = [-1,0,1]

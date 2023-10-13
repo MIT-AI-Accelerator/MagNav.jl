@@ -2099,7 +2099,12 @@ Plot in-flight event(s) on existing plot.
 
 **Arguments:**
 - `p1`:       existing plot (e.g., time series of magnetometer measurements)
-- `df_event`: lookup table (DataFrame) of in-flight events, must contain `flight`, `tt`, & `event` columns
+- `df_event`: lookup table (DataFrame) of in-flight events
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`flight`|`Symbol`| flight name (e.g., `:Flt1001`)
+`tt`    |`Real`  | time of `event` [s]
+`event` |`String`| event description
 - `flight`:   flight name (e.g., `:Flt1001`)
 - `keyword`:  (optional) keyword to search within events, case insensitive
 - `show_lab`: (optional) if true, show in-flight event (legend) label(s)
