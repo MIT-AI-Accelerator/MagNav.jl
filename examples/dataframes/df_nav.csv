@@ -1,4 +1,4 @@
-flight,line,t_start,t_end,full_line,map_name,map_type,traj_alt
+flight,line,t_start,t_end,full_line,map_name,map_type,line_alt
 Flt1002,158.0,49310.0,49838.1,true,Renfrew_drape,drape,-1
 Flt1002,160.0,50051.9,50560.5,true,Renfrew_drape,drape,-1
 Flt1002,1367.0,50903.8,51444.4,true,Renfrew_drape,drape,-1

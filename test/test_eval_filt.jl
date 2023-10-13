@@ -83,7 +83,7 @@ end
 (filt_res,crlb_P) = run_filt(traj,ins,mag_1_c,itp_mapS,:ekf;extract=false)
 
 @testset "eval_results tests" begin
-    @test typeof(eval_results(traj,ins,filt_res,crlb_P)) <: 
+    @test typeof(eval_results(traj,ins,filt_res,crlb_P)) <:
           Tuple{MagNav.CRLBout,MagNav.INSout,MagNav.FILTout}
     @test typeof(eval_crlb(traj,crlb_P)) <: MagNav.CRLBout
     @test typeof(eval_ins(traj,ins2)) <: MagNav.INSout
@@ -100,16 +100,16 @@ p1 = plot();
     @test_nowarn plot_filt_err(traj,filt_out,crlb_out;vel_plot=true,show_plot=false);
 end
 
-@testset "plot_filt tests" begin
-    @test_nowarn plot_mag_map(traj,mag_1_c,itp_mapS  ;order=:magmap);
-    @test_nowarn plot_mag_map(traj,mag_1_c,itp_mapS3D;order=:mapmag);
-    @test_throws ErrorException plot_mag_map(traj,mag_1_c,itp_mapS;order=:test);
-    @test typeof(plot_mag_map_err(traj,mag_1_c,itp_mapS  )) <: Plots.Plot
-    @test typeof(plot_mag_map_err(traj,mag_1_c,itp_mapS3D)) <: Plots.Plot
+@testset "plot_mag_map tests" begin
+    @test_nowarn plot_mag_map(traj,mag_1_c,itp_mapS  ;order=:magmap,show_plot=false);
+    @test_nowarn plot_mag_map(traj,mag_1_c,itp_mapS3D;order=:mapmag,show_plot=false);
+    @test_throws ErrorException plot_mag_map(traj,mag_1_c,itp_mapS;order=:test,show_plot=false);
+    @test typeof(plot_mag_map_err(traj,mag_1_c,itp_mapS  ;show_plot=false)) <: Plots.Plot
+    @test typeof(plot_mag_map_err(traj,mag_1_c,itp_mapS3D;show_plot=false)) <: Plots.Plot
 end
 
 @testset "plot_autocor tests" begin
-    @test typeof(plot_autocor(mag_1_c-map_val,dt,1)) <: Plots.Plot
+    @test typeof(plot_autocor(mag_1_c-map_val,dt,1;show_plot=false)) <: Plots.Plot
 end
 
 @testset "chisq tests" begin
@@ -125,6 +125,7 @@ P = crlb_P[1:2,1:2,:]
 
 p1 = plot();
 
+save_plot   = true
 ellipse_gif = joinpath(@__DIR__,"conf_ellipse")
 
 @testset "ellipse tests" begin
@@ -138,9 +139,9 @@ ellipse_gif = joinpath(@__DIR__,"conf_ellipse")
     @test typeof(MagNav.units_ellipse(filt_res,filt_out;conf_units=:ft)) <: Array
     @test typeof(MagNav.units_ellipse(filt_res,filt_out;conf_units=:m )) <: Array
     @test_throws ErrorException MagNav.units_ellipse(filt_res,filt_out;conf_units=:test)
-    @test typeof(gif_ellipse(P,ellipse_gif)) <: Plots.AnimatedGif
-    @test typeof(gif_ellipse(filt_res,filt_out,ellipse_gif)) <: Plots.AnimatedGif
-    @test typeof(gif_ellipse(filt_res,filt_out,ellipse_gif,mapS)) <: Plots.AnimatedGif
+    @test typeof(gif_ellipse(P;save_plot,ellipse_gif)) <: Plots.AnimatedGif
+    @test typeof(gif_ellipse(filt_res,filt_out;save_plot,ellipse_gif)) <: Plots.AnimatedGif
+    @test typeof(gif_ellipse(filt_res,filt_out,mapS;save_plot,ellipse_gif)) <: Plots.AnimatedGif
 end
 
 ellipse_gif = MagNav.add_extension(ellipse_gif,".gif")

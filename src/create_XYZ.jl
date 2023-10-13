@@ -844,13 +844,13 @@ Internal helper function to estimate a direction cosine matrix using known
 heading with FOGM noise.
 
 **Arguments:**
-- `vn`:    north velocity [m/s]
-- `ve`:    east  velocity [m/s]
+- `vn`:    length `N` north velocity [m/s]
+- `ve`:    length `N` east  velocity [m/s]
 - `dt`:    (optional) measurement time step [s]
 - `order`: (optional) rotation order {`:body2nav`,`:nav2body`}
 
 **Returns:**
-- `dcm`: direction cosine matrix [-]
+- `dcm`: `3` x `3` x `N` direction cosine matrix [-]
 """
 function create_dcm(vn, ve, dt=0.1, order::Symbol=:body2nav)
 
@@ -894,9 +894,8 @@ function calculate_imputed_TL_earth(xyz::Union{XYZ1,XYZ20,XYZ21}, ind,
                                     terms    = [:permanent,:induced,:eddy],
                                     Bt_scale = 50000)
 
-    # get IGRF field from model
-    check_xyz = set_igrf ? false : true
-    igrf_vec  = get_igrf(xyz,ind;frame=:body,norm_igrf=false,check_xyz=check_xyz)
+    # get IGRF from model
+    igrf_vec  = get_igrf(xyz,ind;frame=:body,norm_igrf=false,check_xyz=!set_igrf)
     set_igrf && (xyz.igrf[ind] .= norm.(igrf_vec))
 
     # obtain scalar map values with IGRF for this trajectory

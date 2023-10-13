@@ -29,7 +29,7 @@ process using a 64 GB MacBook Pro.
 - `xyz_xyz`:        path/name of flight data .xyz file (`.xyz` extension optional)
 - `xyz_h5`:         path/name of flight data HDF5 file to save (`.h5` extension optional)
 - `flight`:         flight name (e.g., `:Flt1001`)
-- `lines`:          (optional) selected line number(s) to ONLY include or exclude, must be a vector of 3-element (`line`,`start_time`,`stop_time`) tuple(s)
+- `lines`:          (optional) selected line number(s) to ONLY include or exclude, must be a vector of 3-element (`line`,`start_time`,`end_time`) tuple(s)
 - `lines_type`:     (optional) whether to ONLY `:include` (i.e., to generate testing data) or `:exclude` (i.e., to generate training data) `lines`
 - `tt_sort`:        (optional) if true, sort data by time (instead of line)
 - `downsample_160`: (optional) if true, downsample 160 Hz data to 10 Hz (only for 160 Hz data files)

@@ -82,7 +82,7 @@ crlb_P = crlb(lat,lon,alt,vn,ve,vd,fn,fe,fd,Cnb,dt,itp_mapS;
               fogm_tau = fogm_tau,
               core     = false)
 
-# ## 
+# ## temp
 # xyz_h5   = normpath(MagNav.sgl_2020_train()*"/Flt1002_train.h5");
 # xyz      = get_XYZ20(xyz_h5;silent=true);
 # ind      = get_ind(xyz;lines=(1002.17));
@@ -95,10 +95,10 @@ crlb_P = crlb(lat,lon,alt,vn,ve,vd,fn,fe,fd,Cnb,dt,itp_mapS;
 # itp_mapS3D = map_interpolate(mapS3D,:linear);
 # using BenchmarkTools
 
-# ## 
+# ## temp
 # @btime ekf(ins,mag_1_c,itp_mapS);
 
-# ## 
+# ## temp
 # lat = traj.lat;
 # lon = traj.lon;
 # alt = one.(lat)*mapS.alt .+ 2.5;
@@ -111,7 +111,7 @@ crlb_P = crlb(lat,lon,alt,vn,ve,vd,fn,fe,fd,Cnb,dt,itp_mapS;
 #     @btime itp_mapS3D.(lon,lat,alt);
 # end
 
-## 
+## temp
 filt_res = ekf(ins_lat,ins_lon,ins_alt,ins_vn,ins_ve,ins_vd,
                ins_fn,ins_fe,ins_fd,ins_Cnb,mag_1_c,dt,itp_mapS;
                P0       = P0,

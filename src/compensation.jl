@@ -1901,29 +1901,29 @@ function linear_test(x, y, data_norms::Tuple, model;
 end # function linear_test
 
 """
-    comp_train(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
-               comp_params::CompParams = NNCompParams(),
-               xyz_test::XYZ           = xyz,
-               ind_test::BitVector     = BitVector(),
-               σ_curriculum            = 1.0,
-               l_window::Int           = 5,
-               window_type::Symbol     = :sliding,
-               tf_layer_type::Symbol   = :postlayer,
-               tf_norm_type::Symbol    = :batch,
-               dropout_prob            = 0.2,
-               N_tf_head::Int          = 8,
-               tf_gain                 = 1.0,
-               silent::Bool            = false)
+    comp_train(comp_params::CompParams, xyz::XYZ, ind,
+               mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
+               xyz_test::XYZ         = xyz,
+               ind_test              = BitVector(),
+               σ_curriculum          = 1.0,
+               l_window::Int         = 5,
+               window_type::Symbol   = :sliding,
+               tf_layer_type::Symbol = :postlayer,
+               tf_norm_type::Symbol  = :batch,
+               dropout_prob          = 0.2,
+               N_tf_head::Int        = 8,
+               tf_gain               = 1.0,
+               silent::Bool          = false)
 
 Train an aeromagnetic compensation model.
 
 **Arguments:**
-- `xyz`:         `XYZ` flight data struct
-- `ind`:         selected data indices
-- `mapS`:        (optional) `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct, only used for `y_type = :b, :c`
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct, either:
     - `NNCompParams`:  neural network-based aeromagnetic compensation parameters struct
     - `LinCompParams`: linear aeromagnetic compensation parameters struct
+- `xyz`:           `XYZ` flight data struct
+- `ind`:           selected data indices
+- `mapS`:          (optional) `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct, only used for `y_type = :b, :c`
 - `xyz_test`:      (optional) `XYZ` held-out test data struct
 - `ind_test`:      (optional) indices for test data struct
 - `σ_curriculum`:  (optional) standard deviation threshold, only used for `model_type = :m3sc, :m3vc`
@@ -1943,19 +1943,19 @@ Train an aeromagnetic compensation model.
 - `err`:         length `N` compensation error
 - `features`:    length `Nf` feature vector (including components of TL `A`, etc.)
 """
-function comp_train(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
-                    comp_params::CompParams = NNCompParams(),
-                    xyz_test::XYZ           = xyz,
-                    ind_test::BitVector     = BitVector(),
-                    σ_curriculum            = 1.0,
-                    l_window::Int           = 5,
-                    window_type::Symbol     = :sliding,
-                    tf_layer_type::Symbol   = :postlayer,
-                    tf_norm_type::Symbol    = :batch,
-                    dropout_prob            = 0.2,
-                    N_tf_head::Int          = 8,
-                    tf_gain                 = 1.0,
-                    silent::Bool            = false)
+function comp_train(comp_params::CompParams, xyz::XYZ, ind,
+                    mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
+                    xyz_test::XYZ         = xyz,
+                    ind_test              = BitVector(),
+                    σ_curriculum          = 1.0,
+                    l_window::Int         = 5,
+                    window_type::Symbol   = :sliding,
+                    tf_layer_type::Symbol = :postlayer,
+                    tf_norm_type::Symbol  = :batch,
+                    dropout_prob          = 0.2,
+                    N_tf_head::Int        = 8,
+                    tf_gain               = 1.0,
+                    silent::Bool          = false)
 
     seed!(2) # for reproducibility
     t0 = time()
@@ -2288,31 +2288,29 @@ function comp_train(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
 end # function comp_train
 
 """
-    comp_train(xyz_vec::Vector{XYZ20{Int64,Float64}},
-               ind_vec::Vector{BitVector},
+    comp_train(comp_params::CompParams, xyz_vec::Vector, ind_vec::Vector,
                mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
-               comp_params::CompParams = NNCompParams(),
-               xyz_test::XYZ           = xyz_vec[1],
-               ind_test::BitVector     = BitVector(),
-               σ_curriculum            = 1.0,
-               l_window::Int           = 5,
-               window_type::Symbol     = :sliding,
-               tf_layer_type::Symbol   = :postlayer,
-               tf_norm_type::Symbol    = :batch,
-               dropout_prob            = 0.2,
-               N_tf_head::Int          = 8,
-               tf_gain                 = 1.0,
-               silent::Bool            = false)
+               xyz_test::XYZ         = xyz_vec[1],
+               ind_test              = BitVector(),
+               σ_curriculum          = 1.0,
+               l_window::Int         = 5,
+               window_type::Symbol   = :sliding,
+               tf_layer_type::Symbol = :postlayer,
+               tf_norm_type::Symbol  = :batch,
+               dropout_prob          = 0.2,
+               N_tf_head::Int        = 8,
+               tf_gain               = 1.0,
+               silent::Bool          = false)
 
 Train an aeromagnetic compensation model.
 
 **Arguments:**
-- `xyz_vec`:     vector of `XYZ` flight data structs
-- `ind_vec`:     vector of selected data indices
-- `mapS`:        (optional) `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct, only used for `y_type = :b, :c`
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct, either:
     - `NNCompParams`:  neural network-based aeromagnetic compensation parameters struct
     - `LinCompParams`: linear aeromagnetic compensation parameters struct
+- `xyz_vec`:       vector of `XYZ` flight data structs
+- `ind_vec`:       vector of selected data indices
+- `mapS`:          (optional) `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct, only used for `y_type = :b, :c`
 - `xyz_test`:      (optional) `XYZ` held-out test data struct
 - `ind_test`:      (optional) indices for test data struct
 - `σ_curriculum`:  (optional) standard deviation threshold, only used for `model_type = :m3sc, :m3vc`
@@ -2332,21 +2330,19 @@ Train an aeromagnetic compensation model.
 - `err`:         length `N` compensation error
 - `features`:    length `Nf` feature vector (including components of TL `A`, etc.)
 """
-function comp_train(xyz_vec::Vector{XYZ20{Int64,Float64}},
-                    ind_vec::Vector{BitVector},
+function comp_train(comp_params::CompParams, xyz_vec::Vector, ind_vec::Vector,
                     mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
-                    comp_params::CompParams = NNCompParams(),
-                    xyz_test::XYZ           = xyz_vec[1],
-                    ind_test::BitVector     = BitVector(),
-                    σ_curriculum            = 1.0,
-                    l_window::Int           = 5,
-                    window_type::Symbol     = :sliding,
-                    tf_layer_type::Symbol   = :postlayer,
-                    tf_norm_type::Symbol    = :batch,
-                    dropout_prob            = 0.2,
-                    N_tf_head::Int          = 8,
-                    tf_gain                 = 1.0,
-                    silent::Bool            = false)
+                    xyz_test::XYZ         = xyz_vec[1],
+                    ind_test              = BitVector(),
+                    σ_curriculum          = 1.0,
+                    l_window::Int         = 5,
+                    window_type::Symbol   = :sliding,
+                    tf_layer_type::Symbol = :postlayer,
+                    tf_norm_type::Symbol  = :batch,
+                    dropout_prob          = 0.2,
+                    N_tf_head::Int        = 8,
+                    tf_gain               = 1.0,
+                    silent::Bool          = false)
 
     seed!(2) # for reproducibility
     t0 = time()
@@ -2727,8 +2723,8 @@ function comp_train(xyz_vec::Vector{XYZ20{Int64,Float64}},
 end # function comp_train
 
 """
-    comp_train(lines, df_line::DataFrame, df_flight::DataFrame,
-               df_map::DataFrame, comp_params::CompParams=NNCompParams();
+    comp_train(comp_params::CompParams, lines,
+               df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame;
                σ_curriculum          = 1.0,
                l_window::Int         = 5,
                window_type::Symbol   = :sliding,
@@ -2742,13 +2738,35 @@ end # function comp_train
 Train an aeromagnetic compensation model.
 
 **Arguments:**
-- `lines`:       selected line number(s)
-- `df_line`:     lookup table (DataFrame) of `lines`
-- `df_flight`:   lookup table (DataFrame) of flight data HDF5 files
-- `df_map`:      lookup table (DataFrame) of map data HDF5 files
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct, either:
     - `NNCompParams`:  neural network-based aeromagnetic compensation parameters struct
     - `LinCompParams`: linear aeromagnetic compensation parameters struct
+- `lines`:   selected line number(s)
+- `df_line`: lookup table (DataFrame) of `lines`
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`flight`   |`Symbol`| flight name (e.g., `:Flt1001`)
+`line`     |`Real`  | line number, i.e., segments within `flight`
+`t_start`  |`Real`  | start time of `line` to use [s]
+`t_end`    |`Real`  | end   time of `line` to use [s]
+`full_line`|`Bool`  | (optional) if true, `t_start` to `t_end` is full line
+`map_name` |`Symbol`| (optional) name of magnetic anomaly map relevant to `line`
+`map_type` |`Symbol`| (optional) type of magnetic anomaly map for `map_name` {`drape`,`HAE`}
+`line_alt` |`Real`  | (optional) nominal altitude of `line` [m]
+- `df_flight`: lookup table (DataFrame) of flight data HDF5 files
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
+`xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
+`xyz_set` |`Real`  | flight dataset number (used to prevent inproper mixing of datasets, such as different magnetometer locations)
+`xyz_h5`  |`String`| path/name of flight data HDF5 file (`.h5` extension optional)
+- `df_map`: lookup table (DataFrame) of map data HDF5 files
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`map_name`|`Symbol`| name of magnetic anomaly map
+`map_h5`  |`String`| path/name of map data HDF5 file (`.h5` extension optional)
+`map_type`|`Symbol`| (optional) type of magnetic anomaly map {`drape`,`HAE`}
+`map_alt` |`Real`  | (optional) map altitude, -1 for drape map [m]
 - `σ_curriculum`:  (optional) standard deviation threshold, only used for `model_type = :m3sc, :m3vc`
 - `l_window`:      (optional) temporal window length, only used for `model_type = :m3w, :m3tf`
 - `window_type`:   (optional) type of windowing, `:sliding` for overlapping or `:contiguous` for non-overlapping, only used for `model_type = :m3w, :m3tf`
@@ -2766,8 +2784,8 @@ Train an aeromagnetic compensation model.
 - `err`:         length `N` mean-corrected (per line) compensation error
 - `features`:    length `Nf` feature vector (including components of TL `A`, etc.)
 """
-function comp_train(lines, df_line::DataFrame, df_flight::DataFrame,
-                    df_map::DataFrame, comp_params::CompParams=NNCompParams();
+function comp_train(comp_params::CompParams, lines,
+                    df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame;
                     σ_curriculum          = 1.0,
                     l_window::Int         = 5,
                     window_type::Symbol   = :sliding,
@@ -3094,22 +3112,22 @@ function comp_train(lines, df_line::DataFrame, df_flight::DataFrame,
 end # function comp_train
 
 """
-    comp_test(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
-              comp_params::CompParams = NNCompParams(),
-              l_window::Int           = 5,
-              silent::Bool            = false)
+    comp_test(comp_params::CompParams, xyz::XYZ, ind,
+              mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
+              l_window::Int = 5,
+              silent::Bool  = false)
 
 Evaluate performance of an aeromagnetic compensation model.
 
 **Arguments:**
-- `xyz`:         `XYZ` flight data struct
-- `ind`:         selected data indices
-- `mapS`:        (optional) `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct, only used for `y_type = :b, :c`
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct, either:
     - `NNCompParams`:  neural network-based aeromagnetic compensation parameters struct
     - `LinCompParams`: linear aeromagnetic compensation parameters struct
-- `l_window`:    (optional) temporal window length, only used for `model_type = :m3w, :m3tf`
-- `silent`:      (optional) if true, no print outs
+- `xyz`:      `XYZ` flight data struct
+- `ind`:      selected data indices
+- `mapS`:     (optional) `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct, only used for `y_type = :b, :c`
+- `l_window`: (optional) temporal window length, only used for `model_type = :m3w, :m3tf`
+- `silent`:   (optional) if true, no print outs
 
 **Returns:**
 - `y`:        length `N` target vector
@@ -3117,10 +3135,10 @@ Evaluate performance of an aeromagnetic compensation model.
 - `err`:      length `N` compensation error
 - `features`: length `Nf` feature vector (including components of TL `A`, etc.)
 """
-function comp_test(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
-                   comp_params::CompParams = NNCompParams(),
-                   l_window::Int           = 5,
-                   silent::Bool            = false)
+function comp_test(comp_params::CompParams, xyz::XYZ, ind,
+                   mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
+                   l_window::Int = 5,
+                   silent::Bool  = false)
 
     seed!(2) # for reproducibility
     t0 = time()
@@ -3291,23 +3309,45 @@ function comp_test(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
 end # function comp_test
 
 """
-    comp_test(lines, df_line::DataFrame, df_flight::DataFrame,
-              df_map::DataFrame, comp_params::CompParams=NNCompParams();
+    comp_test(comp_params::CompParams, lines,
+              df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame;
               l_window::Int = 5,
               silent::Bool  = false)
 
 Evaluate performance of an aeromagnetic compensation model.
 
 **Arguments:**
-- `lines`:       selected line number(s)
-- `df_line`:     lookup table (DataFrame) of `lines`
-- `df_flight`:   lookup table (DataFrame) of flight data HDF5 files
-- `df_map`:      lookup table (DataFrame) of map data HDF5 files
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct, either:
     - `NNCompParams`:  neural network-based aeromagnetic compensation parameters struct
     - `LinCompParams`: linear aeromagnetic compensation parameters struct
-- `l_window`:    (optional) temporal window length, only used for `model_type = :m3w, :m3tf`
-- `silent`:      (optional) if true, no print outs
+- `lines`:   selected line number(s)
+- `df_line`: lookup table (DataFrame) of `lines`
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`flight`   |`Symbol`| flight name (e.g., `:Flt1001`)
+`line`     |`Real`  | line number, i.e., segments within `flight`
+`t_start`  |`Real`  | start time of `line` to use [s]
+`t_end`    |`Real`  | end   time of `line` to use [s]
+`full_line`|`Bool`  | (optional) if true, `t_start` to `t_end` is full line
+`map_name` |`Symbol`| (optional) name of magnetic anomaly map relevant to `line`
+`map_type` |`Symbol`| (optional) type of magnetic anomaly map for `map_name` {`drape`,`HAE`}
+`line_alt` |`Real`  | (optional) nominal altitude of `line` [m]
+- `df_flight`: lookup table (DataFrame) of flight data HDF5 files
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
+`xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
+`xyz_set` |`Real`  | flight dataset number (used to prevent inproper mixing of datasets, such as different magnetometer locations)
+`xyz_h5`  |`String`| path/name of flight data HDF5 file (`.h5` extension optional)
+- `df_map`: lookup table (DataFrame) of map data HDF5 files
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`map_name`|`Symbol`| name of magnetic anomaly map
+`map_h5`  |`String`| path/name of map data HDF5 file (`.h5` extension optional)
+`map_type`|`Symbol`| (optional) type of magnetic anomaly map {`drape`,`HAE`}
+`map_alt` |`Real`  | (optional) map altitude, -1 for drape map [m]
+- `l_window`: (optional) temporal window length, only used for `model_type = :m3w, :m3tf`
+- `silent`:   (optional) if true, no print outs
 
 **Returns:**
 - `y`:        length `N` target vector
@@ -3315,8 +3355,8 @@ Evaluate performance of an aeromagnetic compensation model.
 - `err`:      length `N` mean-corrected (per line) compensation error
 - `features`: length `Nf` feature vector (including components of TL `A`, etc.)
 """
-function comp_test(lines, df_line::DataFrame, df_flight::DataFrame,
-                   df_map::DataFrame, comp_params::CompParams=NNCompParams();
+function comp_test(comp_params::CompParams, lines,
+                   df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame;
                    l_window::Int = 5,
                    silent::Bool  = false)
 
@@ -3505,21 +3545,42 @@ function comp_test(lines, df_line::DataFrame, df_flight::DataFrame,
 end # function comp_test
 
 """
-    comp_m2bc_test(lines, df_line::DataFrame,
-                   df_flight::DataFrame, df_map::DataFrame,
-                   comp_params::NNCompParams=NNCompParams();
-                   silent::Bool=false)
+    comp_m2bc_test(comp_params::NNCompParams, lines,
+                   df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame;
+                   silent::Bool = false)
 
 Evaluate performance of neural network-based aeromagnetic compensation,
 model 2b or 2c with additional outputs for explainability.
 
 **Arguments:**
+- `comp_params`: `NNCompParams` neural network-based aeromagnetic compensation parameters struct
 - `lines`:       selected line number(s)
 - `df_line`:     lookup table (DataFrame) of `lines`
-- `df_flight`:   lookup table (DataFrame) of flight data HDF5 files
-- `df_map`:      lookup table (DataFrame) of map data HDF5 files
-- `comp_params`: `NNCompParams` neural network-based aeromagnetic compensation parameters struct
-- `silent`:      (optional) if true, no print outs
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`flight`   |`Symbol`| flight name (e.g., `:Flt1001`)
+`line`     |`Real`  | line number, i.e., segments within `flight`
+`t_start`  |`Real`  | start time of `line` to use [s]
+`t_end`    |`Real`  | end   time of `line` to use [s]
+`full_line`|`Bool`  | (optional) if true, `t_start` to `t_end` is full line
+`map_name` |`Symbol`| (optional) name of magnetic anomaly map relevant to `line`
+`map_type` |`Symbol`| (optional) type of magnetic anomaly map for `map_name` {`drape`,`HAE`}
+`line_alt` |`Real`  | (optional) nominal altitude of `line` [m]
+- `df_flight`: lookup table (DataFrame) of flight data HDF5 files
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
+`xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
+`xyz_set` |`Real`  | flight dataset number (used to prevent inproper mixing of datasets, such as different magnetometer locations)
+`xyz_h5`  |`String`| path/name of flight data HDF5 file (`.h5` extension optional)
+- `df_map`: lookup table (DataFrame) of map data HDF5 files
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`map_name`|`Symbol`| name of magnetic anomaly map
+`map_h5`  |`String`| path/name of map data HDF5 file (`.h5` extension optional)
+`map_type`|`Symbol`| (optional) type of magnetic anomaly map {`drape`,`HAE`}
+`map_alt` |`Real`  | (optional) map altitude, -1 for drape map [m]
+- `silent`: (optional) if true, no print outs
 
 **Returns:**
 - `y_nn`:     length `N` neural network compensation portion
@@ -3529,10 +3590,9 @@ model 2b or 2c with additional outputs for explainability.
 - `err`:      length `N` mean-corrected (per line) compensation error
 - `features`: length `Nf` feature vector (including components of TL `A`, etc.)
 """
-function comp_m2bc_test(lines, df_line::DataFrame,
-                        df_flight::DataFrame, df_map::DataFrame,
-                        comp_params::NNCompParams=NNCompParams();
-                        silent::Bool=false)
+function comp_m2bc_test(comp_params::NNCompParams, lines,
+                        df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame;
+                        silent::Bool = false)
 
     seed!(2) # for reproducibility
     t0 = time()
@@ -3597,9 +3657,8 @@ function comp_m2bc_test(lines, df_line::DataFrame,
 end # function comp_m2bc_test
 
 """
-    comp_m3_test(lines, df_line::DataFrame,
-                 df_flight::DataFrame, df_map::DataFrame,
-                 comp_params::NNCompParams=NNCompParams();
+    comp_m3_test(comp_params::NNCompParams, lines,
+                 df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame;
                  l_window::Int = 5,
                  silent::Bool  = false)
 
@@ -3607,13 +3666,35 @@ Evaluate performance of neural network-based aeromagnetic compensation, model 3
 with additional outputs for explainability.
 
 **Arguments:**
+- `comp_params`: `NNCompParams` neural network-based aeromagnetic compensation parameters struct
 - `lines`:       selected line number(s)
 - `df_line`:     lookup table (DataFrame) of `lines`
-- `df_flight`:   lookup table (DataFrame) of flight data HDF5 files
-- `df_map`:      lookup table (DataFrame) of map data HDF5 files
-- `comp_params`: `NNCompParams` neural network-based aeromagnetic compensation parameters struct
-- `l_window`:    (optional) temporal window length, only used for `model_type = :m3w, :m3tf`
-- `silent`:      (optional) if true, no print outs
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`flight`   |`Symbol`| flight name (e.g., `:Flt1001`)
+`line`     |`Real`  | line number, i.e., segments within `flight`
+`t_start`  |`Real`  | start time of `line` to use [s]
+`t_end`    |`Real`  | end   time of `line` to use [s]
+`full_line`|`Bool`  | (optional) if true, `t_start` to `t_end` is full line
+`map_name` |`Symbol`| (optional) name of magnetic anomaly map relevant to `line`
+`map_type` |`Symbol`| (optional) type of magnetic anomaly map for `map_name` {`drape`,`HAE`}
+`line_alt` |`Real`  | (optional) nominal altitude of `line` [m]
+- `df_flight`: lookup table (DataFrame) of flight data HDF5 files
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
+`xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
+`xyz_set` |`Real`  | flight dataset number (used to prevent inproper mixing of datasets, such as different magnetometer locations)
+`xyz_h5`  |`String`| path/name of flight data HDF5 file (`.h5` extension optional)
+- `df_map`: lookup table (DataFrame) of map data HDF5 files
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`map_name`|`Symbol`| name of magnetic anomaly map
+`map_h5`  |`String`| path/name of map data HDF5 file (`.h5` extension optional)
+`map_type`|`Symbol`| (optional) type of magnetic anomaly map {`drape`,`HAE`}
+`map_alt` |`Real`  | (optional) map altitude, -1 for drape map [m]
+- `l_window`: (optional) temporal window length, only used for `model_type = :m3w, :m3tf`
+- `silent`:   (optional) if true, no print outs
 
 **Returns:**
 - `TL_perm`:      `3` x `N` matrix of TL permanent vector field
@@ -3629,9 +3710,8 @@ with additional outputs for explainability.
 - `err`:          length `N` mean-corrected (per line) compensation error
 - `features`:     length `Nf` feature vector (including components of TL `A`, etc.)
 """
-function comp_m3_test(lines, df_line::DataFrame,
-                      df_flight::DataFrame, df_map::DataFrame,
-                      comp_params::NNCompParams=NNCompParams();
+function comp_m3_test(comp_params::NNCompParams, lines,
+                      df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame;
                       l_window::Int = 5,
                       silent::Bool  = false)
 
@@ -3730,32 +3810,32 @@ function comp_m3_test(lines, df_line::DataFrame,
 end # function comp_m3_test
 
 """
-    comp_train_test(xyz_train::XYZ, xyz_test::XYZ, ind_train, ind_test,
+    comp_train_test(comp_params::CompParams,
+                    xyz_train::XYZ, xyz_test::XYZ, ind_train, ind_test,
                     mapS_train::Union{MapS,MapSd,MapS3D} = mapS_null,
                     mapS_test::Union{MapS,MapSd,MapS3D}  = mapS_null;
-                    comp_params::CompParams = NNCompParams(),
-                    σ_curriculum            = 1.0,
-                    l_window::Int           = 5,
-                    window_type::Symbol     = :sliding,
-                    tf_layer_type::Symbol   = :postlayer,
-                    tf_norm_type::Symbol    = :batch,
-                    dropout_prob            = 0.2,
-                    N_tf_head::Int          = 8,
-                    tf_gain                 = 1.0,
-                    silent::Bool            = false)
+                    σ_curriculum          = 1.0,
+                    l_window::Int         = 5,
+                    window_type::Symbol   = :sliding,
+                    tf_layer_type::Symbol = :postlayer,
+                    tf_norm_type::Symbol  = :batch,
+                    dropout_prob          = 0.2,
+                    N_tf_head::Int        = 8,
+                    tf_gain               = 1.0,
+                    silent::Bool          = false)
 
 Train and evaluate performance of an aeromagnetic compensation model.
 
 **Arguments:**
-- `xyz_train`:   `XYZ` flight data struct for training
-- `xyz_test`:    `XYZ` flight data struct for testing
-- `ind_train`:   selected data indices for training
-- `ind_test`:    selected data indices for testing
-- `mapS_train`:  (optional) `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct for training, only used for `y_type = :b, :c`
-- `mapS_test`:   (optional) `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct for testing,  only used for `y_type = :b, :c`
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct, either:
     - `NNCompParams`:  neural network-based aeromagnetic compensation parameters struct
     - `LinCompParams`: linear aeromagnetic compensation parameters struct
+- `xyz_train`:     `XYZ` flight data struct for training
+- `xyz_test`:      `XYZ` flight data struct for testing
+- `ind_train`:     selected data indices for training
+- `ind_test`:      selected data indices for testing
+- `mapS_train`:    (optional) `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct for training, only used for `y_type = :b, :c`
+- `mapS_test`:     (optional) `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct for testing,  only used for `y_type = :b, :c`
 - `σ_curriculum`:  (optional) standard deviation threshold, only used for `model_type = :m3sc, :m3vc`
 - `l_window`:      (optional) temporal window length, only used for `model_type = :m3w, :m3tf`
 - `window_type`:   (optional) type of windowing, `:sliding` for overlapping or `:contiguous` for non-overlapping, only used for `model_type = :m3w, :m3tf`
@@ -3776,25 +3856,24 @@ Train and evaluate performance of an aeromagnetic compensation model.
 - `err_test`:    length `N_test` testing compensation error
 - `features`:    length `Nf` feature vector (including components of TL `A`, etc.)
 """
-function comp_train_test(xyz_train::XYZ, xyz_test::XYZ, ind_train, ind_test,
+function comp_train_test(comp_params::CompParams,
+                         xyz_train::XYZ, xyz_test::XYZ, ind_train, ind_test,
                          mapS_train::Union{MapS,MapSd,MapS3D} = mapS_null,
                          mapS_test::Union{MapS,MapSd,MapS3D}  = mapS_null;
-                         comp_params::CompParams = NNCompParams(),
-                         σ_curriculum            = 1.0,
-                         l_window::Int           = 5,
-                         window_type::Symbol     = :sliding,
-                         tf_layer_type::Symbol   = :postlayer,
-                         tf_norm_type::Symbol    = :batch,
-                         dropout_prob            = 0.2,
-                         N_tf_head::Int          = 8,
-                         tf_gain                 = 1.0,
-                         silent::Bool            = false)
+                         σ_curriculum          = 1.0,
+                         l_window::Int         = 5,
+                         window_type::Symbol   = :sliding,
+                         tf_layer_type::Symbol = :postlayer,
+                         tf_norm_type::Symbol  = :batch,
+                         dropout_prob          = 0.2,
+                         N_tf_head::Int        = 8,
+                         tf_gain               = 1.0,
+                         silent::Bool          = false)
 
     @assert typeof(xyz_train) == typeof(xyz_test) "xyz types do no match"
 
     (comp_params,y_train,y_train_hat,err_train,features) =
-        comp_train(xyz_train,ind_train,mapS_train;
-                   comp_params   = comp_params,
+        comp_train(comp_params,xyz_train,ind_train,mapS_train;
                    σ_curriculum  = σ_curriculum,
                    l_window      = l_window,
                    window_type   = window_type,
@@ -3806,17 +3885,17 @@ function comp_train_test(xyz_train::XYZ, xyz_test::XYZ, ind_train, ind_test,
                    silent        = silent)
 
     (y_test,y_test_hat,err_test,_) =
-        comp_test(xyz_test,ind_test,mapS_test;
-                  comp_params=comp_params,l_window=l_window,silent=silent)
+        comp_test(comp_params,xyz_test,ind_test,mapS_test;
+                  l_window = l_window,
+                  silent   = silent)
 
     return (comp_params, y_train, y_train_hat, err_train,
                          y_test , y_test_hat , err_test , features)
 end # function comp_train_test
 
 """
-    comp_train_test(lines_train, lines_test,
-                    df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame,
-                    comp_params::CompParams = NNCompParams();
+    comp_train_test(comp_params::CompParams, lines_train, lines_test,
+                    df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame;
                     σ_curriculum          = 1.0,
                     l_window::Int         = 5,
                     window_type::Symbol   = :sliding,
@@ -3830,14 +3909,36 @@ end # function comp_train_test
 Train and evaluate performance of an aeromagnetic compensation model.
 
 **Arguments:**
-- `lines_train`: selected line number(s) for training
-- `lines_test`:  selected line number(s) for testing
-- `df_line`:     lookup table (DataFrame) of `lines`
-- `df_flight`:   lookup table (DataFrame) of flight data HDF5 files
-- `df_map`:      lookup table (DataFrame) of map data HDF5 files
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct, either:
     - `NNCompParams`:  neural network-based aeromagnetic compensation parameters struct
     - `LinCompParams`: linear aeromagnetic compensation parameters struct
+- `lines_train`: selected line number(s) for training
+- `lines_test`:  selected line number(s) for testing
+- `df_line`:     lookup table (DataFrame) of `lines`
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`flight`   |`Symbol`| flight name (e.g., `:Flt1001`)
+`line`     |`Real`  | line number, i.e., segments within `flight`
+`t_start`  |`Real`  | start time of `line` to use [s]
+`t_end`    |`Real`  | end   time of `line` to use [s]
+`full_line`|`Bool`  | (optional) if true, `t_start` to `t_end` is full line
+`map_name` |`Symbol`| (optional) name of magnetic anomaly map relevant to `line`
+`map_type` |`Symbol`| (optional) type of magnetic anomaly map for `map_name` {`drape`,`HAE`}
+`line_alt` |`Real`  | (optional) nominal altitude of `line` [m]
+- `df_flight`: lookup table (DataFrame) of flight data HDF5 files
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
+`xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
+`xyz_set` |`Real`  | flight dataset number (used to prevent inproper mixing of datasets, such as different magnetometer locations)
+`xyz_h5`  |`String`| path/name of flight data HDF5 file (`.h5` extension optional)
+- `df_map`: lookup table (DataFrame) of map data HDF5 files
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`map_name`|`Symbol`| name of magnetic anomaly map
+`map_h5`  |`String`| path/name of map data HDF5 file (`.h5` extension optional)
+`map_type`|`Symbol`| (optional) type of magnetic anomaly map {`drape`,`HAE`}
+`map_alt` |`Real`  | (optional) map altitude, -1 for drape map [m]
 - `σ_curriculum`:  (optional) standard deviation threshold, only used for `model_type = :m3sc, :m3vc`
 - `l_window`:      (optional) temporal window length, only used for `model_type = :m3w, :m3tf`
 - `window_type`:   (optional) type of windowing, `:sliding` for overlapping or `:contiguous` for non-overlapping, only used for `model_type = :m3w, :m3tf`
@@ -3858,9 +3959,8 @@ Train and evaluate performance of an aeromagnetic compensation model.
 - `err_test`:    length `N_test` mean-corrected (per line) testing compensation error
 - `features`:    length `Nf` feature vector (including components of TL `A`, etc.)
 """
-function comp_train_test(lines_train, lines_test,
-                         df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame,
-                         comp_params::CompParams = NNCompParams();
+function comp_train_test(comp_params::CompParams, lines_train, lines_test,
+                         df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame;
                          σ_curriculum          = 1.0,
                          l_window::Int         = 5,
                          window_type::Symbol   = :sliding,
@@ -3872,7 +3972,7 @@ function comp_train_test(lines_train, lines_test,
                          silent::Bool          = false)
 
     (comp_params,y_train,y_train_hat,err_train,features) =
-        comp_train(lines_train,df_line,df_flight,df_map,comp_params;
+        comp_train(comp_params,lines_train,df_line,df_flight,df_map;
                    σ_curriculum  = σ_curriculum,
                    l_window      = l_window,
                    window_type   = window_type,
@@ -3884,7 +3984,9 @@ function comp_train_test(lines_train, lines_test,
                    silent        = silent)
 
     (y_test,y_test_hat,err_test,_) =
-        comp_test(lines_test,df_line,df_flight,df_map,comp_params;l_window=l_window,silent=silent)
+        comp_test(comp_params,lines_test,df_line,df_flight,df_map;
+                  l_window = l_window,
+                  silent   = silent)
 
     return (comp_params, y_train, y_train_hat, err_train,
                          y_test , y_test_hat , err_test , features)

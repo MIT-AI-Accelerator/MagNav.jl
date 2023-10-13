@@ -66,7 +66,7 @@ add_igrf_date = get_years(2013,293)
 
 @testset "map_correct_igrf tests" begin
     @test map_correct_igrf(mapS.map,mapS.alt,mapS.xx,mapS.yy;
-                           add_igrf_date=add_igrf_date,map_units=:rad) == 
+                           add_igrf_date=add_igrf_date,map_units=:rad) ==
           map_correct_igrf(mapS.map,mapS.alt,rad2deg.(mapS.xx),rad2deg.(mapS.yy);
                            add_igrf_date=add_igrf_date,map_units=:deg)
     @test_throws ErrorException map_correct_igrf(mapS.map,mapS.alt,mapS.xx,mapS.yy;
@@ -166,7 +166,7 @@ end
 @testset "get_map_val tests" begin
     @test [get_map_val(mapS  ,traj.lat[1],traj.lon[1],traj.alt[1]),
            get_map_val(mapSd ,traj.lat[1],traj.lon[1],traj.alt[1]),
-           get_map_val(mapS3D,traj.lat[1],traj.lon[1],traj.alt[1])] == 
+           get_map_val(mapS3D,traj.lat[1],traj.lon[1],traj.alt[1])] ==
            get_map_val([mapS,mapSd,mapS3D],traj,1)
     @test_nowarn get_map_val(mapS3D,traj.lat[1],traj.lon[1],mapS3D.alt[1]-1)
     @test_nowarn get_map_val(mapS3D,traj.lat[1],traj.lon[1],mapS3D.alt[end]+1)

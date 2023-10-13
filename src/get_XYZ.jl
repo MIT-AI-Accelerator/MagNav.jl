@@ -66,9 +66,9 @@ INS fields should be within the specified `ins_field` MAT struct and without
 - `xyz_file`:   path/name of flight data HDF5 or MAT file (`.h5` or `.mat` extension required)
 - `traj_field`: (optional) trajectory struct field within MAT file to use, not relevant for HDF5 file
 - `ins_field`:  (optional) INS struct field within MAT file to use, `:none` if unavailable, not relevant for HDF5 file
-- `flight`:     (optional) flight number, only used if not in file
-- `line`:       (optional) line number, i.e., segment within `flight`, only used if not in file
-- `dt`:         (optional) measurement time step [s], only used if not in file
+- `flight`:     (optional) flight number, only used if not in `xyz_file`
+- `line`:       (optional) line number, i.e., segment within `flight`, only used if not in `xyz_file`
+- `dt`:         (optional) measurement time step [s], only used if not in `xyz_file`
 - `silent`:     (optional) if true, no print outs
 
 **Returns:**
@@ -247,9 +247,9 @@ INS fields should be within the specified `ins_field` MAT struct and without
 - `xyz_file`:   path/name of flight data HDF5 or MAT file (`.h5` or `.mat` extension required)
 - `traj_field`: (optional) trajectory struct field within MAT file to use, not relevant for HDF5 file
 - `ins_field`:  (optional) INS struct field within MAT file to use, `:none` if unavailable, not relevant for HDF5 file
-- `flight`:     (optional) flight number, only used if not in file
-- `line`:       (optional) line number, i.e., segment within `flight`, only used if not in file
-- `dt`:         (optional) measurement time step [s], only used if not in file
+- `flight`:     (optional) flight number, only used if not in `xyz_file`
+- `line`:       (optional) line number, i.e., segment within `flight`, only used if not in `xyz_file`
+- `dt`:         (optional) measurement time step [s], only used if not in `xyz_file`
 - `silent`:     (optional) if true, no print outs
 
 **Returns:**
@@ -444,7 +444,7 @@ MATLAB-companion outputs data.
 **Arguments:**
 - `traj_file`: path/name of trajectory data HDF5 or MAT file (`.h5` or `.mat` extension required)
 - `field`:     (optional) struct field within MAT file to use, not relevant for HDF5 file
-- `dt`:        (optional) measurement time step [s], only used if not in file
+- `dt`:        (optional) measurement time step [s], only used if not in `traj_file`
 - `silent`:    (optional) if true, no print outs
 
 **Returns:**
@@ -607,7 +607,7 @@ prefixes. This is the standard way the MATLAB-companion outputs data.
 **Arguments:**
 - `ins_file`: path/name of INS data HDF5 or MAT file (`.h5` or `.mat` extension required)
 - `field`:    (optional) struct field within MAT file to use, not relevant for HDF5 file
-- `dt`:       (optional) measurement time step [s], only used if not in file
+- `dt`:       (optional) measurement time step [s], only used if not in `ins_file`
 - `silent`:   (optional) if true, no print outs
 
 **Returns:**
@@ -1188,8 +1188,14 @@ Get `XYZ` flight data from saved HDF5 file via DataFrame lookup.
 **Arguments:**
 - `flight`:       flight name (e.g., `:Flt1001`)
 - `df_flight`:    lookup table (DataFrame) of flight data HDF5 files
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
+`xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
+`xyz_set` |`Real`  | flight dataset number (used to prevent inproper mixing of datasets, such as different magnetometer locations)
+`xyz_h5`  |`String`| path/name of flight data HDF5 file (`.h5` extension optional)
 - `tt_sort`:      (optional) if true, sort data by time (instead of line)
-- `reorient_vec`: (optional) if true, align vector magnetometer with body frame
+- `reorient_vec`: (optional) if true, align vector magnetometer measurements with body frame
 - `silent`:       (optional) if true, no print outs
 
 **Returns:**
@@ -1261,11 +1267,11 @@ function xyz_reorient_vec!(xyz::Union{XYZ1,XYZ20,XYZ21})
             @info("found NaNs, not reorienting $use_vec")
         else
             # get start time of flight (seconds past midnight) and compute IGRF directions
-            ind            = trues(length(flux.x)) # do for whole flight
-            norm_igrf_vecs = get_igrf(xyz,ind;frame=:body,norm_igrf=true)
+            ind      = trues(length(flux.x)) # do for whole flight
+            igrf_vec = get_igrf(xyz,ind;frame=:body,norm_igrf=true)
 
             # compute optimal rotation matrix for this flight
-            igrf_matrix = permutedims(reduce(hcat,norm_igrf_vecs))
+            igrf_matrix = permutedims(reduce(hcat,igrf_vec))
             flux_matrix = permutedims(reduce(hcat,normalize.([ [x,y,z] for (x,y,z) in zip(flux.x,flux.y,flux.z) ])))
             R = get_optimal_rotation_matrix(flux_matrix,igrf_matrix)
 

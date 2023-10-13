@@ -444,7 +444,7 @@ Plot flights paths on an existing plot and latitude & longitude vs time.
 - `vel_plot`:  (optional) if true, plot velocities
 - `dpi`:       (optional) dots per inch (image resolution)
 - `Nmax`:      (optional) maximum number of data points plotted
-- `show_plot`: (optional) if true, show plot
+- `show_plot`: (optional) if true, show plots
 - `save_plot`: (optional) if true, plots will be saved with default file names
 
 **Returns:**
@@ -571,7 +571,7 @@ Plot flights paths and latitude & longitude vs time.
 - `vel_plot`:  (optional) if true, plot velocities
 - `dpi`:       (optional) dots per inch (image resolution)
 - `Nmax`:      (optional) maximum number of data points plotted
-- `show_plot`: (optional) if true, show plot
+- `show_plot`: (optional) if true, show plots
 - `save_plot`: (optional) if true, plots will be saved with default file names
 
 **Returns:**
@@ -613,7 +613,7 @@ Plot northing and easting errors vs time.
 - `vel_plot`:  (optional) if true, plot velocity errors
 - `dpi`:       (optional) dots per inch (image resolution)
 - `Nmax`:      (optional) maximum number of data points plotted
-- `show_plot`: (optional) if true, show plot
+- `show_plot`: (optional) if true, show plots
 - `save_plot`: (optional) if true, plots will be saved with default file names
 
 **Returns:**
@@ -741,7 +741,9 @@ end # function plot_filt_err
                  dpi::Int           = 200,
                  Nmax::Int          = 5000,
                  detrend_data::Bool = true,
-                 save_plot::Bool    = false)
+                 show_plot::Bool    = true,
+                 save_plot::Bool    = false,
+                 plot_png::String   = "mag_vs_map.png")
 
 Plot scalar magnetometer measurements vs map values.
 
@@ -754,7 +756,9 @@ Plot scalar magnetometer measurements vs map values.
 - `dpi`:          (optional) dots per inch (image resolution)
 - `Nmax`:         (optional) maximum number of data points plotted
 - `detrend_data`: (optional) if true, plot data will be detrended
-- `save_plot`:    (optional) if true, `p1` will be saved with default file names
+- `show_plot`:    (optional) if true, `p1` will be shown
+- `save_plot`:    (optional) if true, `p1` will be saved as `plot_png`
+- `plot_png`:     (optional) plot file name to save (`.png` extension optional)
 
 **Returns:**
 - `p1`: scalar magnetometer measurements vs map values
@@ -765,7 +769,9 @@ function plot_mag_map(path::Path, mag, itp_mapS;
                       dpi::Int           = 200,
                       Nmax::Int          = 5000,
                       detrend_data::Bool = true,
-                      save_plot::Bool    = false)
+                      show_plot::Bool    = true,
+                      save_plot::Bool    = false,
+                      plot_png::String   = "mag_vs_map.png")
 
     i  = downsample(1:path.N,Nmax)
     tt = (path.tt[i] .- path.tt[i][1]) / 60
@@ -792,7 +798,8 @@ function plot_mag_map(path::Path, mag, itp_mapS;
         error("order $order not defined")
     end
 
-    save_plot && png(p1,"mag_vs_map.png")
+    show_plot && display(p1)
+    save_plot && png(p1,plot_png)
 
     return (p1)
 end # function plot_mag_map
@@ -803,7 +810,9 @@ end # function plot_mag_map
                      dpi::Int           = 200,
                      Nmax::Int          = 5000,
                      detrend_data::Bool = true,
-                     save_plot::Bool    = false)
+                     show_plot::Bool    = true,
+                     save_plot::Bool    = false,
+                     plot_png::String   = "mag_map_err.png")
 
 Plot scalar magnetometer measurement vs map value errors.
 
@@ -815,7 +824,9 @@ Plot scalar magnetometer measurement vs map value errors.
 - `dpi`:          (optional) dots per inch (image resolution)
 - `Nmax`:         (optional) maximum number of data points plotted
 - `detrend_data`: (optional) if true, plot data will be detrended
-- `save_plot`:    (optional) if true, `p1` will be saved with default file names
+- `show_plot`:    (optional) if true, `p1` will be shown
+- `save_plot`:    (optional) if true, `p1` will be saved as `plot_png`
+- `plot_png`:     (optional) plot file name to save (`.png` extension optional)
 
 **Returns:**
 - `p1`: scalar magnetometer measurement vs map value errors
@@ -825,7 +836,9 @@ function plot_mag_map_err(path::Path, mag, itp_mapS;
                           dpi::Int           = 200,
                           Nmax::Int          = 5000,
                           detrend_data::Bool = true,
-                          save_plot::Bool    = false)
+                          show_plot::Bool    = true,
+                          save_plot::Bool    = false,
+                          plot_png::String   = "mag_map_err.png")
 
     i  = downsample(1:path.N,Nmax)
     tt = (path.tt[i] .- path.tt[i][1]) / 60
@@ -846,7 +859,8 @@ function plot_mag_map_err(path::Path, mag, itp_mapS;
 
     plot!(p1,tt,f(mag[i] - map_val),lab=lab)
 
-    save_plot && png(p1,"mag_map_err.png")
+    show_plot && display(p1)
+    save_plot && png(p1,plot_png)
 
 	err = round(std(mag[i] - map_val),digits=2)
     @info("mag-map error standard deviation = $err nT")
@@ -879,7 +893,10 @@ function get_autocor(x::Vector, dt=0.1, dt_max=300.0)
 end # function get_autocor
 
 """
-    plot_autocor(x::Vector, dt=0.1, dt_max=300.0; show_plot::Bool=false)
+    plot_autocor(x::Vector, dt=0.1, dt_max=300.0;
+                 show_plot::Bool  = true,
+                 save_plot::Bool  = false,
+                 plot_png::String = "autocor.png")
 
 Plot autocorrelation of data (e.g., actual - expected measurements). Prints out
 `σ` = standard deviation & `τ` = autocorrelation decay to e^-1 of `x`.
@@ -889,11 +906,16 @@ Plot autocorrelation of data (e.g., actual - expected measurements). Prints out
 - `dt`:        (optional) measurement time step [s]
 - `dt_max`:    (optional) maximum time step to evaluate [s]
 - `show_plot`: (optional) if true, `p1` will be shown
+- `save_plot`: (optional) if true, `p1` will be saved as `plot_png`
+- `plot_png`:  (optional) plot file name to save (`.png` extension optional)
 
 **Returns:**
 - `p1`: plot of autocorrelation of `x`
 """
-function plot_autocor(x::Vector, dt=0.1, dt_max=300.0; show_plot::Bool=false)
+function plot_autocor(x::Vector, dt=0.1, dt_max=300.0;
+                      show_plot::Bool  = true,
+                      save_plot::Bool  = false,
+                      plot_png::String = "autocor.png")
 
     (sigma,tau) = get_autocor(x,dt,dt_max) # 1002.17: σ = 5, τ ≈ 45
 
@@ -905,7 +927,9 @@ function plot_autocor(x::Vector, dt=0.1, dt_max=300.0; show_plot::Bool=false)
     lags = round.(Int,dts/dt)
     x_ac = autocor(x,lags)
     p1   = plot(dts,x_ac,lab=false);
+
     show_plot && display(p1)
+    save_plot && png(p1,plot_png)
 
     return (p1)
 end # function plot_autocor
@@ -1196,9 +1220,7 @@ function units_ellipse(filt_res::FILTres, filt_out::FILTout; conf_units::Symbol=
 end # function units_ellipse
 
 """
-    gif_ellipse(P,
-                ellipse_gif::String = "conf_ellipse.gif",
-                lat1                = deg2rad(45);
+    gif_ellipse(P, lat1 = deg2rad(45);
                 dt                  = 0.1,
                 di::Int             = 10,
                 speedup::Int        = 60,
@@ -1213,14 +1235,15 @@ end # function units_ellipse
                 plot_eigax::Bool    = false,
                 bg_color::Symbol    = :white,
                 ce_color::Symbol    = :black,
-                b_e                 = gr())
+                b_e                 = gr(),
+                save_plot::Bool     = false,
+                ellipse_gif::String = "conf_ellipse.gif")
 
 Create a (position) confidence ellipse GIF animation for a `2`x`2` (x`N`)
 covariance matrix.
 
 **Arguments:**
 - `P`:           `2`x`2` (x`N`) covariance matrix
-- `ellipse_gif`: (optional) path/name of confidence ellipse GIF file to save (`.gif` extension optional)
 - `lat1`:        (optional) nominal latitude [rad], only used if `conf_units = :m` or `:ft`
 - `dt`:          (optional) measurement time step [s]
 - `di`:          (optional) GIF measurement interval (e.g., `di = 10` uses every 10th measurement)
@@ -1237,13 +1260,13 @@ covariance matrix.
 - `bg_color`:    (optional) background color
 - `ce_color`:    (optional) confidence ellipse color
 - `b_e`:         (optional) plotting backend
+- `save_plot`:   (optional) if true, `g1` will be saved as `ellipse_gif`
+- `ellipse_gif`: (optional) path/name of confidence ellipse GIF file to save (`.gif` extension optional)
 
 **Returns:**
 - `g1`: confidence ellipse GIF animation
 """
-function gif_ellipse(P,
-                     ellipse_gif::String = "conf_ellipse.gif",
-                     lat1                = deg2rad(45);
+function gif_ellipse(P, lat1 = deg2rad(45);
                      dt                  = 0.1,
                      di::Int             = 10,
                      speedup::Int        = 60,
@@ -1258,7 +1281,9 @@ function gif_ellipse(P,
                      plot_eigax::Bool    = false,
                      bg_color::Symbol    = :white,
                      ce_color::Symbol    = :black,
-                     b_e                 = gr())
+                     b_e                 = gr(),
+                     save_plot::Bool     = false,
+                     ellipse_gif::String = "conf_ellipse.gif")
 
     P  = units_ellipse(P;conf_units=conf_units,lat1=lat1)
     a1 = Animation()
@@ -1279,8 +1304,10 @@ function gif_ellipse(P,
         frame(a1,p1);
     end
 
+    # show or save gif
     ellipse_gif = add_extension(ellipse_gif,".gif")
-    g1 = gif(a1,ellipse_gif;fps=1/dt/di*speedup);
+    fps         = 1/dt/di*speedup
+    g1          = save_plot ? gif(a1,ellipse_gif;fps=fps) : gif(a1;fps=fps)
 
     return (g1)
 end # function gif_ellipse
@@ -1288,7 +1315,6 @@ end # function gif_ellipse
 """
     gif_ellipse(filt_res::FILTres,
                 filt_out::FILTout,
-                ellipse_gif::String = "conf_ellipse.gif",
                 map_map::Map        = mapS_null;
                 dt                  = 0.1,
                 di::Int             = 10,
@@ -1307,7 +1333,9 @@ end # function gif_ellipse
                 ce_color::Symbol    = :black,
                 map_color::Symbol   = :usgs,
                 clims::Tuple        = (0,0),
-                b_e                 = gr())
+                b_e                 = gr(),
+                save_plot::Bool     = false,
+                ellipse_gif::String = "conf_ellipse.gif")
 
 Create a (position) confidence ellipse GIF animation for a `2`x`2` (x`N`)
 covariance matrix.
@@ -1315,7 +1343,6 @@ covariance matrix.
 **Arguments:**
 - `filt_res`:    `FILTres` filter results struct
 - `filt_out`:    `FILTout` filter extracted output struct
-- `ellipse_gif`: (optional) path/name of confidence ellipse GIF file to save (`.gif` extension optional)
 - `map_map`:     (optional) `Map` magnetic anomaly map struct
 - `dt`:          (optional) measurement time step [s]
 - `di`:          (optional) GIF measurement interval (e.g., `di = 10` uses every 10th measurement)
@@ -1335,13 +1362,14 @@ covariance matrix.
 - `map_color`:   (optional) filled contour color scheme {`:usgs`,`:gray`,`:gray1`,`:gray2`,`:plasma`,`:magma`}
 - `clims`:       (optional) map color scale limits
 - `b_e`:         (optional) plotting backend
+- `save_plot`:   (optional) if true, `g1` will be saved as `ellipse_gif`
+- `ellipse_gif`: (optional) path/name of confidence ellipse GIF file to save (`.gif` extension optional)
 
 **Returns:**
-- `g1`: confidence ellipse gif
+- `g1`: confidence ellipse GIF animation
 """
 function gif_ellipse(filt_res::FILTres,
                      filt_out::FILTout,
-                     ellipse_gif::String = "conf_ellipse.gif",
                      map_map::Map        = mapS_null;
                      dt                  = 0.1,
                      di::Int             = 10,
@@ -1360,7 +1388,9 @@ function gif_ellipse(filt_res::FILTres,
                      ce_color::Symbol    = :black,
                      map_color::Symbol   = :usgs,
                      clims::Tuple        = (0,0),
-                     b_e                 = gr())
+                     b_e                 = gr(),
+                     save_plot::Bool     = false,
+                     ellipse_gif::String = "conf_ellipse.gif")
 
     dx = dlon2de(get_step(map_map.xx),mean(map_map.yy))
     dy = dlat2dn(get_step(map_map.yy),mean(map_map.yy))
@@ -1411,8 +1441,10 @@ function gif_ellipse(filt_res::FILTres,
         frame(a1,p1)
     end
 
+    # show or save gif
     ellipse_gif = add_extension(ellipse_gif,".gif")
-    g1 = gif(a1,ellipse_gif;fps=1/dt/di*speedup)
+    fps         = 1/dt/di*speedup
+    g1          = save_plot ? gif(a1,ellipse_gif;fps=fps) : gif(a1;fps=fps)
 
     return (g1)
 end # function gif_ellipse

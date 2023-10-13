@@ -1,5 +1,5 @@
 ##* top-level file for running unit tests
-#*  note that all non-hardcoded test data was generated using the MagNav 
+#*  note that all non-hardcoded test data was generated using the MagNav
 #*  MATLAB-companion (run test_baseline.m & copy the test_data folder over)
 using TestItemRunner
 

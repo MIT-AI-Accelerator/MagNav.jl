@@ -116,6 +116,12 @@ typically saved in `:deg` units, while `:rad` is used internally.
 **Arguments:**
 - `map_name`:   name of magnetic anomaly map
 - `df_map`:     lookup table (DataFrame) of map data HDF5 and/or MAT files
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`map_name`|`Symbol`| name of magnetic anomaly map
+`map_h5`  |`String`| path/name of map data HDF5 file (`.h5` extension optional)
+`map_type`|`Symbol`| (optional) type of magnetic anomaly map {`drape`,`HAE`}
+`map_alt` |`Real`  | (optional) map altitude, -1 for drape map [m]
 - `map_units`:  (optional) map xx/yy units to use in `map_map` {`:rad`,`:deg`}
 - `file_units`: (optional) map xx/yy units used in files within `df_map` {`:rad`,`:deg`}
 

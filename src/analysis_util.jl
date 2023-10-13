@@ -468,25 +468,43 @@ end # function get_x
     get_x(lines, df_line::DataFrame, df_flight::DataFrame,
           features_setup::Vector{Symbol}   = [:mag_1_uc,:TL_A_flux_a];
           features_no_norm::Vector{Symbol} = Symbol[],
-          terms             = [:permanent,:induced,:eddy],
-          sub_diurnal::Bool = false,
-          sub_igrf::Bool    = false,
-          bpf_mag::Bool     = false,
-          l_window::Int     = -1,
-          silent::Bool      = true)
+          terms              = [:permanent,:induced,:eddy],
+          sub_diurnal::Bool  = false,
+          sub_igrf::Bool     = false,
+          bpf_mag::Bool      = false,
+          reorient_vec::Bool = false,
+          l_window::Int      = -1,
+          silent::Bool       = true)
 
 Get `x` data matrix from multiple flight lines, possibly multiple flights.
 
 **Arguments:**
 - `lines`:            selected line number(s)
 - `df_line`:          lookup table (DataFrame) of `lines`
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`flight`   |`Symbol`| flight name (e.g., `:Flt1001`)
+`line`     |`Real`  | line number, i.e., segments within `flight`
+`t_start`  |`Real`  | start time of `line` to use [s]
+`t_end`    |`Real`  | end   time of `line` to use [s]
+`full_line`|`Bool`  | (optional) if true, `t_start` to `t_end` is full line
+`map_name` |`Symbol`| (optional) name of magnetic anomaly map relevant to `line`
+`map_type` |`Symbol`| (optional) type of magnetic anomaly map for `map_name` {`drape`,`HAE`}
+`line_alt` |`Real`  | (optional) nominal altitude of `line` [m]
 - `df_flight`:        lookup table (DataFrame) of flight data HDF5 files
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
+`xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
+`xyz_set` |`Real`  | flight dataset number (used to prevent inproper mixing of datasets, such as different magnetometer locations)
+`xyz_h5`  |`String`| path/name of flight data HDF5 file (`.h5` extension optional)
 - `features_setup`:   vector of features to include
 - `features_no_norm`: (optional) vector of features to not normalize
 - `terms`:            (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
 - `sub_diurnal`:      (optional) if true, subtract diurnal from scalar magnetometer measurements
 - `sub_igrf`:         (optional) if true, subtract IGRF from scalar magnetometer measurements
 - `bpf_mag`:          (optional) if true, bpf scalar magnetometer measurements
+- `reorient_vec`:     (optional) if true, align vector magnetometer measurements with body frame
 - `l_window`:         (optional) trim data by `mod(N,l_window)`, `-1` to ignore
 - `silent`:           (optional) if true, no print outs
 
@@ -494,16 +512,18 @@ Get `x` data matrix from multiple flight lines, possibly multiple flights.
 - `x`:        `N` x `Nf` data matrix (`Nf` is number of features)
 - `no_norm`:  length `Nf` Boolean indices of features to not be normalized
 - `features`: length `Nf` feature vector (including components of TL `A`, etc.)
+- `l_segs`:   length `N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
 """
 function get_x(lines, df_line::DataFrame, df_flight::DataFrame,
                features_setup::Vector{Symbol}   = [:mag_1_uc,:TL_A_flux_a];
                features_no_norm::Vector{Symbol} = Symbol[],
-               terms             = [:permanent,:induced,:eddy],
-               sub_diurnal::Bool = false,
-               sub_igrf::Bool    = false,
-               bpf_mag::Bool     = false,
-               l_window::Int     = -1,
-               silent::Bool      = true)
+               terms              = [:permanent,:induced,:eddy],
+               sub_diurnal::Bool  = false,
+               sub_igrf::Bool     = false,
+               bpf_mag::Bool      = false,
+               reorient_vec::Bool = false,
+               l_window::Int      = -1,
+               silent::Bool       = true)
 
     # check if lines are in df_line, remove if not
     for l in lines
@@ -525,17 +545,19 @@ function get_x(lines, df_line::DataFrame, df_flight::DataFrame,
     flt_old  = :FltInitial
     x        = nothing
     no_norm  = nothing
-    xyz      = nothing
     features = nothing
+    xyz      = nothing
+    l_segs   = zeros(Int,length(lines))
 
     for line in lines
         flt = df_line.flight[df_line.line .== line][1]
         if flt != flt_old
-            xyz = get_XYZ(flt,df_flight;silent=silent)
+            xyz = get_XYZ(flt,df_flight;reorient_vec=reorient_vec,silent=silent)
         end
         flt_old = flt
 
         ind = get_ind(xyz,line,df_line;l_window=l_window)
+        l_segs[findfirst(l_segs .== 0)] = length(xyz.traj.lat[ind])
 
         if x === nothing
             (x,no_norm,features) = get_x(xyz,ind,features_setup;
@@ -554,7 +576,7 @@ function get_x(lines, df_line::DataFrame, df_flight::DataFrame,
         end
     end
 
-    return (x, no_norm, features)
+    return (x, no_norm, features, l_segs)
 end # function get_x
 
 """
@@ -645,8 +667,30 @@ Get `y` target vector from multiple flight lines, possibly multiple flights.
 **Arguments:**
 - `lines`:     selected line number(s)
 - `df_line`:   lookup table (DataFrame) of `lines`
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`flight`   |`Symbol`| flight name (e.g., `:Flt1001`)
+`line`     |`Real`  | line number, i.e., segments within `flight`
+`t_start`  |`Real`  | start time of `line` to use [s]
+`t_end`    |`Real`  | end   time of `line` to use [s]
+`full_line`|`Bool`  | (optional) if true, `t_start` to `t_end` is full line
+`map_name` |`Symbol`| (optional) name of magnetic anomaly map relevant to `line`, only used for `y_type = :b, :c`
+`map_type` |`Symbol`| (optional) type of magnetic anomaly map for `map_name` {`drape`,`HAE`}
+`line_alt` |`Real`  | (optional) nominal altitude of `line` [m]
 - `df_flight`: lookup table (DataFrame) of flight data HDF5 files
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
+`xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
+`xyz_set` |`Real`  | flight dataset number (used to prevent inproper mixing of datasets, such as different magnetometer locations)
+`xyz_h5`  |`String`| path/name of flight data HDF5 file (`.h5` extension optional)
 - `df_map`:    lookup table (DataFrame) of map data HDF5 files
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`map_name`|`Symbol`| name of magnetic anomaly map
+`map_h5`  |`String`| path/name of map data HDF5 file (`.h5` extension optional)
+`map_type`|`Symbol`| (optional) type of magnetic anomaly map {`drape`,`HAE`}
+`map_alt` |`Real`  | (optional) map altitude, -1 for drape map [m]
 - `y_type`:    (optional) `y` target type
     - `:a` = anomaly field  #1, compensated tail stinger total field scalar magnetometer measurements
     - `:b` = anomaly field  #2, interpolated `magnetic anomaly map` values
@@ -752,10 +796,32 @@ from multiple flight lines, possibly multiple flights. Optionally return `Bt`
 and `B_dot` used to create the "external" Tolles-Lawson `A` matrix.
 
 **Arguments:**
-- `lines`:            selected line number(s)
-- `df_line`:          lookup table (DataFrame) of `lines`
-- `df_flight`:        lookup table (DataFrame) of flight data HDF5 files
-- `df_map`:           lookup table (DataFrame) of map data HDF5 files
+- `lines`:     selected line number(s)
+- `df_line`:   lookup table (DataFrame) of `lines`
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`flight`   |`Symbol`| flight name (e.g., `:Flt1001`)
+`line`     |`Real`  | line number, i.e., segments within `flight`
+`t_start`  |`Real`  | start time of `line` to use [s]
+`t_end`    |`Real`  | end   time of `line` to use [s]
+`full_line`|`Bool`  | (optional) if true, `t_start` to `t_end` is full line
+`map_name` |`Symbol`| (optional) name of magnetic anomaly map relevant to `line`, only used for `y_type = :b, :c`
+`map_type` |`Symbol`| (optional) type of magnetic anomaly map for `map_name` {`drape`,`HAE`}
+`line_alt` |`Real`  | (optional) nominal altitude of `line` [m]
+- `df_flight`: lookup table (DataFrame) of flight data HDF5 files
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
+`xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
+`xyz_set` |`Real`  | flight dataset number (used to prevent inproper mixing of datasets, such as different magnetometer locations)
+`xyz_h5`  |`String`| path/name of flight data HDF5 file (`.h5` extension optional)
+- `df_map`:    lookup table (DataFrame) of map data HDF5 files
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`map_name`|`Symbol`| name of magnetic anomaly map
+`map_h5`  |`String`| path/name of map data HDF5 file (`.h5` extension optional)
+`map_type`|`Symbol`| (optional) type of magnetic anomaly map {`drape`,`HAE`}
+`map_alt` |`Real`  | (optional) map altitude, -1 for drape map [m]
 - `features_setup`:   vector of features to include
 - `features_no_norm`: (optional) vector of features to not normalize
 - `y_type`:           (optional) `y` target type
@@ -772,7 +838,7 @@ and `B_dot` used to create the "external" Tolles-Lawson `A` matrix.
 - `sub_diurnal`:  (optional) if true, subtract diurnal from scalar magnetometer measurements
 - `sub_igrf`:     (optional) if true, subtract IGRF from scalar magnetometer measurements
 - `bpf_mag`:      (optional) if true, bpf scalar magnetometer measurements in `x` data matrix
-- `reorient_vec`: (optional) if true, align vector magnetometer with body frame
+- `reorient_vec`: (optional) if true, align vector magnetometer measurements with body frame
 - `l_window`:     (optional) trim data by `mod(N,l_window)`, `-1` to ignore
 - `mod_TL`:       (optional) if true, create modified  "external" Tolles-Lawson `A` matrix with `use_mag`
 - `map_TL`:       (optional) if true, create map-based "external" Tolles-Lawson `A` matrix
@@ -1052,6 +1118,9 @@ function get_nn_m(Nf::Int, Ny::Int=1;
         # pre & post layer normalization transformer architectures
         # https://tnq177.github.io/data/transformers_without_tears.pdf
 
+        @assert l > 0 "hidden must have at least 1 element"
+        @assert mod(hidden[1],N_tf_head) == 0 "hidden[1] must be divisible by N_tf_head"
+
         N_head = hidden[1]
         init   = Flux.glorot_uniform(gain=tf_gain)
 
@@ -1074,9 +1143,7 @@ function get_nn_m(Nf::Int, Ny::Int=1;
                                                   init         = init)
 
         # only add activation to final feedforward NN, change for stacked encoders
-        if l == 0
-            error("hidden must have at least 1 element")
-        elseif l == 1
+        if l == 1
             ffnn = Chain(Dense(N_head, N_head, activation; init=init),
                                Dropout(dropout_prob))
         elseif l == 2
@@ -1487,7 +1554,7 @@ line number(s), and/or time range. Any or all of these may be used.
 - `line`:   line number(s)
 - `ind`:    (optional) selected data indices. Defaults to use all data indices
 - `lines`:  (optional) selected line number(s). Defaults to use all lines
-- `tt_lim`: (optional) 2-element (inclusive) start and stop time limits, in seconds past midnight. Defaults to use full time range
+- `tt_lim`: (optional) 2-element (inclusive) start & end time limits. Defaults to use full time range [s]
 - `splits`: (optional) data splits, must sum to 1
 
 **Returns:**
@@ -1559,7 +1626,7 @@ line number(s), and/or time range. Any or all of these may be used.
 - `xyz`:    `XYZ` flight data struct
 - `ind`:    (optional) selected data indices. Defaults to use all data indices
 - `lines`:  (optional) selected line number(s). Defaults to use all lines
-- `tt_lim`: (optional) 2-element (inclusive) start and stop time limits, in seconds past midnight. Defaults to use full time range
+- `tt_lim`: (optional) 2-element (inclusive) start & end time limits. Defaults to use full time range [s]
 - `splits`: (optional) data splits, must sum to 1
 
 **Returns:**
@@ -1590,6 +1657,16 @@ Get BitVector of indices for further analysis via DataFrame lookup.
 - `xyz`:      `XYZ` flight data struct
 - `line`:     line number
 - `df_line`:  lookup table (DataFrame) of `lines`
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`flight`   |`Symbol`| flight name (e.g., `:Flt1001`)
+`line`     |`Real`  | line number, i.e., segments within `flight`
+`t_start`  |`Real`  | start time of `line` to use [s]
+`t_end`    |`Real`  | end   time of `line` to use [s]
+`full_line`|`Bool`  | (optional) if true, `t_start` to `t_end` is full line
+`map_name` |`Symbol`| (optional) name of magnetic anomaly map relevant to `line`
+`map_type` |`Symbol`| (optional) type of magnetic anomaly map for `map_name` {`drape`,`HAE`}
+`line_alt` |`Real`  | (optional) nominal altitude of `line` [m]
 - `splits`:   (optional) data splits, must sum to 1
 - `l_window`: (optional) trim data by `mod(N,l_window)`, `-1` to ignore
 
@@ -1637,6 +1714,16 @@ Get BitVector of selected data indices for further analysis via DataFrame lookup
 - `xyz`:        `XYZ` flight data struct
 - `lines`:      selected line number(s)
 - `df_line`:    lookup table (DataFrame) of `lines`
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`flight`   |`Symbol`| flight name (e.g., `:Flt1001`)
+`line`     |`Real`  | line number, i.e., segments within `flight`
+`t_start`  |`Real`  | start time of `line` to use [s]
+`t_end`    |`Real`  | end   time of `line` to use [s]
+`full_line`|`Bool`  | (optional) if true, `t_start` to `t_end` is full line
+`map_name` |`Symbol`| (optional) name of magnetic anomaly map relevant to `line`
+`map_type` |`Symbol`| (optional) type of magnetic anomaly map for `map_name` {`drape`,`HAE`}
+`line_alt` |`Real`  | (optional) nominal altitude of `line` [m]
 - `splits`:     (optional) data splits, must sum to 1
 - `l_window`:   (optional) trim data by `mod(N,l_window)`, `-1` to ignore
 
@@ -1866,6 +1953,10 @@ Plot horizontal bar graph of feature importance (Shapley effects).
 
 **Arguments:**
 - `df_shap`:       DataFrame of Shapley effects
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`feature_name`|`Symbol`| feature name
+`mean_effect` |`Real`  | mean Shapley effect
 - `baseline_shap`: intercept of Shapley effects
 - `range_shap`:    (optional) range of Shapley effects to plot (limit to length ~20)
 - `dpi`:           (optional) dots per inch (image resolution)
@@ -1945,7 +2036,7 @@ date in IGRF time (years since 0 CE), and reference frame.
 - `check_xyz`: (optional) if true, cross-check with `igrf` field in `xyz`
 
 **Returns:**
-- `igrf_vec`: `N` x `3` stacked vector for N indices and 3 coordinates of IGRF in desired frame
+- `igrf_vec`: length `N` stacked vector of `3` IGRF coordinates in `frame`
 """
 function get_igrf(xyz::Union{XYZ1,XYZ20,XYZ21}, ind=trues(xyz.traj.N);
                   frame           = :body,
@@ -1964,7 +2055,7 @@ function get_igrf(xyz::Union{XYZ1,XYZ20,XYZ21}, ind=trues(xyz.traj.N);
     lat = xyz.traj.lat[ind]
     lon = xyz.traj.lon[ind]
 
-    # get the IGRF field, igrf() outputs length N vector of [Bx, By, Bz] with
+    # get IGRF, igrf() outputs length N vector of [Bx, By, Bz] with
     # Bx: north component [nT]
     # By: east  component [nT]
     # Bz: down  component [nT]
@@ -1979,7 +2070,7 @@ function get_igrf(xyz::Union{XYZ1,XYZ20,XYZ21}, ind=trues(xyz.traj.N);
     if (frame == :nav)
         return (igrf_vec)
     else # convert to body frame
-        Cnb = xyz.ins.Cnb[:,:,ind] # body to navigation
+        Cnb = iszero(xyz.traj.Cnb[:,:,ind]) ? xyz.ins.Cnb[:,:,ind] : xyz.traj.Cnb[:,:,ind] # body to navigation
         # transpose is navigation to body
         igrf_vec_body = [Cnb[:,:,i]'*igrf_vec[i] for i=1:N]
         return (igrf_vec_body)
@@ -2010,33 +2101,33 @@ function project_vec_to_2d(vec_in, uvec_x, uvec_y)
 end # function project_vec_to_2d
 
 """
-    project_body_field_to_2d_igrf(vec_body, igrf_in, dcm)
+    project_body_field_to_2d_igrf(vec_body, igrf_nav, Cnb)
 
-Projects a body frame vector onto a 2D plane defined by the direction
-of the IGRF field and a tangent vector to the Earth ellipsoid, which is
-computed by taking the cross product of the IGRF field with the upward
-direction. Returns a 2D vector whose components describe the amount of
-the body field that is in alignment with the Earth field and an orthogonal
-direction to the Earth field (roughly to the east).
+Projects a body frame vector onto a 2D plane defined by the direction of the
+IGRF and a tangent vector to the Earth ellipsoid, which is computed by taking
+the cross product of the IGRF with the upward direction. Returns a 2D vector
+whose components describe the amount of the body field that is in alignment
+with the Earth field and an orthogonal direction to the Earth field (roughly
+to the east).
 
 **Arguments:**
-- `vec_body`: vector in the body reference frame (e.g., the aircraft induced field)
-- `igrf_in`:  IGRF field unit vector in the navigation reference frame
-- `dcm`:      direction cosine matrix (body to navigation)
+- `vec_body`: vector in body frame (e.g., aircraft induced field)
+- `igrf_nav`: IGRF unit vector in navigation frame
+- `Cnb`:      `3` x `3` x `N` direction cosine matrix (body to navigation) [-]
 
 **Returns:**
 - `v_out`: 2D vector whose components illustrate projection onto the Earth field and an orthogonal component
 """
-function project_body_field_to_2d_igrf(vec_body, igrf_in, dcm)
-    # assume igrf_in is "north" in navigation frame and rotate about Z axis to get "east"
-    igrf_north     = igrf_in  # components are [north, east, down]
+function project_body_field_to_2d_igrf(vec_body, igrf_nav, Cnb)
+    # assume igrf_nav is "north" in navigation frame and rotate about Z axis to get "east"
+    igrf_north     = igrf_nav  # components are [north, east, down]
     igrf_tan_earth = cross(igrf_north, [0.0, 0.0, -1.0]) # cross product with "up" direction
     igrf_east      = normalize(igrf_tan_earth)
 
     # transform aircraft vector from body to navigation frame
-    vec_nav = dcm*vec_body
+    vec_nav = Cnb*vec_body
 
-    v_out = project_vec_to_2d(vec_nav, igrf_north, igrf_east)
+    v_out = project_vec_to_2d(vec_nav,igrf_north,igrf_east)
     return (v_out)
 end # function project_body_field_to_2d_igrf
 
@@ -2168,13 +2259,18 @@ end # function expand_range
     filter_events!(df_event::DataFrame, flight::Symbol, keyword::String = "";
                    tt_lim = extrema(df_event.tt[df_event.flight .== flight]))
 
-Filter a DataFrame of in-flight events to only contain relevent events.
+Filter a DataFrame of in-flight events to only contain relevant events.
 
 **Arguments:**
-- `df_event`: lookup table (DataFrame) of in-flight events, must contain `flight`, `tt`, & `event` columns
+- `df_event`: lookup table (DataFrame) of in-flight events
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`flight`|`Symbol`| flight name (e.g., `:Flt1001`)
+`tt`    |`Real`  | time of `event` [s]
+`event` |`String`| event description
 - `flight`:   flight name (e.g., `:Flt1001`)
 - `keyword`:  (optional) keyword to search within events, case insensitive
-- `tt_lim`:   (optional) 2-element (inclusive) start and stop time limits, in seconds past midnight. Defaults to use full time range
+- `tt_lim`:   (optional) 2-element (inclusive) start & end time limits. Defaults to use full time range [s]
 
 **Returns:**
 - `nothing`: `df_event` is filtered
@@ -2191,13 +2287,18 @@ end # function filter_events!
     filter_events(df_event::DataFrame, flight::Symbol, keyword::String = "";
                   tt_lim = extrema(df_event.tt[df_event.flight .== flight]))
 
-Filter a DataFrame of in-flight events to only contain relevent events.
+Filter a DataFrame of in-flight events to only contain relevant events.
 
 **Arguments:**
-- `df_event`: lookup table (DataFrame) of in-flight events, must contain `flight`, `tt`, & `event` columns
+- `df_event`: lookup table (DataFrame) of in-flight events
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`flight`|`Symbol`| flight name (e.g., `:Flt1001`)
+`tt`    |`Real`  | time of `event` [s]
+`event` |`String`| event description
 - `flight`:   flight name (e.g., `:Flt1001`)
 - `keyword`:  (optional) keyword to search within events, case insensitive
-- `tt_lim`:   (optional) 2-element (inclusive) start and stop time limits, in seconds past midnight. Defaults to use full time range
+- `tt_lim`:   (optional) 2-element (inclusive) start & end time limits. Defaults to use full time range [s]
 
 **Returns:**
 - `df_event`: lookup table (DataFrame) of in-flight events, filtered
@@ -2238,9 +2339,9 @@ predicted scalar magnetic field.
 - `filt_lat`:    (optional) length `N` filter output latitude  [rad]
 - `filt_lon`:    (optional) length `N` filter output longitude [rad]
 - `ind`:         (optional) selected data indices
-- `tt_lim`:      (optional) 2-element (inclusive) start and stop time limits, in minutes. Defaults to use full time range
+- `tt_lim`:      (optional) 2-element (inclusive) start & end time limits. Defaults to use full time range [min]
 - `skip_every`:  (optional) number of time steps to skip between frames
-- `save_plot`:   (optional) if true, `g1` will be saved
+- `save_plot`:   (optional) if true, `g1` will be saved as `mag_gif`
 - `mag_gif`:     (optional) path/name of magnetic field GIF file to save (`.gif` extension optional)
 
 **Returns**
@@ -2273,6 +2374,7 @@ function gif_animation_m3(TL_perm::AbstractMatrix, TL_induced::AbstractMatrix, T
 
     # get lat & lon for plotting
     traj     = xyz.traj(ind)
+    ins      = xyz.ins(ind)
     filt_lat = rad2deg.(filt_lat)
     filt_lon = rad2deg.(filt_lon)
     gps_lat  = rad2deg.(traj.lat)
@@ -2299,12 +2401,12 @@ function gif_animation_m3(TL_perm::AbstractMatrix, TL_induced::AbstractMatrix, T
     igrf_nav_2D[3,:] .= 0.0
     normalize!.(eachcol(igrf_nav_2D))
 
-    dcms = xyz.ins.Cnb[:,:,ind]
-    aircraft_2D_NN = project_body_field_to_2d_igrf.(eachcol(y_nn       ),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
-    aircraft_2D_TL = project_body_field_to_2d_igrf.(eachcol(TL_aircraft),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
-    perm_field_2D  = project_body_field_to_2d_igrf.(eachcol(TL_perm    ),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
-    ind_field_2D   = project_body_field_to_2d_igrf.(eachcol(TL_induced ),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
-    eddy_field_2D  = project_body_field_to_2d_igrf.(eachcol(TL_eddy    ),eachcol(igrf_nav_2D),eachslice(dcms,dims=3))
+    Cnb = iszero(traj.Cnb) ? ins.Cnb : traj.Cnb # body to navigation
+    aircraft_2D_NN = project_body_field_to_2d_igrf.(eachcol(y_nn       ),eachcol(igrf_nav_2D),eachslice(Cnb,dims=3))
+    aircraft_2D_TL = project_body_field_to_2d_igrf.(eachcol(TL_aircraft),eachcol(igrf_nav_2D),eachslice(Cnb,dims=3))
+    perm_field_2D  = project_body_field_to_2d_igrf.(eachcol(TL_perm    ),eachcol(igrf_nav_2D),eachslice(Cnb,dims=3))
+    ind_field_2D   = project_body_field_to_2d_igrf.(eachcol(TL_induced ),eachcol(igrf_nav_2D),eachslice(Cnb,dims=3))
+    eddy_field_2D  = project_body_field_to_2d_igrf.(eachcol(TL_eddy    ),eachcol(igrf_nav_2D),eachslice(Cnb,dims=3))
 
     aircraft_2D_NN = reduce(hcat,aircraft_2D_NN)
     aircraft_2D_TL = reduce(hcat,aircraft_2D_TL)
@@ -2317,7 +2419,7 @@ function gif_animation_m3(TL_perm::AbstractMatrix, TL_induced::AbstractMatrix, T
     i_end   = findlast( tt .<= tt_lim[2])
 
     # create gif
-    l  = @layout[ a{0.6w} [b;c] ]
+    l  = @layout [ a{0.6w} [b;c] ]
     p1 = plot(layout=l, size=(800,500), margin=5*mm)
     a1 = Animation()
 
@@ -2351,9 +2453,9 @@ function gif_animation_m3(TL_perm::AbstractMatrix, TL_induced::AbstractMatrix, T
         frame(a1,p1)
     end
 
-    # Show or save the plot
+    # show or save gif
     mag_gif = add_extension(mag_gif,".gif")
-    g1 = save_plot ? gif(a1,mag_gif,fps=15) : gif(a1,fps=15)
+    g1 = save_plot ? gif(a1,mag_gif;fps=15) : gif(a1;fps=15)
 
     return (g1)
 end # function gif_animation_m3
