@@ -1,6 +1,6 @@
 name = "MagNav"
 uuid = "f91b31a4-be4d-40e3-b767-4b8c09c10076"
-version = "1.1.4"
+version = "1.1.5"
 
 [deps]
 ArchGDAL = "c9ce4bd3-c3d5-55b8-8973-c0e20141b8c3"
