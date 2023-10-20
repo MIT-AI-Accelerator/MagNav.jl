@@ -600,8 +600,8 @@ Get `y` target vector.
     - `:c` = aircraft field #1, difference between uncompensated cabin total field scalar magnetometer measurements and interpolated `magnetic anomaly map` values
     - `:d` = aircraft field #2, difference between uncompensated cabin and compensated tail stinger total field scalar magnetometer measurements
     - `:e` = BPF'd total field, bandpass filtered uncompensated cabin total field scalar magnetometer measurements
-- `use_mag`:     (optional) scalar magnetometer to use {`:mag_1_uc`, etc.}, only used for `y_type = :c, :d, :e`
-- `use_mag_c`:   (optional) compensated scalar magnetometer to use {`:mag_1_c`, etc.}, only used for `y_type = :a, :d`
+- `use_mag`:     (optional) uncompensated scalar magnetometer to use for `y` target vector {`:mag_1_uc`, etc.}, only used for `y_type = :c, :d, :e`
+- `use_mag_c`:   (optional) compensated scalar magnetometer to use for `y` target vector {`:mag_1_c`, etc.}, only used for `y_type = :a, :d`
 - `sub_diurnal`: (optional) if true, subtract diurnal from scalar magnetometer measurements
 - `sub_igrf`:    (optional) if true, subtract IGRF from scalar magnetometer measurements
 
@@ -697,8 +697,8 @@ Get `y` target vector from multiple flight lines, possibly multiple flights.
     - `:c` = aircraft field #1, difference between uncompensated cabin total field scalar magnetometer measurements and interpolated `magnetic anomaly map` values
     - `:d` = aircraft field #2, difference between uncompensated cabin and compensated tail stinger total field scalar magnetometer measurements
     - `:e` = BPF'd total field, bandpass filtered uncompensated cabin total field scalar magnetometer measurements
-- `use_mag`:     (optional) scalar magnetometer to use {`:mag_1_uc`, etc.}, only used for `y_type = :c, :d, :e`
-- `use_mag_c`:   (optional) compensated scalar magnetometer to use {`:mag_1_c`, etc.}, only used for `y_type = :a, :d`
+- `use_mag`:     (optional) uncompensated scalar magnetometer to use for `y` target vector {`:mag_1_uc`, etc.}, only used for `y_type = :c, :d, :e`
+- `use_mag_c`:   (optional) compensated scalar magnetometer to use for `y` target vector {`:mag_1_c`, etc.}, only used for `y_type = :a, :d`
 - `sub_diurnal`: (optional) if true, subtract diurnal from scalar magnetometer measurements
 - `sub_igrf`:    (optional) if true, subtract IGRF from scalar magnetometer measurements
 - `l_window`:    (optional) trim data by `mod(N,l_window)`, `-1` to ignore
@@ -830,8 +830,8 @@ and `B_dot` used to create the "external" Tolles-Lawson `A` matrix.
     - `:c` = aircraft field #1, difference between uncompensated cabin total field scalar magnetometer measurements and interpolated `magnetic anomaly map` values
     - `:d` = aircraft field #2, difference between uncompensated cabin and compensated tail stinger total field scalar magnetometer measurements
     - `:e` = BPF'd total field, bandpass filtered uncompensated cabin total field scalar magnetometer measurements
-- `use_mag`:      (optional) scalar magnetometer to use {`:mag_1_uc`, etc.}, only used for `y_type = :c, :d, :e`
-- `use_mag_c`:    (optional) compensated scalar magnetometer to use {`:mag_1_c`, etc.}, only used for `y_type = :a, :d`
+- `use_mag`:      (optional) uncompensated scalar magnetometer to use for `y` target vector {`:mag_1_uc`, etc.}, only used for `y_type = :c, :d, :e`
+- `use_mag_c`:    (optional) compensated scalar magnetometer to use for `y` target vector {`:mag_1_c`, etc.}, only used for `y_type = :a, :d`
 - `use_vec`:      (optional) vector magnetometer (fluxgate) to use for "external" Tolles-Lawson `A` matrix {`:flux_a`, etc.}
 - `terms`:        (optional) Tolles-Lawson terms to use for `A` within `x` data matrix {`:permanent`,`:induced`,`:eddy`,`:bias`}
 - `terms_A`:      (optional) Tolles-Lawson terms to use for "external" Tolles-Lawson `A` matrix {`:permanent`,`:induced`,`:eddy`,`:bias`}
@@ -2435,7 +2435,7 @@ function gif_animation_m3(TL_perm::AbstractMatrix, TL_induced::AbstractMatrix, T
         plot!(p1[1], [tt[i]], linetype=:vline, lab="", color=:black)
 
         # draw compass plot for each field
-        plot!(p1[1],xlab="east [nT]",ylab=" north [nT]",
+        plot!(p1[2],xlab="east [nT]",ylab=" north [nT]",
               xlim=(-2500,2500),ylim=(-2500,2500),legend=:topright)
         plot!(p1[2],[0.0,aircraft_2D_TL[2,i]],[0.0,aircraft_2D_TL[1,i]],arrow=true,lab="TL",color=:blue)
         plot!(p1[2],[0.0,aircraft_2D_NN[2,i]],[0.0,aircraft_2D_NN[1,i]],arrow=true,lab="NN",color=:red)

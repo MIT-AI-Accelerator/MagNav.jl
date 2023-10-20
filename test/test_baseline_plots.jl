@@ -186,3 +186,16 @@ end
                                   save_plot = false,
                                   silent    = true);
 end
+
+feat_set  = [:mag_1_c,:mag_1_uc,:TL_A_flux_a,:flight]
+show_plot = false
+
+@testset "plot_correlation_matrix tests" begin
+    @test_nowarn plot_correlation_matrix(xyz,ind;show_plot);
+    @test_nowarn plot_correlation_matrix(xyz,ind,feat_set[1:2];show_plot)
+    @test_nowarn plot_correlation_matrix(xyz,ind,feat_set[3:3];show_plot)
+    @test_nowarn plot_correlation_matrix(xyz,ind,feat_set[2:3];show_plot)
+    @test_nowarn plot_correlation_matrix(xyz,ind,feat_set[1:3];show_plot)
+    @test_throws AssertionError plot_correlation_matrix(xyz,ind,feat_set[1:1];show_plot)
+    @test_throws AssertionError plot_correlation_matrix(xyz,ind,feat_set[1:4];show_plot)
+end

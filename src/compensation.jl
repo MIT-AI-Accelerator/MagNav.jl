@@ -1985,7 +1985,7 @@ function comp_train(comp_params::CompParams, xyz::XYZ, ind,
         silent || @info("forcing y_type $(y_type) => :c (aircraft field #1, using map)")
         y_type = :c
     end
-    if model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc]
+    if model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc,:m3w,:m3tf]
         for term in terms_A
             if term in [:fdm,:f,:fdm3,:f3,:bias,:b]
                 silent || @info("removing $term term from terms_A")
@@ -2372,7 +2372,7 @@ function comp_train(comp_params::CompParams, xyz_vec::Vector, ind_vec::Vector,
         silent || @info("forcing y_type $(y_type) => :c (aircraft field #1, using map)")
         y_type = :c
     end
-    if model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc]
+    if model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc,:m3w,:m3tf]
         for term in terms_A
             if term in [:fdm,:f,:fdm3,:f3,:bias,:b]
                 silent || @info("removing $term term from terms_A")
@@ -2824,7 +2824,7 @@ function comp_train(comp_params::CompParams, lines,
         silent || @info("forcing y_type $(y_type) => :c (aircraft field #1, using map)")
         y_type = :c
     end
-    if model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc]
+    if model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc,:m3w,:m3tf]
         for term in terms_A
             if term in [:fdm,:f,:fdm3,:f3,:bias,:b]
                 silent || @info("removing $term term from terms_A")
@@ -3168,7 +3168,7 @@ function comp_test(comp_params::CompParams, xyz::XYZ, ind,
         silent || @info("forcing y_type $(y_type) => :c (aircraft field #1, using map)")
         y_type = :c
     end
-    if model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc]
+    if model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc,:m3w,:m3tf]
         for term in terms_A
             if term in [:fdm,:f,:fdm3,:f3,:bias,:b]
                 silent || @info("ignoring $term term in terms_A")
@@ -3388,7 +3388,7 @@ function comp_test(comp_params::CompParams, lines,
         silent || @info("forcing y_type $(y_type) => :c (aircraft field #1, using map)")
         y_type = :c
     end
-    if model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc]
+    if model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc,:m3w,:m3tf]
         for term in terms_A
             if term in [:fdm,:f,:fdm3,:f3,:bias,:b]
                 silent || @info("ignoring $term term in terms_A")
