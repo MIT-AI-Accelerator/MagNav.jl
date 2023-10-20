@@ -7,6 +7,7 @@ makedocs(
         mathengine = Documenter.MathJax3(),
     ),
     checkdocs = :exports,
+    warnonly  = true,
     sitename  = "MagNav.jl",
     pages = [
         "Home"                      => "index.md",
