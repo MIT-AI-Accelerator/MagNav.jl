@@ -1,4 +1,4 @@
-# NN-Based Model Diagrams
+# Neural Network-Based Model Diagrams
 
 The goal of neural network-based aeromagnetic compensation is to use machine learning in order to create a nonlinear aeromagnetic compensation model. It may be possible to use additional sensors, beyond a single scalar and vector magnetometer, to improve compensation performance. Shown on this page are diagrams for each of the neural network-based aeromagnetic compensation models available within the package.
 
