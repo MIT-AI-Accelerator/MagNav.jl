@@ -52,9 +52,9 @@ The built-in [NAMAD](https://mrdata.usgs.gov/magnetic/map-us.html) map is used t
 
 # ╔═╡ ff29f1c4-74ef-43cb-95be-14b5518e2cc6
 begin
-	t    = 900 # flight time [s]
+	t    = 600 # flight time [s]
 	mapS = get_map(MagNav.namad) # load map data
-	xyz  = create_XYZ0(mapS;alt=mapS.alt,t=t,N_waves=2) # create flight data
+	xyz  = create_XYZ0(mapS;alt=mapS.alt,t=t,N_waves=1) # create flight data
 	traj = xyz.traj # trajectory (GPS) struct
 	ins  = xyz.ins  # INS struct
 	mapS = map_trim(mapS,traj;pad=10) # trim map for given trajectory (with padding)
