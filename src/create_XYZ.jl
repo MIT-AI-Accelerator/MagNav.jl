@@ -937,7 +937,7 @@ over into `use_mag` in the new `XYZ` data.
 - `xyz`:      (original) `XYZ` flight data struct
 - `ind`:      selected data indices
 - `mapS`:     `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct
-- `use_mag`:  scalar magnetometer to use {`:mag_1_uc`, etc.}
+- `use_mag`:  uncompensated scalar magnetometer to use for `y` target vector {`:mag_1_uc`, etc.}
 - `use_vec`:  vector magnetometer (fluxgate) to use for Tolles-Lawson `A` matrix {`:flux_a`, etc.}
 - `TL_coef`:  Tolles-Lawson coefficients
 - `terms`:    (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`}

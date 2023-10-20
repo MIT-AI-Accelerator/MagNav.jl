@@ -709,7 +709,7 @@ end # function plot_correlation_matrix
 """
     plot_correlation_matrix(xyz::XYZ, ind = trues(xyz.traj.N),
                             features_setup::Vector{Symbol} = [:mag_1_uc,:TL_A_flux_a];
-                            terms             = [:permanent,:induced,:eddy],
+                            terms             = [:permanent],
                             sub_diurnal::Bool = false,
                             sub_igrf::Bool    = false,
                             bpf_mag::Bool     = false,
@@ -738,7 +738,7 @@ Plot the correlation matrix for 2-5 features.
 """
 function plot_correlation_matrix(xyz::XYZ, ind = trues(xyz.traj.N),
                                  features_setup::Vector{Symbol} = [:mag_1_uc,:TL_A_flux_a];
-                                 terms             = [:permanent,:induced,:eddy],
+                                 terms             = [:permanent],
                                  sub_diurnal::Bool = false,
                                  sub_igrf::Bool    = false,
                                  bpf_mag::Bool     = false,

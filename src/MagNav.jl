@@ -929,7 +929,7 @@ module MagNav
     |`features_no_norm`| vector of features to not normalize, not used for `model_type = :TL, :mod_TL, :map_TL`
     |`model_type`      | aeromagnetic compensation model type (`see below`)
     |`y_type`          | `y` target type (`see below`)
-    |`use_mag`         | scalar magnetometer to use {`:mag_1_uc`, etc.}, only used for `y_type = :c, :d, :e`
+    |`use_mag`         | uncompensated scalar magnetometer to use for `y` target vector {`:mag_1_uc`, etc.}, only used for `y_type = :c, :d, :e`
     |`use_vec`         | vector magnetometer (fluxgate) to use for "external" Tolles-Lawson `A` matrix {`:flux_a`, etc.}, not used for `model_type = :elasticnet, :plsr`
     |`data_norms`      | tuple of data normalizations, e.g., `(A_bias,A_scale,x_bias,x_scale,y_bias,y_scale)`
     |`model`           | linear model coefficients
@@ -1010,7 +1010,7 @@ module MagNav
     |`features_no_norm`| vector of features to not normalize
     |`model_type`      | aeromagnetic compensation model type (`see below`)
     |`y_type`          | `y` target type (`see below`)
-    |`use_mag`         | scalar magnetometer to use {`:mag_1_uc`, etc.}, only used for `y_type = :c, :d, :e`
+    |`use_mag`         | uncompensated scalar magnetometer to use for `y` target vector {`:mag_1_uc`, etc.}, only used for `y_type = :c, :d, :e`
     |`use_vec`         | vector magnetometer (fluxgate) to use for "external" Tolles-Lawson `A` matrix {`:flux_a`, etc.}, not used for `model_type = :m1`
     |`data_norms`      | tuple of data normalizations, e.g., `(A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale)`
     |`model`           | neural network model
@@ -1175,7 +1175,7 @@ module MagNav
         map_sort_ind   :: Vector{Int64}         = sortperm([m.alt for m in maps])
         fallback       :: MapS{Float64}         = map_fill(map_trim(get_map(namad)))
         map_cache      :: Dict                  = Dict{Tuple{Int64,Int64},Any}()
-        fallback_cache :: Dict                  = Dict{Int64, Any}()
+        fallback_cache :: Dict                  = Dict{Int64,Any}()
         dz             :: Real                  = 100
     end # mutable struct Map_Cache
 
@@ -1206,9 +1206,9 @@ module MagNav
     norm_sets,denorm_sets,get_ind,chunk_data,predict_rnn_full,
     predict_rnn_windowed,krr,eval_shapley,plot_shapley,eval_gsa,
     get_IGRF,get_igrf,project_body_field_to_2d_igrf,get_optimal_rotation_matrix,
-    get_days_per_year,get_years,filter_events!,filter_events, gif_animation_m3,
-    plot_basic,plot_activation,plot_mag,plot_mag_c,
-    plot_PSD,plot_spectrogram,plot_frequency,plot_correlation,
+    get_days_per_year,get_years,filter_events!,filter_events,gif_animation_m3,
+    plot_basic,plot_activation,plot_mag,plot_mag_c,plot_PSD,plot_spectrogram,
+    plot_frequency,plot_correlation,plot_correlation_matrix,
     comp_train,comp_test,comp_m2bc_test,comp_m3_test,comp_train_test,
     create_XYZ0,create_traj,create_ins,create_mag_c,corrupt_mag,create_flux,
     create_informed_xyz,
