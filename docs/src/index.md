@@ -12,6 +12,8 @@ Pages = [
 Depth = 1
 ```
 
+There are also multiple example notebooks available that showcase various functionalities.
+
 ## Version
 
 ```@repl
