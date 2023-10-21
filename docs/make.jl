@@ -1,6 +1,8 @@
 using Documenter, MagNav, PlutoStaticHTML
 
-# run Pluto notebooks in notebooks_dir & write to Markdown files
+# cd(pkgdir(MagNav)) # for local development
+
+# run Pluto notebooks in notebooks_dir & create Markdown files
 # done sequentially to avoid recompiling multiple times
 println("building example notebooks")
 notebooks_dir = joinpath(pkgdir(MagNav),"examples")
