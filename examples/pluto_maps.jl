@@ -54,7 +54,7 @@ This is the Perth map (at 800 m) as provided by Sander Geophysics Ltd.
 begin
 	map_gxf = MagNav.ottawa_area_maps_gxf()*"/Perth_Mag.gxf"
 	p_mapS_plot = map_gxf2h5(map_gxf,800;fill_map=false)
-	p1 = plot_map(p_mapS_plot;legend=false)
+	p1 = plot_map(p_mapS_plot)
 end
 
 # ╔═╡ 438f2f01-5cbe-4088-b365-571de4f9539a
@@ -116,9 +116,11 @@ md"## Plot all Ottawa area maps
 
 # ╔═╡ 6d4a87c8-41d7-4478-b52a-4dc5a1ae18ea
 begin
-	p2 = plot_map(n_mapS_395;legend=false,clims=(-500,500),map_color=:magma) # 395 m
-	plot_map!(p2,e_mapS_plot;legend=false,clims=(-500,500),map_color=:usgs ) # 395 m
-	plot_map!(p2,p_mapS_plot;legend=false,clims=(-500,500),map_color=:gray2) # 800 m
+	clims = (-500,500)
+	dpi   = 50
+	p2 = plot_map(n_mapS_395;clims=clims,dpi=dpi,legend=false)     # 395 m
+	plot_map!(p2,e_mapS_plot;clims=clims,dpi=dpi,map_color=:magma) # 395 m
+	plot_map!(p2,p_mapS_plot;clims=clims,dpi=dpi,map_color=:gray)  # 800 m
 end
 
 # ╔═╡ 2d18bbeb-ad4e-4c5b-80a3-25bd99f45c73
@@ -136,7 +138,7 @@ begin # the Eastern drape map contains an additional drape (altitude) map
 	alt_val = 200:500
 	alt_cdf = [sum(e_alts .< a) for a in alt_val] / sum(e_mask)
 	p3 = plot(alt_val,alt_cdf,xlab="altitude [m]",ylab="fraction [-]",
-	          title="altitude map CDF",lab=false)
+	          title="altitude map CDF",lab=false,dpi=200)
 end
 
 # ╔═╡ 3f6b725b-f1c7-41fb-9854-c737b9698a40
@@ -147,10 +149,10 @@ Minimal areas have map data collected at 395 m or higher (colored spots), so a l
 
 # ╔═╡ ae1acc31-19db-4e94-85dc-e6274186978e
 begin
-	p4 = plot_map(e_mapS_plot;map_color=:gray,legend=false)
+	p4 = plot_map(e_mapS_plot;dpi=dpi,legend=false,map_color=:gray)
 	e_mapS_plot_ = deepcopy(e_mapS_plot)
 	e_mapS_plot_.map[e_mapS_drp.alt .<= 395] .= 0
-	plot_map!(p4,e_mapS_plot_)
+	plot_map!(p4,e_mapS_plot_;dpi=dpi)
 end
 
 # ╔═╡ 504842a2-61e0-4154-a1e9-5182c97b6090
@@ -169,8 +171,8 @@ begin
 	xx        = [(e_mapS_395.xx[1]-dx*px):dx:(e_mapS_395.xx[end]+dx*px_end);]
 	yy        = [(e_mapS_395.yy[1]-dy*py):dy:(e_mapS_395.yy[end]+dy*py_end);]
 	(lon,lat) = map_border(e_mapS_plot;sort_border=true) # get map border
-	p5 = plot_map(map_map,xx,yy)
-	plot_path!(p5,lat,lon,path_color=:black)
+	p5 = plot_map(map_map,xx,yy;dpi=dpi)
+	plot_path!(p5,lat,lon;path_color=:black)
 end
 
 # ╔═╡ 8b5c030a-e0b9-4a7a-a901-a6967edbe70b
@@ -183,8 +185,8 @@ md"## Plot combined Eastern Ontario & NAMAD maps together
 begin
 	mapS_combined = map_combine(e_mapS_plot,n_mapS_395)
 	mapS_upward   = upward_fft(mapS_combined,395)
-	p6 = plot_map(mapS_upward)
-	plot_path!(p6,lat,lon,path_color=:black)
+	p6 = plot_map(mapS_upward;dpi=dpi)
+	plot_path!(p6,lat,lon;path_color=:black)
 end
 
 # ╔═╡ 1b4d1092-1680-4676-a69d-6acc2549d588
@@ -198,9 +200,9 @@ begin
 	ind_trim   = (rad2deg.(lon) .> -76) .& (rad2deg.(lat) .< 45)
 	lon_trim   = lon[ind_trim]
 	lat_trim   = lat[ind_trim]
-	p7 = plot_map(mapS_combined,map_color=:gray)
-	plot_path!(p7,lat,lon,path_color=:black)
-	plot_path!(p7,lat_trim,lon_trim,path_color=:red)
+	p7 = plot_map(mapS_combined;dpi=dpi,map_color=:gray)
+	plot_path!(p7,lat,lon;path_color=:black)
+	plot_path!(p7,lat_trim,lon_trim;path_color=:red)
 end
 
 # ╔═╡ 8dd4196a-692f-4f4f-8f4a-6d8c39c4e3ac
@@ -222,7 +224,8 @@ md" The trend of the map values agree, as expected.
 
 # ╔═╡ 992dce6d-3bed-428c-84ca-2ee9bc9f0167
 begin
-	p8 = plot(e_mapS_val,lab="Eastern",ylab="map value [nT]",dpi=200)
+    p8 = plot(ylab="map value [nT]",dpi=200)
+	plot!(p8,e_mapS_val,lab="Eastern")
 	plot!(p8,n_mapS_val,lab="NAMAD")
 end
 

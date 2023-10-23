@@ -1456,7 +1456,7 @@ Plot map on an existing plot.
 - `clims`:      (optional) color scale limits
 - `dpi`:        (optional) dots per inch (image resolution)
 - `margin`:     (optional) margin around plot [mm]
-- `Nmax`:       (optional) maximum number of data points plotted
+- `Nmax`:       (optional) maximum number of data points plotted (per axis)
 - `legend`:     (optional) if true, show legend
 - `axis`:       (optional) if true, show axes
 - `map_color`:  (optional) filled contour color scheme {`:usgs`,`:gray`,`:gray1`,`:gray2`,`:plasma`,`:magma`}
@@ -1580,7 +1580,7 @@ Plot map on an existing plot.
 - `clims`:      (optional) color scale limits
 - `dpi`:        (optional) dots per inch (image resolution)
 - `margin`:     (optional) margin around plot [mm]
-- `Nmax`:       (optional) maximum number of data points plotted
+- `Nmax`:       (optional) maximum number of data points plotted (per axis)
 - `legend`:     (optional) if true, show legend
 - `axis`:       (optional) if true, show axes
 - `map_color`:  (optional) filled contour color scheme {`:usgs`,`:gray`,`:gray1`,`:gray2`,`:plasma`,`:magma`}
@@ -1643,7 +1643,7 @@ Plot map on an existing plot.
 - `clims`:      (optional) color scale limits
 - `dpi`:        (optional) dots per inch (image resolution)
 - `margin`:     (optional) margin around plot [mm]
-- `Nmax`:       (optional) maximum number of data points plotted
+- `Nmax`:       (optional) maximum number of data points plotted (per axis)
 - `legend`:     (optional) if true, show legend
 - `axis`:       (optional) if true, show axes
 - `map_color`:  (optional) filled contour color scheme {`:usgs`,`:gray`,`:gray1`,`:gray2`,`:plasma`,`:magma`}
@@ -1653,9 +1653,9 @@ Plot map on an existing plot.
 - `b_e`:        (optional) plotting backend
 
 **Returns:**
-- `nothing`: map (if typeof(`map_map`) = `MapV`, `mapX`) is plotted on `p1`
-- `nothing`: map (if typeof(`map_map`) = `MapV`, `mapY`) is plotted on `p2`
-- `nothing`: map (if typeof(`map_map`) = `MapV`, `mapZ`) is plotted on `p3`
+- `nothing`: `mapX` is plotted on `p1`
+- `nothing`: `mapY` is plotted on `p2`
+- `nothing`: `mapZ` is plotted on `p3`
 """
 function plot_map!(p1, p2, p3, mapV::MapV;
                    clims::Tuple       = (-500,500),
@@ -1710,7 +1710,7 @@ Plot map.
 - `clims`:      (optional) color scale limits
 - `dpi`:        (optional) dots per inch (image resolution)
 - `margin`:     (optional) margin around plot [mm]
-- `Nmax`:       (optional) maximum number of data points plotted
+- `Nmax`:       (optional) maximum number of data points plotted (per axis)
 - `legend`:     (optional) if true, show legend
 - `axis`:       (optional) if true, show axes
 - `map_color`:  (optional) filled contour color scheme {`:usgs`,`:gray`,`:gray1`,`:gray2`,`:plasma`,`:magma`}
@@ -1773,7 +1773,7 @@ Plot map.
 - `clims`:      (optional) color scale limits
 - `dpi`:        (optional) dots per inch (image resolution)
 - `margin`:     (optional) margin around plot [mm]
-- `Nmax`:       (optional) maximum number of data points plotted
+- `Nmax`:       (optional) maximum number of data points plotted (per axis)
 - `legend`:     (optional) if true, show legend
 - `axis`:       (optional) if true, show axes
 - `map_color`:  (optional) filled contour color scheme {`:usgs`,`:gray`,`:gray1`,`:gray2`,`:plasma`,`:magma`}
