@@ -76,7 +76,7 @@ begin
 end;
 
 # ╔═╡ 43dbbbb1-e4b9-4ef5-b5f1-b7da32e6f8e1
-md"Perform neural network-based calibration using training data & extract trained neural network (NN) compensation model. The full list of SGL flights is in `df_flight`, the full list of maps is in `df_map`, and the full list of flight lines is in `df_all`.
+md"Perform neural network-based calibration using training data & extract trained neural network (NN) compensation model. The full list of SGL flights is in `df_flight`, the full list of maps is in `df_map`, & the full list of flight lines is in `df_all`.
 "
 
 # ╔═╡ fd8adf67-48b5-487b-9a14-8f4acf47d1d6

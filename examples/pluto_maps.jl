@@ -206,7 +206,7 @@ begin
 end
 
 # ╔═╡ 8dd4196a-692f-4f4f-8f4a-6d8c39c4e3ac
-md" First the `map_interpolate` function is used to create map interpolation objects, which are then evaluated at the given latitudes and longitudes (red path above). The (standard deviation) error of the map values is approximately 100 nT in this case.
+md" First the `map_interpolate` function is used to create map interpolation objects, which are then evaluated at the given latitudes & longitudes (red path above). The (standard deviation) error of the map values is approximately 100 nT in this case.
 "
 
 # ╔═╡ b332569d-28d6-48e3-b080-170e23c1aa3f
@@ -244,7 +244,7 @@ begin
 end
 
 # ╔═╡ ee8bbf97-97b0-420d-a29d-7a0a9fb87a41
-md"The second way to create a 3D map is to combine multiple 2D maps using the `map_combine` function. In this case, the Eastern map (395 m) and Perth map (800 m) are stacked into a 3D map.
+md"The second way to create a 3D map is to combine multiple 2D maps using the `map_combine` function. In this case, the Eastern map (395 m) & Perth map (800 m) are stacked into a 3D map.
 "
 
 # ╔═╡ eaa6b007-97cf-4178-bb9a-2656632df7c1

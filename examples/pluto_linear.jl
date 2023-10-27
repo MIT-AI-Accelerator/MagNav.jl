@@ -86,7 +86,7 @@ end;
 # ╔═╡ dc519bdb-c501-443a-b7e5-26e6071650fe
 md"## PLSR-based calibration and compensation
 
-Perform PLSR-based calibration using training data. The full list of SGL flights is in `df_flight`, the full list of maps is in `df_map`, and the full list of flight lines is in `df_all`.
+Perform PLSR-based calibration using training data. The full list of SGL flights is in `df_flight`, the full list of maps is in `df_map`, & the full list of flight lines is in `df_all`.
 "
 
 # ╔═╡ dc05737c-4ce8-49aa-809d-e58046fe546c

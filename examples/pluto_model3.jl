@@ -47,7 +47,7 @@ Dataframe  | Description
 # ╔═╡ 3a55962c-bd1b-410c-b98a-3130fc11ee11
 md"## Train a (linear) Tolles-Lawson model
 
-Select Flight 1006 (see [readme](https://github.com/MIT-AI-Accelerator/MagNav.jl/blob/master/readmes/Flt1006_readme.txt)), load the flight data, and get the Boolean indices for a specific calibration flight line that will be used to fit the Tolles-Lawson coefficients. The full list of SGL flights is in `df_flight`, and the full list of calibration flight line options is in `df_comp`.
+Select Flight 1006 (see [readme](https://github.com/MIT-AI-Accelerator/MagNav.jl/blob/master/readmes/Flt1006_readme.txt)), load the flight data, & get the Boolean indices for a specific calibration flight line that will be used to fit the Tolles-Lawson coefficients. The full list of SGL flights is in `df_flight`, & the full list of calibration flight line options is in `df_comp`.
 "
 
 # ╔═╡ bf9f72f0-c351-48d3-a811-418ee965073c
@@ -120,7 +120,7 @@ begin
 end;
 
 # ╔═╡ 7a59dc41-21f1-4a5e-9f8b-06cacca8845b
-md"Perform Tolles-Lawson compensation on `lines_test`. The full list of SGL flights is in `df_flight`, the full list of maps is in `df_map`, and the full list of flight lines is in `df_all`.
+md"Perform Tolles-Lawson compensation on `lines_test`. The full list of SGL flights is in `df_flight`, the full list of maps is in `df_map`, & the full list of flight lines is in `df_all`.
 "
 
 # ╔═╡ 9ed61357-346b-49de-a1ed-8849db041ade

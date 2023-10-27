@@ -70,7 +70,7 @@ typeof(xyz)
 fieldnames(MagNav.XYZ20)
 
 # ╔═╡ 1a3aba8d-3aa8-454b-9fb0-708f0bd38c42
-md"Select the map & view the flight line options (`df_options`) for the selected flight & map. The full list of SGL flights is in `df_flight`, the full list of maps is in `df_map`, and the full list of navigation-capable flight lines is in `df_nav`.
+md"Select the map & view the flight line options (`df_options`) for the selected flight & map. The full list of SGL flights is in `df_flight`, the full list of maps is in `df_map`, & the full list of navigation-capable flight lines is in `df_nav`.
 "
 
 # ╔═╡ c192c83b-deb3-4b6e-b0d9-97357e0b554c
