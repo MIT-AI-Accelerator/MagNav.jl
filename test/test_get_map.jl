@@ -32,17 +32,17 @@ map_data_drpS = Dict("map" => map_map[ind,ind],
                      "alt" => map_map[ind,ind])
 
 test_data_map_badS = joinpath(@__DIR__,"test_data_map_badS.mat")
-map_data  = matopen(test_data_map_badS,"w") do file
+matopen(test_data_map_badS,"w") do file
     write(file,"map_data",map_data_badS)
 end
 
 test_data_map_badV = joinpath(@__DIR__,"test_data_map_badV.mat")
-map_data  = matopen(test_data_map_badV,"w") do file
+matopen(test_data_map_badV,"w") do file
     write(file,"map_data",map_data_badV)
 end
 
 test_data_map_drpS = joinpath(@__DIR__,"test_data_map_drpS.mat")
-map_data  = matopen(test_data_map_drpS,"w") do file
+matopen(test_data_map_drpS,"w") do file
     write(file,"map_data",map_data_drpS)
 end
 

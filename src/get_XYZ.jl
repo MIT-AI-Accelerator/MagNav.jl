@@ -7,13 +7,13 @@
              dt                 = 0.1,
              silent::Bool       = false)
 
-Get the minimum dataset required for MagNav from saved HDF5 or MAT file.
+Get the minimum dataset required for MagNav from saved CSV, HDF5, or MAT file.
 Not all fields within the `XYZ0` flight data struct are required. The minimum
-data required in the HDF5 or MAT file includes:
+data required in the CSV, HDF5, or MAT file includes:
 - `lat`, `lon`, `alt` (position)
-- `mag_1_uc` OR `mag_1_c` (scalar magnetometer measurements)
+- `mag_1_c` OR `mag_1_uc` (scalar magnetometer measurements)
 
-If an HDF5 file is provided, the possible fields in the file are:
+If a CSV or HDF5 file is provided, the possible columns/fields in the file are:
 
 |**Field**|**Type**|**Description**
 |:--|:--|:--
@@ -28,7 +28,7 @@ If an HDF5 file is provided, the possible fields in the file are:
 |`fn`      |vector | north specific force [m/s]
 |`fe`      |vector | east  specific force [m/s]
 |`fd`      |vector | down  specific force [m/s]
-|`Cnb`     |3x3xN  | direction cosine matrix (body to navigation) [-]
+|`Cnb`     |3x3xN  | direction cosine matrix (body to navigation) [-], not valid for CSV file
 |`roll`    |vector | roll [deg]
 |`pitch`   |vector | pitch [deg]
 |`yaw`     |vector | yaw [deg]
@@ -43,11 +43,11 @@ If an HDF5 file is provided, the possible fields in the file are:
 |`ins_fn`  |vector | INS north specific force [m/s]
 |`ins_fe`  |vector | INS east  specific force [m/s]
 |`ins_fd`  |vector | INS down  specific force [m/s]
-|`ins_Cnb` |3x3xN  | INS direction cosine matrix (body to navigation) [-]
+|`ins_Cnb` |3x3xN  | INS direction cosine matrix (body to navigation) [-], not valid for CSV file
 |`ins_roll`|vector | INS roll [deg]
 |`ins_pitch`|vector| INS pitch [deg]
 |`ins_yaw` |vector | INS yaw [deg]
-|`ins_P`   |17x17xN| INS covariance matrix, only relevant for simulated data, otherwise zeros [-]
+|`ins_P`   |17x17xN| INS covariance matrix, only relevant for simulated data, otherwise zeros [-], not valid for CSV file
 |`flux_a_x`|vector | Flux A x-direction magnetic field [nT]
 |`flux_a_y`|vector | Flux A y-direction magnetic field [nT]
 |`flux_a_z`|vector | Flux A z-direction magnetic field [nT]
@@ -63,9 +63,9 @@ INS fields should be within the specified `ins_field` MAT struct and without
 `ins_` prefixes. This is the standard way the MATLAB-companion outputs data.
 
 **Arguments:**
-- `xyz_file`:   path/name of flight data HDF5 or MAT file (`.h5` or `.mat` extension required)
-- `traj_field`: (optional) trajectory struct field within MAT file to use, not relevant for HDF5 file
-- `ins_field`:  (optional) INS struct field within MAT file to use, `:none` if unavailable, not relevant for HDF5 file
+- `xyz_file`:   path/name of flight data CSV, HDF5, or MAT file (`.csv`, `.h5`, or `.mat` extension required)
+- `traj_field`: (optional) trajectory struct field within MAT file to use, not relevant for CSV or HDF5 file
+- `ins_field`:  (optional) INS struct field within MAT file to use, `:none` if unavailable, not relevant for CSV or HDF5 file
 - `flight`:     (optional) flight number, only used if not in `xyz_file`
 - `line`:       (optional) line number, i.e., segment within `flight`, only used if not in `xyz_file`
 - `dt`:         (optional) measurement time step [s], only used if not in `xyz_file`
@@ -82,32 +82,49 @@ function get_XYZ0(xyz_file::String,
                   dt                 = 0.1,
                   silent::Bool       = false)
 
-    @assert any(occursin.([".h5",".mat"],xyz_file)) "$xyz_file flight data file must have .h5 or .mat extension"
+    @assert any(occursin.([".csv",".h5",".mat"],xyz_file)) "$xyz_file flight data file must have .csv, .h5, or .mat extension"
 
     traj = get_traj(xyz_file,traj_field;dt=dt,silent=silent)
 
-    if occursin(".h5",xyz_file) # get data from HDF5 file
+    if occursin(".csv",xyz_file) # get data from CSV file
 
-        xyz_data = h5open(xyz_file,"r") # read-only
+        d = DataFrame(CSV.File(xyz_file))
 
         # if needed, create INS struct
-        if any(isnan.(read_check(xyz_data,:ins_lat,1,true))) |
-           any(isnan.(read_check(xyz_data,:ins_lon,1,true))) |
-           any(isnan.(read_check(xyz_data,:ins_alt,1,true)))
+        if any(["ins_lat","ins_lon","ins_alt"] .∉ (names(d),))
             ins = create_ins(traj)
         else
             ins = get_ins(xyz_file,ins_field;dt=traj.dt,silent=silent)
         end
 
         # these fields might not be included
-        flight_  = read_check(xyz_data,:flight,1,true)
-        line_    = read_check(xyz_data,:line  ,1,true)
+        flight   = "flight"   in names(d) ? d[:,"flight"  ] : flight
+        line     = "line"     in names(d) ? d[:,"line"    ] : line
+        mag_1_c  = "mag_1_c"  in names(d) ? d[:,"mag_1_c" ] : NaN
+        mag_1_uc = "mag_1_uc" in names(d) ? d[:,"mag_1_uc"] : NaN
+
+    elseif occursin(".h5",xyz_file) # get data from HDF5 file
+
+        d = h5open(xyz_file,"r") # read-only
+
+        # if needed, create INS struct
+        if any(isnan.(read_check(d,:ins_lat,1,true))) |
+           any(isnan.(read_check(d,:ins_lon,1,true))) |
+           any(isnan.(read_check(d,:ins_alt,1,true)))
+            ins = create_ins(traj)
+        else
+            ins = get_ins(xyz_file,ins_field;dt=traj.dt,silent=silent)
+        end
+
+        # these fields might not be included
+        flight_  = read_check(d,:flight,1,true)
+        line_    = read_check(d,:line  ,1,true)
         flight   = any(isnan.(flight_)) ? flight : flight_
         line     = any(isnan.(line_))   ? line   : line_
-        mag_1_uc = read_check(xyz_data,:mag_1_uc,1,true)
-        mag_1_c  = read_check(xyz_data,:mag_1_c ,1,true)
+        mag_1_c  = read_check(d,:mag_1_c ,1,true)
+        mag_1_uc = read_check(d,:mag_1_uc,1,true)
 
-        close(xyz_data)
+        close(d)
 
     elseif occursin(".mat",xyz_file) # get data from MAT file
 
@@ -118,23 +135,23 @@ function get_XYZ0(xyz_file::String,
             ins = get_ins(xyz_file,ins_field;dt=traj.dt,silent=silent)
         end
 
-        xyz_data = matopen(xyz_file,"r") do file
-            read(file,string(traj_field))
+        d = matopen(xyz_file,"r") do file
+            read(file,"$traj_field")
         end
 
         # these fields might not be included
-        flight   = haskey(xyz_data,"flight"  ) ? xyz_data["flight"]   : flight
-        line     = haskey(xyz_data,"line"    ) ? xyz_data["line"]     : line
-        mag_1_uc = haskey(xyz_data,"mag_1_uc") ? xyz_data["mag_1_uc"] : NaN
-        mag_1_c  = haskey(xyz_data,"mag_1_c" ) ? xyz_data["mag_1_c" ] : NaN
+        flight   = haskey(d,"flight"  ) ? d["flight"]   : flight
+        line     = haskey(d,"line"    ) ? d["line"]     : line
+        mag_1_c  = haskey(d,"mag_1_c" ) ? d["mag_1_c" ] : NaN
+        mag_1_uc = haskey(d,"mag_1_uc") ? d["mag_1_uc"] : NaN
 
     end
 
     # ensure vectors
     flight   = length(flight  ) > 1 ? vec(flight  ) : one.(traj.lat)*flight[1]
     line     = length(line    ) > 1 ? vec(line    ) : one.(traj.lat)*line[1]
-    mag_1_uc = length(mag_1_uc) > 1 ? vec(mag_1_uc) : one.(traj.lat)*mag_1_uc[1]
     mag_1_c  = length(mag_1_c ) > 1 ? vec(mag_1_c ) : one.(traj.lat)*mag_1_c[1]
+    mag_1_uc = length(mag_1_uc) > 1 ? vec(mag_1_uc) : one.(traj.lat)*mag_1_uc[1]
 
     # if needed, create flux_a
     flux_a = get_flux(xyz_file,:flux_a,traj_field)
@@ -143,18 +160,18 @@ function get_XYZ0(xyz_file::String,
         flux_a = create_flux(traj)
     end
 
-    # if needed, create mag_1_uc
-    if any(isnan.(mag_1_uc))
-        silent || @info("creating uncompensated scalar magnetometer data")
-        (mag_1_uc,_) = corrupt_mag(mag_1_c,flux_a;dt=dt)
-    end
-
     # if needed, create mag_1_c
     if any(isnan.(mag_1_c))
         silent || @info("creating compensated scalar magnetometer data")
         A       = create_TL_A(flux_a)
         TL_coef = create_TL_coef(flux_a,mag_1_uc)
         mag_1_c = mag_1_uc - detrend(A*TL_coef;mean_only=true)
+    end
+
+    # if needed, create mag_1_uc
+    if any(isnan.(mag_1_uc))
+        silent || @info("creating uncompensated scalar magnetometer data")
+        (mag_1_uc,_) = corrupt_mag(mag_1_c,flux_a;dt=dt)
     end
 
     return XYZ0(traj, ins, flux_a, flight, line, mag_1_c, mag_1_uc)
@@ -169,17 +186,17 @@ end # function get_XYZ0
              dt                 = 0.1,
              silent::Bool       = false)
 
-Get the minimum dataset required for MagNav from saved HDF5 or MAT file.
+Get the minimum dataset required for MagNav from saved CSV, HDF5, or MAT file.
 Not all fields within the `XYZ1` flight data struct are required. The minimum
-data required in the HDF5 or MAT file includes:
+data required in the CSV, HDF5, or MAT file includes:
 - `lat`, `lon`, `alt` (position)
-- `mag_1_uc` OR `mag_1_c` (scalar magnetometer measurements)
+- `mag_1_c` OR `mag_1_uc` (scalar magnetometer measurements)
 
 All other fields will be computed/simulated, except `flux_b`, `year`, `doy`,
 `diurnal`, `igrf`, `mag_2_c`, `mag_3_c`, `mag_2_uc`, `mag_3_uc`, `aux_1`,
 `aux_2`, and `aux_3`.
 
-If an HDF5 file is provided, the possible fields in the file are:
+If a CSV or HDF5 file is provided, the possible columns/fields in the file are:
 
 |**Field**|**Type**|**Description**
 |:--|:--|:--
@@ -194,7 +211,7 @@ If an HDF5 file is provided, the possible fields in the file are:
 |`fn`      |vector | north specific force [m/s]
 |`fe`      |vector | east  specific force [m/s]
 |`fd`      |vector | down  specific force [m/s]
-|`Cnb`     |3x3xN  | direction cosine matrix (body to navigation) [-]
+|`Cnb`     |3x3xN  | direction cosine matrix (body to navigation) [-], not valid for CSV file
 |`roll`    |vector | roll [deg]
 |`pitch`   |vector | pitch [deg]
 |`yaw`     |vector | yaw [deg]
@@ -209,11 +226,11 @@ If an HDF5 file is provided, the possible fields in the file are:
 |`ins_fn`  |vector | INS north specific force [m/s]
 |`ins_fe`  |vector | INS east  specific force [m/s]
 |`ins_fd`  |vector | INS down  specific force [m/s]
-|`ins_Cnb` |3x3xN  | INS direction cosine matrix (body to navigation) [-]
+|`ins_Cnb` |3x3xN  | INS direction cosine matrix (body to navigation) [-], not valid for CSV file
 |`ins_roll`|vector | INS roll [deg]
 |`ins_pitch`|vector| INS pitch [deg]
 |`ins_yaw` |vector | INS yaw [deg]
-|`ins_P`   |17x17xN| INS covariance matrix, only relevant for simulated data, otherwise zeros [-]
+|`ins_P`   |17x17xN| INS covariance matrix, only relevant for simulated data, otherwise zeros [-], not valid for CSV file
 |`flux_a_x`|vector | Flux A x-direction magnetic field [nT]
 |`flux_a_y`|vector | Flux A y-direction magnetic field [nT]
 |`flux_a_z`|vector | Flux A z-direction magnetic field [nT]
@@ -244,9 +261,9 @@ INS fields should be within the specified `ins_field` MAT struct and without
 `ins_` prefixes. This is the standard way the MATLAB-companion outputs data.
 
 **Arguments:**
-- `xyz_file`:   path/name of flight data HDF5 or MAT file (`.h5` or `.mat` extension required)
-- `traj_field`: (optional) trajectory struct field within MAT file to use, not relevant for HDF5 file
-- `ins_field`:  (optional) INS struct field within MAT file to use, `:none` if unavailable, not relevant for HDF5 file
+- `xyz_file`:   path/name of flight data CSV, HDF5, or MAT file (`.csv`, `.h5`, or `.mat` extension required)
+- `traj_field`: (optional) trajectory struct field within MAT file to use, not relevant for CSV or HDF5 file
+- `ins_field`:  (optional) INS struct field within MAT file to use, `:none` if unavailable, not relevant for CSV or HDF5 file
 - `flight`:     (optional) flight number, only used if not in `xyz_file`
 - `line`:       (optional) line number, i.e., segment within `flight`, only used if not in `xyz_file`
 - `dt`:         (optional) measurement time step [s], only used if not in `xyz_file`
@@ -263,7 +280,7 @@ function get_XYZ1(xyz_file::String,
                   dt                 = 0.1,
                   silent::Bool       = false)
 
-    @assert any(occursin.([".h5",".mat"],xyz_file)) "$xyz_file flight data file must have .h5 or .mat extension"
+    @assert any(occursin.([".csv",".h5",".mat"],xyz_file)) "$xyz_file flight data file must have .csv, .h5, or .mat extension"
 
     xyz = get_XYZ0(xyz_file,traj_field,ins_field;
                    flight = flight,
@@ -282,43 +299,61 @@ function get_XYZ1(xyz_file::String,
 
     flux_b = get_flux(xyz_file,:flux_b,traj_field)
 
-    if occursin(".h5",xyz_file) # get data from HDF5 file
+    if occursin(".csv",xyz_file) # get data from CSV file
 
-        xyz_data = h5open(xyz_file,"r") # read-only
+        d = DataFrame(CSV.File(xyz_file))
 
         # these fields might not be included
-        year     = read_check(xyz_data,:year,1,true)
-        doy      = read_check(xyz_data,:doy ,1,true)
-        diurnal  = read_check(xyz_data,:diurnal,1,true)
-        igrf     = read_check(xyz_data,:igrf ,1,true)
-        mag_2_c  = read_check(xyz_data,:mag_2_c,1,true)
-        mag_3_c  = read_check(xyz_data,:mag_3_c ,1,true)
-        mag_2_uc = read_check(xyz_data,:mag_2_uc,1,true)
-        mag_3_uc = read_check(xyz_data,:mag_3_uc ,1,true)
-        aux_1    = read_check(xyz_data,:aux_1,1,true)
-        aux_2    = read_check(xyz_data,:aux_2,1,true)
-        aux_3    = read_check(xyz_data,:aux_3 ,1,true)
+        year     = "year"     in names(d) ? d[:,"year"    ] : NaN
+        doy      = "doy"      in names(d) ? d[:,"doy"     ] : NaN
+        diurnal  = "diurnal"  in names(d) ? d[:,"diurnal" ] : NaN
+        igrf     = "igrf"     in names(d) ? d[:,"igrf"    ] : NaN
+        mag_2_c  = "mag_2_c"  in names(d) ? d[:,"mag_2_c" ] : NaN
+        mag_3_c  = "mag_3_c"  in names(d) ? d[:,"mag_3_c" ] : NaN
+        mag_2_uc = "mag_2_uc" in names(d) ? d[:,"mag_2_uc"] : NaN
+        mag_3_uc = "mag_3_uc" in names(d) ? d[:,"mag_3_uc"] : NaN
+        aux_1    = "aux_1"    in names(d) ? d[:,"aux_1"   ] : NaN
+        aux_2    = "aux_2"    in names(d) ? d[:,"aux_2"   ] : NaN
+        aux_3    = "aux_3"    in names(d) ? d[:,"aux_3"   ] : NaN
 
-        close(xyz_data)
+    elseif occursin(".h5",xyz_file) # get data from HDF5 file
+
+        d = h5open(xyz_file,"r") # read-only
+
+        # these fields might not be included
+        year     = read_check(d,:year    ,1,true)
+        doy      = read_check(d,:doy     ,1,true)
+        diurnal  = read_check(d,:diurnal ,1,true)
+        igrf     = read_check(d,:igrf    ,1,true)
+        mag_2_c  = read_check(d,:mag_2_c ,1,true)
+        mag_3_c  = read_check(d,:mag_3_c ,1,true)
+        mag_2_uc = read_check(d,:mag_2_uc,1,true)
+        mag_3_uc = read_check(d,:mag_3_uc,1,true)
+        aux_1    = read_check(d,:aux_1   ,1,true)
+        aux_2    = read_check(d,:aux_2   ,1,true)
+        aux_3    = read_check(d,:aux_3   ,1,true)
+
+        close(d)
 
     elseif occursin(".mat",xyz_file) # get data from MAT file
 
-        xyz_data = matopen(xyz_file,"r") do file
-            read(file,string(traj_field))
+        d = matopen(xyz_file,"r") do file
+            read(file,"$traj_field")
         end
 
         # these fields might not be included
-        year     = haskey(xyz_data,"year"    ) ? xyz_data["year"    ] : NaN
-        doy      = haskey(xyz_data,"doy"     ) ? xyz_data["doy"     ] : NaN
-        diurnal  = haskey(xyz_data,"diurnal" ) ? xyz_data["diurnal" ] : NaN
-        igrf     = haskey(xyz_data,"igrf"    ) ? xyz_data["igrf"    ] : NaN
-        mag_2_c  = haskey(xyz_data,"mag_2_c" ) ? xyz_data["mag_2_c" ] : NaN
-        mag_3_c  = haskey(xyz_data,"mag_3_c" ) ? xyz_data["mag_3_c" ] : NaN
-        mag_2_uc = haskey(xyz_data,"mag_2_uc") ? xyz_data["mag_2_uc"] : NaN
-        mag_3_uc = haskey(xyz_data,"mag_3_uc") ? xyz_data["mag_3_uc"] : NaN
-        aux_1    = haskey(xyz_data,"aux_1"   ) ? xyz_data["aux_1"   ] : NaN
-        aux_2    = haskey(xyz_data,"aux_2"   ) ? xyz_data["aux_2"   ] : NaN
-        aux_3    = haskey(xyz_data,"aux_3"   ) ? xyz_data["aux_3"   ] : NaN
+        year     = haskey(d,"year"    ) ? d["year"    ] : NaN
+        doy      = haskey(d,"doy"     ) ? d["doy"     ] : NaN
+        diurnal  = haskey(d,"diurnal" ) ? d["diurnal" ] : NaN
+        igrf     = haskey(d,"igrf"    ) ? d["igrf"    ] : NaN
+        mag_2_c  = haskey(d,"mag_2_c" ) ? d["mag_2_c" ] : NaN
+        mag_3_c  = haskey(d,"mag_3_c" ) ? d["mag_3_c" ] : NaN
+        mag_2_uc = haskey(d,"mag_2_uc") ? d["mag_2_uc"] : NaN
+        mag_3_uc = haskey(d,"mag_3_uc") ? d["mag_3_uc"] : NaN
+        aux_1    = haskey(d,"aux_1"   ) ? d["aux_1"   ] : NaN
+        aux_2    = haskey(d,"aux_2"   ) ? d["aux_2"   ] : NaN
+        aux_3    = haskey(d,"aux_3"   ) ? d["aux_3"   ] : NaN
+
     end
 
     # ensure vectors
@@ -344,9 +379,9 @@ end # function get_XYZ1
              use_vec::Symbol = :flux_a,
              field::Symbol   = :traj)
 
-Get vector magnetometer data from saved HDF5 or MAT file.
+Get vector magnetometer data from saved CSV, HDF5, or MAT file.
 
-If an HDF5 file is provided, the possible fields in the file are:
+If a CSV or HDF5 file is provided, the possible columns/fields in the file are:
 
 |**Field**|**Type**|**Description**
 |:--|:--|:--
@@ -360,9 +395,9 @@ should be within the specified `field` MAT struct. This is the standard way the
 MATLAB-companion outputs data.
 
 **Arguments:**
-- `flux_file`: path/name of vector magnetometer data HDF5 or MAT file (`.h5` or `.mat` extension required)
-- `field`:     (optional) struct field within MAT file to use, not relevant for HDF5 file
+- `flux_file`: path/name of vector magnetometer data CSV, HDF5, or MAT file (`.csv`, `.h5`, or `.mat` extension required)
 - `use_vec`:   (optional) vector magnetometer (fluxgate) to use
+- `field`:     (optional) struct field within MAT file to use, not relevant for CSV or HDF5 file
 
 **Returns:**
 - `flux`: `MagV` vector magnetometer measurement struct
@@ -371,29 +406,38 @@ function get_flux(flux_file::String,
                   use_vec::Symbol = :flux_a,
                   field::Symbol   = :traj)
 
-    @assert any(occursin.([".h5",".mat"],flux_file)) "$flux_file vector magnetometer data file must have .h5 or .mat extension"
+    @assert any(occursin.([".csv",".h5",".mat"],flux_file)) "$flux_file vector magnetometer data file must have .csv, .h5, or .mat extension"
 
-    if occursin(".h5",flux_file) # get data from HDF5 file
+    if occursin(".csv",flux_file) # get data from CSV file
 
-        magv_data = h5open(flux_file,"r") # read-only
+        d = DataFrame(CSV.File(flux_file))
+        x = "$(use_vec)_x" in names(d) ? d[:,"$(use_vec)_x"] : NaN
+        y = "$(use_vec)_y" in names(d) ? d[:,"$(use_vec)_y"] : NaN
+        z = "$(use_vec)_z" in names(d) ? d[:,"$(use_vec)_z"] : NaN
+        t = "$(use_vec)_t" in names(d) ? d[:,"$(use_vec)_t"] : NaN
 
-        x = read_check(magv_data,Symbol(use_vec,"_x"),1,true)
-        y = read_check(magv_data,Symbol(use_vec,"_y"),1,true)
-        z = read_check(magv_data,Symbol(use_vec,"_z"),1,true)
-        t = read_check(magv_data,Symbol(use_vec,"_t"),1,true)
+    elseif occursin(".h5",flux_file) # get data from HDF5 file
 
-        close(magv_data)
+        d = h5open(flux_file,"r") # read-only
+
+        x = read_check(d,Symbol(use_vec,"_x"),1,true)
+        y = read_check(d,Symbol(use_vec,"_y"),1,true)
+        z = read_check(d,Symbol(use_vec,"_z"),1,true)
+        t = read_check(d,Symbol(use_vec,"_t"),1,true)
+
+        close(d)
 
     elseif occursin(".mat",flux_file) # get data from MAT file
 
-        magv_data = matopen(flux_file,"r") do file
-            read(file,string(field))
+        d = matopen(flux_file,"r") do file
+            read(file,"$field")
         end
 
-        x = haskey(magv_data,"$(use_vec)_x") ? magv_data["$(use_vec)_x"] : NaN
-        y = haskey(magv_data,"$(use_vec)_y") ? magv_data["$(use_vec)_y"] : NaN
-        z = haskey(magv_data,"$(use_vec)_z") ? magv_data["$(use_vec)_z"] : NaN
-        t = haskey(magv_data,"$(use_vec)_t") ? magv_data["$(use_vec)_t"] : NaN
+        x = haskey(d,"$(use_vec)_x") ? d["$(use_vec)_x"] : NaN
+        y = haskey(d,"$(use_vec)_y") ? d["$(use_vec)_y"] : NaN
+        z = haskey(d,"$(use_vec)_z") ? d["$(use_vec)_z"] : NaN
+        t = haskey(d,"$(use_vec)_t") ? d["$(use_vec)_t"] : NaN
+
     end
 
     # ensure vectors
@@ -414,10 +458,10 @@ get_MagV = get_magv = get_flux
 """
     get_traj(traj_file::String, field::Symbol=:traj; dt=0.1, silent::Bool=false)
 
-Get trajectory data from saved HDF5 or MAT file. The only required fields are
-`lat`, `lon`, and `alt` (position).
+Get trajectory data from saved CSV, HDF5, or MAT file. The only required fields
+are `lat`, `lon`, and `alt` (position).
 
-If an HDF5 file is provided, the possible fields in the file are:
+If a CSV or HDF5 file is provided, the possible columns/fields in the file are:
 
 |**Field**|**Type**|**Description**
 |:--|:--|:--
@@ -432,7 +476,7 @@ If an HDF5 file is provided, the possible fields in the file are:
 |`fn`      |vector | north specific force [m/s]
 |`fe`      |vector | east  specific force [m/s]
 |`fd`      |vector | down  specific force [m/s]
-|`Cnb`     |3x3xN  | direction cosine matrix (body to navigation) [-]
+|`Cnb`     |3x3xN  | direction cosine matrix (body to navigation) [-], not valid for CSV file
 |`roll`    |vector | roll [deg]
 |`pitch`   |vector | pitch [deg]
 |`yaw`     |vector | yaw [deg]
@@ -442,8 +486,8 @@ should be within the specified `field` MAT struct. This is the standard way the
 MATLAB-companion outputs data.
 
 **Arguments:**
-- `traj_file`: path/name of trajectory data HDF5 or MAT file (`.h5` or `.mat` extension required)
-- `field`:     (optional) struct field within MAT file to use, not relevant for HDF5 file
+- `traj_file`: path/name of trajectory data CSV, HDF5, or MAT file (`.csv`, `.h5`, or `.mat` extension required)
+- `field`:     (optional) struct field within MAT file to use, not relevant for CSV or HDF5 file
 - `dt`:        (optional) measurement time step [s], only used if not in `traj_file`
 - `silent`:    (optional) if true, no print outs
 
@@ -452,60 +496,83 @@ MATLAB-companion outputs data.
 """
 function get_traj(traj_file::String, field::Symbol=:traj; dt=0.1, silent::Bool=false)
 
-    @assert any(occursin.([".h5",".mat"],traj_file)) "$traj_file trajectory data file must have .h5 or .mat extension"
+    @assert any(occursin.([".csv",".h5",".mat"],traj_file)) "$traj_file trajectory data file must have .csv, .h5, or .mat extension"
 
     silent || @info("reading in data: $traj_file")
 
-    if occursin(".h5",traj_file) # get data from HDF5 file
+    if occursin(".csv",traj_file) # get data from CSV file
 
-        traj_data = h5open(traj_file,"r") # read-only
+        d = DataFrame(CSV.File(traj_file))
 
         # these fields are absolutely expected
-        lat   = read_check(traj_data,:lat,1,true)
-        lon   = read_check(traj_data,:lon,1,true)
-        alt   = read_check(traj_data,:alt,1,true)
+        lat   = d[:,"lat"]
+        lon   = d[:,"lon"]
+        alt   = d[:,"alt"]
 
         # these fields might not be included (especially dt vs tt & Cnb vs RPY)
-        dt_   = read_check(traj_data,:dt,1,true)[1]
-        dt    = isnan(dt_) ? dt : dt_
-        tt    = read_check(traj_data,:tt   ,1,true)
-        vn    = read_check(traj_data,:vn   ,1,true)
-        ve    = read_check(traj_data,:ve   ,1,true)
-        vd    = read_check(traj_data,:vd   ,1,true)
-        fn    = read_check(traj_data,:fn   ,1,true)
-        fe    = read_check(traj_data,:fe   ,1,true)
-        fd    = read_check(traj_data,:fd   ,1,true)
-        Cnb   = read_check(traj_data,:Cnb  ,1,true)
-        roll  = read_check(traj_data,:roll ,1,true)
-        pitch = read_check(traj_data,:pitch,1,true)
-        yaw   = read_check(traj_data,:yaw  ,1,true)
+        dt    = "dt"    in names(d) ? d[:,"dt"][1] : dt
+        tt    = "tt"    in names(d) ? d[:,"tt"   ] : NaN
+        vn    = "vn"    in names(d) ? d[:,"vn"   ] : NaN
+        ve    = "ve"    in names(d) ? d[:,"ve"   ] : NaN
+        vd    = "vd"    in names(d) ? d[:,"vd"   ] : NaN
+        fn    = "fn"    in names(d) ? d[:,"fn"   ] : NaN
+        fe    = "fe"    in names(d) ? d[:,"fe"   ] : NaN
+        fd    = "fd"    in names(d) ? d[:,"fd"   ] : NaN
+        Cnb   = NaN # matrix, not vector (column)
+        roll  = "roll"  in names(d) ? d[:,"roll" ] : NaN
+        pitch = "pitch" in names(d) ? d[:,"pitch"] : NaN
+        yaw   = "yaw"   in names(d) ? d[:,"yaw"  ] : NaN
 
-        close(traj_data)
+    elseif occursin(".h5",traj_file) # get data from HDF5 file
+
+        d = h5open(traj_file,"r") # read-only
+
+        # these fields are absolutely expected
+        lat   = read_check(d,:lat,1,true)
+        lon   = read_check(d,:lon,1,true)
+        alt   = read_check(d,:alt,1,true)
+
+        # these fields might not be included (especially dt vs tt & Cnb vs RPY)
+        dt_   = read_check(d,:dt,1,true)[1]
+        dt    = isnan(dt_) ? dt : dt_
+        tt    = read_check(d,:tt   ,1,true)
+        vn    = read_check(d,:vn   ,1,true)
+        ve    = read_check(d,:ve   ,1,true)
+        vd    = read_check(d,:vd   ,1,true)
+        fn    = read_check(d,:fn   ,1,true)
+        fe    = read_check(d,:fe   ,1,true)
+        fd    = read_check(d,:fd   ,1,true)
+        Cnb   = read_check(d,:Cnb  ,1,true)
+        roll  = read_check(d,:roll ,1,true)
+        pitch = read_check(d,:pitch,1,true)
+        yaw   = read_check(d,:yaw  ,1,true)
+
+        close(d)
 
     elseif occursin(".mat",traj_file) # get data from MAT file
 
-        traj_data = matopen(traj_file,"r") do file
-            read(file,string(field))
+        d = matopen(traj_file,"r") do file
+            read(file,"$field")
         end
 
         # these fields are absolutely expected
-        lat   = traj_data["lat"]
-        lon   = traj_data["lon"]
-        alt   = traj_data["alt"]
+        lat   = d["lat"]
+        lon   = d["lon"]
+        alt   = d["alt"]
 
         # these fields might not be included (especially dt vs tt & Cnb vs RPY)
-        dt    = haskey(traj_data,"dt"   ) ? traj_data["dt"][1] : dt
-        tt    = haskey(traj_data,"tt"   ) ? traj_data["tt"   ] : NaN
-        vn    = haskey(traj_data,"vn"   ) ? traj_data["vn"   ] : NaN
-        ve    = haskey(traj_data,"ve"   ) ? traj_data["ve"   ] : NaN
-        vd    = haskey(traj_data,"vd"   ) ? traj_data["vd"   ] : NaN
-        fn    = haskey(traj_data,"fn"   ) ? traj_data["fn"   ] : NaN
-        fe    = haskey(traj_data,"fe"   ) ? traj_data["fe"   ] : NaN
-        fd    = haskey(traj_data,"fd"   ) ? traj_data["fd"   ] : NaN
-        Cnb   = haskey(traj_data,"Cnb"  ) ? traj_data["Cnb"  ] : NaN
-        roll  = haskey(traj_data,"roll" ) ? traj_data["roll" ] : NaN
-        pitch = haskey(traj_data,"pitch") ? traj_data["pitch"] : NaN
-        yaw   = haskey(traj_data,"yaw"  ) ? traj_data["yaw"  ] : NaN
+        dt    = haskey(d,"dt"   ) ? d["dt"][1] : dt
+        tt    = haskey(d,"tt"   ) ? d["tt"   ] : NaN
+        vn    = haskey(d,"vn"   ) ? d["vn"   ] : NaN
+        ve    = haskey(d,"ve"   ) ? d["ve"   ] : NaN
+        vd    = haskey(d,"vd"   ) ? d["vd"   ] : NaN
+        fn    = haskey(d,"fn"   ) ? d["fn"   ] : NaN
+        fe    = haskey(d,"fe"   ) ? d["fe"   ] : NaN
+        fd    = haskey(d,"fd"   ) ? d["fd"   ] : NaN
+        Cnb   = haskey(d,"Cnb"  ) ? d["Cnb"  ] : NaN
+        roll  = haskey(d,"roll" ) ? d["roll" ] : NaN
+        pitch = haskey(d,"pitch") ? d["pitch"] : NaN
+        yaw   = haskey(d,"yaw"  ) ? d["yaw"  ] : NaN
 
     end
 
@@ -576,10 +643,10 @@ end # function get_traj
 """
     get_ins(ins_file::String, field::Symbol=:ins_data; dt=0.1, silent::Bool=false)
 
-Get inertial navigation system data from saved HDF5 or MAT file. The only
+Get inertial navigation system data from saved CSV, HDF5, or MAT file. The only
 required fields are `ins_lat`, `ins_lon`, and `ins_alt` (position).
 
-If an HDF5 file is provided, the possible fields in the file are:
+If a CSV or HDF5 file is provided, the possible columns/fields in the file are:
 
 |**Field**|**Type**|**Description**
 |:--|:--|:--
@@ -594,19 +661,19 @@ If an HDF5 file is provided, the possible fields in the file are:
 |`ins_fn`  |vector | INS north specific force [m/s]
 |`ins_fe`  |vector | INS east  specific force [m/s]
 |`ins_fd`  |vector | INS down  specific force [m/s]
-|`ins_Cnb` |3x3xN  | INS direction cosine matrix (body to navigation) [-]
+|`ins_Cnb` |3x3xN  | INS direction cosine matrix (body to navigation) [-], not valid for CSV file
 |`ins_roll`|vector | INS roll [deg]
 |`ins_pitch`|vector| INS pitch [deg]
 |`ins_yaw` |vector | INS yaw [deg]
-|`ins_P`   |17x17xN| INS covariance matrix, only relevant for simulated data, otherwise zeros [-]
+|`ins_P`   |17x17xN| INS covariance matrix, only relevant for simulated data, otherwise zeros [-], not valid for CSV file
 
 If a MAT file is provided, the above fields may also be provided, but they
 should be within the specified `field` MAT struct and without `ins_`
 prefixes. This is the standard way the MATLAB-companion outputs data.
 
 **Arguments:**
-- `ins_file`: path/name of INS data HDF5 or MAT file (`.h5` or `.mat` extension required)
-- `field`:    (optional) struct field within MAT file to use, not relevant for HDF5 file
+- `ins_file`: path/name of INS data CSV, HDF5, or MAT file (`.csv`, `.h5`, or `.mat` extension required)
+- `field`:    (optional) struct field within MAT file to use, not relevant for CSV or HDF5 file
 - `dt`:       (optional) measurement time step [s], only used if not in `ins_file`
 - `silent`:   (optional) if true, no print outs
 
@@ -615,62 +682,86 @@ prefixes. This is the standard way the MATLAB-companion outputs data.
 """
 function get_ins(ins_file::String, field::Symbol=:ins_data; dt=0.1, silent::Bool=false)
 
-    @assert any(occursin.([".h5",".mat"],ins_file)) "$ins_file INS data file must have .h5 or .mat extension"
+    @assert any(occursin.([".csv",".h5",".mat"],ins_file)) "$ins_file INS data file must have .csv, .h5, or .mat extension"
 
     silent || @info("reading in data: $ins_file")
 
-    if occursin(".h5",ins_file) # get data from HDF5 file
+    if occursin(".csv",ins_file) # get data from CSV file
 
-        ins_data = h5open(ins_file,"r") # read-only
+        d = DataFrame(CSV.File(ins_file))
 
         # these fields are absolutely expected
-        lat   = read_check(ins_data,:ins_lat,1,true)
-        lon   = read_check(ins_data,:ins_lon,1,true)
-        alt   = read_check(ins_data,:ins_alt,1,true)
+        lat   = d[:,"ins_lat"]
+        lon   = d[:,"ins_lon"]
+        alt   = d[:,"ins_alt"]
 
         # these fields might not be included (especially dt vs tt & Cnb vs RPY)
-        dt_   = read_check(ins_data,:ins_dt,1,true)[1]
-        dt    = isnan(dt_) ? dt : dt_
-        tt    = read_check(ins_data,:ins_tt   ,1,true)
-        vn    = read_check(ins_data,:ins_vn   ,1,true)
-        ve    = read_check(ins_data,:ins_ve   ,1,true)
-        vd    = read_check(ins_data,:ins_vd   ,1,true)
-        fn    = read_check(ins_data,:ins_fn   ,1,true)
-        fe    = read_check(ins_data,:ins_fe   ,1,true)
-        fd    = read_check(ins_data,:ins_fd   ,1,true)
-        Cnb   = read_check(ins_data,:ins_Cnb  ,1,true)
-        roll  = read_check(ins_data,:ins_roll ,1,true)
-        pitch = read_check(ins_data,:ins_pitch,1,true)
-        yaw   = read_check(ins_data,:ins_yaw  ,1,true)
-        P     = read_check(ins_data,:ins_P    ,1,true)
+        dt    = "ins_dt"    in names(d) ? d[:,"ins_dt"][1] : dt
+        tt    = "ins_tt"    in names(d) ? d[:,"ins_tt"   ] : NaN
+        vn    = "ins_vn"    in names(d) ? d[:,"ins_vn"   ] : NaN
+        ve    = "ins_ve"    in names(d) ? d[:,"ins_ve"   ] : NaN
+        vd    = "ins_vd"    in names(d) ? d[:,"ins_vd"   ] : NaN
+        fn    = "ins_fn"    in names(d) ? d[:,"ins_fn"   ] : NaN
+        fe    = "ins_fe"    in names(d) ? d[:,"ins_fe"   ] : NaN
+        fd    = "ins_fd"    in names(d) ? d[:,"ins_fd"   ] : NaN
+        Cnb   = NaN # matrix, not vector (column)
+        roll  = "ins_roll"  in names(d) ? d[:,"ins_roll" ] : NaN
+        pitch = "ins_pitch" in names(d) ? d[:,"ins_pitch"] : NaN
+        yaw   = "ins_yaw"   in names(d) ? d[:,"ins_yaw"  ] : NaN
+        P     = NaN # matrix, not vector (column)
 
-        close(ins_data)
+    elseif occursin(".h5",ins_file) # get data from HDF5 file
+
+        d = h5open(ins_file,"r") # read-only
+
+        # these fields are absolutely expected
+        lat   = read_check(d,:ins_lat,1,true)
+        lon   = read_check(d,:ins_lon,1,true)
+        alt   = read_check(d,:ins_alt,1,true)
+
+        # these fields might not be included (especially dt vs tt & Cnb vs RPY)
+        dt_   = read_check(d,:ins_dt,1,true)[1]
+        dt    = isnan(dt_) ? dt : dt_
+        tt    = read_check(d,:ins_tt   ,1,true)
+        vn    = read_check(d,:ins_vn   ,1,true)
+        ve    = read_check(d,:ins_ve   ,1,true)
+        vd    = read_check(d,:ins_vd   ,1,true)
+        fn    = read_check(d,:ins_fn   ,1,true)
+        fe    = read_check(d,:ins_fe   ,1,true)
+        fd    = read_check(d,:ins_fd   ,1,true)
+        Cnb   = read_check(d,:ins_Cnb  ,1,true)
+        roll  = read_check(d,:ins_roll ,1,true)
+        pitch = read_check(d,:ins_pitch,1,true)
+        yaw   = read_check(d,:ins_yaw  ,1,true)
+        P     = read_check(d,:ins_P    ,1,true)
+
+        close(d)
 
     elseif occursin(".mat",ins_file) # get data from MAT file
 
-        ins_data = matopen(ins_file,"r") do file
-            read(file,string(field))
+        d = matopen(ins_file,"r") do file
+            read(file,"$field")
         end
 
         # these fields are absolutely expected
-        lat   = ins_data["lat"]
-        lon   = ins_data["lon"]
-        alt   = ins_data["alt"]
+        lat   = d["lat"]
+        lon   = d["lon"]
+        alt   = d["alt"]
 
         # these fields might not be included (especially dt vs tt & Cnb vs RPY)
-        dt    = haskey(ins_data,"dt"   ) ? ins_data["dt"][1] : dt
-        tt    = haskey(ins_data,"tt"   ) ? ins_data["tt"   ] : NaN
-        vn    = haskey(ins_data,"vn"   ) ? ins_data["vn"   ] : NaN
-        ve    = haskey(ins_data,"ve"   ) ? ins_data["ve"   ] : NaN
-        vd    = haskey(ins_data,"vd"   ) ? ins_data["vd"   ] : NaN
-        fn    = haskey(ins_data,"fn"   ) ? ins_data["fn"   ] : NaN
-        fe    = haskey(ins_data,"fe"   ) ? ins_data["fe"   ] : NaN
-        fd    = haskey(ins_data,"fd"   ) ? ins_data["fd"   ] : NaN
-        Cnb   = haskey(ins_data,"Cnb"  ) ? ins_data["Cnb"  ] : NaN
-        roll  = haskey(ins_data,"roll" ) ? ins_data["roll" ] : NaN
-        pitch = haskey(ins_data,"pitch") ? ins_data["pitch"] : NaN
-        yaw   = haskey(ins_data,"yaw"  ) ? ins_data["yaw"  ] : NaN
-        P     = haskey(ins_data,"P"    ) ? ins_data["P"    ] : NaN
+        dt    = haskey(d,"dt"   ) ? d["dt"][1] : dt
+        tt    = haskey(d,"tt"   ) ? d["tt"   ] : NaN
+        vn    = haskey(d,"vn"   ) ? d["vn"   ] : NaN
+        ve    = haskey(d,"ve"   ) ? d["ve"   ] : NaN
+        vd    = haskey(d,"vd"   ) ? d["vd"   ] : NaN
+        fn    = haskey(d,"fn"   ) ? d["fn"   ] : NaN
+        fe    = haskey(d,"fe"   ) ? d["fe"   ] : NaN
+        fd    = haskey(d,"fd"   ) ? d["fd"   ] : NaN
+        Cnb   = haskey(d,"Cnb"  ) ? d["Cnb"  ] : NaN
+        roll  = haskey(d,"roll" ) ? d["roll" ] : NaN
+        pitch = haskey(d,"pitch") ? d["pitch"] : NaN
+        yaw   = haskey(d,"yaw"  ) ? d["yaw"  ] : NaN
+        P     = haskey(d,"P"    ) ? d["P"    ] : NaN
 
     end
 

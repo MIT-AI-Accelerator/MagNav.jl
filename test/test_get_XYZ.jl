@@ -1,10 +1,13 @@
-using MagNav, Test, MAT, DataFrames
+using MagNav, Test, MAT, DataFrames, CSV
 using MagNav: delete_field, write_field
 
-traj_file = joinpath(@__DIR__,"test_data/test_data_traj.mat")
-ins_file  = joinpath(@__DIR__,"test_data/test_data_ins.mat")
+traj_mat = joinpath(@__DIR__,"test_data/test_data_traj.mat")
+ins_mat  = joinpath(@__DIR__,"test_data/test_data_ins.mat")
 
-xyz    = get_XYZ0(traj_file,:traj,:none;silent=true)
+traj_field = :traj
+ins_field  = :ins_data
+
+xyz    = get_XYZ0(traj_mat,traj_field,:none;silent=true)
 traj   = xyz.traj
 ins    = xyz.ins
 flux_a = xyz.flux_a
@@ -12,7 +15,39 @@ flux_a = xyz.flux_a
 ind = trues(traj.N)
 ind[51:end] .= false
 
-xyz_h5 = joinpath(@__DIR__,"test_get_XYZ0.h5")
+df_traj = DataFrame(lat      = traj.lat,
+                    lon      = traj.lon,
+                    alt      = traj.alt,
+                    mag_1_c  = xyz.mag_1_c,
+                    flux_a_x = flux_a.x,
+                    flux_a_y = flux_a.y,
+                    flux_a_z = flux_a.z,
+                    flux_a_t = flux_a.t)
+
+df_ins  = DataFrame(ins_lat  = ins.lat,
+                    ins_lon  = ins.lon,
+                    ins_alt  = ins.alt)
+
+traj_csv = joinpath(@__DIR__,"test_traj.csv")
+xyz_csv  = joinpath(@__DIR__,"test_xyz.csv")
+CSV.write(traj_csv,df_traj)
+CSV.write(xyz_csv,hcat(df_traj,df_ins))
+
+traj_data = matopen(traj_mat,"r") do file
+    read(file,"$traj_field")
+end
+
+ins_data = matopen(ins_mat,"r") do file
+    read(file,"$ins_field")
+end
+
+xyz_mat = joinpath(@__DIR__,"test_xyz.mat")
+matopen(xyz_mat,"w") do file
+    write(file,"$traj_field",traj_data)
+    write(file,"$ins_field" ,ins_data)
+end
+
+xyz_h5 = joinpath(@__DIR__,"test_xyz.h5")
 write_field(xyz_h5,:tt,traj.tt)
 write_field(xyz_h5,:lat,rad2deg.(traj.lat))
 write_field(xyz_h5,:lon,rad2deg.(traj.lon))
@@ -24,16 +59,18 @@ write_field(xyz_h5,:ins_alt,ins.alt)
 write_field(xyz_h5,:mag_1_uc,xyz.mag_1_uc)
 
 @testset "get_xyz tests" begin
-    @test_nowarn get_XYZ0(traj_file,:traj,:none,
+    @test typeof(get_XYZ0(xyz_csv ;silent=true)) <: MagNav.XYZ0
+    @test typeof(get_XYZ1(traj_csv;silent=true)) <: MagNav.XYZ1
+    @test typeof(get_XYZ0(traj_mat,traj_field,:none,
                           flight = 1,
                           line   = 1,
                           dt     = 1,
-                          silent = true)
-    @test_nowarn get_XYZ1(traj_file,:traj,:none,
+                          silent = true)) <: MagNav.XYZ0
+    @test typeof(get_XYZ1(xyz_mat,traj_field,ins_field,
                           flight = 1,
                           line   = 1,
                           dt     = 1,
-                          silent = true)
+                          silent = true)) <: MagNav.XYZ1
     @test typeof(get_XYZ0(xyz_h5;silent=true)) <: MagNav.XYZ0
     @test typeof(get_XYZ1(xyz_h5;silent=true)) <: MagNav.XYZ1
     delete_field(xyz_h5,:tt)
@@ -56,27 +93,33 @@ write_field(xyz_h5,:mag_1_uc,xyz.mag_1_uc)
     @test_throws AssertionError get_XYZ0("test")
 end
 
-rm(xyz_h5)
-
 @testset "get_traj tests" begin
-    @test_nowarn get_traj(traj_file,:traj;silent=true)
+    @test typeof(get_traj(traj_csv           ;silent=true)) <: MagNav.Traj
+    @test typeof(get_traj(traj_mat,traj_field;silent=true)) <: MagNav.Traj
     @test get_traj(xyz,ind).Cnb == traj(ind).Cnb
     @test_throws AssertionError get_traj("test")
 end
 
 @testset "get_ins tests" begin
-    @test_nowarn get_ins(ins_file,:ins_data;silent=true)
+    @test typeof(get_ins(xyz_csv          ;silent=true)) <: MagNav.INS
+    @test typeof(get_ins(xyz_mat,ins_field;silent=true)) <: MagNav.INS
     @test get_ins(xyz,ind).P == ins(ind).P
     @test get_ins(xyz,ind;t_zero_ll=10).lat[1:10] == traj.lat[ind][1:10]
-    @test_nowarn MagNav.zero_ins_ll(ins.lat,ins.lon,1,
-                                    traj.lat[1:1],traj.lon[1:1])
+    @test typeof(MagNav.zero_ins_ll(ins.lat,ins.lon,1,
+                                    traj.lat[1:1],traj.lon[1:1])) <: Tuple
     @test_throws AssertionError get_ins("test")
 end
 
 @testset "get_flux tests" begin
-    @test_nowarn flux_a(ind)
-    @test_nowarn get_flux(traj_file,:flux_a,:traj)
+    @test typeof(get_flux(traj_csv,:flux_a           )) <: MagNav.MagV
+    @test typeof(get_flux(traj_mat,:flux_a,traj_field)) <: MagNav.MagV
+    @test typeof(flux_a(ind)) <: MagNav.MagV
 end
+
+rm(traj_csv)
+rm(xyz_csv)
+rm(xyz_mat)
+rm(xyz_h5)
 
 xyz_dir   = MagNav.sgl_2020_train()
 flights   = [:Flt1002,:Flt1003,:Flt1004,:Flt1005,:Flt1006,:Flt1007]

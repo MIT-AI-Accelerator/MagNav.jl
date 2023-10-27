@@ -167,6 +167,8 @@ end
         end
         @test MagNav.compare_fields(comp_params_,comp_params;silent) == 0 # no mutating
     end
+    @test typeof(comp_train_test(xyz,xyz,ind,ind,mapS,mapS;comp_params=comp_params_list[1],silent)) <: Tuple # deprecated
+    @test typeof(comp_train_test(line,line,df_line,df_flight,df_map,   comp_params_list[1];silent)) <: Tuple # deprecated
 end
 
 generate && (writedlm(comp_csv,comp_err,','))
@@ -215,6 +217,7 @@ end
                              silent)[end-1]) < 1
     @test std(comp_m2bc_test(comp_params_2c,line,df_line,df_flight,df;
                              silent)[end-1]) < 1
+    @test typeof(comp_m2bc_test(line,df_line,df_flight,df,comp_params_2b;silent)) <: Tuple # deprecated
 end
 
 @testset "comp_m3_test tests" begin
@@ -230,6 +233,7 @@ end
                            silent)[end-1]) < 50
     @test std(comp_m3_test(comp_params_3vc,line,df_line,df_flight,df;
                            silent)[end-1]) < 50
+    @test typeof(comp_m3_test(line,df_line,df_flight,df,comp_params_3s;silent)) <: Tuple # deprecated
 end
 
 epoch_lbfgs = 1
@@ -387,6 +391,9 @@ y = [1:5;]
                                            df_line,df_flight,df;silent)
     @test_throws ErrorException comp_train(comp_params_nn_bad_drop,line,
                                            df_line,df_flight,df;silent)
+    @test typeof(comp_train( xyz     , ind     ;comp_params=comp_params_1,silent)) <: Tuple # deprecated
+    @test typeof(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_1,silent)) <: Tuple # deprecated
+    @test typeof(comp_train(line,df_line,df_flight,df,      comp_params_1;silent)) <: Tuple # deprecated
 end
 
 @testset "comp_test tests" begin
@@ -401,6 +408,8 @@ end
                                           df_line,df_flight,df;silent)
     @test_throws ErrorException comp_test(comp_params_nn_bad_drop,line,
                                           df_line,df_flight,df;silent)
+    @test typeof(comp_test(xyz,ind;      comp_params=comp_params_3sc,silent)) <: Tuple # deprecated
+    @test typeof(comp_test(line,df_line,df_flight,df,comp_params_3sc;silent)) <: Tuple # deprecated
 end
 
 terms_pi5e8 = [:p,:i5,:e8]

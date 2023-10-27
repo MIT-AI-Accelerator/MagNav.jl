@@ -2287,6 +2287,34 @@ function comp_train(comp_params::CompParams, xyz::XYZ, ind,
     return (comp_params, y, y_hat, err, features)
 end # function comp_train
 
+function comp_train(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
+                    comp_params::CompParams = NNCompParams(),
+                    xyz_test::XYZ           = xyz,
+                    ind_test                = BitVector(),
+                    σ_curriculum            = 1.0,
+                    l_window::Int           = 5,
+                    window_type::Symbol     = :sliding,
+                    tf_layer_type::Symbol   = :postlayer,
+                    tf_norm_type::Symbol    = :batch,
+                    dropout_prob            = 0.2,
+                    N_tf_head::Int          = 8,
+                    tf_gain                 = 1.0,
+                    silent::Bool            = false)
+    @warn("this version of comp_train() is deprecated & will be removed in MagNav.jl v1.2.0, see docstring for argument order")
+    comp_train(comp_params,xyz,ind,mapS;
+               xyz_test      = xyz_test,
+               ind_test      = ind_test,
+               σ_curriculum  = σ_curriculum,
+               l_window      = l_window,
+               window_type   = window_type,
+               tf_layer_type = tf_layer_type,
+               tf_norm_type  = tf_norm_type,
+               dropout_prob  = dropout_prob,
+               N_tf_head     = N_tf_head,
+               tf_gain       = tf_gain,
+               silent        = silent)
+end # function comp_train
+
 """
     comp_train(comp_params::CompParams, xyz_vec::Vector, ind_vec::Vector,
                mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
@@ -2722,6 +2750,36 @@ function comp_train(comp_params::CompParams, xyz_vec::Vector, ind_vec::Vector,
     return (comp_params, y, y_hat, err, features)
 end # function comp_train
 
+function comp_train(xyz_vec::Vector{XYZ20{Int64,Float64}},
+                    ind_vec::Vector{BitVector},
+                    mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
+                    comp_params::CompParams = NNCompParams(),
+                    xyz_test::XYZ           = xyz_vec[1],
+                    ind_test                = BitVector(),
+                    σ_curriculum            = 1.0,
+                    l_window::Int           = 5,
+                    window_type::Symbol     = :sliding,
+                    tf_layer_type::Symbol   = :postlayer,
+                    tf_norm_type::Symbol    = :batch,
+                    dropout_prob            = 0.2,
+                    N_tf_head::Int          = 8,
+                    tf_gain                 = 1.0,
+                    silent::Bool            = false)
+    @warn("this version of comp_train() is deprecated & will be removed in MagNav.jl v1.2.0, see docstring for argument order")
+    comp_train(comp_params,xyz_vec,ind_vec,mapS;
+               xyz_test      = xyz_test,
+               ind_test      = ind_test,
+               σ_curriculum  = σ_curriculum,
+               l_window      = l_window,
+               window_type   = window_type,
+               tf_layer_type = tf_layer_type,
+               tf_norm_type  = tf_norm_type,
+               dropout_prob  = dropout_prob,
+               N_tf_head     = N_tf_head,
+               tf_gain       = tf_gain,
+               silent        = silent)
+end # function comp_train
+
 """
     comp_train(comp_params::CompParams, lines,
                df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame;
@@ -3111,6 +3169,30 @@ function comp_train(comp_params::CompParams, lines,
     return (comp_params, y, y_hat, err, features)
 end # function comp_train
 
+function comp_train(lines, df_line::DataFrame, df_flight::DataFrame,
+                    df_map::DataFrame, comp_params::CompParams=NNCompParams();
+                    σ_curriculum            = 1.0,
+                    l_window::Int           = 5,
+                    window_type::Symbol     = :sliding,
+                    tf_layer_type::Symbol   = :postlayer,
+                    tf_norm_type::Symbol    = :batch,
+                    dropout_prob            = 0.2,
+                    N_tf_head::Int          = 8,
+                    tf_gain                 = 1.0,
+                    silent::Bool            = false)
+    @warn("this version of comp_train() is deprecated & will be removed in MagNav.jl v1.2.0, see docstring for argument order")
+    comp_train(comp_params,lines,df_line,df_flight,df_map;
+               σ_curriculum  = σ_curriculum,
+               l_window      = l_window,
+               window_type   = window_type,
+               tf_layer_type = tf_layer_type,
+               tf_norm_type  = tf_norm_type,
+               dropout_prob  = dropout_prob,
+               N_tf_head     = N_tf_head,
+               tf_gain       = tf_gain,
+               silent        = silent)
+end # function comp_train
+
 """
     comp_test(comp_params::CompParams, xyz::XYZ, ind,
               mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
@@ -3306,6 +3388,16 @@ function comp_test(comp_params::CompParams, xyz::XYZ, ind,
     silent || print_time(time()-t0,1)
 
     return (y, y_hat, err, features)
+end # function comp_test
+
+function comp_test(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
+                   comp_params::CompParams = NNCompParams(),
+                   l_window::Int           = 5,
+                   silent::Bool            = false)
+    @warn("this version of comp_test() is deprecated & will be removed in MagNav.jl v1.2.0, see docstring for argument order")
+    comp_test(comp_params,xyz,ind,mapS;
+              l_window = l_window,
+              silent   = silent)
 end # function comp_test
 
 """
@@ -3544,6 +3636,16 @@ function comp_test(comp_params::CompParams, lines,
     return (y, y_hat, err, features)
 end # function comp_test
 
+function comp_test(lines, df_line::DataFrame, df_flight::DataFrame,
+                   df_map::DataFrame, comp_params::CompParams=NNCompParams();
+                   l_window::Int = 5,
+                   silent::Bool  = false)
+    @warn("this version of comp_test() is deprecated & will be removed in MagNav.jl v1.2.0, see docstring for argument order")
+    comp_test(comp_params,lines,df_line,df_flight,df_map;
+              l_window = l_window,
+              silent   = silent)
+end # function comp_test
+
 """
     comp_m2bc_test(comp_params::NNCompParams, lines,
                    df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame;
@@ -3654,6 +3756,15 @@ function comp_m2bc_test(comp_params::NNCompParams, lines,
     silent || print_time(time()-t0,1)
 
     return (y_nn, y_TL, y, y_hat, err, features)
+end # function comp_m2bc_test
+
+function comp_m2bc_test(lines, df_line::DataFrame,
+                        df_flight::DataFrame, df_map::DataFrame,
+                        comp_params::NNCompParams=NNCompParams();
+                        silent::Bool = false)
+    @warn("this version of comp_m2bc_test() is deprecated & will be removed in MagNav.jl v1.2.0, see docstring for argument order")
+    comp_m2bc_test(comp_params,lines,df_line,df_flight,df_map;
+                   silent = silent)
 end # function comp_m2bc_test
 
 """
@@ -3809,6 +3920,17 @@ function comp_m3_test(comp_params::NNCompParams, lines,
             B_unit, B_vec, y_nn, vec_aircraft, y, y_hat, err, features)
 end # function comp_m3_test
 
+function comp_m3_test(lines, df_line::DataFrame,
+                      df_flight::DataFrame, df_map::DataFrame,
+                      comp_params::NNCompParams=NNCompParams();
+                      l_window::Int = 5,
+                      silent::Bool  = false)
+    @warn("this version of comp_m3_test() is deprecated & will be removed in MagNav.jl v1.2.0, see docstring for argument order")
+    comp_m3_test(comp_params,lines,df_line,df_flight,df_map;
+                 l_window = l_window,
+                 silent   = silent)
+end # function comp_m3_test
+
 """
     comp_train_test(comp_params::CompParams,
                     xyz_train::XYZ, xyz_test::XYZ, ind_train, ind_test,
@@ -3891,6 +4013,33 @@ function comp_train_test(comp_params::CompParams,
 
     return (comp_params, y_train, y_train_hat, err_train,
                          y_test , y_test_hat , err_test , features)
+end # function comp_train_test
+
+function comp_train_test(xyz_train::XYZ, xyz_test::XYZ, ind_train, ind_test,
+                         mapS_train::Union{MapS,MapSd,MapS3D} = mapS_null,
+                         mapS_test::Union{MapS,MapSd,MapS3D}  = mapS_null;
+                         comp_params::CompParams = NNCompParams(),
+                         σ_curriculum            = 1.0,
+                         l_window::Int           = 5,
+                         window_type::Symbol     = :sliding,
+                         tf_layer_type::Symbol   = :postlayer,
+                         tf_norm_type::Symbol    = :batch,
+                         dropout_prob            = 0.2,
+                         N_tf_head::Int          = 8,
+                         tf_gain                 = 1.0,
+                         silent::Bool            = false)
+    @warn("this version of comp_train_test() is deprecated & will be removed in MagNav.jl v1.2.0, see docstring for argument order")
+    comp_train_test(comp_params,xyz_train,xyz_test,
+                    ind_train,ind_test,mapS_train,mapS_test;
+                    σ_curriculum  = σ_curriculum,
+                    l_window      = l_window,
+                    window_type   = window_type,
+                    tf_layer_type = tf_layer_type,
+                    tf_norm_type  = tf_norm_type,
+                    dropout_prob  = dropout_prob,
+                    N_tf_head     = N_tf_head,
+                    tf_gain       = tf_gain,
+                    silent        = silent)
 end # function comp_train_test
 
 """
@@ -3990,6 +4139,32 @@ function comp_train_test(comp_params::CompParams, lines_train, lines_test,
 
     return (comp_params, y_train, y_train_hat, err_train,
                          y_test , y_test_hat , err_test , features)
+end # function comp_train_test
+
+function comp_train_test(lines_train, lines_test,
+                         df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame,
+                         comp_params::CompParams = NNCompParams();
+                         σ_curriculum            = 1.0,
+                         l_window::Int           = 5,
+                         window_type::Symbol     = :sliding,
+                         tf_layer_type::Symbol   = :postlayer,
+                         tf_norm_type::Symbol    = :batch,
+                         dropout_prob            = 0.2,
+                         N_tf_head::Int          = 8,
+                         tf_gain                 = 1.0,
+                         silent::Bool            = false)
+    @warn("this version of comp_train_test() is deprecated & will be removed in MagNav.jl v1.2.0, see docstring for argument order")
+    comp_train_test(comp_params,lines_train,lines_test,
+                    df_line,df_flight,df_map;
+                    σ_curriculum  = σ_curriculum,
+                    l_window      = l_window,
+                    window_type   = window_type,
+                    tf_layer_type = tf_layer_type,
+                    tf_norm_type  = tf_norm_type,
+                    dropout_prob  = dropout_prob,
+                    N_tf_head     = N_tf_head,
+                    tf_gain       = tf_gain,
+                    silent        = silent)
 end # function comp_train_test
 
 """
