@@ -113,6 +113,7 @@ df_map = DataFrame(map_name = map_name,
     @test typeof(get_x(lines,df_line,df_flight)[1]) <: Matrix
     @test typeof(get_x([line2,line3],df_line,df_flight)[1]) <: Matrix
     @test_throws AssertionError get_x([line2,line2],df_line,df_flight)
+    @test typeof(get_x(line2,df_line,df_flight;l_seq=5)) <: Tuple # deprecated
 end
 
 map_val = randn(sum(ind))
@@ -128,6 +129,7 @@ map_val = randn(sum(ind))
     @test typeof(get_y(lines,df_line,df_flight,df_map;y_type=:c)) <: Vector
     @test typeof(get_y([line2,line3],df_line,df_flight,df_map;y_type=:d)) <: Vector
     @test_throws AssertionError get_y([line2,line2],df_line,df_flight,df_map)
+    @test typeof(get_y(line2,df_line,df_flight,df_map;y_type=:a,l_seq=5)) <: Vector # deprecated
 end
 
 @testset "get_Axy tests" begin
@@ -135,6 +137,7 @@ end
     @test typeof(get_Axy(lines,df_line,df_flight,df_map;y_type=:b,map_TL=true)[1]) <: Matrix
     @test typeof(get_Axy([line2,line3],df_line,df_flight,df_map)[1]) <: Matrix
     @test_throws AssertionError get_Axy([line2,line2],df_line,df_flight,df_map)
+    @test typeof(get_Axy(line2,df_line,df_flight,df_map;l_seq=5)) <: Tuple # deprecated
 end
 
 @testset "get_nn_m tests" begin
@@ -244,6 +247,8 @@ end
     @test sum.(get_ind(xyz,lines,df_line;splits=(0.7,0.2,0.1))) == (35,10,5)
     @test_throws AssertionError get_ind(xyz,lines,df_line;splits=(1,1,1))
     @test_throws AssertionError get_ind(xyz,lines,df_line;splits=(1,0,0,0))
+    @test sum(get_ind(xyz,lines[2]  ,df_line;l_seq=15)) ≈ 45 # deprecated
+    @test sum(get_ind(xyz,lines[2:2],df_line;l_seq=15)) ≈ 45 # deprecated
 end
 
 @testset "chunk_data tests" begin
@@ -351,6 +356,10 @@ mag_gif = joinpath(@__DIR__,"comp_xai")
                  TL_aircraft, B_unit', y_nn, y, y_hat, xyz,
 				 xyz.ins.lat[ind], xyz.ins.lon[ind];
                  ind=ind, save_plot=true, mag_gif=mag_gif)) <: Plots.AnimatedGif
+    @test typeof(gif_animation_m3(TL_perm, TL_induced, TL_eddy,
+                 TL_aircraft, B_unit', y_nn, y, y_hat,
+				 xyz.ins.lat[ind], xyz.ins.lon[ind], xyz;
+                 ind=ind, save_plot=true, mag_gif=mag_gif)) <: Plots.AnimatedGif # deprecated
 end
 
 mag_gif = MagNav.add_extension(mag_gif,".gif")

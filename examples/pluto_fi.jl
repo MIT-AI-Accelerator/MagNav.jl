@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.29
+# v0.19.30
 
 using Markdown
 using InteractiveUtils
@@ -30,7 +30,7 @@ This is a reactive notebook, so feel free to change any parameters of interest, 
 "
 
 # ╔═╡ b1d3b1b3-db8d-4bb0-a884-d57f217fef24
-md"## Import packages & DataFrames
+md"## Import packages and DataFrames
 
 The DataFrames listed below provide useful information about the flight data (collected by Sander Geophysics Ltd. (SGL) in 2020) & magnetic anomaly maps.
 
@@ -76,7 +76,7 @@ begin
 end;
 
 # ╔═╡ 43dbbbb1-e4b9-4ef5-b5f1-b7da32e6f8e1
-md"Perform neural network-based calibration using training data & extract trained neural network (NN) compensation model. The full list of SGL flights is in `df_flight`, the full list of maps is in `df_map`, and the full list of flight lines is in `df_all`.
+md"Perform neural network-based calibration using training data & extract trained neural network (NN) compensation model. The full list of SGL flights is in `df_flight`, the full list of maps is in `df_map`, & the full list of flight lines is in `df_all`.
 "
 
 # ╔═╡ fd8adf67-48b5-487b-9a14-8f4acf47d1d6
@@ -131,7 +131,7 @@ List of most important features.
 "
 
 # ╔═╡ f3633d2c-f008-4fae-9ef0-cb2c097e6967
-md"## (sparse) group Lasso-based feature importance
+md"## Sparse group Lasso (SGL)-based feature importance
 
 List of most important features.
 "
@@ -213,9 +213,9 @@ version = "0.1.33"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra", "Requires"]
-git-tree-sha1 = "76289dc51920fdc6e0013c872ba9551d54961c24"
+git-tree-sha1 = "68c4c187a232e7abe00ac29e3b03e09af9d77317"
 uuid = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
-version = "3.6.2"
+version = "3.7.0"
 weakdeps = ["StaticArrays"]
 
     [deps.Adapt.extensions]
@@ -1740,9 +1740,9 @@ version = "1.39.0"
 
 [[deps.Pluto]]
 deps = ["Base64", "Configurations", "Dates", "FileWatching", "FuzzyCompletions", "HTTP", "HypertextLiteral", "InteractiveUtils", "Logging", "LoggingExtras", "MIMEs", "Malt", "Markdown", "MsgPack", "Pkg", "PrecompileSignatures", "PrecompileTools", "REPL", "RegistryInstances", "RelocatableFolders", "Scratch", "Sockets", "TOML", "Tables", "URIs", "UUIDs"]
-git-tree-sha1 = "5d03fac7fb58345c186431e55ddd3aa8d828c1a5"
+git-tree-sha1 = "e4b0597995554d3a35baba8313cdb67e96b86ffa"
 uuid = "c3e4b0f8-55cb-11ea-2926-15256bba5781"
-version = "0.19.29"
+version = "0.19.30"
 
 [[deps.Polynomials]]
 deps = ["LinearAlgebra", "RecipesBase", "Setfield", "SparseArrays"]

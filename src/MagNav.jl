@@ -2,7 +2,7 @@
 `MagNav`: airborne `Mag`netic anomaly `Nav`igation
 """
 module MagNav
-    using ArchGDAL, Flux, ForwardDiff, HDF5, LazyArtifacts
+    using ArchGDAL, CSV, Flux, ForwardDiff, HDF5, LazyArtifacts
     using LinearAlgebra, Plots, TOML, ZipFile, Zygote
     using BSON: bson, load
     using DataFrames: DataFrame, combine, groupby, order, sort

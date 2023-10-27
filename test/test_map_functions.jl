@@ -156,7 +156,7 @@ df_event = DataFrame(flight=:test,tt=49.5*60,event="test")
 @testset "plot_events! tests" begin
     @test_nowarn plot_events!(p1,df_event.tt[1]/60,df_event.event[1])
     @test_nowarn plot_events!(p1,df_event,df_event.flight[1])
-    @test typeof(plot_events!(p1,df_event.flight[1],df_event)) <: Plots.Plot
+    @test typeof(plot_events!(p1,df_event.flight[1],df_event)) <: Plots.Plot # deprecated
 end
 
 @testset "map_check tests" begin

@@ -51,7 +51,7 @@ julia> using Pluto
 julia> Pluto.run()
 ```
 
-In Pluto, select and open the desired Pluto notebook, and it should run automatically.
+In Pluto, select and open the desired Pluto notebook, then click `Run notebook code` if it does not run automatically.
 
 ### Docker
 

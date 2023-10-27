@@ -2137,7 +2137,7 @@ function plot_events!(p1, flight::Symbol, df_event::DataFrame;
                       t0              = 0,
                       t_units::Symbol = :min,
                       legend::Symbol  = :outertopright)
-    @warn("this version of plot_events!() will be deprecated, use plot_events!(p1, df_event::DataFrame, flight::Symbol)")
+    @warn("this version of plot_events!() is deprecated & will be removed in MagNav.jl v1.2.0, use plot_events!(p1, df_event::DataFrame, flight::Symbol)")
     plot_events!(p1,df_event,flight;
                  show_lab=show_lab,t0=t0,t_units=t_units,legend=legend)
 end # function plot_events!

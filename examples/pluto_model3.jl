@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.29
+# v0.19.30
 
 using Markdown
 using InteractiveUtils
@@ -30,7 +30,7 @@ This is a reactive notebook, so feel free to change any parameters of interest, 
 "
 
 # ╔═╡ b1d3b1b3-db8d-4bb0-a884-d57f217fef24
-md"## Import packages & DataFrames
+md"## Import packages and DataFrames
 
 The DataFrames listed below provide useful information about the flight data (collected by Sander Geophysics Ltd. (SGL) in 2020) & magnetic anomaly maps.
 
@@ -47,7 +47,7 @@ Dataframe  | Description
 # ╔═╡ 3a55962c-bd1b-410c-b98a-3130fc11ee11
 md"## Train a (linear) Tolles-Lawson model
 
-Select Flight 1006 (see [readme](https://github.com/MIT-AI-Accelerator/MagNav.jl/blob/master/readmes/Flt1006_readme.txt)), load the flight data, and get the Boolean indices for a specific calibration flight line that will be used to fit the Tolles-Lawson coefficients. The full list of SGL flights is in `df_flight`, and the full list of calibration flight line options is in `df_comp`.
+Select Flight 1006 (see [readme](https://github.com/MIT-AI-Accelerator/MagNav.jl/blob/master/readmes/Flt1006_readme.txt)), load the flight data, & get the Boolean indices for a specific calibration flight line that will be used to fit the Tolles-Lawson coefficients. The full list of SGL flights is in `df_flight`, & the full list of calibration flight line options is in `df_comp`.
 "
 
 # ╔═╡ bf9f72f0-c351-48d3-a811-418ee965073c
@@ -120,7 +120,7 @@ begin
 end;
 
 # ╔═╡ 7a59dc41-21f1-4a5e-9f8b-06cacca8845b
-md"Perform Tolles-Lawson compensation on `lines_test`. The full list of SGL flights is in `df_flight`, the full list of maps is in `df_map`, and the full list of flight lines is in `df_all`.
+md"Perform Tolles-Lawson compensation on `lines_test`. The full list of SGL flights is in `df_flight`, the full list of maps is in `df_map`, & the full list of flight lines is in `df_all`.
 "
 
 # ╔═╡ 9ed61357-346b-49de-a1ed-8849db041ade
@@ -279,7 +279,7 @@ end;
 
 # ╔═╡ 658524ef-c716-408c-ab57-f1a10459ff24
 md"
-## Compensation & Navigation Animation
+## Compensation and navigation animation
 
 Make an animation of the navigation performance, keeping track of each component of the compensation terms emitted by model 3, projected into a 2D plane (north/east, removing the vertical components) to make visualization simpler. Ideally, you should see that the knowledge-integrated architecture in model 3 is mostly accounting for variations in the compensation field arising from the map/plane maneuvers in the Tolles-Lawson (TL) component, whereas the neural network (NN) correction is addressing any deviations due to current/voltage fluctuations.
 
@@ -366,9 +366,9 @@ version = "0.1.33"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra", "Requires"]
-git-tree-sha1 = "76289dc51920fdc6e0013c872ba9551d54961c24"
+git-tree-sha1 = "68c4c187a232e7abe00ac29e3b03e09af9d77317"
 uuid = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
-version = "3.6.2"
+version = "3.7.0"
 weakdeps = ["StaticArrays"]
 
     [deps.Adapt.extensions]
@@ -1893,9 +1893,9 @@ version = "1.39.0"
 
 [[deps.Pluto]]
 deps = ["Base64", "Configurations", "Dates", "FileWatching", "FuzzyCompletions", "HTTP", "HypertextLiteral", "InteractiveUtils", "Logging", "LoggingExtras", "MIMEs", "Malt", "Markdown", "MsgPack", "Pkg", "PrecompileSignatures", "PrecompileTools", "REPL", "RegistryInstances", "RelocatableFolders", "Scratch", "Sockets", "TOML", "Tables", "URIs", "UUIDs"]
-git-tree-sha1 = "5d03fac7fb58345c186431e55ddd3aa8d828c1a5"
+git-tree-sha1 = "e4b0597995554d3a35baba8313cdb67e96b86ffa"
 uuid = "c3e4b0f8-55cb-11ea-2926-15256bba5781"
-version = "0.19.29"
+version = "0.19.30"
 
 [[deps.Polynomials]]
 deps = ["LinearAlgebra", "RecipesBase", "Setfield", "SparseArrays"]

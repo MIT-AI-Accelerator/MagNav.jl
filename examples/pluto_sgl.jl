@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.29
+# v0.19.30
 
 using Markdown
 using InteractiveUtils
@@ -30,7 +30,7 @@ This is a reactive notebook, so feel free to change any parameters of interest.
 "
 
 # ╔═╡ b1d3b1b3-db8d-4bb0-a884-d57f217fef24
-md"## Import packages & DataFrames
+md"## Import packages and DataFrames
 
 The DataFrames listed below provide useful information about the flight data (collected by Sander Geophysics Ltd. (SGL) in 2020) & magnetic anomaly maps.
 
@@ -45,7 +45,7 @@ Dataframe  | Description
 "
 
 # ╔═╡ 2f1e71ff-8f7f-4704-8e7d-b4fd2846f7ed
-md"## Load flight & map data
+md"## Load flight and map data
 
 Select Flight 1006 (see [readme](https://github.com/MIT-AI-Accelerator/MagNav.jl/blob/master/readmes/Flt1006_readme.txt)) & load the flight data. The full list of SGL flights is in `df_flight`.
 "
@@ -70,7 +70,7 @@ typeof(xyz)
 fieldnames(MagNav.XYZ20)
 
 # ╔═╡ 1a3aba8d-3aa8-454b-9fb0-708f0bd38c42
-md"Select the map & view the flight line options (`df_options`) for the selected flight & map. The full list of SGL flights is in `df_flight`, the full list of maps is in `df_map`, and the full list of navigation-capable flight lines is in `df_nav`.
+md"Select the map & view the flight line options (`df_options`) for the selected flight & map. The full list of SGL flights is in `df_flight`, the full list of maps is in `df_map`, & the full list of navigation-capable flight lines is in `df_nav`.
 "
 
 # ╔═╡ c192c83b-deb3-4b6e-b0d9-97357e0b554c
@@ -102,7 +102,7 @@ begin
 end;
 
 # ╔═╡ db7dc866-b889-4fb7-81d4-97cd8435636e
-md"## Baseline plots of scalar & vector (fluxgate) magnetometer data
+md"## Baseline plots of scalar and vector (fluxgate) magnetometer data
 
 Setup for the baseline plots.
 "
@@ -170,7 +170,7 @@ b6 = plot_frequency(xyz;ind,show_plot,save_plot,detrend_data,
                     freq_type = :spec)
 
 # ╔═╡ 1233e336-3f11-44e3-b136-08c724f12e0f
-md"## Tolles-Lawson calibration & compensation
+md"## Tolles-Lawson calibration and compensation
 
 Fit the Tolles-Lawson coefficients for uncompensated scalar magnetometers `1-5` with vector (fluxgate) magnetometer `d`.
 "
@@ -423,9 +423,9 @@ version = "0.1.33"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra", "Requires"]
-git-tree-sha1 = "76289dc51920fdc6e0013c872ba9551d54961c24"
+git-tree-sha1 = "68c4c187a232e7abe00ac29e3b03e09af9d77317"
 uuid = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
-version = "3.6.2"
+version = "3.7.0"
 weakdeps = ["StaticArrays"]
 
     [deps.Adapt.extensions]
@@ -1950,9 +1950,9 @@ version = "1.39.0"
 
 [[deps.Pluto]]
 deps = ["Base64", "Configurations", "Dates", "FileWatching", "FuzzyCompletions", "HTTP", "HypertextLiteral", "InteractiveUtils", "Logging", "LoggingExtras", "MIMEs", "Malt", "Markdown", "MsgPack", "Pkg", "PrecompileSignatures", "PrecompileTools", "REPL", "RegistryInstances", "RelocatableFolders", "Scratch", "Sockets", "TOML", "Tables", "URIs", "UUIDs"]
-git-tree-sha1 = "5d03fac7fb58345c186431e55ddd3aa8d828c1a5"
+git-tree-sha1 = "e4b0597995554d3a35baba8313cdb67e96b86ffa"
 uuid = "c3e4b0f8-55cb-11ea-2926-15256bba5781"
-version = "0.19.29"
+version = "0.19.30"
 
 [[deps.Polynomials]]
 deps = ["LinearAlgebra", "RecipesBase", "Setfield", "SparseArrays"]

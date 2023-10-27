@@ -7,11 +7,11 @@ folder       = "examples"
 
 # run Pluto notebooks in src_dir & create Markdown files
 # done sequentially to avoid recompiling multiple times
-println("building example Pluto notebooks")
 src_dir = joinpath(package_dir,folder)
 bopts   = BuildOptions(src_dir;
                        output_format   = documenter_output,
                        use_distributed = false)
+println("building example Pluto notebooks")
 build_notebooks(bopts)
 
 # map sidebar names to Markdown files
@@ -24,14 +24,15 @@ notebooks = [
     "Using Simulated Data"  => "$folder/pluto_sim.md",
 ]
 
-# create folder in docs/src if it doesn't exist
+# create folder in docs_src_dir if it doesn't exist
 dst_dir = joinpath(docs_src_dir,folder)
 isdir(dst_dir) || mkdir(dst_dir)
 
-# move Markdown files into folder in docs/src
+# move Markdown files into folder in docs_src_dir
 for notebook in notebooks
     src = joinpath(package_dir ,notebook[2])
     dst = joinpath(docs_src_dir,notebook[2])
+    println("moving $src to $dst")
     mv(src,dst;force=true)
 end
 
