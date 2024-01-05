@@ -29,8 +29,9 @@ julia> Pkg.activate(".")
 julia> Pkg.instantiate()
 ```
 
-NOTE: If any artifacts produce a hash mismatch error while downloading, simply navigate to the 
-`.julia/artifacts` folder and manually set the appropriate artifact folder name. For example, the ottawa_area_maps artifact folder name should be `bf360d29207d6468a8cf783269191bda2cf1f679`.
+NOTE: If an artifact produces a hash mismatch error while downloading, navigate to the 
+local `.julia/artifacts` folder and manually set the appropriate artifact folder name. For example, the `ottawa_area_maps` artifact folder name should be `bf360d29207d6468a8cf783269191bda2cf1f679`. If needed, artifacts can also be downloaded directly from their online storage locations, then unzipped, renamed, and placed in the 
+local `.julia/artifacts` folder. Online storage locations (`url`) and folder names (`git-tree-sha1`) can be found in the [Artifacts.toml](Artifacts.toml) file.
 
 ## Usage
 
