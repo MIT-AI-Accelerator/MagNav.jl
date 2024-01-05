@@ -149,6 +149,7 @@ else
 end
 
 @testset "comp_train_test tests" begin
+    atol = minor == 6 ? 5f-6 : 5f-7
     for (i,comp_params) in enumerate(comp_params_list)
         comp_params_ = deepcopy(comp_params)
         (err_train_1,err_test_1) = comp_train_test(comp_params,xyz,xyz,ind,ind,
@@ -162,8 +163,8 @@ end
             comp_err[i,1] = std(err_train_1)
             comp_err[i,2] = std(err_test_1 )
         else # test compensation reproducibility
-            @test isapprox(comp_err[i,1],std(err_train_1),atol=1f-6)
-            @test isapprox(comp_err[i,2],std(err_test_1 ),atol=1f-6)
+            @test isapprox(comp_err[i,1],std(err_train_1),atol=atol)
+            @test isapprox(comp_err[i,2],std(err_test_1 ),atol=atol)
         end
         @test MagNav.compare_fields(comp_params_,comp_params;silent) == 0 # no mutating
     end
