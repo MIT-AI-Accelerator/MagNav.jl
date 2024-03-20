@@ -66,13 +66,7 @@ function plot_activation(activation = [:relu,:σ,:swish,:tanh];
                          plot_deriv::Bool  = false,
                          show_plot::Bool   = true,
                          save_plot::Bool   = false,
-                         plot_png::String  = "act_func.png",
-                         file_name::String = "act_func")
-
-    if file_name != "act_func"
-        @warn("this version of plot_activation() is deprecated & will be removed in MagNav.jl v1.2.0, use plot_activation(; plot_png::String)")
-        plot_png = file_name
-    end
+                         plot_png::String  = "act_func.png")
 
     save_plot ? dpi = 500 : dpi = 200
 
@@ -150,13 +144,7 @@ function plot_mag(xyz::XYZ;
                   dpi::Int                  = 200,
                   show_plot::Bool           = true,
                   save_plot::Bool           = false,
-                  plot_png::String          = "scalar_mags.png",
-                  file_name::String         = "scalar_mags")
-
-    if file_name != "scalar_mags"
-        @warn("this version of plot_mag() is deprecated & will be removed in MagNav.jl v1.2.0, use plot_mag(; plot_png::String)")
-        plot_png = file_name
-    end
+                  plot_png::String          = "scalar_mags.png")
 
     tt = (xyz.traj.tt[ind] .- xyz.traj.tt[ind][1]) / 60
     xlab = "time [min]"
@@ -326,13 +314,7 @@ function plot_mag_c(xyz::XYZ,xyz_comp::XYZ;
                     ylim                     = (),
                     show_plot::Bool          = true,
                     save_plot::Bool          = false,
-                    plot_png::String         = "scalar_mags_comp.png",
-                    file_name::String        = "scalar_mags_comp")
-
-    if file_name != "scalar_mags_comp"
-        @warn("this version of plot_mag_c() is deprecated & will be removed in MagNav.jl v1.2.0, use plot_mag_c(; plot_png::String)")
-        plot_png = file_name
-    end
+                    plot_png::String         = "scalar_mags_comp.png")
 
     field_check(xyz,use_vec,MagV)
     A = create_TL_A(getfield(xyz,use_vec),terms=terms)[ind,:]
@@ -439,13 +421,7 @@ function plot_PSD(x::Vector, fs=10;
                   dpi::Int          = 200,
                   show_plot::Bool   = true,
                   save_plot::Bool   = false,
-                  plot_png::String  = "PSD.png",
-                  file_name::String = "PSD")
-
-    if file_name != "PSD"
-        @warn("this version of plot_PSD() is deprecated & will be removed in MagNav.jl v1.2.0, use plot_PSD(; plot_png::String)")
-        plot_png = file_name
-    end
+                  plot_png::String  = "PSD.png")
 
     p = welch_pgram(x,fs=fs,window=window)
 
@@ -485,13 +461,7 @@ function plot_spectrogram(x::Vector, fs=10;
                           dpi::Int          = 200,
                           show_plot::Bool   = true,
                           save_plot::Bool   = false,
-                          plot_png::String  = "spectrogram.png",
-                          file_name::String = "spectrogram")
-
-    if file_name != "spectrogram"
-        @warn("this version of plot_spectrogram() is deprecated & will be removed in MagNav.jl v1.2.0, use plot_spectrogram(; plot_png::String)")
-        plot_png = file_name
-    end
+                          plot_png::String  = "spectrogram.png")
 
     s = spectrogram(x;fs=fs,window=window)
 
@@ -542,13 +512,7 @@ function plot_frequency(xyz::XYZ;
                         dpi::Int           = 200,
                         show_plot::Bool    = true,
                         save_plot::Bool    = false,
-                        plot_png::String   = "PSD.png",
-                        file_name::String  = "PSD")
-
-    if file_name != "PSD"
-        @warn("this version of plot_frequency() is deprecated & will be removed in MagNav.jl v1.2.0, use plot_frequency(; plot_png::String)")
-        plot_png = file_name
-    end
+                        plot_png::String   = "PSD.png")
 
     x = getfield(xyz,field)[ind]
 

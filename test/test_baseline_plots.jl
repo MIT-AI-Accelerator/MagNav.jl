@@ -69,7 +69,6 @@ end
                                  plot_deriv = true,
                                  show_plot  = false,
                                  save_plot  = false);
-    @test plot_activation(;show_plot=false,file_name="test") isa Plot # deprecated
 end
 
 @testset "plot_mag tests" begin
@@ -113,7 +112,6 @@ end
                           dpi          = 100,
                           show_plot    = false,
                           save_plot    = false);
-    @test plot_mag(xyz;show_plot=false,file_name="test") isa Plot # deprecated
 end
 
 @testset "plot_mag_c tests" begin
@@ -137,7 +135,6 @@ end
                      ylim          = (-50,50),
                      show_plot     = false,
                      save_plot     = false) isa Plot
-    @test plot_mag_c(xyz,xyz;show_plot=false,file_name="test") isa Plot # deprecated
 end
 
 @testset "plot_PSD tests" begin
@@ -147,7 +144,6 @@ end
                           dpi       = 100,
                           show_plot = false,
                           save_plot = false);
-    @test plot_PSD(mag_1_c;show_plot=false,file_name="test") isa Plot # deprecated
 end
 
 @testset "plot_spectrogram tests" begin
@@ -157,7 +153,6 @@ end
                                   dpi       = 100,
                                   show_plot = false,
                                   save_plot = false);
-    @test plot_spectrogram(mag_1_c;show_plot=false,file_name="test") isa Plot # deprecated
 end
 
 @testset "plot_frequency tests" begin
@@ -171,7 +166,6 @@ end
                                 dpi          = 100,
                                 show_plot    = false,
                                 save_plot    = false);
-    @test plot_frequency(xyz;show_plot=false,file_name="test") isa Plot # deprecated
 end
 
 @testset "plot_correlation tests" begin

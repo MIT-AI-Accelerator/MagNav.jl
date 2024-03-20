@@ -525,13 +525,7 @@ function get_x(lines, df_line::DataFrame, df_flight::DataFrame,
                bpf_mag::Bool      = false,
                reorient_vec::Bool = false,
                l_window::Int      = -1,
-               l_seq::Int         = -1,
                silent::Bool       = true)
-
-    if l_seq != -1
-        @warn("this version of get_x() is deprecated & will be removed in MagNav.jl v1.2.0, use get_x(; l_window::Int)")
-        l_window = l_seq
-    end
 
     # check if lines are in df_line, remove if not
     for l in lines
@@ -723,13 +717,7 @@ function get_y(lines, df_line::DataFrame, df_flight::DataFrame,
                sub_diurnal::Bool = false,
                sub_igrf::Bool    = false,
                l_window::Int     = -1,
-               l_seq::Int        = -1,
                silent::Bool      = true)
-
-    if l_seq != -1
-        @warn("this version of get_y() is deprecated & will be removed in MagNav.jl v1.2.0, use get_y(; l_window::Int)")
-        l_window = l_seq
-    end
 
     # check if lines are in df_line, remove if not
     for l in lines
@@ -884,16 +872,10 @@ function get_Axy(lines, df_line::DataFrame,
                  bpf_mag::Bool      = false,
                  reorient_vec::Bool = false,
                  l_window::Int      = -1,
-                 l_seq::Int         = -1,
                  mod_TL::Bool       = false,
                  map_TL::Bool       = false,
                  return_B::Bool     = false,
                  silent::Bool       = true)
-
-    if l_seq != -1
-        @warn("this version of get_Axy() is deprecated & will be removed in MagNav.jl v1.2.0, use get_Axy(; l_window::Int)")
-        l_window = l_seq
-    end
 
     # check if lines are in df_line, remove if not
     for l in lines
@@ -1695,13 +1677,7 @@ Get BitVector of indices for further analysis via DataFrame lookup.
 """
 function get_ind(xyz::XYZ, line::Real, df_line::DataFrame;
                  splits        = (1),
-                 l_window::Int = -1,
-                 l_seq::Int    = -1)
-
-    if l_seq != -1
-        @warn("this version of get_ind() is deprecated & will be removed in MagNav.jl v1.2.0, use get_ind(; l_window::Int)")
-        l_window = l_seq
-    end
+                 l_window::Int = -1)
 
     tt_lim = [df_line.t_start[df_line.line .== line][1],
               df_line.t_end[  df_line.line .== line][end]]
@@ -1760,13 +1736,7 @@ Get BitVector of selected data indices for further analysis via DataFrame lookup
 """
 function get_ind(xyz::XYZ, lines, df_line::DataFrame;
                  splits        = (1),
-                 l_window::Int = -1,
-                 l_seq::Int    = -1)
-
-    if l_seq != -1
-        @warn("this version of get_ind() is deprecated & will be removed in MagNav.jl v1.2.0, use get_ind(; l_window::Int)")
-        l_window = l_seq
-    end
+                 l_window::Int = -1)
 
     @assert sum(splits) ≈ 1 "sum of splits = $(sum(splits)) ≠ 1"
     @assert length(splits) <= 3 "number of splits = $(length(splits)) > 3"
@@ -2503,24 +2473,4 @@ function gif_animation_m3(TL_perm::AbstractMatrix, TL_induced::AbstractMatrix, T
     g1 = save_plot ? gif(a1,mag_gif;fps=15) : gif(a1;fps=15)
 
     return (g1)
-end # function gif_animation_m3
-
-function gif_animation_m3(TL_perm::AbstractMatrix, TL_induced::AbstractMatrix, TL_eddy::AbstractMatrix,
-                          TL_aircraft::AbstractMatrix, B_unit::AbstractMatrix, y_nn::AbstractMatrix,
-                          y::Vector, y_hat::Vector, filt_lat::Vector, filt_lon::Vector,
-                          xyz::XYZ;
-                          ind             = trues(xyz.traj.N),
-                          tt_lim::Tuple   = (0, (xyz.traj(ind).N-1)*xyz.traj.dt/60),
-                          skip_every::Int = 5,
-                          save_plot::Bool = false,
-                          mag_gif::String = "comp_xai.gif")
-    @warn("this version of gif_animation_m3() is deprecated & will be removed in MagNav.jl v1.2.0, see docstring for argument order")
-    gif_animation_m3(TL_perm,TL_induced,TL_eddy,
-                     TL_aircraft,B_unit,y_nn,
-                     y,y_hat,xyz,filt_lat,filt_lon;
-                     ind        = ind,
-                     tt_lim     = tt_lim,
-                     skip_every = skip_every,
-                     save_plot  = save_plot,
-                     mag_gif    = mag_gif)
 end # function gif_animation_m3

@@ -318,14 +318,8 @@ function nekf_train(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt,
                     hidden::Int          = 1,
                     activation::Function = swish,
                     l_window::Int        = 50,
-                    l_seq::Int           = 50,
                     date                 = get_years(2020,185),
                     core::Bool           = false)
-
-    if l_seq != 50
-        @warn("this version of nekf_train() is deprecated & will be removed in MagNav.jl v1.2.0, use nekf_train(; l_window::Int)")
-        l_window = l_seq
-    end
 
     x_seqs = chunk_data(Float32.(x_nn),zero(lat),l_window)[1]
     y_seqs = chunk_data(y_nn,zero(lat),l_window)[1]
@@ -434,14 +428,8 @@ function nekf_train(ins::INS, meas, itp_mapS, x_nn::Matrix, y_nn::Matrix;
                     hidden::Int          = 1,
                     activation::Function = swish,
                     l_window::Int        = 50,
-                    l_seq::Int           = 50,
                     date                 = get_years(2020,185),
                     core::Bool           = false)
-
-    if l_seq != 50
-        @warn("this version of nekf_train() is deprecated & will be removed in MagNav.jl v1.2.0, use nekf_train(; l_window::Int)")
-        l_window = l_seq
-    end
 
     nekf_train(ins.lat,ins.lon,ins.alt,ins.vn,ins.ve,ins.vd,
                ins.fn,ins.fe,ins.fd,ins.Cnb,meas,ins.dt,itp_mapS,x_nn,y_nn;
@@ -518,14 +506,8 @@ function nekf_train(xyz::XYZ, ind, meas, itp_mapS, x::Matrix;
                     hidden::Int          = 1,
                     activation::Function = swish,
                     l_window::Int        = 50,
-                    l_seq::Int           = 50,
                     date                 = get_years(2020,185),
                     core::Bool           = false)
-
-    if l_seq != 50
-        @warn("this version of nekf_train() is deprecated & will be removed in MagNav.jl v1.2.0, use nekf_train(; l_window::Int)")
-        l_window = l_seq
-    end
 
     # get traj, ins, and y_nn (position)
     traj = get_traj(xyz,ind)

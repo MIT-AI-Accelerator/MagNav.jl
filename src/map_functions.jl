@@ -2193,16 +2193,6 @@ function plot_events!(p1, df_event::DataFrame, flight::Symbol, keyword::String =
     return (p1)
 end # function plot_events!
 
-function plot_events!(p1, flight::Symbol, df_event::DataFrame;
-                      show_lab::Bool  = true,
-                      t0              = 0,
-                      t_units::Symbol = :min,
-                      legend::Symbol  = :outertopright)
-    @warn("this version of plot_events!() is deprecated & will be removed in MagNav.jl v1.2.0, use plot_events!(p1, df_event::DataFrame, flight::Symbol)")
-    plot_events!(p1,df_event,flight;
-                 show_lab=show_lab,t0=t0,t_units=t_units,legend=legend)
-end # function plot_events!
-
 """
     map_check(map_map::Map, lat, lon, alt = fill(median(map_map.alt),size(lat)))
 
