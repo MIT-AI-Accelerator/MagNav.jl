@@ -17,7 +17,7 @@ julia> Pkg.add("MagNav")
 
 or from the Julia REPL, type `]` to enter Pkg REPL mode and run:
 
-```julia
+```julia-repl
 pkg> add MagNav
 ```
 
