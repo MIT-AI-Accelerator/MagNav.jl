@@ -1,5 +1,5 @@
 """
-    create_P0(lat1=deg2rad(45);
+    create_P0(lat1 = deg2rad(45);
               init_pos_sigma   = 3.0,
               init_alt_sigma   = 0.001,
               init_vel_sigma   = 0.01,
@@ -35,7 +35,7 @@ Internal helper function to create P0, initial covariance matrix.
 **Returns:**
 - `P0`: initial covariance matrix
 """
-function create_P0(lat1=deg2rad(45);
+function create_P0(lat1 = deg2rad(45);
                    init_pos_sigma   = 3.0,
                    init_alt_sigma   = 0.001,
                    init_vel_sigma   = 0.01,
@@ -56,7 +56,7 @@ function create_P0(lat1=deg2rad(45);
 
     nx = 17 + nx_TL + nx_vec + nx_fogm
 
-    P0 = zeros(nx,nx) # initial covariance matrix
+    P0 = zeros(Float64,nx,nx) # initial covariance matrix
 
     P0[1,1]   = dn2dlat(init_pos_sigma,lat1)^2
     P0[2,2]   = de2dlon(init_pos_sigma,lat1)^2
@@ -87,7 +87,7 @@ function create_P0(lat1=deg2rad(45);
 end # function create_P0
 
 """
-    create_Qd(dt=0.1;
+    create_Qd(dt = 0.1;
               VRW_sigma        = 0.000238,
               ARW_sigma        = 0.000000581,
               baro_sigma       = 1.0,
@@ -125,7 +125,7 @@ Internal helper function to create Qd, discrete time process/system noise matrix
 **Returns:**
 - `Qd`: discrete time process/system noise matrix
 """
-function create_Qd(dt=0.1;
+function create_Qd(dt = 0.1;
                    VRW_sigma        = 0.000238,
                    ARW_sigma        = 0.000000581,
                    baro_sigma       = 1.0,
@@ -161,7 +161,7 @@ function create_Qd(dt=0.1;
          1e-30;
          repeat([acc_drive ],3);
          repeat([gyro_drive],3);
-         zeros(nx_TL+nx_vec+nx_fogm)]
+         zeros(Float64,nx_TL+nx_vec+nx_fogm)]
 
     i1 = 18
     i2 = i1 + nx_TL
@@ -176,7 +176,7 @@ function create_Qd(dt=0.1;
 end # function create_Qd
 
 """
-    create_model(dt=0.1, lat1=deg2rad(45);
+    create_model(dt = 0.1, lat1 = deg2rad(45);
                  init_pos_sigma   = 3.0,
                  init_alt_sigma   = 0.001,
                  init_vel_sigma   = 0.01,
@@ -233,7 +233,7 @@ Create magnetic navigation model for EKF or MPF.
 - `Qd`: discrete time process/system noise matrix
 - `R`:  measurement (white) noise variance
 """
-function create_model(dt=0.1, lat1=deg2rad(45);
+function create_model(dt = 0.1, lat1 = deg2rad(45);
                       init_pos_sigma   = 3.0,
                       init_alt_sigma   = 0.001,
                       init_vel_sigma   = 0.01,
@@ -369,7 +369,7 @@ function get_pinson(nx::Int, lat, vn, ve, vd, fn, fe, fd, Cnb;
     cos_l = cos(lat)
     sin_l = sin(lat)
 
-    F = zeros(nx,nx)
+    F = zeros(Float64,nx,nx)
 
     F[1,3]   = -vn / r_earth^2
     F[1,4]   =  1  / r_earth
@@ -512,7 +512,7 @@ end # function get_Phi
 Internal helper function to get expected magnetic measurement Jacobian (gradient here).
 
 **Arguments:**
-- `itp_mapS`: scalar map interpolation function
+- `itp_mapS`: scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
 - `x`:        states [lat, lon, ... S]
 - `lat`:      latitude  [rad]
 - `lon`:      longitude [rad]
@@ -544,7 +544,7 @@ anomaly map interpolation function, FOGM catch-all, and optionally IGRF for
 core magnetic field.
 
 **Arguments:**
-- `itp_mapS`: scalar map interpolation function
+- `itp_mapS`: scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
 - `x`:        states [lat, lon, ... S]
 - `lat`:      latitude  [rad]
 - `lon`:      longitude [rad]
@@ -559,7 +559,7 @@ function get_h(itp_mapS, x::Array, lat, lon, alt;
                date       = get_years(2020,185),
                core::Bool = false)
 
-    map_val = itp_mapS.(lon.+x[2,:],lat.+x[1,:],alt.+x[3,:])
+    map_val = itp_mapS.(lat.+x[1,:],lon.+x[2,:],alt.+x[3,:])
 
     if core
         return (map_val .+ x[end,:] .+ norm.(igrf.(date,alt.+x[3,:],lat.+x[1,:],
@@ -581,8 +581,8 @@ core magnetic field. Includes vertical derivative information, currently only
 for ~constant HAE.
 
 **Arguments:**
-- `itp_mapS`: scalar map interpolation function
-- `der_mapS`: scalar map vertical derivative grid interpolation
+- `itp_mapS`: scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
+- `der_mapS`: scalar map vertical derivative map interpolation function (`f(lat,lon)` or (`f(lat,lon,alt)`)
 - `x`:        states [lat, lon, ... S]
 - `lat`:      latitude  [rad]
 - `lon`:      longitude [rad]
@@ -598,8 +598,8 @@ function get_h(itp_mapS, der_mapS, x::Array, lat, lon, alt, map_alt;
                date       = get_years(2020,185),
                core::Bool = false)
 
-    map_val = itp_mapS.(lon.+x[2,:],lat.+x[1,:],alt.+x[3,:])
-    der_val = der_mapS.(lon.+x[2,:],lat.+x[1,:],alt.+x[3,:])
+    map_val = itp_mapS.(lat.+x[1,:],lon.+x[2,:],alt.+x[3,:])
+    der_val = der_mapS.(lat.+x[1,:],lon.+x[2,:],alt.+x[3,:])
 
     if core
         return (map_val .+ x[end,:] .+ der_val .* (alt.+x[3,:] .- map_alt) .+
@@ -616,7 +616,7 @@ end # function get_h
 Internal helper function to get local map gradient.
 
 **Arguments:**
-- `itp_mapS`: scalar map interpolation function
+- `itp_mapS`: scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
 - `lat`:      latitude  [rad]
 - `lon`:      longitude [rad]
 - `alt`:      altitude  [m]
@@ -628,9 +628,9 @@ Internal helper function to get local map gradient.
 function map_grad(itp_mapS, lat, lon, alt; δ=1.0f-8)
     dlat = dlon = δ
     dalt = dlat2dn(δ,lat)
-    return ([(itp_mapS(lon,lat+dlat,alt) - itp_mapS(lon,lat-dlat,alt)) /2/dlat,
-             (itp_mapS(lon+dlon,lat,alt) - itp_mapS(lon-dlon,lat,alt)) /2/dlon,
-             (itp_mapS(lon,lat,alt+dalt) - itp_mapS(lon,lat,alt-dalt)) /2/dalt])
+    return ([(itp_mapS(lat+dlat,lon,alt) - itp_mapS(lat-dlat,lon,alt)) /2/dlat,
+             (itp_mapS(lat,lon+dlon,alt) - itp_mapS(lat,lon-dlon,alt)) /2/dlon,
+             (itp_mapS(lat,lon,alt+dalt) - itp_mapS(lat,lon,alt-dalt)) /2/dalt])
 end # function map_grad
 
 """
@@ -676,14 +676,14 @@ Represents unmeasureable time-correlated errors.
 """
 function fogm(sigma, tau, dt, N)
 
-    x    = zeros(N)
-    x[1] = sigma*randn()
+    x    = zeros(Float64,N)
+    x[1] = sigma*randn(Float64)
     Phi  = exp(-dt/tau)
     Q    = 2*sigma^2/tau
     Qd   = Q*dt
 
     for i = 2:N
-        x[i] = Phi*x[i-1] + sqrt(Qd)*randn()
+        x[i] = Phi*x[i-1] + sqrt(Qd)*randn(Float64)
     end
 
     return (x)

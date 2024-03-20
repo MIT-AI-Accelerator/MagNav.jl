@@ -24,7 +24,7 @@ Extended Kalman filter (EKF) with online learning of neural network weights.
 - `Cnb`:      direction cosine matrix (body to navigation) [-]
 - `meas`:     scalar magnetometer measurement [nT]
 - `dt`:       measurement time step [s]
-- `itp_mapS`: scalar map interpolation function
+- `itp_mapS`: scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
 - `x_nn`:     `N` x `Nf` data matrix for neural network (`Nf` is number of features)
 - `m`:        neural network model, does not work with skip connections
 - `y_norms`:  tuple of `y` normalizations, i.e., `(y_bias,y_scale)`
@@ -57,21 +57,20 @@ function ekf_online_nn(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
     nx    = size(P0,1)
     nx_nn = sum(length,Flux.params(m))
     ny    = size(meas,2)
-    x_out = zeros(nx,N)
-    P_out = zeros(nx,nx,N)
-    r_out = zeros(ny,N)
-
-    x = zeros(nx) # state estimate
-    P = P0        # covariance matrix
+    x_out = zeros(eltype(P0),nx,N)
+    P_out = zeros(eltype(P0),nx,nx,N)
+    r_out = zeros(eltype(P0),ny,N)
+    x     = zeros(eltype(P0),nx) # state estimate
+    P     = P0 # covariance matrix
 
     (w0_nn,re) = destructure(m)
     x[end-nx_nn:end-1] .= w0_nn
 
-    map_cache = (typeof(itp_mapS) <: Map_Cache) ? itp_mapS : nothing
+    map_cache = itp_mapS isa Map_Cache ? itp_mapS : nothing
 
     for t = 1:N
         # custom itp_mapS from map cache, if available
-        if typeof(map_cache) <: Map_Cache
+        if map_cache isa Map_Cache
             itp_mapS = get_cached_map(map_cache,lat[t],lon[t],alt[t];silent=true)
         end
 
@@ -85,9 +84,9 @@ function ekf_online_nn(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
                 get_h(itp_mapS,x,lat[t],lon[t],alt[t];date=date,core=core)
 
         # measurement Jacobian (repeated gradient here) [ny x nx]
-        Hnn = get_Hnn(nn_grad(m,x_nn[t,:]))
         Hll = get_H(itp_mapS,x,lat[t],lon[t],alt[t];date=date,core=core)'
-        H1  = [Hll[1:2]; zeros(nx-3-nx_nn); Hnn.*y_scale; 1]
+        Hnn = get_Hnn(nn_grad(m,x_nn[t,:]))
+        H1  = [Hll[1:2]; zeros(eltype(Hll),nx-3-nx_nn); Hnn.*y_scale; 1]
         H   = repeat(H1',ny,1)
 
         # measurement residual covariance
@@ -142,7 +141,7 @@ function get_Hnn(g::Tuple)
     Hnn = Float32[]
     for i in eachindex(g)
         Hnn = [Hnn;vec(g[i].weight);]
-        g[i].bias !== nothing && (Hnn = [Hnn;vec(g[i].bias);])
+        !(g[i].bias isa Nothing) && (Hnn = [Hnn;vec(g[i].bias);])
     end
     return (Hnn)
 end # function get_Hnn
@@ -161,7 +160,7 @@ Extended Kalman filter (EKF) with online learning of neural network weights.
 **Arguments:**
 - `ins`:      `INS` inertial navigation system struct
 - `meas`:     scalar magnetometer measurement [nT]
-- `itp_mapS`: scalar map interpolation function
+- `itp_mapS`: scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
 - `x_nn`:     `N` x `Nf` data matrix for neural network (`Nf` is number of features)
 - `m`:        neural network model, does not work with skip connections
 - `y_norms`:  tuple of `y` normalizations, i.e., `(y_bias,y_scale)`
@@ -208,7 +207,7 @@ end # function ekf_online_nn
 
 #     N        = length(y)
 #     N_sigma  = min(N,N_sigma)
-#     coef_set = zeros(length(w_nn),N_sigma)
+#     coef_set = zeros(eltype(w_nn),length(w_nn),N_sigma)
 #     for i = 1:N_sigma
 #         ind = ((i-1)*floor(Int,(N-1)/N_sigma)).+(1:1)
 #         # ind = (i-1)*bS+1:i*bS
@@ -246,8 +245,8 @@ function ekf_online_nn_setup(x, y, m, y_norms; N_sigma::Int=1000)
     @assert N_sigma >= N_sigma_min "increase N_sigma to $N_sigma_min"
     (y_bias,y_scale) = y_norms # unpack normalizations
     m = deepcopy(m) # don't modify original NN model
-    (w_nn,re) = destructure(m) # weights, restructure
-    w_nn_store = zeros(length(w_nn),N_sigma) # initialize weights matrix
+    (w_nn,re)  = destructure(m) # weights, restructure
+    w_nn_store = zeros(eltype(w_nn),length(w_nn),N_sigma) # initialize weights matrix
     P = I(length(w_nn)) # initialize covariance matrix
     for i = 1:N_sigma   # run recursive least squares
         m = re(w_nn)

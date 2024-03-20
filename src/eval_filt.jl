@@ -27,13 +27,13 @@ Run navigation filter and optionally compute Cramér–Rao lower bound (CRLB).
 - `traj`:      `Traj` trajectory struct
 - `ins`:       `INS` inertial navigation system struct
 - `meas`:      scalar magnetometer measurement [nT]
-- `itp_mapS`:  scalar map interpolation function
+- `itp_mapS`:  scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
 - `filt_type`: (optional) filter type {`:ekf`,`:mpf`}
 - `P0`:        (optional) initial covariance matrix
 - `Qd`:        (optional) discrete time process/system noise matrix
 - `R`:         (optional) measurement (white) noise variance
-- `num_part`:  (optional) number of particles (`:mpf` only)
-- `thresh`:    (optional) resampling threshold fraction {0:1} (`:mpf` only)
+- `num_part`:  (optional) number of particles, only used for `filt_type = :mpf`
+- `thresh`:    (optional) resampling threshold fraction {0:1}, only used for `filt_type = :mpf`
 - `baro_tau`:  (optional) barometer time constant [s]
 - `acc_tau`:   (optional) accelerometer time constant [s]
 - `gyro_tau`:  (optional) gyroscope time constant [s]
@@ -261,9 +261,8 @@ Extract Cramér–Rao lower bound (CRLB) results.
 function eval_crlb(traj::Traj, crlb_P::Array)
 
     N = traj.N
-
-    crlb_out = CRLBout(zeros(N),zeros(N),zeros(N),zeros(N),zeros(N),zeros(N),
-                       zeros(N),zeros(N),zeros(N),zeros(N),zeros(N),zeros(N))
+    N_fields = length(fieldnames(CRLBout))
+    crlb_out = CRLBout((zeros(Float64,N) for _ = 1:N_fields)...)
 
     crlb_out.lat_std  .= sqrt.(crlb_P[1,1,:])
     crlb_out.lon_std  .= sqrt.(crlb_P[2,2,:])
@@ -302,10 +301,8 @@ function eval_ins(traj::Traj, ins::INS)
     # not doing vn,ve,vd,tn,te,td,ax,ay,az,gx,gy,gz
 
     N = traj.N
-
-    ins_out = INSout(zeros(N),zeros(N),zeros(N),zeros(N),
-                     zeros(N),zeros(N),zeros(N),zeros(N),
-                     zeros(N),zeros(N))
+    N_fields = length(fieldnames(INSout))
+    ins_out  = INSout((zeros(Float64,N) for _ = 1:N_fields)...)
 
     if !iszero(ins.P)
         ins_out.lat_std .= sqrt.(ins.P[1,1,:])
@@ -339,19 +336,10 @@ Extract filter results.
 """
 function eval_filt(traj::Traj, ins::INS, filt_res::FILTres)
 
-    N =  traj.N
+    N  = traj.N
     dt = traj.dt
-
-    filt_out = FILTout(N,dt    ,zeros(N),zeros(N),zeros(N),zeros(N),
-                       zeros(N),zeros(N),zeros(N),zeros(N),zeros(N),
-                       zeros(N),zeros(N),zeros(N),zeros(N),zeros(N),
-                       zeros(N),zeros(N),zeros(N),zeros(N),zeros(N),
-                       zeros(N),zeros(N),zeros(N),zeros(N),zeros(N),
-                       zeros(N),zeros(N),zeros(N),zeros(N),zeros(N),
-                       zeros(N),zeros(N),zeros(N),zeros(N),zeros(N),
-                       zeros(N),zeros(N),zeros(N),zeros(N),zeros(N),
-                       zeros(N),zeros(N),zeros(N),zeros(N),zeros(N),
-                       zeros(N),zeros(N),zeros(N),zeros(N),zeros(N),zeros(N))
+    N_fields = length(fieldnames(FILTout))
+    filt_out = FILTout(N,dt,(zeros(Float64,N) for _ = 1:N_fields-2)...)
 
     filt_out.tt   .= traj.tt
     filt_out.lat  .= ins.lat + filt_res.x[1,:]
@@ -402,9 +390,9 @@ function eval_filt(traj::Traj, ins::INS, filt_res::FILTres)
     filt_out.ve_err  .= filt_out.ve  - traj.ve
     filt_out.vd_err  .= filt_out.vd  - traj.vd
 
-    n_tilt = zeros(N)
-    e_tilt = zeros(N)
-    d_tilt = zeros(N)
+    n_tilt = zeros(eltype(filt_out.lat),N)
+    e_tilt = zeros(eltype(filt_out.lat),N)
+    d_tilt = zeros(eltype(filt_out.lat),N)
 
     for k = 1:N
         tilt_temp = ins.Cnb[:,:,k]*traj.Cnb[:,:,k]'
@@ -750,7 +738,7 @@ Plot scalar magnetometer measurements vs map values.
 **Arguments:**
 - `path`:         `Path` struct, i.e., `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
 - `mag`:          scalar magnetometer measurements [nT]
-- `itp_mapS`:     scalar map interpolation function
+- `itp_mapS`:     scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
 - `lab`:          (optional) magnetometer data (legend) label
 - `order`:        (optional) plotting order {`:magmap`,`:mapmag`}
 - `dpi`:          (optional) dots per inch (image resolution)
@@ -777,13 +765,13 @@ function plot_mag_map(path::Path, mag, itp_mapS;
     tt = (path.tt[i] .- path.tt[i][1]) / 60
 
     # custom itp_mapS from map cache, using median path position
-    if typeof(itp_mapS) <: Map_Cache # not the most accurate, but it runs
+    if itp_mapS isa Map_Cache # not the most accurate, but it runs
         itp_mapS = get_cached_map(itp_mapS,median(path.lat[i]),
                                            median(path.lon[i]),
                                            median(path.alt[i]))
     end
 
-    map_val = itp_mapS.(path.lon[i],path.lat[i],path.alt[i])
+    map_val = itp_mapS.(path.lat[i],path.lon[i],path.alt[i])
     mag_val = detrend_data ? detrend(mag[i] ) : mag[i]
     map_val = detrend_data ? detrend(map_val) : map_val
 
@@ -819,7 +807,7 @@ Plot scalar magnetometer measurement vs map value errors.
 **Arguments:**
 - `path`:         `Path` struct, i.e., `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
 - `mag`:          scalar magnetometer measurements [nT]
-- `itp_mapS`:     scalar map interpolation function
+- `itp_mapS`:     scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
 - `lab`:          (optional) data (legend) label
 - `dpi`:          (optional) dots per inch (image resolution)
 - `Nmax`:         (optional) maximum number of data points plotted
@@ -849,13 +837,13 @@ function plot_mag_map_err(path::Path, mag, itp_mapS;
     f = detrend_data ? detrend : x -> x
 
     # custom itp_mapS from map cache, using median path position
-    if typeof(itp_mapS) <: Map_Cache # not the most accurate, but it runs
+    if itp_mapS isa Map_Cache # not the most accurate, but it runs
         itp_mapS = get_cached_map(itp_mapS,median(path.lat[i]),
                                            median(path.lon[i]),
                                            median(path.alt[i]))
     end
 
-    map_val = itp_mapS.(path.lon[i],path.lat[i],path.alt[i])
+    map_val = itp_mapS.(path.lat[i],path.lon[i],path.alt[i])
 
     plot!(p1,tt,f(mag[i] - map_val),lab=lab)
 
@@ -888,7 +876,7 @@ function get_autocor(x::Vector, dt=0.1, dt_max=300.0)
     lags  = round.(Int,dts/dt)
     x_ac  = autocor(x,lags)
     i     = findfirst(x_ac .< exp(-1))
-    tau   = i !== nothing ? round(Int,dts[i]) : dt_max
+    tau   = i isa Nothing ? dt_max : round(Int,dts[i])
     return (sigma, tau)
 end # function get_autocor
 
@@ -948,7 +936,7 @@ Probability density function (PDF) of the chi-square distribution.
 """
 function chisq_pdf(x, k::Int=1)
     f = x > 0 ? x^(k/2-1) * exp(-x/2) / (2^(k/2) * gamma(k/2)) : 0
-    return (float(f))
+    return float(f)
 end # function chisq_pdf
 
 """
@@ -965,7 +953,7 @@ Cumulative distribution function (CDF) of the chi-square distribution.
 """
 function chisq_cdf(x, k::Int=1)
     F = x > 0 ? gamma_inc.(k/2,x/2)[1] : 0
-    return (float(F))
+    return float(F)
 end # function chisq_cdf
 
 """
@@ -1018,7 +1006,7 @@ end # function points_ellipse
 
 """
     conf_ellipse!(p1, P;
-                  μ                = zeros(2),
+                  μ                = zeros(eltype(P),2),
                   conf             = 0.95,
                   clip             = Inf,
                   n::Int           = 61,
@@ -1041,7 +1029,7 @@ matrix (2 degrees of freedom). Visualization of a 2D confidence interval.
 - `conf`:       (optional) percentile {0:1}
 - `clip`:       (optional) clipping radius (in same units as `P`)
 - `n`:          (optional) number of confidence ellipse points
-- `lim`:        (optional) `x` & `y` plotting limits (in same units as `P`)
+- `lim`:        (optional) (`-lim`,`lim`) `x` & `y` plotting limits (in same units as `P`)
 - `margin`:     (optional) margin around plot [mm]
 - `lab`:        (optional) axis labels
 - `axis`:       (optional) if true, show axes
@@ -1054,7 +1042,7 @@ matrix (2 degrees of freedom). Visualization of a 2D confidence interval.
 - `nothing`: confidence ellipse is plotted on `p1`
 """
 function conf_ellipse!(p1, P;
-                       μ                = zeros(2),
+                       μ                = zeros(eltype(P),2),
                        conf             = 0.95,
                        clip             = Inf,
                        n::Int           = 61,
@@ -1071,7 +1059,7 @@ function conf_ellipse!(p1, P;
     eigax = I*sqrt.(Diagonal(eigval)) * eigvec'
 
     # check arguments
-    xlim = ylim = lim === nothing  ? lim : (-lim,lim)
+    xlim = ylim = lim isa Nothing  ? lim : (-lim,lim)
     xlab = ylab = axis             ? lab : nothing
     @assert all(real(eigval) .> 0) "P is not positive definite"
     @assert size(P) == (2,2)       "P is size $(size(P)) ≂̸ (2,2)"
@@ -1080,7 +1068,7 @@ function conf_ellipse!(p1, P;
 
     k  = sqrt(chisq_q(conf,2)) # compute quantile for desired percentile
     b_e # backend
-    if lim === nothing
+    if lim isa Nothing
         plot!(p1,xlab=xlab,ylab=ylab,
               legend=false,aspect_ratio=:equal,margin=margin*mm,
               axis=axis,xticks=axis,yticks=axis,grid=axis,bg=bg_color)
@@ -1101,7 +1089,7 @@ end # function conf_ellipse!
 
 """
     conf_ellipse(P;
-                 μ                = zeros(2),
+                 μ                = zeros(eltype(P),2),
                  conf             = 0.95,
                  clip             = Inf,
                  n::Int           = 61,
@@ -1123,7 +1111,7 @@ matrix (2 degrees of freedom). Visualization of a 2D confidence interval.
 - `conf`:       (optional) percentile {0:1}
 - `clip`:       (optional) clipping radius (in same units as `P`)
 - `n`:          (optional) number of confidence ellipse points
-- `lim`:        (optional) `x` & `y` plotting limits (in same units as `P`)
+- `lim`:        (optional) (`-lim`,`lim`) `x` & `y` plotting limits (in same units as `P`)
 - `margin`:     (optional) margin around plot [mm]
 - `lab`:        (optional) axis labels
 - `axis`:       (optional) if true, show axes
@@ -1136,7 +1124,7 @@ matrix (2 degrees of freedom). Visualization of a 2D confidence interval.
 - `p1`: plot of confidence ellipse
 """
 function conf_ellipse(P;
-                      μ                = zeros(2),
+                      μ                = zeros(eltype(P),2),
                       conf             = 0.95,
                       clip             = Inf,
                       n::Int           = 61,
@@ -1225,7 +1213,7 @@ end # function units_ellipse
                 di::Int             = 10,
                 speedup::Int        = 60,
                 conf_units::Symbol  = :m,
-                μ                   = zeros(2),
+                μ                   = zeros(eltype(P),2),
                 conf                = 0.95,
                 clip                = Inf,
                 n::Int              = 61,
@@ -1253,7 +1241,7 @@ covariance matrix.
 - `conf`:        (optional) percentile {0:1}
 - `clip`:        (optional) clipping radius [`conf_units`]
 - `n`:           (optional) number of confidence ellipse points
-- `lim`:         (optional) `x` & `y` plotting limits [`conf_units`]
+- `lim`:         (optional) (`-lim`,`lim`) `x` & `y` plotting limits [`conf_units`]
 - `margin`:      (optional) margin around plot [mm]
 - `axis`:        (optional) if true, show axes
 - `plot_eigax`:  (optional) if true, show major and minor axes
@@ -1271,7 +1259,7 @@ function gif_ellipse(P, lat1 = deg2rad(45);
                      di::Int             = 10,
                      speedup::Int        = 60,
                      conf_units::Symbol  = :m,
-                     μ                   = zeros(2),
+                     μ                   = zeros(eltype(P),2),
                      conf                = 0.95,
                      clip                = Inf,
                      n::Int              = 61,
@@ -1320,7 +1308,7 @@ end # function gif_ellipse
                 di::Int             = 10,
                 speedup::Int        = 60,
                 conf_units::Symbol  = :m,
-                μ                   = zeros(2),
+                μ                   = zeros(eltype(filt_res.P),2),
                 conf                = 0.95,
                 clip                = Inf,
                 n::Int              = 61,
@@ -1352,7 +1340,7 @@ covariance matrix.
 - `conf`:        (optional) percentile {0:1}
 - `clip`:        (optional) clipping radius [`conf_units`]
 - `n`:           (optional) number of confidence ellipse points
-- `lim`:         (optional) `x` & `y` plotting limits [`conf_units`]
+- `lim`:         (optional) (`-lim`,`lim`) `x` & `y` plotting limits [`conf_units`]
 - `dpi`:         (optional) dots per inch (image resolution)
 - `margin`:      (optional) margin around plot [mm]
 - `axis`:        (optional) if true, show axes
@@ -1375,7 +1363,7 @@ function gif_ellipse(filt_res::FILTres,
                      di::Int             = 10,
                      speedup::Int        = 60,
                      conf_units::Symbol  = :m,
-                     μ                   = zeros(2),
+                     μ                   = zeros(eltype(filt_res.P),2),
                      conf                = 0.95,
                      clip                = Inf,
                      n::Int              = 61,

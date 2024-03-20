@@ -104,7 +104,7 @@ filt_res_2 = mpf(ins,mag_1_c,itp_mapS;
 end
 
 @testset "mpf helper tests" begin
-    @test MagNav.sys_resample([0,1,0])                          ≈ [2,2,2]
+    @test MagNav.sys_resample([0,1,0])                          ≈ [1,1,1]
     @test MagNav.sys_resample([0.3,0.3,0.3])[end]               ≈ 3
     @test MagNav.part_cov([0,1,0],zeros(3,3),ones(3))           ≈ ones(3,3)
     @test MagNav.part_cov([0,1,0],zeros(3,3),ones(3),ones(3,3)) ≈ 2*ones(3,3)

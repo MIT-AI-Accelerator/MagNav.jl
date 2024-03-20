@@ -1,9 +1,9 @@
 ## setup DataFrames for use with examples
 
 ## SGL calibration flight lines
-df_comp = DataFrame(CSV.File("dataframes/df_comp.csv"))
-df_comp[!,:flight]   = Symbol.(df_comp[!,:flight])
-df_comp[!,:map_name] = Symbol.(df_comp[!,:map_name]) # not ideal, but ok
+df_cal = DataFrame(CSV.File("dataframes/df_cal.csv"))
+df_cal[!,:flight]   = Symbol.(df_cal[!,:flight])
+df_cal[!,:map_name] = Symbol.(df_cal[!,:map_name]) # not ideal, but ok
 
 ## SGL flight data HDF5 files
 df_flight = DataFrame(CSV.File("dataframes/df_flight.csv"))

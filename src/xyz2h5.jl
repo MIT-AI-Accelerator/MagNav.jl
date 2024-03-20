@@ -64,8 +64,8 @@ function xyz2h5(xyz_xyz::String, xyz_h5::String, flight::Symbol;
         end
     end
 
-    N    = sum(ind)     # number of valid data rows
-    data = zeros(N,Nf) # initialize data matrix
+    N    = sum(ind) # number of valid data rows
+    data = zeros(Float64,N,Nf) # initialize data matrix
 
     @info("reading in file: $xyz_xyz")
 
@@ -223,7 +223,7 @@ Delete a data field from an HDF5 file.
 """
 function delete_field(data_h5::String, field)
     data_h5 = add_extension(data_h5,".h5")
-    field = string.(field)
+    field = string(field)
     file  = h5open(data_h5,"r+") # read-write, preserve existing contents
     delete_object(file,field)
     close(file)
@@ -244,7 +244,7 @@ Write (add) a new data field and data in an HDF5 file.
 """
 function write_field(data_h5::String, field, data)
     data_h5 = add_extension(data_h5,".h5")
-    field = string.(field)
+    field = string(field)
     h5open(data_h5,"cw") do file # read-write, create file if not existing, preserve existing contents
         write(file,field,data)
     end
@@ -265,7 +265,7 @@ Overwrite a data field and data in an HDF5 file.
 """
 function overwrite_field(data_h5::String, field, data)
     data_h5 = add_extension(data_h5,".h5")
-    field = string.(field)
+    field = string(field)
     delete_field(data_h5,field)
     write_field(data_h5,field,data)
 end # function overwrite_field
@@ -284,7 +284,7 @@ Read data for a data field in an HDF5 file.
 """
 function read_field(data_h5::String, field)
     data_h5 = add_extension(data_h5,".h5")
-    field = string.(field)
+    field = string(field)
     h5open(data_h5,"r") do file # read-only
         read(file,field)
     end
@@ -305,8 +305,8 @@ Rename data field in an HDF5 file.
 """
 function rename_field(data_h5::String, field_old, field_new)
     data_h5 = add_extension(data_h5,".h5")
-    field_old = string.(field_old)
-    field_new = string.(field_new)
+    field_old = string(field_old)
+    field_new = string(field_new)
     data = read_field(data_h5,field_old)
     delete_field(data_h5,field_old)
     write_field(data_h5,field_new,data)
@@ -391,7 +391,7 @@ function compare_fields(s1, s2; silent::Bool=false)
                     dif ≈ 0 || println("$field  ",dif)
                     dif ≈ 0 || (N_dif += 1)
                 end
-            elseif typeof(f1) <: Chain
+            elseif f1 isa Chain
                 if length(f1) != length(f2)
                     println("size of $field field is different")
                     N_dif += 1
@@ -422,7 +422,7 @@ function compare_fields(s1, s2; silent::Bool=false)
 end # function compare_fields
 
 """
-    field_check(s, t)
+    field_check(s, t::Union{DataType,UnionAll})
 
 Internal helper function to find data fields of a specified type in given struct.
 
@@ -433,9 +433,9 @@ Internal helper function to find data fields of a specified type in given struct
 **Returns:**
 - `fields`: data fields of type `t` in struct `s`
 """
-function field_check(s, t)
+function field_check(s, t::Union{DataType,UnionAll})
     fields = fieldnames(typeof(s))
-    [fields[i] for i = findall([typeof(getfield(s,f)) for f in fields] .<: t)]
+    [fields[i] for i = findall([getfield(s,f) isa t for f in fields])]
 end # function field_check
 
 """
@@ -456,7 +456,7 @@ function field_check(s, field::Symbol)
 end # function field_check
 
 """
-    field_check(s, field::Symbol, t)
+    field_check(s, field::Symbol, t::Union{DataType,UnionAll})
 
 Internal helper function to check if a specified data field is in a given
 struct and of a given type.
@@ -469,9 +469,9 @@ struct and of a given type.
 **Returns:**
 - `AssertionError` if `field` is not in struct `s` or not type `t`
 """
-function field_check(s, field::Symbol, t)
+function field_check(s, field::Symbol, t::Union{DataType,UnionAll})
     field_check(s,field)
-    @assert typeof(getfield(s,field)) <: t "$field is not $t type"
+    @assert getfield(s,field) isa t "$field is not $t type"
 end # function field_check
 
 """
@@ -537,7 +537,7 @@ function xyz_fields(flight::Symbol)
     fields21  = sgl_fields()*"/fields_sgl_2021.csv"
     fields160 = sgl_fields()*"/fields_sgl_160.csv"
 
-    d = Dict{Symbol,Any}()
+    d = Dict{Symbol,Vector{Symbol}}()
     push!(d, :fields20  => Symbol.(vec(readdlm(fields20 ,','))))
     push!(d, :fields21  => Symbol.(vec(readdlm(fields21 ,','))))
     push!(d, :fields160 => Symbol.(vec(readdlm(fields160,','))))

@@ -7,6 +7,7 @@
                     epoch_lbfgs::Int     = 0,
                     hidden               = [8],
                     activation::Function = swish,
+                    loss::Function       = mse,
                     batchsize::Int       = 2048,
                     frac_train           = 14/17,
                     α_sgl                = 1,
@@ -29,6 +30,7 @@ function nn_comp_1_train(x, y, no_norm;
                          epoch_lbfgs::Int     = 0,
                          hidden               = [8],
                          activation::Function = swish,
+                         loss::Function       = mse,
                          batchsize::Int       = 2048,
                          frac_train           = 14/17,
                          α_sgl                = 1,
@@ -112,16 +114,16 @@ function nn_comp_1_train(x, y, no_norm;
         y_hat_norm = nn_comp_1_fwd(x_norm,y_bias,y_scale,m;
                                    denorm   = false,
                                    testmode = false)
-        return mse(y_hat_norm, vec(y_norm))
+        return loss(y_hat_norm, vec(y_norm))
     end # function loss_m1
 
     loss_m1_λ(xl,yl) = loss_m1(xl,yl) + λ*sum(sparse_group_lasso(m,α))
-    loss = λ > 0 ? loss_m1_λ : loss_m1
+    lossf = λ > 0 ? loss_m1_λ : loss_m1
 
     function loss_all(data_l)
         l = 0f0
         for (x_l,y_l) in data_l
-            l += loss(x_l,y_l)
+            l += lossf(x_l,y_l)
         end
         return (l/length(data_l))
     end # function loss_all
@@ -135,7 +137,7 @@ function nn_comp_1_train(x, y, no_norm;
 
     silent || @info("epoch 0: loss = $best_loss")
     for i = 1:epoch_adam
-        Flux.train!(loss,Flux.params(m),data_train,opt)
+        Flux.train!(lossf,Flux.params(m),data_train,opt)
         current_loss = loss_all(data_val)
         # update NN model weights for lowest validation loss or lowest test error
         if isempty(x_test)
@@ -143,7 +145,7 @@ function nn_comp_1_train(x, y, no_norm;
                 best_loss = current_loss
                 m_store   = deepcopy(m)
             end
-            mod(i,5) == 0 && !silent && @info("epoch $i: loss = $best_loss")
+            i % 5 == 0 && !silent && @info("epoch $i: loss = $best_loss")
         else
             test_error = std(nn_comp_1_test(x_test_norm,y_test,y_bias,y_scale,m;
                                             l_segs = l_segs_test,
@@ -152,9 +154,9 @@ function nn_comp_1_train(x, y, no_norm;
                 best_test_error = test_error
                 m_store         = deepcopy(m)
             end
-            mod(i,5) == 0 && !silent && @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error,digits=2)) nT")
+            i % 5 == 0 && !silent && @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error,digits=2)) nT")
         end
-        if (mod(i,10) == 0) & !silent
+        if i % 10 == 0 && !silent
             err = nn_comp_1_test(x_norm,y,y_bias,y_scale,m;l_segs=l_segs,silent=true)[2]
             @info("$i train error: $(round(std(err),digits=2)) nT")
             isempty(x_test) || @info("$i test  error: $(round((test_error),digits=2)) nT")
@@ -194,7 +196,8 @@ function nn_comp_1_train(x, y, no_norm;
     model = m
 
     # pack data normalizations
-    data_norms = (zeros(1,1),zeros(1,1),v_scale,x_bias,x_scale,y_bias,y_scale)
+    data_norms = (zeros(eltype(x_bias),1,1),zeros(eltype(x_bias),1,1),
+                  v_scale,x_bias,x_scale,y_bias,y_scale)
 
     return (model, data_norms, y_hat, err)
 end # function nn_comp_1_train
@@ -295,6 +298,7 @@ end # function nn_comp_1_test
                     epoch_lbfgs::Int     = 0,
                     hidden               = [8],
                     activation::Function = swish,
+                    loss::Function       = mse,
                     batchsize::Int       = 2048,
                     frac_train           = 14/17,
                     α_sgl                = 1,
@@ -321,6 +325,7 @@ function nn_comp_2_train(A, x, y, no_norm;
                          epoch_lbfgs::Int     = 0,
                          hidden               = [8],
                          activation::Function = swish,
+                         loss::Function       = mse,
                          batchsize::Int       = 2048,
                          frac_train           = 14/17,
                          α_sgl                = 1,
@@ -419,7 +424,7 @@ function nn_comp_2_train(A, x, y, no_norm;
                                    TL_coef_norm = TL_coef_norm,
                                    denorm       = false,
                                    testmode     = false)
-        return mse(y_hat_norm, vec(y_norm))
+        return loss(y_hat_norm, vec(y_norm))
     end # function loss_m2
 
     loss_m2a(Al,xl,yl) = loss_m2(Al,xl,yl,:m2a,TL_coef_norm)
@@ -432,15 +437,15 @@ function nn_comp_2_train(A, x, y, no_norm;
     loss_m2c_λ(Al,xl,yl) = loss_m2c(Al,xl,yl) + λ*sum(sparse_group_lasso(m,α))
     loss_m2d_λ(Al,xl,yl) = loss_m2d(Al,xl,yl) + λ*sum(sparse_group_lasso(m,α))
 
-    model_type == :m2a && (loss = λ > 0 ? loss_m2a_λ : loss_m2a)
-    model_type == :m2b && (loss = λ > 0 ? loss_m2b_λ : loss_m2b)
-    model_type == :m2c && (loss = λ > 0 ? loss_m2c_λ : loss_m2c)
-    model_type == :m2d && (loss = λ > 0 ? loss_m2d_λ : loss_m2d)
+    model_type == :m2a && (lossf = λ > 0 ? loss_m2a_λ : loss_m2a)
+    model_type == :m2b && (lossf = λ > 0 ? loss_m2b_λ : loss_m2b)
+    model_type == :m2c && (lossf = λ > 0 ? loss_m2c_λ : loss_m2c)
+    model_type == :m2d && (lossf = λ > 0 ? loss_m2d_λ : loss_m2d)
 
     function loss_all(data_l)
         l = 0f0
         for (A_l,x_l,y_l) in data_l
-            l += loss(A_l,x_l,y_l)
+            l += lossf(A_l,x_l,y_l)
         end
         return (l/length(data_l))
     end # function loss_all
@@ -458,9 +463,9 @@ function nn_comp_2_train(A, x, y, no_norm;
     silent || @info("epoch 0: loss = $best_loss")
     for i = 1:epoch_adam
         if model_type in [:m2a,:m2b,:m2d] # train on NN model weights only
-            Flux.train!(loss,Flux.params(m),data_train,opt)
+            Flux.train!(lossf,Flux.params(m),data_train,opt)
         elseif model_type in [:m2c] # train on NN model weights + TL coef
-            Flux.train!(loss,Flux.params(m,TL_coef_norm),data_train,opt)
+            Flux.train!(lossf,Flux.params(m,TL_coef_norm),data_train,opt)
         end
         current_loss = loss_all(data_val)
         if isempty(x_test)
@@ -469,7 +474,7 @@ function nn_comp_2_train(A, x, y, no_norm;
                 m_store       = deepcopy(m)
                 TL_coef_store = deepcopy(TL_coef_norm)
             end
-            mod(i,5) == 0 && !silent && @info("epoch $i: loss = $best_loss")
+            i % 5 == 0 && !silent && @info("epoch $i: loss = $best_loss")
         else
             test_error = std(nn_comp_2_test(A_test_norm,x_test_norm,y_test,y_bias,y_scale,m;
                                             model_type   = model_type,
@@ -481,9 +486,9 @@ function nn_comp_2_train(A, x, y, no_norm;
                 m_store         = deepcopy(m)
                 TL_coef_store   = deepcopy(TL_coef_norm)
             end
-            mod(i,5) == 0 && !silent && @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error,digits=2)) nT")
+            i % 5 == 0 && !silent && @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error,digits=2)) nT")
         end
-        if (mod(i,10) == 0) & !silent
+        if i % 10 == 0 && !silent
             err = nn_comp_2_test(A_norm,x_norm,y,y_bias,y_scale,m;
                                  model_type   = model_type,
                                  TL_coef_norm = TL_coef_norm,
@@ -844,7 +849,7 @@ original data. Adds padding to the beginning of the data.
 """
 function get_temporal_data(x_norm::AbstractMatrix, l_window::Int)
     (Nf,N) = size(x_norm)
-    x_w    = zeros(Float32, Nf, l_window, N)
+    x_w    = zeros(eltype(x_norm), Nf, l_window, N)
     for i = 1:N
         i1 = max(1, i - l_window + 1)
         x_w[:, i1+l_window-i:l_window, i] = x_norm[:, i1:i]
@@ -929,6 +934,7 @@ end # function get_split
                     epoch_lbfgs::Int      = 0,
                     hidden                = [8],
                     activation::Function  = swish,
+                    loss::Function        = mse,
                     batchsize::Int        = 2048,
                     frac_train            = 14/17,
                     α_sgl                 = 1,
@@ -989,6 +995,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
                          epoch_lbfgs::Int      = 0,
                          hidden                = [8],
                          activation::Function  = swish,
+                         loss::Function        = mse,
                          batchsize::Int        = 2048,
                          frac_train            = 14/17,
                          α_sgl                 = 1,
@@ -1164,7 +1171,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
                                    use_nn     = use_nn,
                                    denorm     = false,
                                    testmode   = false)
-        return mse(y_hat_norm, vec(y_norm))
+        return loss(y_hat_norm, vec(y_norm))
     end # function loss_m3
 
     use_nn = model_type in [:m3s,:m3v,:m3w,:m3tf] ? true : false # multiplier to include/exclude NN contribution to y_hat
@@ -1176,18 +1183,18 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
     loss_m3w( Bul,Bvl,Bvdl,xl,yl) = loss_m3(Bul,Bvl,Bvdl,xl,yl,:m3w ,TL_coef_p,TL_coef_i,TL_coef_e,use_nn) # use NN
     loss_m3tf(Bul,Bvl,Bvdl,xl,yl) = loss_m3(Bul,Bvl,Bvdl,xl,yl,:m3tf,TL_coef_p,TL_coef_i,TL_coef_e,use_nn) # use NN
 
-    model_type == :m3tl && (loss = loss_m3tl)
-    model_type == :m3s  && (loss = loss_m3s)
-    model_type == :m3v  && (loss = loss_m3v)
-    model_type == :m3sc && (loss = loss_m3sc)
-    model_type == :m3vc && (loss = loss_m3vc)
-    model_type == :m3w  && (loss = loss_m3w)
-    model_type == :m3tf && (loss = loss_m3tf)
+    model_type == :m3tl && (lossf = loss_m3tl)
+    model_type == :m3s  && (lossf = loss_m3s)
+    model_type == :m3v  && (lossf = loss_m3v)
+    model_type == :m3sc && (lossf = loss_m3sc)
+    model_type == :m3vc && (lossf = loss_m3vc)
+    model_type == :m3w  && (lossf = loss_m3w)
+    model_type == :m3tf && (lossf = loss_m3tf)
 
     function loss_all(data_l)
         l = 0f0
         for (B_unit_l,B_vec_l,B_vec_dot_l,x_l,y_l) in data_l
-            l += loss(B_unit_l,B_vec_l,B_vec_dot_l,x_l,y_l)
+            l += lossf(B_unit_l,B_vec_l,B_vec_dot_l,x_l,y_l)
         end
         return (l/length(data_l))
     end # function loss_all
@@ -1210,7 +1217,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
     silent || @info("epoch 0: loss = $best_loss")
     for i = 1:epoch_adam
         if model_type in [:m3tl,:m3s,:m3v,:m3w,:m3tf] # train on NN model weights + TL coef
-            Flux.train!(loss,Flux.params(m,TL_coef_p,TL_coef_i.data,TL_coef_e),data_train,opt)
+            Flux.train!(lossf,Flux.params(m,TL_coef_p,TL_coef_i.data,TL_coef_e),data_train,opt)
         elseif model_type in [:m3sc,:m3vc]
             if     i < epoch_adam * (1 / 10)
                 params = Flux.params(TL_coef_p)
@@ -1223,15 +1230,15 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
                 params = Flux.params(m)
                 data_train = data_train_2
                 if model_type == :m3sc # :m3sc finishes with NN
-                    loss = loss_m3s
+                    lossf = loss_m3s
                 elseif model_type == :m3vc # :m3vc finishes with NN
-                    loss = loss_m3v
+                    lossf = loss_m3v
                 end
             else
                 use_nn = true
                 params = Flux.params(m,TL_coef_p,TL_coef_i.data,TL_coef_e)
             end
-            Flux.train!(loss,params,data_train,opt)
+            Flux.train!(lossf,params,data_train,opt)
         end
         TL_coef = TL_mat2vec(TL_coef_p,TL_coef_i,TL_coef_e,terms_A;Bt_scale=Bt_scale)
         current_loss = loss_all(data_val)
@@ -1241,7 +1248,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
                 m_store       = deepcopy(m)
                 TL_coef_store = TL_coef
             end
-            mod(i,5) == 0 && !silent && @info("epoch $i: loss = $best_loss")
+            i % 5 == 0 && !silent && @info("epoch $i: loss = $best_loss")
         else
             test_error = std(nn_comp_3_test(B_unit_test,B_vec_test,B_vec_dot_test,
                                             x_test_norm,y_test,y_bias,y_scale,m,
@@ -1258,9 +1265,9 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
                 m_store         = deepcopy(m)
                 TL_coef_store   = TL_coef
             end
-            mod(i,5) == 0 && !silent && @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error,digits=2)) nT")
+            i % 5 == 0 && !silent && @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error,digits=2)) nT")
         end
-        if (mod(i,10) == 0) & !silent
+        if i % 10 == 0 && !silent
             err = nn_comp_3_test(B_unit,B_vec,B_vec_dot,
                                  x_norm,y,y_bias,y_scale,m,
                                  TL_coef_p,TL_coef_i,TL_coef_e;
@@ -1291,7 +1298,6 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
 
         function lbfgs_train!(m_l,data_l,iter,t_l,p_l,i_l,e_l,silent)
             (Bu_l,Bv_l,Bvd_l,x_l,y_l) = data_l.data
-            # loss_() = loss(Bu_l,Bv_l,Bvd_l,x_l,y_l)
             loss_() = loss_m3(Bu_l,Bv_l,Bvd_l,x_l,y_l,t_l,p_l,i_l,e_l,true)
             refresh()
             params = Flux.params(m_l,p_l,i_l,e_l)
@@ -1336,7 +1342,8 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
     model = m
 
     # pack data normalizations
-    data_norms = (zeros(1,1),zeros(1,1),v_scale,x_bias,x_scale,y_bias,y_scale)
+    data_norms = (zeros(eltype(x_bias),1,1),zeros(eltype(x_bias),1,1),
+                  v_scale,x_bias,x_scale,y_bias,y_scale)
 
     return (model, TL_coef, data_norms, y_hat, err)
 end # function nn_comp_3_train
@@ -1961,14 +1968,14 @@ function comp_train(comp_params::CompParams, xyz::XYZ, ind,
     t0 = time()
 
     # unpack parameters
-    if typeof(comp_params) <: NNCompParams
+    if comp_params isa NNCompParams
         @unpack version, features_setup, features_no_norm, model_type, y_type,
         use_mag, use_vec, data_norms, model, terms, terms_A, sub_diurnal,
         sub_igrf, bpf_mag, reorient_vec, norm_type_A, norm_type_x, norm_type_y,
-        TL_coef, η_adam, epoch_adam, epoch_lbfgs, hidden, activation,
+        TL_coef, η_adam, epoch_adam, epoch_lbfgs, hidden, activation, loss,
         batchsize, frac_train, α_sgl, λ_sgl, k_pca,
         drop_fi, drop_fi_bson, drop_fi_csv, perm_fi, perm_fi_csv = comp_params
-    elseif typeof(comp_params) <: LinCompParams
+    elseif comp_params isa LinCompParams
         @unpack version, features_setup, features_no_norm, model_type, y_type,
         use_mag, use_vec, data_norms, model, terms, terms_A, sub_diurnal,
         sub_igrf, bpf_mag, reorient_vec, norm_type_A, norm_type_x, norm_type_y,
@@ -2085,6 +2092,7 @@ function comp_train(comp_params::CompParams, xyz::XYZ, ind,
                                     epoch_lbfgs = epoch_lbfgs,
                                     hidden      = hidden,
                                     activation  = activation,
+                                    loss        = loss,
                                     batchsize   = batchsize,
                                     frac_train  = frac_train,
                                     α_sgl       = α_sgl,
@@ -2106,6 +2114,7 @@ function comp_train(comp_params::CompParams, xyz::XYZ, ind,
                                     epoch_lbfgs = epoch_lbfgs,
                                     hidden      = hidden,
                                     activation  = activation,
+                                    loss        = loss,
                                     batchsize   = batchsize,
                                     frac_train  = frac_train,
                                     α_sgl       = α_sgl,
@@ -2129,6 +2138,7 @@ function comp_train(comp_params::CompParams, xyz::XYZ, ind,
                                     epoch_lbfgs   = epoch_lbfgs,
                                     hidden        = hidden,
                                     activation    = activation,
+                                    loss          = loss,
                                     batchsize     = batchsize,
                                     frac_train    = frac_train,
                                     α_sgl         = α_sgl,
@@ -2179,6 +2189,7 @@ function comp_train(comp_params::CompParams, xyz::XYZ, ind,
                                 epoch_lbfgs = epoch_lbfgs,
                                 hidden      = hidden,
                                 activation  = activation,
+                                loss        = loss,
                                 batchsize   = batchsize,
                                 frac_train  = frac_train,
                                 α_sgl       = α_sgl,
@@ -2202,6 +2213,7 @@ function comp_train(comp_params::CompParams, xyz::XYZ, ind,
                                 epoch_lbfgs = epoch_lbfgs,
                                 hidden      = hidden,
                                 activation  = activation,
+                                loss        = loss,
                                 batchsize   = batchsize,
                                 frac_train  = frac_train,
                                 α_sgl       = α_sgl,
@@ -2227,6 +2239,7 @@ function comp_train(comp_params::CompParams, xyz::XYZ, ind,
                                 epoch_lbfgs   = epoch_lbfgs,
                                 hidden        = hidden,
                                 activation    = activation,
+                                loss          = loss,
                                 batchsize     = batchsize,
                                 frac_train    = frac_train,
                                 α_sgl         = α_sgl,
@@ -2270,13 +2283,13 @@ function comp_train(comp_params::CompParams, xyz::XYZ, ind,
 
     end
 
-    if typeof(comp_params) <: NNCompParams
+    if comp_params isa NNCompParams
         comp_params = NNCompParams(comp_params,
                                    data_norms = data_norms,
                                    model      = model,
                                    terms_A    = terms_A,
                                    TL_coef    = TL_coef)
-    elseif typeof(comp_params) <: LinCompParams
+    elseif comp_params isa LinCompParams
         comp_params = LinCompParams(comp_params,
                                     data_norms = data_norms,
                                     model      = model)
@@ -2376,14 +2389,14 @@ function comp_train(comp_params::CompParams, xyz_vec::Vector, ind_vec::Vector,
     t0 = time()
 
     # unpack parameters
-    if typeof(comp_params) <: NNCompParams
+    if comp_params isa NNCompParams
         @unpack version, features_setup, features_no_norm, model_type, y_type,
         use_mag, use_vec, data_norms, model, terms, terms_A, sub_diurnal,
         sub_igrf, bpf_mag, reorient_vec, norm_type_A, norm_type_x, norm_type_y,
-        TL_coef, η_adam, epoch_adam, epoch_lbfgs, hidden, activation,
+        TL_coef, η_adam, epoch_adam, epoch_lbfgs, hidden, activation, loss,
         batchsize, frac_train, α_sgl, λ_sgl, k_pca,
         drop_fi, drop_fi_bson, drop_fi_csv, perm_fi, perm_fi_csv = comp_params
-    elseif typeof(comp_params) <: LinCompParams
+    elseif comp_params isa LinCompParams
         @unpack version, features_setup, features_no_norm, model_type, y_type,
         use_mag, use_vec, data_norms, model, terms, terms_A, sub_diurnal,
         sub_igrf, bpf_mag, reorient_vec, norm_type_A, norm_type_x, norm_type_y,
@@ -2548,6 +2561,7 @@ function comp_train(comp_params::CompParams, xyz_vec::Vector, ind_vec::Vector,
                                     epoch_lbfgs = epoch_lbfgs,
                                     hidden      = hidden,
                                     activation  = activation,
+                                    loss        = loss,
                                     batchsize   = batchsize,
                                     frac_train  = frac_train,
                                     α_sgl       = α_sgl,
@@ -2569,6 +2583,7 @@ function comp_train(comp_params::CompParams, xyz_vec::Vector, ind_vec::Vector,
                                     epoch_lbfgs = epoch_lbfgs,
                                     hidden      = hidden,
                                     activation  = activation,
+                                    loss        = loss,
                                     batchsize   = batchsize,
                                     frac_train  = frac_train,
                                     α_sgl       = α_sgl,
@@ -2592,6 +2607,7 @@ function comp_train(comp_params::CompParams, xyz_vec::Vector, ind_vec::Vector,
                                     epoch_lbfgs   = epoch_lbfgs,
                                     hidden        = hidden,
                                     activation    = activation,
+                                    loss          = loss,
                                     batchsize     = batchsize,
                                     frac_train    = frac_train,
                                     α_sgl         = α_sgl,
@@ -2642,6 +2658,7 @@ function comp_train(comp_params::CompParams, xyz_vec::Vector, ind_vec::Vector,
                                 epoch_lbfgs = epoch_lbfgs,
                                 hidden      = hidden,
                                 activation  = activation,
+                                loss        = loss,
                                 batchsize   = batchsize,
                                 frac_train  = frac_train,
                                 α_sgl       = α_sgl,
@@ -2665,6 +2682,7 @@ function comp_train(comp_params::CompParams, xyz_vec::Vector, ind_vec::Vector,
                                 epoch_lbfgs = epoch_lbfgs,
                                 hidden      = hidden,
                                 activation  = activation,
+                                loss        = loss,
                                 batchsize   = batchsize,
                                 frac_train  = frac_train,
                                 α_sgl       = α_sgl,
@@ -2690,6 +2708,7 @@ function comp_train(comp_params::CompParams, xyz_vec::Vector, ind_vec::Vector,
                                 epoch_lbfgs   = epoch_lbfgs,
                                 hidden        = hidden,
                                 activation    = activation,
+                                loss          = loss,
                                 batchsize     = batchsize,
                                 frac_train    = frac_train,
                                 α_sgl         = α_sgl,
@@ -2733,13 +2752,13 @@ function comp_train(comp_params::CompParams, xyz_vec::Vector, ind_vec::Vector,
 
     end
 
-    if typeof(comp_params) <: NNCompParams
+    if comp_params isa NNCompParams
         comp_params = NNCompParams(comp_params,
                                    data_norms = data_norms,
                                    model      = model,
                                    terms_A    = terms_A,
                                    TL_coef    = TL_coef)
-    elseif typeof(comp_params) <: LinCompParams
+    elseif comp_params isa LinCompParams
         comp_params = LinCompParams(comp_params,
                                     data_norms = data_norms,
                                     model      = model)
@@ -2816,7 +2835,7 @@ Train an aeromagnetic compensation model.
 |:--|:--|:--
 `flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
 `xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
-`xyz_set` |`Real`  | flight dataset number (used to prevent inproper mixing of datasets, such as different magnetometer locations)
+`xyz_set` |`Real`  | flight dataset number (used to prevent improper mixing of datasets, such as different magnetometer locations)
 `xyz_h5`  |`String`| path/name of flight data HDF5 file (`.h5` extension optional)
 - `df_map`: lookup table (DataFrame) of map data HDF5 files
 |**Field**|**Type**|**Description**
@@ -2858,14 +2877,14 @@ function comp_train(comp_params::CompParams, lines,
     t0 = time()
 
     # unpack parameters
-    if typeof(comp_params) <: NNCompParams
+    if comp_params isa NNCompParams
         @unpack version, features_setup, features_no_norm, model_type, y_type,
         use_mag, use_vec, data_norms, model, terms, terms_A, sub_diurnal,
         sub_igrf, bpf_mag, reorient_vec, norm_type_A, norm_type_x, norm_type_y,
-        TL_coef, η_adam, epoch_adam, epoch_lbfgs, hidden, activation,
+        TL_coef, η_adam, epoch_adam, epoch_lbfgs, hidden, activation, loss,
         batchsize, frac_train, α_sgl, λ_sgl, k_pca,
         drop_fi, drop_fi_bson, drop_fi_csv, perm_fi, perm_fi_csv = comp_params
-    elseif typeof(comp_params) <: LinCompParams
+    elseif comp_params isa LinCompParams
         @unpack version, features_setup, features_no_norm, model_type, y_type,
         use_mag, use_vec, data_norms, model, terms, terms_A, sub_diurnal,
         sub_igrf, bpf_mag, reorient_vec, norm_type_A, norm_type_x, norm_type_y,
@@ -2959,6 +2978,7 @@ function comp_train(comp_params::CompParams, lines,
                                     epoch_lbfgs = epoch_lbfgs,
                                     hidden      = hidden,
                                     activation  = activation,
+                                    loss        = loss,
                                     batchsize   = batchsize,
                                     frac_train  = frac_train,
                                     α_sgl       = α_sgl,
@@ -2979,6 +2999,7 @@ function comp_train(comp_params::CompParams, lines,
                                     epoch_lbfgs = epoch_lbfgs,
                                     hidden      = hidden,
                                     activation  = activation,
+                                    loss        = loss,
                                     batchsize   = batchsize,
                                     frac_train  = frac_train,
                                     α_sgl       = α_sgl,
@@ -3000,6 +3021,7 @@ function comp_train(comp_params::CompParams, lines,
                                     epoch_lbfgs   = epoch_lbfgs,
                                     hidden        = hidden,
                                     activation    = activation,
+                                    loss          = loss,
                                     batchsize     = batchsize,
                                     frac_train    = frac_train,
                                     α_sgl         = α_sgl,
@@ -3046,6 +3068,7 @@ function comp_train(comp_params::CompParams, lines,
                                 epoch_lbfgs = epoch_lbfgs,
                                 hidden      = hidden,
                                 activation  = activation,
+                                loss        = loss,
                                 batchsize   = batchsize,
                                 frac_train  = frac_train,
                                 α_sgl       = α_sgl,
@@ -3068,6 +3091,7 @@ function comp_train(comp_params::CompParams, lines,
                                 epoch_lbfgs = epoch_lbfgs,
                                 hidden      = hidden,
                                 activation  = activation,
+                                loss        = loss,
                                 batchsize   = batchsize,
                                 frac_train  = frac_train,
                                 α_sgl       = α_sgl,
@@ -3091,6 +3115,7 @@ function comp_train(comp_params::CompParams, lines,
                                 epoch_lbfgs   = epoch_lbfgs,
                                 hidden        = hidden,
                                 activation    = activation,
+                                loss          = loss,
                                 batchsize     = batchsize,
                                 frac_train    = frac_train,
                                 α_sgl         = α_sgl,
@@ -3152,13 +3177,13 @@ function comp_train(comp_params::CompParams, lines,
 
     end
 
-    if typeof(comp_params) <: NNCompParams
+    if comp_params isa NNCompParams
         comp_params = NNCompParams(comp_params,
                                    data_norms = data_norms,
                                    model      = model,
                                    terms_A    = terms_A,
                                    TL_coef    = TL_coef)
-    elseif typeof(comp_params) <: LinCompParams
+    elseif comp_params isa LinCompParams
         comp_params = LinCompParams(comp_params,
                                     data_norms = data_norms,
                                     model      = model)
@@ -3226,14 +3251,14 @@ function comp_test(comp_params::CompParams, xyz::XYZ, ind,
     t0 = time()
 
     # unpack parameters
-    if typeof(comp_params) <: NNCompParams
+    if comp_params isa NNCompParams
         @unpack version, features_setup, features_no_norm, model_type, y_type,
         use_mag, use_vec, data_norms, model, terms, terms_A, sub_diurnal,
         sub_igrf, bpf_mag, reorient_vec, norm_type_A, norm_type_x, norm_type_y,
-        TL_coef, η_adam, epoch_adam, epoch_lbfgs, hidden, activation,
+        TL_coef, η_adam, epoch_adam, epoch_lbfgs, hidden, activation, loss,
         batchsize, frac_train, α_sgl, λ_sgl, k_pca,
         drop_fi, drop_fi_bson, drop_fi_csv, perm_fi, perm_fi_csv = comp_params
-    elseif typeof(comp_params) <: LinCompParams
+    elseif comp_params isa LinCompParams
         @unpack version, features_setup, features_no_norm, model_type, y_type,
         use_mag, use_vec, data_norms, model, terms, terms_A, sub_diurnal,
         sub_igrf, bpf_mag, reorient_vec, norm_type_A, norm_type_x, norm_type_y,
@@ -3429,7 +3454,7 @@ Evaluate performance of an aeromagnetic compensation model.
 |:--|:--|:--
 `flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
 `xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
-`xyz_set` |`Real`  | flight dataset number (used to prevent inproper mixing of datasets, such as different magnetometer locations)
+`xyz_set` |`Real`  | flight dataset number (used to prevent improper mixing of datasets, such as different magnetometer locations)
 `xyz_h5`  |`String`| path/name of flight data HDF5 file (`.h5` extension optional)
 - `df_map`: lookup table (DataFrame) of map data HDF5 files
 |**Field**|**Type**|**Description**
@@ -3456,14 +3481,14 @@ function comp_test(comp_params::CompParams, lines,
     t0 = time()
 
     # unpack parameters
-    if typeof(comp_params) <: NNCompParams
+    if comp_params isa NNCompParams
         @unpack version, features_setup, features_no_norm, model_type, y_type,
         use_mag, use_vec, data_norms, model, terms, terms_A, sub_diurnal,
         sub_igrf, bpf_mag, reorient_vec, norm_type_A, norm_type_x, norm_type_y,
-        TL_coef, η_adam, epoch_adam, epoch_lbfgs, hidden, activation,
+        TL_coef, η_adam, epoch_adam, epoch_lbfgs, hidden, activation, loss,
         batchsize, frac_train, α_sgl, λ_sgl, k_pca,
         drop_fi, drop_fi_bson, drop_fi_csv, perm_fi, perm_fi_csv = comp_params
-    elseif typeof(comp_params) <: LinCompParams
+    elseif comp_params isa LinCompParams
         @unpack version, features_setup, features_no_norm, model_type, y_type,
         use_mag, use_vec, data_norms, model, terms, terms_A, sub_diurnal,
         sub_igrf, bpf_mag, reorient_vec, norm_type_A, norm_type_x, norm_type_y,
@@ -3673,7 +3698,7 @@ model 2b or 2c with additional outputs for explainability.
 |:--|:--|:--
 `flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
 `xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
-`xyz_set` |`Real`  | flight dataset number (used to prevent inproper mixing of datasets, such as different magnetometer locations)
+`xyz_set` |`Real`  | flight dataset number (used to prevent improper mixing of datasets, such as different magnetometer locations)
 `xyz_h5`  |`String`| path/name of flight data HDF5 file (`.h5` extension optional)
 - `df_map`: lookup table (DataFrame) of map data HDF5 files
 |**Field**|**Type**|**Description**
@@ -3703,7 +3728,7 @@ function comp_m2bc_test(comp_params::NNCompParams, lines,
     @unpack version, features_setup, features_no_norm, model_type, y_type,
     use_mag, use_vec, data_norms, model, terms, terms_A, sub_diurnal,
     sub_igrf, bpf_mag, reorient_vec, norm_type_A, norm_type_x, norm_type_y,
-    TL_coef, η_adam, epoch_adam, epoch_lbfgs, hidden, activation,
+    TL_coef, η_adam, epoch_adam, epoch_lbfgs, hidden, activation, loss,
     batchsize, frac_train, α_sgl, λ_sgl, k_pca,
     drop_fi, drop_fi_bson, drop_fi_csv, perm_fi, perm_fi_csv = comp_params
 
@@ -3795,7 +3820,7 @@ with additional outputs for explainability.
 |:--|:--|:--
 `flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
 `xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
-`xyz_set` |`Real`  | flight dataset number (used to prevent inproper mixing of datasets, such as different magnetometer locations)
+`xyz_set` |`Real`  | flight dataset number (used to prevent improper mixing of datasets, such as different magnetometer locations)
 `xyz_h5`  |`String`| path/name of flight data HDF5 file (`.h5` extension optional)
 - `df_map`: lookup table (DataFrame) of map data HDF5 files
 |**Field**|**Type**|**Description**
@@ -3833,7 +3858,7 @@ function comp_m3_test(comp_params::NNCompParams, lines,
     @unpack version, features_setup, features_no_norm, model_type, y_type,
     use_mag, use_vec, data_norms, model, terms, terms_A, sub_diurnal,
     sub_igrf, bpf_mag, reorient_vec, norm_type_A, norm_type_x, norm_type_y,
-    TL_coef, η_adam, epoch_adam, epoch_lbfgs, hidden, activation,
+    TL_coef, η_adam, epoch_adam, epoch_lbfgs, hidden, activation, loss,
     batchsize, frac_train, α_sgl, λ_sgl, k_pca,
     drop_fi, drop_fi_bson, drop_fi_csv, perm_fi, perm_fi_csv = comp_params
 
@@ -4079,7 +4104,7 @@ Train and evaluate performance of an aeromagnetic compensation model.
 |:--|:--|:--
 `flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
 `xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
-`xyz_set` |`Real`  | flight dataset number (used to prevent inproper mixing of datasets, such as different magnetometer locations)
+`xyz_set` |`Real`  | flight dataset number (used to prevent improper mixing of datasets, such as different magnetometer locations)
 `xyz_h5`  |`String`| path/name of flight data HDF5 file (`.h5` extension optional)
 - `df_map`: lookup table (DataFrame) of map data HDF5 files
 |**Field**|**Type**|**Description**

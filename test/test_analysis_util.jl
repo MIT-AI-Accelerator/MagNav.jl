@@ -110,10 +110,10 @@ df_map = DataFrame(map_name = map_name,
     @test_throws ErrorException get_x(xyz,ind,[:mag_6_uc])
     @test_nowarn get_x([xyz,xyz],[ind,ind])
     @test_nowarn get_x(line2,df_line,df_flight)
-    @test typeof(get_x(lines,df_line,df_flight)[1]) <: Matrix
-    @test typeof(get_x([line2,line3],df_line,df_flight)[1]) <: Matrix
+    @test get_x(lines,df_line,df_flight)[1] isa Matrix
+    @test get_x([line2,line3],df_line,df_flight)[1] isa Matrix
     @test_throws AssertionError get_x([line2,line2],df_line,df_flight)
-    @test typeof(get_x(line2,df_line,df_flight;l_seq=5)) <: Tuple # deprecated
+    @test get_x(line2,df_line,df_flight;l_seq=5) isa Tuple # deprecated
 end
 
 map_val = randn(sum(ind))
@@ -125,19 +125,19 @@ map_val = randn(sum(ind))
     @test_nowarn get_y(xyz,ind;y_type=:d)
     @test_nowarn get_y(xyz,ind;y_type=:e,use_mag=:flux_a)
     @test_throws ErrorException get_y(xyz,ind;y_type=:test)
-    @test typeof(get_y(line2,df_line,df_flight,df_map;y_type=:a)) <: Vector
-    @test typeof(get_y(lines,df_line,df_flight,df_map;y_type=:c)) <: Vector
-    @test typeof(get_y([line2,line3],df_line,df_flight,df_map;y_type=:d)) <: Vector
+    @test get_y(line2,df_line,df_flight,df_map;y_type=:a) isa Vector
+    @test get_y(lines,df_line,df_flight,df_map;y_type=:c) isa Vector
+    @test get_y([line2,line3],df_line,df_flight,df_map;y_type=:d) isa Vector
     @test_throws AssertionError get_y([line2,line2],df_line,df_flight,df_map)
-    @test typeof(get_y(line2,df_line,df_flight,df_map;y_type=:a,l_seq=5)) <: Vector # deprecated
+    @test get_y(line2,df_line,df_flight,df_map;y_type=:a,l_seq=5) isa Vector # deprecated
 end
 
 @testset "get_Axy tests" begin
     @test_nowarn get_Axy(line2,df_line,df_flight,df_map;y_type=:a,mod_TL=true,return_B=true)
-    @test typeof(get_Axy(lines,df_line,df_flight,df_map;y_type=:b,map_TL=true)[1]) <: Matrix
-    @test typeof(get_Axy([line2,line3],df_line,df_flight,df_map)[1]) <: Matrix
+    @test get_Axy(lines,df_line,df_flight,df_map;y_type=:b,map_TL=true)[1] isa Matrix
+    @test get_Axy([line2,line3],df_line,df_flight,df_map)[1] isa Matrix
     @test_throws AssertionError get_Axy([line2,line2],df_line,df_flight,df_map)
-    @test typeof(get_Axy(line2,df_line,df_flight,df_map;l_seq=5)) <: Tuple # deprecated
+    @test get_Axy(line2,df_line,df_flight,df_map;l_seq=5) isa Tuple # deprecated
 end
 
 @testset "get_nn_m tests" begin
@@ -263,7 +263,7 @@ m_rnn = Chain(GRU(3,1),Dense(1,1))
 end
 
 @testset "krr tests" begin
-    @test typeof(krr(x,y,x,y)) <: Tuple{Vector,Vector}
+    @test krr(x,y,x,y) isa Tuple{Vector,Vector}
 end
 
 features = [:f1,:f2,:f3]
@@ -273,7 +273,7 @@ features = [:f1,:f2,:f3]
     @test_nowarn MagNav.predict_shapley(m,DataFrame(x,features))
     @test_nowarn eval_shapley(m,x,features)
     @test_nowarn plot_shapley(df_shap,baseline_shap)
-    @test typeof(eval_gsa(m,x)) <: Vector
+    @test eval_gsa(m,x) isa Vector
 end
 
 @testset "get_igrf tests" begin
@@ -332,11 +332,11 @@ end
 end
 
 x = [-1,0,1]
-x_lim = (-2.0,2)
+xlim = (-2.0,2)
 
 @testset "expand_range tests" begin
-    @test MagNav.expand_range(x,x_lim,true)[1] == -3:3
-    @test MagNav.expand_range(x,x_lim,false)[2] == 2:4
+    @test MagNav.expand_range(x,xlim,true)[1] == -3:3
+    @test MagNav.expand_range(x,xlim,false)[2] == 2:4
 end
 
 (B_unit,Bt,B_vec_dot) = create_TL_A(xyz.flux_a,ind;terms=[:p],return_B=true)
@@ -352,14 +352,14 @@ mag_gif = joinpath(@__DIR__,"comp_xai")
 
 @testset "gif_animation_m3 tests" begin
     ENV["GKSwstype"] = "100"
-    @test typeof(gif_animation_m3(TL_perm, TL_induced, TL_eddy,
-                 TL_aircraft, B_unit', y_nn, y, y_hat, xyz,
-				 xyz.ins.lat[ind], xyz.ins.lon[ind];
-                 ind=ind, save_plot=true, mag_gif=mag_gif)) <: Plots.AnimatedGif
-    @test typeof(gif_animation_m3(TL_perm, TL_induced, TL_eddy,
-                 TL_aircraft, B_unit', y_nn, y, y_hat,
-				 xyz.ins.lat[ind], xyz.ins.lon[ind], xyz;
-                 ind=ind, save_plot=true, mag_gif=mag_gif)) <: Plots.AnimatedGif # deprecated
+    @test gif_animation_m3(TL_perm, TL_induced, TL_eddy,
+                           TL_aircraft, B_unit', y_nn, y, y_hat, xyz,
+                           xyz.ins.lat[ind], xyz.ins.lon[ind];
+                           ind=ind, save_plot=true, mag_gif=mag_gif) isa Plots.AnimatedGif
+    @test gif_animation_m3(TL_perm, TL_induced, TL_eddy,
+                           TL_aircraft, B_unit', y_nn, y, y_hat,
+                           xyz.ins.lat[ind], xyz.ins.lon[ind], xyz;
+                           ind=ind, save_plot=true, mag_gif=mag_gif) isa Plots.AnimatedGif # deprecated
 end
 
 mag_gif = MagNav.add_extension(mag_gif,".gif")

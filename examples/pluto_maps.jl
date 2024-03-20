@@ -37,7 +37,7 @@ The DataFrames listed below provide useful information about the flight data (co
 Dataframe  | Description
 :--------- | :----------
 `df_map`   | map files relevant for SGL flights
-`df_comp`  | SGL calibration flight lines
+`df_cal`   | SGL calibration flight lines
 `df_flight`| SGL flight files
 `df_all`   | all flight lines
 `df_nav`   | all *navigation-capable* flight lines
@@ -170,7 +170,7 @@ begin
 	dy        = MagNav.get_step(e_mapS_395.yy)
 	xx        = [(e_mapS_395.xx[1]-dx*px):dx:(e_mapS_395.xx[end]+dx*px_end);]
 	yy        = [(e_mapS_395.yy[1]-dy*py):dy:(e_mapS_395.yy[end]+dy*py_end);]
-	(lon,lat) = map_border(e_mapS_plot;sort_border=true) # get map border
+	(lat,lon) = map_border(e_mapS_plot;sort_border=true) # get map border
 	p5 = plot_map(map_map,xx,yy;dpi=dpi)
 	plot_path!(p5,lat,lon;path_color=:black)
 end
@@ -213,8 +213,8 @@ md" First the `map_interpolate` function is used to create map interpolation obj
 begin
 	e_itp_mapS = map_interpolate(e_mapS_plot)
 	n_itp_mapS = map_interpolate(n_mapS_395)
-	e_mapS_val = e_itp_mapS.(lon_trim,lat_trim)
-	n_mapS_val = n_itp_mapS.(lon_trim,lat_trim)
+	e_mapS_val = e_itp_mapS.(lat_trim,lon_trim)
+	n_mapS_val = n_itp_mapS.(lat_trim,lon_trim)
 	mapS_err   = round(Int,std(n_mapS_val - e_mapS_val)) # error
 end
 

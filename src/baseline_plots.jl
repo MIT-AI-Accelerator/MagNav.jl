@@ -116,7 +116,7 @@ end # function plot_activation
              detrend_data::Bool        = false,
              use_mags::Vector{Symbol}  = [:all_mags],
              vec_terms::Vector{Symbol} = [:all],
-             ylim                      = (),
+             ylim::Tuple               = (),
              dpi::Int                  = 200,
              show_plot::Bool           = true,
              save_plot::Bool           = false,
@@ -146,7 +146,7 @@ function plot_mag(xyz::XYZ;
                   detrend_data::Bool        = false,
                   use_mags::Vector{Symbol}  = [:all_mags],
                   vec_terms::Vector{Symbol} = [:all],
-                  ylim                      = (),
+                  ylim::Tuple               = (),
                   dpi::Int                  = 200,
                   show_plot::Bool           = true,
                   save_plot::Bool           = false,
@@ -709,18 +709,16 @@ function plot_correlation_matrix(x::AbstractMatrix, features::Vector{Symbol};
     @assert Nf <= Nf_max "number of features = $Nf > $Nf_max"
     p_ = []
 
-    for j = 2:Nf
-        for i = 1:Nf-1
-            if j > i
-                xlab   = j == Nf ? features[i] : ""
-                ylab   = i == 1  ? features[j] : ""
-                x_     = x[:,i]
-                y_     = x[:,j]
-                xticks = j == Nf ? round.(mean(x_) .+ [-1,1]*std(x_),sigdigits=3) : []
-                yticks = i == 1  ? round.(mean(y_) .+ [-1,1]*std(y_),sigdigits=3) : []
-                push!(p_,scatter(x_,y_,lab=false,dpi=dpi,ms=2,
-                      xlab=xlab,ylab=ylab,xticks=xticks,yticks=yticks))
-            end
+    for j = 2:Nf, i = 1:Nf-1
+        if j > i
+            xlab   = j == Nf ? features[i] : ""
+            ylab   = i == 1  ? features[j] : ""
+            x_     = x[:,i]
+            y_     = x[:,j]
+            xticks = j == Nf ? round.(mean(x_) .+ [-1,1]*std(x_),sigdigits=3) : []
+            yticks = i == 1  ? round.(mean(y_) .+ [-1,1]*std(y_),sigdigits=3) : []
+            push!(p_,scatter(x_,y_,lab=false,dpi=dpi,ms=2,
+                  xlab=xlab,ylab=ylab,xticks=xticks,yticks=yticks))
         end
     end
 

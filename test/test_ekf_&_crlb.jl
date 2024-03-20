@@ -40,10 +40,12 @@ ins_fe   = vec(ins_data["fe"])
 ins_fd   = vec(ins_data["fd"])
 ins_Cnb  = ins_data["Cnb"]
 
+map_info = "Map"
 map_map  = map_data["map"]
 map_xx   = deg2rad.(vec(map_data["xx"]))
 map_yy   = deg2rad.(vec(map_data["yy"]))
 map_alt  = map_data["alt"]
+map_mask = MagNav.map_params(map_map,map_xx,map_yy)[2]
 
 dt       = params["dt"]
 baro_tau = params["baro_tau"]
@@ -69,7 +71,7 @@ traj = MagNav.Traj(N,dt,tt,lat,lon,alt,vn,ve,vd,fn,fe,fd,Cnb)
 ins  = MagNav.INS( N,dt,tt,ins_lat,ins_lon,ins_alt,ins_vn,ins_ve,ins_vd,
                    ins_fn,ins_fe,ins_fd,ins_Cnb,zeros(1,1,1))
 
-mapS = MagNav.MapS(map_map,map_xx,map_yy,map_alt)
+mapS = MagNav.MapS(map_info,map_map,map_xx,map_yy,map_alt,map_mask)
 (itp_mapS,der_mapS) = map_interpolate(mapS,:linear;return_vert_deriv=true) # linear to match MATLAB
 
 crlb_P = crlb(lat,lon,alt,vn,ve,vd,fn,fe,fd,Cnb,dt,itp_mapS;
@@ -105,10 +107,10 @@ crlb_P = crlb(lat,lon,alt,vn,ve,vd,fn,fe,fd,Cnb,dt,itp_mapS;
 # for type in [:linear,:quad,:cubic]
 #     itp_mapS   = map_interpolate(mapS  ,type);
 #     itp_mapS3D = map_interpolate(mapS3D,type);
-#     itp_mapS.(  lon,lat);
-#     itp_mapS3D.(lon,lat,alt);
-#     @btime itp_mapS.(  lon,lat);
-#     @btime itp_mapS3D.(lon,lat,alt);
+#     itp_mapS.(  lat,lon);
+#     itp_mapS3D.(lat,lon,alt);
+#     @btime itp_mapS.(  lat,lon);
+#     @btime itp_mapS3D.(lat,lon,alt);
 # end
 
 ## temp

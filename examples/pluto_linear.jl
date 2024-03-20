@@ -44,7 +44,7 @@ The DataFrames listed below provide useful information about the flight data (co
 Dataframe  | Description
 :--------- | :----------
 `df_map`   | map files relevant for SGL flights
-`df_comp`  | SGL calibration flight lines
+`df_cal`   | SGL calibration flight lines
 `df_flight`| SGL flight files
 `df_all`   | all flight lines
 `df_nav`   | all *navigation-capable* flight lines
@@ -101,14 +101,14 @@ md"Perform PLSR-based compensation on testing data. The full list of navigation-
 comp_test(comp_params_1,lines_test,df_nav,df_flight,df_map);
 
 # ╔═╡ 800fbc33-2c64-496a-8a6e-f2c9bf463692
-md"Setup data for Tolles-Lawson. `TL_ind` holds the Boolean indices (mask) just for the selected flight data. The full list of calibration flight line options is in `df_comp`.
+md"Setup data for Tolles-Lawson. `TL_ind` holds the Boolean indices (mask) just for the selected flight data. The full list of calibration flight line options is in `df_cal`.
 "
 
 # ╔═╡ 8eebdfaa-22d2-4466-8092-d62a6392c49b
 begin
 	TL_i   = 6 # select first calibration box of 1006.04
-	TL_xyz = get_XYZ(df_comp.flight[TL_i],df_flight;silent=true) # load flight data
-	TL_ind = get_ind(TL_xyz;tt_lim=[df_comp.t_start[TL_i],df_comp.t_end[TL_i]])
+	TL_xyz = get_XYZ(df_cal.flight[TL_i],df_flight;silent=true) # load flight data
+	TL_ind = get_ind(TL_xyz;tt_lim=[df_cal.t_start[TL_i],df_cal.t_end[TL_i]])
 end;
 
 # ╔═╡ d6efdf23-1a67-4e3e-b8d8-162b706032f6

@@ -75,8 +75,10 @@ Reference: Blakely, Potential Theory in Gravity and Magnetic Applications,
 """
 function upward_fft(map_map::Map, alt; expand::Bool=true, α=0)
 
-    if length(alt) > 1
-        @assert typeof(map_map) <: Union{MapS,MapS3D} "multiple upward continuation altitudes only allowed for MapS or MapS3D"
+    N_alt = length(alt)
+
+    if N_alt > 1
+        @assert map_map isa Union{MapS,MapS3D} "multiple upward continuation altitudes only allowed for MapS or MapS3D"
         alt = sort(alt)
     end
 
@@ -84,26 +86,30 @@ function upward_fft(map_map::Map, alt; expand::Bool=true, α=0)
     dx  = dlon2de(get_step(map_map.xx),mean(map_map.yy))
     dy  = dlat2dn(get_step(map_map.yy),mean(map_map.yy))
 
-    if (typeof(map_map) <: Union{MapS,MapSd,MapV}) & (all(alt .>= median(map_map.alt)) | (α > 0))
+    if (map_map isa Union{MapS,MapSd,MapV}) & (all(alt .>= median(map_map.alt)) | (α > 0))
 
         dz = alt .- median(map_map.alt)
 
-        if typeof(map_map) <: Union{MapS,MapSd} # scalar map
-            if length(alt) > 1
-                map_map = MapS3D(upward_fft(map_map.map,dx,dy,dz,expand=expand,α=α),
-                                 map_map.xx,map_map.yy,alt)
+        if map_map isa Union{MapS,MapSd} # scalar map
+            if N_alt > 1
+                map_map = MapS3D(map_map.info,
+                                 upward_fft(map_map.map,dx,dy,dz,expand=expand,α=α),
+                                 map_map.xx,map_map.yy,alt,
+                                 cat((map_map.mask for _ = 1:N_alt)...,dims=3))
             else # 3D map
-                map_map = MapS(upward_fft(map_map.map,dx,dy,dz,expand=expand,α=α),
-                               map_map.xx,map_map.yy,alt)
+                map_map = MapS(map_map.info,
+                               upward_fft(map_map.map,dx,dy,dz,expand=expand,α=α),
+                               map_map.xx,map_map.yy,alt,map_map.mask)
             end
-        elseif typeof(map_map) <: MapV # vector map
+        elseif map_map isa MapV # vector map
             mapX    = upward_fft(map_map.mapX,dx,dy,dz,expand=expand,α=α)
             mapY    = upward_fft(map_map.mapY,dx,dy,dz,expand=expand,α=α)
             mapZ    = upward_fft(map_map.mapZ,dx,dy,dz,expand=expand,α=α)
-            map_map = MapV(mapX,mapY,mapZ,map_map.xx,map_map.yy,alt)
+            map_map = MapV(map_map.info,mapX,mapY,mapZ,
+                           map_map.xx,map_map.yy,alt,map_map.mask)
         end
 
-    elseif (typeof(map_map) <: Union{MapS3D}) & (all(alt .>= map_map.alt[1]) | (α > 0))
+    elseif (map_map isa MapS3D) & (all(alt .>= map_map.alt[1]) | (α > 0))
 
         (ny,nx,_) = size(map_map.map)
         alt  = [alt;] # ensure vector
@@ -111,23 +117,29 @@ function upward_fft(map_map::Map, alt; expand::Bool=true, α=0)
         @assert all(rem.(alt .- map_map.alt[1],dalt) .≈ 0) "alt must have same step size as in MapS3D alt"
         alt_down = alt[alt .< map_map.alt[1]]
         alt_up   = alt[alt .> map_map.alt[end]]
+        N_down   = length(alt_down)
+        N_up     = length(alt_up)
 
-        if length(alt_down) > 0 # downward continue from lowest map
+        if N_down > 0 # downward continue from lowest map
             dz       = alt_down .- map_map.alt[1]
             map_down = upward_fft(map_map.map[:,:,1],dx,dy,dz,expand=expand,α=α)
         else
             map_down = Array{eltype(alt)}(undef,ny,nx,0)
         end
 
-        if length(alt_up) > 0 # upward continue from highest map
+        if N_up > 0 # upward continue from highest map
             dz     = alt_up .- map_map.alt[end]
             map_up = upward_fft(map_map.map[:,:,end],dx,dy,dz,expand=expand,α=α)
         else
             map_up = Array{eltype(alt)}(undef,ny,nx,0)
         end
 
-        map_map = MapS3D(cat(map_down,map_map.map,map_up,dims=3),map_map.xx,map_map.yy,
-                            [alt_down;map_map.alt;alt_up])
+        map_map = MapS3D(map_map.info,cat(map_down,map_map.map,map_up,dims=3),
+                         map_map.xx,map_map.yy,[alt_down;map_map.alt;alt_up],
+                         cat((map_map.mask[:,:,1  ] for _ = 1:N_down)...,
+                              map_map.mask,
+                             (map_map.mask[:,:,end] for _ = 1:N_up  )...,
+                             dims=3))
 
     else
         @info("α must be specified for downward continuation, returning original map")
@@ -195,8 +207,8 @@ Internal helper function to create radial wavenumber (spatial frequency) grid.
 """
 function create_k(dx, dy, nx::Int, ny::Int)
     # DFT sample frequencies [rad/m], 1/dx & 1/dy are sampling rates [1/m]
-    kx = nx*dx==0 ? zeros(ny,nx) : repeat(2*pi*fftfreq(nx,1/dx)',ny,1)
-    ky = ny*dy==0 ? zeros(ny,nx) : repeat(2*pi*fftfreq(ny,1/dy) ,1,nx)
+    kx = nx*dx==0 ? zeros(Float64,ny,nx) : repeat(2*pi*fftfreq(nx,1/dx)',ny,1)
+    ky = ny*dy==0 ? zeros(Float64,ny,nx) : repeat(2*pi*fftfreq(ny,1/dy) ,1,nx)
     k  = sqrt.(kx.^2+ky.^2)
     return (k, kx, ky)
 end # function create_k
@@ -234,7 +246,7 @@ function map_expand(map_map::Matrix, pad::Int=1)
     # place original map in middle of new map
     (x1,x2) = (1,nx) .+ padx[1]
     (y1,y2) = (1,ny) .+ pady[1]
-    map_map = zeros(Ny,Nx)
+    map_map = zeros(eltype(map_map),Ny,Nx)
     map_map[y1:y2,x1:x2] = map_
 
     # fill row edges (right/left)
@@ -274,8 +286,8 @@ end # function smooth7
 
 """
     downward_L(map_map::Matrix, dx, dy, dz, α::Vector;
-               expand::Bool = true,
-               ind          = map_params(map_map)[2])
+               map_mask::BitMatrix = map_params(map_map)[2],
+               expand::Bool        = true)
 
 Downward continuation using a sequence of regularization parameters to create
 a characteristic L-curve. The optimal regularization parameter is at a local
@@ -283,23 +295,23 @@ minimum on the L-curve, which is a local maximum of curvature. The global
 maximum of curvature may or may not be the optimal regularization parameter.
 
 **Arguments:**
-- `map_map`: `ny` x `nx` 2D gridded map data
-- `dx:`:     x-direction map step size [m]
-- `dy`:      y-direction map step size [m]
-- `dz`:      z-direction upward/downward continuation distance [m]
-- `α`:      (geometric) sequence of regularization parameters
-- `expand`: (optional) if true, expand map temporarily to reduce edge effects
-- `ind`:    (optional) selected map indices (e.g., non-missing data)
+- `map_map`:   `ny` x `nx` 2D gridded map data
+- `dx:`:       x-direction map step size [m]
+- `dy`:        y-direction map step size [m]
+- `dz`:        z-direction upward/downward continuation distance [m]
+- `α`:        (geometric) sequence of regularization parameters
+- `map_mask`: (optional) `ny` x `nx` mask for valid (not filled-in) map data
+- `expand`:   (optional) if true, expand map temporarily to reduce edge effects
 
 **Returns:**
 - `norms`: L-infinity norm of difference between sequential D.C. solutions
 """
 function downward_L(map_map::Matrix, dx, dy, dz, α::Vector;
-                    expand::Bool = true,
-                    ind          = map_params(map_map)[2])
+                    map_mask::BitMatrix = map_params(map_map)[2],
+                    expand::Bool        = true)
 
     (ny,nx) = size(map_map)
-    norms   = zeros(length(α)-1)
+    norms   = zeros(eltype(map_map),length(α)-1)
 
     if expand
         pad = min(maximum(ceil.(Int,10*abs(dz)./(dx,dy))),5000) # set pad > 10*dz
@@ -313,11 +325,11 @@ function downward_L(map_map::Matrix, dx, dy, dz, α::Vector;
     H_temp  = exp.(-k.*dz)
     H       = H_temp ./ (1 .+ α[1] .* k.^2 .* H_temp) # filter
     map_old = real(ifft(fft(map_map).*H))
-    map_old = map_old[(1:ny).+py,(1:nx).+px][ind]
+    map_old = map_old[(1:ny).+py,(1:nx).+px][map_mask]
     for i = 2:length(α)
         H       = H_temp ./ (1 .+ α[i] .* k.^2 .* H_temp) # filter
         map_new = real(ifft(fft(map_map).*H))
-        map_new = map_new[(1:ny).+py,(1:nx).+px][ind]
+        map_new = map_new[(1:ny).+py,(1:nx).+px][map_mask]
         norms[i-1] = norm(map_new-map_old,Inf)
         map_old = map_new
     end
@@ -327,8 +339,7 @@ end # function downward_L
 
 """
     downward_L(mapS::Union{MapS,MapSd,MapS3D}, alt, α::Vector;
-               expand::Bool = true,
-               ind          = map_params(mapS)[2])
+               expand::Bool = true)
 
 Downward continuation using a sequence of regularization parameters to create
 a characteristic L-curve. The optimal regularization parameter is at a local
@@ -340,22 +351,20 @@ maximum of curvature may or may not be the optimal regularization parameter.
 - `alt`:    target downward continuation altitude [m]
 - `α`:      (geometric) sequence of regularization parameters
 - `expand`: (optional) if true, expand map temporarily to reduce edge effects
-- `ind`:    (optional) selected map indices (e.g., non-missing data)
 
 **Returns:**
 - `norms`: L-infinity norm of difference between sequential D.C. solutions
 """
 function downward_L(mapS::Union{MapS,MapSd,MapS3D}, alt, α::Vector;
-                    expand::Bool = true,
-                    ind          = map_params(mapS)[2])
+                    expand::Bool = true)
     dx   = dlon2de(get_step(mapS.xx),mean(mapS.yy))
     dy   = dlat2dn(get_step(mapS.yy),mean(mapS.yy))
-    alt_ = typeof(mapS) <: Union{MapSd} ? median(mapS.alt[ind]) : mapS.alt[1]
+    alt_ = mapS isa Union{MapSd} ? median(mapS.alt[mapS.mask]) : mapS.alt[1]
     dz   = alt - alt_
-    typeof(mapS) <: MapS3D && @info("3D map provided, using map at lowest altitude")
+    mapS isa MapS3D && @info("3D map provided, using map at lowest altitude")
     return downward_L(mapS.map[:,:,1],dx,dy,dz,α;
-                      expand = expand,
-                      ind    = ind)
+                      map_mask = mapS.mask[:,:,1],
+                      expand   = expand)
 end # function downward_L
 
 """
@@ -400,6 +409,6 @@ across the radial wavenumbers (spatial frequencies) in the Fourier transform.
 function psd(mapS::Union{MapS,MapSd,MapS3D})
     dx = dlon2de(get_step(mapS.xx),mean(mapS.yy))
     dy = dlat2dn(get_step(mapS.yy),mean(mapS.yy))
-    typeof(mapS) <: MapS3D && @info("3D map provided, using map at lowest altitude")
-    return psd(mapS.map[:,:,1], dx, dy)
+    mapS isa MapS3D && @info("3D map provided, using map at lowest altitude")
+    return psd(mapS.map[:,:,1].*mapS.mask[:,:,1], dx, dy)
 end # function psd

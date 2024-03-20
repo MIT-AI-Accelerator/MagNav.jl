@@ -43,15 +43,13 @@ flux_a_t = sqrt.(flux_a_x.^2+flux_a_y.^2+flux_a_z.^2)
 N        = length(lat)
 dt       = tt[2] - tt[1]
 
-ins_P    = zeros(1,1,N)
-flights  = one.(lat)
-lines    = one.(lat)
-
-traj     = MagNav.Traj(N,dt,tt,lat,lon,alt,vn,ve,vd,fn,fe,fd,Cnb)
-ins      = MagNav.INS( N,dt,tt,ins_lat,ins_lon,ins_alt,ins_vn,ins_ve,ins_vd,
-                       ins_fn,ins_fe,ins_fd,ins_Cnb,ins_P)
-flux_a   = MagNav.MagV(flux_a_x,flux_a_y,flux_a_z,flux_a_t)
-xyz      = MagNav.XYZ0(traj,ins,flux_a, flights, lines,mag_1_c,mag_1_uc)
+ins_P  = zeros(1,1,N)
+val    = one.(lat)
+traj   = MagNav.Traj(N,dt,tt,lat,lon,alt,vn,ve,vd,fn,fe,fd,Cnb)
+ins    = MagNav.INS( N,dt,tt,ins_lat,ins_lon,ins_alt,ins_vn,ins_ve,ins_vd,
+                     ins_fn,ins_fe,ins_fd,ins_Cnb,ins_P)
+flux_a = MagNav.MagV(flux_a_x,flux_a_y,flux_a_z,flux_a_t)
+xyz    = MagNav.XYZ0("test",traj,ins,flux_a,val,val,val,val,val,val,mag_1_c,mag_1_uc)
 
 ind = trues(N)
 ind[51:end] .= false
@@ -71,7 +69,7 @@ end
                                  plot_deriv = true,
                                  show_plot  = false,
                                  save_plot  = false);
-    @test typeof(plot_activation(;show_plot=false,file_name="test")) <: Plot # deprecated
+    @test plot_activation(;show_plot=false,file_name="test") isa Plot # deprecated
 end
 
 @testset "plot_mag tests" begin
@@ -115,31 +113,31 @@ end
                           dpi          = 100,
                           show_plot    = false,
                           save_plot    = false);
-    @test typeof(plot_mag(xyz;show_plot=false,file_name="test")) <: Plot # deprecated
+    @test plot_mag(xyz;show_plot=false,file_name="test") isa Plot # deprecated
 end
 
 @testset "plot_mag_c tests" begin
     @test_nowarn plot_mag_c(xyz,xyz;show_plot=false);
     @test_throws ErrorException plot_mag_c(xyz,xyz;use_mags=[:test],show_plot=false);
-    @test typeof(plot_mag_c(xyz,xyz;
-                            ind           = .!ind,
-                            ind_comp      = ind,
-                            detrend_data  = false,
-                            λ             = 0.0025,
-                            terms         = [:p,:i,:e,:b],
-                            pass1         = 0.2,
-                            pass2         = 0.8,
-                            fs            = 1.0,
-                            use_mags      = [:mag_1_uc],
-                            use_vec       = :flux_a,
-                            plot_diff     = true,
-                            plot_mag_1_uc = false,
-                            plot_mag_1_c  = false,
-                            dpi           = 100,
-                            ylim          = (-50,50),
-                            show_plot     = false,
-                            save_plot     = false)) <: Plot
-    @test typeof(plot_mag_c(xyz,xyz;show_plot=false,file_name="test")) <: Plot # deprecated
+    @test plot_mag_c(xyz,xyz;
+                     ind           = .!ind,
+                     ind_comp      = ind,
+                     detrend_data  = false,
+                     λ             = 0.0025,
+                     terms         = [:p,:i,:e,:b],
+                     pass1         = 0.2,
+                     pass2         = 0.8,
+                     fs            = 1.0,
+                     use_mags      = [:mag_1_uc],
+                     use_vec       = :flux_a,
+                     plot_diff     = true,
+                     plot_mag_1_uc = false,
+                     plot_mag_1_c  = false,
+                     dpi           = 100,
+                     ylim          = (-50,50),
+                     show_plot     = false,
+                     save_plot     = false) isa Plot
+    @test plot_mag_c(xyz,xyz;show_plot=false,file_name="test") isa Plot # deprecated
 end
 
 @testset "plot_PSD tests" begin
@@ -149,7 +147,7 @@ end
                           dpi       = 100,
                           show_plot = false,
                           save_plot = false);
-    @test typeof(plot_PSD(mag_1_c;show_plot=false,file_name="test")) <: Plot # deprecated
+    @test plot_PSD(mag_1_c;show_plot=false,file_name="test") isa Plot # deprecated
 end
 
 @testset "plot_spectrogram tests" begin
@@ -159,7 +157,7 @@ end
                                   dpi       = 100,
                                   show_plot = false,
                                   save_plot = false);
-    @test typeof(plot_spectrogram(mag_1_c;show_plot=false,file_name="test")) <: Plot # deprecated
+    @test plot_spectrogram(mag_1_c;show_plot=false,file_name="test") isa Plot # deprecated
 end
 
 @testset "plot_frequency tests" begin
@@ -173,7 +171,7 @@ end
                                 dpi          = 100,
                                 show_plot    = false,
                                 save_plot    = false);
-    @test typeof(plot_frequency(xyz;show_plot=false,file_name="test")) <: Plot # deprecated
+    @test plot_frequency(xyz;show_plot=false,file_name="test") isa Plot # deprecated
 end
 
 @testset "plot_correlation tests" begin

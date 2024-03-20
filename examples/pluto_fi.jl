@@ -37,7 +37,7 @@ The DataFrames listed below provide useful information about the flight data (co
 Dataframe  | Description
 :--------- | :----------
 `df_map`   | map files relevant for SGL flights
-`df_comp`  | SGL calibration flight lines
+`df_cal`   | SGL calibration flight lines
 `df_flight`| SGL flight files
 `df_all`   | all flight lines
 `df_nav`   | all *navigation-capable* flight lines

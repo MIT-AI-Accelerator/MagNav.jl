@@ -168,8 +168,8 @@ end
         end
         @test MagNav.compare_fields(comp_params_,comp_params;silent) == 0 # no mutating
     end
-    @test typeof(comp_train_test(xyz,xyz,ind,ind,mapS,mapS;comp_params=comp_params_list[1],silent)) <: Tuple # deprecated
-    @test typeof(comp_train_test(line,line,df_line,df_flight,df_map,   comp_params_list[1];silent)) <: Tuple # deprecated
+    @test comp_train_test(xyz,xyz,ind,ind,mapS,mapS;comp_params=comp_params_list[1],silent) isa Tuple # deprecated
+    @test comp_train_test(line,line,df_line,df_flight,df_map,   comp_params_list[1];silent) isa Tuple # deprecated
 end
 
 generate && (writedlm(comp_csv,comp_err,','))
@@ -218,7 +218,7 @@ end
                              silent)[end-1]) < 1
     @test std(comp_m2bc_test(comp_params_2c,line,df_line,df_flight,df;
                              silent)[end-1]) < 1
-    @test typeof(comp_m2bc_test(line,df_line,df_flight,df,comp_params_2b;silent)) <: Tuple # deprecated
+    @test comp_m2bc_test(line,df_line,df_flight,df,comp_params_2b;silent) isa Tuple # deprecated
 end
 
 @testset "comp_m3_test tests" begin
@@ -234,7 +234,7 @@ end
                            silent)[end-1]) < 50
     @test std(comp_m3_test(comp_params_3vc,line,df_line,df_flight,df;
                            silent)[end-1]) < 50
-    @test typeof(comp_m3_test(line,df_line,df_flight,df,comp_params_3s;silent)) <: Tuple # deprecated
+    @test comp_m3_test(line,df_line,df_flight,df,comp_params_3s;silent) isa Tuple # deprecated
 end
 
 epoch_lbfgs = 1
@@ -392,9 +392,9 @@ y = [1:5;]
                                            df_line,df_flight,df;silent)
     @test_throws ErrorException comp_train(comp_params_nn_bad_drop,line,
                                            df_line,df_flight,df;silent)
-    @test typeof(comp_train( xyz     , ind     ;comp_params=comp_params_1,silent)) <: Tuple # deprecated
-    @test typeof(comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_1,silent)) <: Tuple # deprecated
-    @test typeof(comp_train(line,df_line,df_flight,df,      comp_params_1;silent)) <: Tuple # deprecated
+    @test comp_train( xyz     , ind     ;comp_params=comp_params_1,silent) isa Tuple # deprecated
+    @test comp_train([xyz,xyz],[ind,ind];comp_params=comp_params_1,silent) isa Tuple # deprecated
+    @test comp_train(line,df_line,df_flight,df,      comp_params_1;silent) isa Tuple # deprecated
 end
 
 @testset "comp_test tests" begin
@@ -409,8 +409,8 @@ end
                                           df_line,df_flight,df;silent)
     @test_throws ErrorException comp_test(comp_params_nn_bad_drop,line,
                                           df_line,df_flight,df;silent)
-    @test typeof(comp_test(xyz,ind;      comp_params=comp_params_3sc,silent)) <: Tuple # deprecated
-    @test typeof(comp_test(line,df_line,df_flight,df,comp_params_3sc;silent)) <: Tuple # deprecated
+    @test comp_test(xyz,ind;      comp_params=comp_params_3sc,silent) isa Tuple # deprecated
+    @test comp_test(line,df_line,df_flight,df,comp_params_3sc;silent) isa Tuple # deprecated
 end
 
 terms_pi5e8 = [:p,:i5,:e8]
@@ -431,7 +431,7 @@ terms_pi3e3 = [:p,:i3,:e3]
         B_vec = B_vec_dot = ones(3,1)
         TL_aircraft = MagNav.get_TL_aircraft_vec(B_vec,B_vec_dot,TL_coef_p_1,
                                                  TL_coef_i_1,TL_coef_e_1)
-        @test typeof(TL_aircraft) <: Matrix
+        @test TL_aircraft isa Matrix
     end
 end
 
@@ -453,8 +453,8 @@ y      = ones(3)
 end
 
 @testset "print_time tests" begin
-    @test typeof(MagNav.print_time(30)) == Nothing
-    @test typeof(MagNav.print_time(90)) == Nothing
+    @test MagNav.print_time(30) isa Nothing
+    @test MagNav.print_time(90) isa Nothing
 end
 
 drop_fi_bson = MagNav.remove_extension(drop_fi_bson,".bson")

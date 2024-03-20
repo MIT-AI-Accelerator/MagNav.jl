@@ -10,10 +10,12 @@ traj_data = matopen(test_file,"r") do file
     read(file,"traj")
 end
 
-map_map = map_data["map"]
-map_xx  = deg2rad.(vec(map_data["xx"]))
-map_yy  = deg2rad.(vec(map_data["yy"]))
-map_alt = map_data["alt"]
+map_info = "Map"
+map_map  = map_data["map"]
+map_xx   = deg2rad.(vec(map_data["xx"]))
+map_yy   = deg2rad.(vec(map_data["yy"]))
+map_alt  = map_data["alt"]
+map_mask = MagNav.map_params(map_map,map_xx,map_yy)[2]
 
 tt  = vec(traj_data["tt"])
 lat = deg2rad.(vec(traj_data["lat"]))
@@ -30,7 +32,7 @@ N   = length(lat)
 dt  = tt[2] - tt[1]
 
 traj = MagNav.Traj(N,dt,tt,lat,lon,alt,vn,ve,vd,fn,fe,fd,Cnb)
-mapS = MagNav.MapS(map_map,map_xx,map_yy,map_alt)
+mapS = MagNav.MapS(map_info,map_map,map_xx,map_yy,map_alt,map_mask)
 
 ind = trues(N)
 ind[51:end] .= false

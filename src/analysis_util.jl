@@ -259,11 +259,13 @@ function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
                sub_igrf::Bool    = false,
                bpf_mag::Bool     = false)
 
-    d        = Dict{Symbol,Any}()
     N        = length(xyz.traj.lat[ind])
+    d        = Dict{Symbol,Array{Float64}}()
     x        = Matrix{eltype(xyz.traj.lat)}(undef,N,0)
     no_norm  = Vector{Bool}(undef,0)
     features = Vector{Symbol}(undef,0)
+
+    @assert N > 2 "ind must contain at least 3 data points"
 
     for use_vec in field_check(xyz,MagV)
         A = create_TL_A(getfield(xyz,use_vec),ind;terms=terms)
@@ -271,7 +273,7 @@ function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
     end
 
     # subtract diurnal and/or IGRF as specified
-    sub = zeros(N)
+    sub = zeros(eltype(xyz.traj.lat),N)
     sub_diurnal && (sub += xyz.diurnal[ind])
     sub_igrf    && (sub += xyz.igrf[ind])
 
@@ -330,7 +332,7 @@ function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
     end
 
     (roll,pitch,yaw) = dcm2euler(xyz.ins.Cnb[:,:,ind],:body2nav) # correct definition
-    push!(d,:dcm=>[reshape(euler2dcm(roll,pitch,yaw,:nav2body),(9,N))';]) # ordered this way initally, leaving for now consistency
+    push!(d,:dcm=>[reshape(euler2dcm(roll,pitch,yaw,:nav2body),(9,N))';]) # ordered this way initially, leaving for now consistency
     push!(d,:dcm_1=>euler2dcm(roll,pitch,yaw,:nav2body)[1,1,:])           # note :nav2body contains same terms as :body2nav, just transposed
     push!(d,:dcm_2=>euler2dcm(roll,pitch,yaw,:nav2body)[2,1,:])
     push!(d,:dcm_3=>euler2dcm(roll,pitch,yaw,:nav2body)[3,1,:])
@@ -496,7 +498,7 @@ Get `x` data matrix from multiple flight lines, possibly multiple flights.
 |:--|:--|:--
 `flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
 `xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
-`xyz_set` |`Real`  | flight dataset number (used to prevent inproper mixing of datasets, such as different magnetometer locations)
+`xyz_set` |`Real`  | flight dataset number (used to prevent improper mixing of datasets, such as different magnetometer locations)
 `xyz_h5`  |`String`| path/name of flight data HDF5 file (`.h5` extension optional)
 - `features_setup`:   vector of features to include
 - `features_no_norm`: (optional) vector of features to not normalize
@@ -505,7 +507,7 @@ Get `x` data matrix from multiple flight lines, possibly multiple flights.
 - `sub_igrf`:         (optional) if true, subtract IGRF from scalar magnetometer measurements
 - `bpf_mag`:          (optional) if true, bpf scalar magnetometer measurements
 - `reorient_vec`:     (optional) if true, align vector magnetometer measurements with body frame
-- `l_window`:         (optional) trim data by `mod(N,l_window)`, `-1` to ignore
+- `l_window`:         (optional) trim data by `N % l_window`, `-1` to ignore
 - `silent`:           (optional) if true, no print outs
 
 **Returns:**
@@ -565,7 +567,7 @@ function get_x(lines, df_line::DataFrame, df_flight::DataFrame,
         ind = get_ind(xyz,line,df_line;l_window=l_window)
         l_segs[findfirst(l_segs .== 0)] = length(xyz.traj.lat[ind])
 
-        if x === nothing
+        if x isa Nothing
             (x,no_norm,features) = get_x(xyz,ind,features_setup;
                                          features_no_norm = features_no_norm,
                                          terms            = terms,
@@ -624,7 +626,7 @@ function get_y(xyz::XYZ, ind = trues(xyz.traj.N),
 
     # selected scalar mags, as needed
     if y_type in [:c,:d,:e]
-        if typeof(getfield(xyz,use_mag)) <: MagV
+        if getfield(xyz,use_mag) isa MagV
             mag_uc = getfield(xyz,use_mag)(ind).t
         else
             mag_uc = getfield(xyz,use_mag)[ind]
@@ -688,7 +690,7 @@ Get `y` target vector from multiple flight lines, possibly multiple flights.
 |:--|:--|:--
 `flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
 `xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
-`xyz_set` |`Real`  | flight dataset number (used to prevent inproper mixing of datasets, such as different magnetometer locations)
+`xyz_set` |`Real`  | flight dataset number (used to prevent improper mixing of datasets, such as different magnetometer locations)
 `xyz_h5`  |`String`| path/name of flight data HDF5 file (`.h5` extension optional)
 - `df_map`:    lookup table (DataFrame) of map data HDF5 files
 |**Field**|**Type**|**Description**
@@ -707,7 +709,7 @@ Get `y` target vector from multiple flight lines, possibly multiple flights.
 - `use_mag_c`:   (optional) compensated scalar magnetometer to use for `y` target vector {`:mag_1_c`, etc.}, only used for `y_type = :a, :d`
 - `sub_diurnal`: (optional) if true, subtract diurnal from scalar magnetometer measurements
 - `sub_igrf`:    (optional) if true, subtract IGRF from scalar magnetometer measurements
-- `l_window`:    (optional) trim data by `mod(N,l_window)`, `-1` to ignore
+- `l_window`:    (optional) trim data by `N % l_window`, `-1` to ignore
 - `silent`:      (optional) if true, no print outs
 
 **Returns:**
@@ -762,7 +764,7 @@ function get_y(lines, df_line::DataFrame, df_flight::DataFrame,
             map_val  = -1
         end
 
-        if y === nothing
+        if y isa Nothing
             y = get_y(xyz,ind,map_val;
                       y_type      = y_type,
                       use_mag     = use_mag,
@@ -825,7 +827,7 @@ and `B_dot` used to create the "external" Tolles-Lawson `A` matrix.
 |:--|:--|:--
 `flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
 `xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
-`xyz_set` |`Real`  | flight dataset number (used to prevent inproper mixing of datasets, such as different magnetometer locations)
+`xyz_set` |`Real`  | flight dataset number (used to prevent improper mixing of datasets, such as different magnetometer locations)
 `xyz_h5`  |`String`| path/name of flight data HDF5 file (`.h5` extension optional)
 - `df_map`:    lookup table (DataFrame) of map data HDF5 files
 |**Field**|**Type**|**Description**
@@ -851,7 +853,7 @@ and `B_dot` used to create the "external" Tolles-Lawson `A` matrix.
 - `sub_igrf`:     (optional) if true, subtract IGRF from scalar magnetometer measurements
 - `bpf_mag`:      (optional) if true, bpf scalar magnetometer measurements in `x` data matrix
 - `reorient_vec`: (optional) if true, align vector magnetometer measurements with body frame
-- `l_window`:     (optional) trim data by `mod(N,l_window)`, `-1` to ignore
+- `l_window`:     (optional) trim data by `N % l_window`, `-1` to ignore
 - `mod_TL`:       (optional) if true, create modified  "external" Tolles-Lawson `A` matrix with `use_mag`
 - `map_TL`:       (optional) if true, create map-based "external" Tolles-Lawson `A` matrix
 - `return_B`:     (optional) if true, also return `Bt` & `B_dot`
@@ -933,7 +935,7 @@ function get_Axy(lines, df_line::DataFrame,
         l_segs[findfirst(l_segs .== 0)] = length(xyz.traj.lat[ind])
 
         # x matrix
-        if x === nothing
+        if x isa Nothing
             (x,no_norm,features) = get_x(xyz,ind,features_setup;
                                          features_no_norm = features_no_norm,
                                          terms            = terms,
@@ -982,7 +984,7 @@ function get_Axy(lines, df_line::DataFrame,
         B_dot = vcat(B_dot,B_dot_)
 
         # y vector
-        if y === nothing
+        if y isa Nothing
             y = get_y(xyz,ind,map_val;
                       y_type      = y_type,
                       use_mag     = use_mag,
@@ -1137,7 +1139,7 @@ function get_nn_m(Nf::Int, Ny::Int=1;
         # https://tnq177.github.io/data/transformers_without_tears.pdf
 
         @assert l > 0 "hidden must have at least 1 element"
-        @assert mod(hidden[1],N_tf_head) == 0 "hidden[1] must be divisible by N_tf_head"
+        @assert hidden[1] % N_tf_head == 0 "hidden[1] must be divisible by N_tf_head"
 
         N_head = hidden[1]
         init   = Flux.glorot_uniform(gain=tf_gain)
@@ -1346,7 +1348,7 @@ function norm_sets(train;
                    norm_type::Symbol = :standardize,
                    no_norm           = falses(size(train,2)))
 
-    if !(typeof(no_norm) <: AbstractVector{Bool})
+    if !(no_norm isa AbstractVector{Bool})
         no_norm = axes(train,2) .∈ (no_norm,)
     end
 
@@ -1357,11 +1359,11 @@ function norm_sets(train;
         train_bias  = minimum(train,dims=1)
         train_scale = maximum(train,dims=1) - train_bias
     elseif norm_type == :scale
-        train_bias  = size(train,2) > 1 ? zero(train)[1:1,:] : zero(train)[1,:]
+        train_bias  = size(train,2) > 1 ? zero(train[1:1,:]) : zero(train[1:1])
         train_scale = maximum(abs.(train),dims=1)
     elseif norm_type == :none
-        train_bias  = size(train,2) > 1 ? zero(train)[1:1,:] : zero(train)[1,:]
-        train_scale = size(train,2) > 1 ? one.(train)[1:1,:] : one.(train)[1,:]
+        train_bias  = size(train,2) > 1 ? zero(train[1:1,:]) : zero(train[1:1])
+        train_scale = size(train,2) > 1 ? one.(train[1:1,:]) : one.(train[1:1])
     else
         error("$norm_type normalization type not defined")
     end
@@ -1403,7 +1405,7 @@ function norm_sets(train, test;
                    norm_type::Symbol = :standardize,
                    no_norm           = falses(size(train,2)))
 
-    if !(typeof(no_norm) <: AbstractVector{Bool})
+    if !(no_norm isa AbstractVector{Bool})
         no_norm = axes(train,2) .∈ (no_norm,)
     end
 
@@ -1446,7 +1448,7 @@ function norm_sets(train, val, test;
                    norm_type::Symbol = :standardize,
                    no_norm           = falses(size(train,2)))
 
-    if !(typeof(no_norm) <: AbstractVector{Bool})
+    if !(no_norm isa AbstractVector{Bool})
         no_norm = axes(train,2) .∈ (no_norm,)
     end
 
@@ -1588,7 +1590,7 @@ function get_ind(tt::Vector, line::Vector;
     @assert length(tt_lim) <= 2 "length of tt_lim = $(length(tt_lim)) > 2"
     @assert length(splits) <= 3 "number of splits = $(length(splits)) > 3"
 
-    if typeof(ind) <: AbstractVector{Bool}
+    if ind isa AbstractVector{Bool}
         indices = deepcopy(ind)
     else
         indices = eachindex(tt) .∈ (ind,)
@@ -1686,7 +1688,7 @@ Get BitVector of indices for further analysis via DataFrame lookup.
 `map_type` |`Symbol`| (optional) type of magnetic anomaly map for `map_name` {`drape`,`HAE`}
 `line_alt` |`Real`  | (optional) nominal altitude of `line` [m]
 - `splits`:   (optional) data splits, must sum to 1
-- `l_window`: (optional) trim data by `mod(N,l_window)`, `-1` to ignore
+- `l_window`: (optional) trim data by `N % l_window`, `-1` to ignore
 
 **Returns:**
 - `ind`: BitVector (or tuple of BitVector) of selected data indices
@@ -1711,14 +1713,16 @@ function get_ind(xyz::XYZ, line::Real, df_line::DataFrame;
                      splits = splits)
 
     if l_window > 0
-        if typeof((inds)) <: Tuple
+        if (inds) isa Tuple
             for ind in inds
-                for _ = 1:mod(length(xyz.traj.lat[ind]),l_window)
+                N_trim = length(xyz.traj.lat[ind]) % l_window
+                for _ = 1:N_trim
                     ind[findlast(ind.==1)] = 0
                 end
             end
         else
-            for _ = 1:mod(sum(inds),l_window)
+            N_trim = sum(inds) % l_window
+            for _ = 1:N_trim
                 inds[findlast(inds.==1)] = 0
             end
         end
@@ -1749,7 +1753,7 @@ Get BitVector of selected data indices for further analysis via DataFrame lookup
 `map_type` |`Symbol`| (optional) type of magnetic anomaly map for `map_name` {`drape`,`HAE`}
 `line_alt` |`Real`  | (optional) nominal altitude of `line` [m]
 - `splits`:     (optional) data splits, must sum to 1
-- `l_window`:   (optional) trim data by `mod(N,l_window)`, `-1` to ignore
+- `l_window`:   (optional) trim data by `N % l_window`, `-1` to ignore
 
 **Returns:**
 - `ind`: BitVector (or tuple of BitVector) of selected data indices
@@ -1805,13 +1809,15 @@ Break data into non-overlapping sequences of length `l_window`.
 """
 function chunk_data(x, y, l_window::Int)
 
+    x = Float32.(x)
+    y = Float32.(y)
     N = size(x,1)
     N_window = floor(Int,N/l_window)
 
-    mod(N,l_window) == 0 || @info("data was not trimmed for l_window = $l_window, may result in worse performance")
+    N % l_window == 0 || @info("data was not trimmed for l_window = $l_window, may result in worse performance")
 
-    x_seqs = [[Float32.(x[(j-1)*l_window+i,:]) for i = 1:l_window]  for j = 1:N_window]
-    y_seqs = [ Float32.(y[(j-1)*l_window       .+    (1:l_window)]) for j = 1:N_window]
+    x_seqs = [[x[(j-1)*l_window+i,:] for i = 1:l_window]  for j = 1:N_window]
+    y_seqs = [ y[(j-1)*l_window       .+    (1:l_window)] for j = 1:N_window]
 
     return (x_seqs, y_seqs)
 end # function chunk_data
@@ -1829,11 +1835,13 @@ Apply model `m` to full sequence of inputs `x`.
 - `y_hat`: vector of scalar targets for each input in `x`
 """
 function predict_rnn_full(m, x)
+
     # reset hidden state (just once)
     Flux.reset!(m)
 
     # apply model to sequence and convert output to vector
-    y_hat = [yi[1] for yi in m.([Float32.(x[i,:]) for i in axes(x,1)])]
+    x     = Float32.(x)
+    y_hat = [yi[1] for yi in m.([x[i,:] for i in axes(x,1)])]
 
     return (y_hat)
 end # function predict_rnn_full
@@ -1852,8 +1860,10 @@ Apply model `m` to inputs by sliding a window of length `l_window` along `x`.
 - `y_hat`: vector of scalar targets for each input in `x`
 """
 function predict_rnn_windowed(m, x, l_window::Int)
-    N = size(x,1)
-    y_hat = zeros(Float32,N)
+
+    x     = Float32.(x)
+    N     = size(x,1)
+    y_hat = zeros(eltype(x),N)
 
     # assume l_window = 4
     # 1 2 3 4 5 6 7 8
@@ -1864,7 +1874,7 @@ function predict_rnn_windowed(m, x, l_window::Int)
         # create window
         i = j < l_window ? 1 : j - l_window + 1
 
-        x_seq = [Float32.(x[k,:]) for k = i:j]
+        x_seq = [x[k,:] for k = i:j]
 
         # apply model
         Flux.reset!(m)
@@ -1872,6 +1882,7 @@ function predict_rnn_windowed(m, x, l_window::Int)
 
         # store last output value in window
         y_hat[j] = y_seq[end][1]
+
     end
 
     return (y_hat)
@@ -2049,8 +2060,8 @@ function eval_gsa(m, x, n::Int=min(10000,size(x,1)))
 end # function eval_gsa
 
 """
-    get_igrf(xyz::Union{XYZ1,XYZ20,XYZ21}, ind=trues(xyz.traj.N);
-             frame           = :body,
+    get_igrf(xyz::XYZ, ind=trues(xyz.traj.N);
+             frame::Symbol   = :body,
              norm_igrf::Bool = false,
              check_xyz::Bool = true)
 
@@ -2068,19 +2079,19 @@ date in IGRF time (years since 0 CE), and reference frame.
 **Returns:**
 - `igrf_vec`: length `N` stacked vector of `3` IGRF coordinates in `frame`
 """
-function get_igrf(xyz::Union{XYZ1,XYZ20,XYZ21}, ind=trues(xyz.traj.N);
-                  frame           = :body,
+function get_igrf(xyz::XYZ, ind=trues(xyz.traj.N);
+                  frame::Symbol   = :body,
                   norm_igrf::Bool = false,
                   check_xyz::Bool = true)
 
     date_start = get_years.(xyz.year[ind],xyz.doy[ind].-1)
-    seconds_per_year = 60 * 60 * 24 * get_days_per_year.(date_start)
+    seconds_in_year = 60 * 60 * 24 * get_days_in_year.(date_start)
 
     @assert frame in [:body,:nav] "must choose `:body` or `:nav` reference frame"
     @assert all(1900 .<= date_start .<= 2030)  "start date must be in valid IGRF date range"
 
     N   = length(xyz.traj.lat[ind])
-    tt  = date_start + xyz.traj.tt[ind] ./ seconds_per_year # [yr]
+    tt  = date_start + xyz.traj.tt[ind] ./ seconds_in_year # [yr]
     alt = xyz.traj.alt[ind]
     lat = xyz.traj.lat[ind]
     lon = xyz.traj.lon[ind]
@@ -2091,8 +2102,9 @@ function get_igrf(xyz::Union{XYZ1,XYZ20,XYZ21}, ind=trues(xyz.traj.N);
     # Bz: down  component [nT]
     igrf_vec = [igrf(tt[i], alt[i], lat[i], lon[i], Val(:geodetic)) for i = 1:N]
     if check_xyz
-        igrf_error = round(rms(norm.(igrf_vec) - xyz.igrf[ind]),digits=2)
-        @assert igrf_error < 1 "large IGRF discrepancy of $igrf_error nT, check `igrf`, `year`, & `doy` fields in `xyz`"
+        lim_igrf = 1
+        err_igrf = round(rms(norm.(igrf_vec) - xyz.igrf[ind]),digits=2)
+        @assert err_igrf < lim_igrf "IGRF discrepancy = $err_igrf > $lim_igrf nT, check `igrf`, `year`, & `doy` fields in `xyz`"
     end
 
     # normalize (or not) and rotate (or not)
@@ -2204,19 +2216,19 @@ function get_optimal_rotation_matrix(v1s, v2s)
 end # function get_optimal_rotation_matrix
 
 """
-    get_days_per_year(year)
+    get_days_in_year(year)
 
-Get days per year based on (rounded down) year.
+Get days in year based on (rounded down) year.
 
 **Arguments:**
 - `year`: year (rounded down)
 
 **Returns:**
-- `days_per_year`: days per `year`
+- `days_in_year`: days in `year`
 """
-function get_days_per_year(year)
-    mod(floor(Int,year),4) == 0 ? 366 : 365
-end # function get_days_per_year
+function get_days_in_year(year)
+    floor(Int,year) % 4 == 0 ? 366 : 365
+end # function get_days_in_year
 
 """
     get_years(year, doy=0)
@@ -2231,7 +2243,7 @@ Get years from year and day of year.
 - `years`: `year` with fractional `doy`
 """
 function get_years(year, doy)
-    round(Int,year) + doy/get_days_per_year(year)
+    round(Int,year) + doy/get_days_in_year(year)
 end # function get_years
 
 """
@@ -2251,43 +2263,43 @@ function get_lim(x, frac=0)
 end # function get_lim
 
 """
-    expand_range(x::Vector, x_lim::Tuple = get_lim(x),
+    expand_range(x::Vector, xlim::Tuple = get_lim(x),
                  extra_step::Bool = false)
 
 Internal helper function to expand range of data that has constant step size.
 
 **Arguments:**
 - `x`:          data
-- `x_lim`:      (optional) limits `(x_min,x_max)` to which `x` is expanded
+- `xlim`:       (optional) limits `(xmin,xmax)` to which `x` is expanded
 - `extra_step`: (optional) if true, expand range by extra step on each end
 
 **Returns:**
 - `x`:     data, expanded
 - `x_ind`: data indices within `x` that contain original data
 """
-function expand_range(x::Vector, x_lim::Tuple = get_lim(x),
+function expand_range(x::Vector, xlim::Tuple = get_lim(x),
                       extra_step::Bool = false)
     dx = get_step(x)
-    i_min = 0
-    (x_min,x_max) = extrema(x)
-    while minimum(x_lim) < x_min
-        i_min += 1
-        x_min -= dx
+    imin = 0
+    (xmin,xmax) = extrema(x)
+    while minimum(xlim) < xmin
+        imin += 1
+        xmin -= dx
     end
-    while x_max < maximum(x_lim)
-        x_max += dx
+    while xmax < maximum(xlim)
+        xmax += dx
     end
     if extra_step
-        i_min += 1
-        x_min -= dx
-        x_max += dx
+        imin += 1
+        xmin -= dx
+        xmax += dx
     end
-    return ([x_min:dx:x_max;], i_min.+(1:length(x)))
+    return ([xmin:dx:xmax;], imin.+(1:length(x)))
 end # function expand_range
 
 """
     filter_events!(df_event::DataFrame, flight::Symbol, keyword::String = "";
-                   tt_lim = extrema(df_event.tt[df_event.flight .== flight]))
+                   tt_lim::Tuple = extrema(df_event.tt[df_event.flight .== flight]))
 
 Filter a DataFrame of in-flight events to only contain relevant events.
 
@@ -2306,7 +2318,7 @@ Filter a DataFrame of in-flight events to only contain relevant events.
 - `nothing`: `df_event` is filtered
 """
 function filter_events!(df_event::DataFrame, flight::Symbol, keyword::String = "";
-                        tt_lim = extrema(df_event.tt[df_event.flight .== flight]))
+                        tt_lim::Tuple = extrema(df_event.tt[df_event.flight .== flight]))
     (t_start,t_end) = tt_lim
     filter!(:flight => f -> (f == flight), df_event)
     filter!(:tt     => t -> (t_start <= t <= t_end), df_event)
@@ -2315,7 +2327,7 @@ end # function filter_events!
 
 """
     filter_events(df_event::DataFrame, flight::Symbol, keyword::String = "";
-                  tt_lim = extrema(df_event.tt[df_event.flight .== flight]))
+                  tt_lim::Tuple = extrema(df_event.tt[df_event.flight .== flight]))
 
 Filter a DataFrame of in-flight events to only contain relevant events.
 
@@ -2334,7 +2346,7 @@ Filter a DataFrame of in-flight events to only contain relevant events.
 - `df_event`: lookup table (DataFrame) of in-flight events, filtered
 """
 function filter_events(df_event::DataFrame, flight::Symbol, keyword::String = "";
-                       tt_lim = extrema(df_event.tt[df_event.flight .== flight]))
+                       tt_lim::Tuple = extrema(df_event.tt[df_event.flight .== flight]))
     df_event = deepcopy(df_event)
     filter_events!(df_event,flight,keyword;tt_lim=tt_lim)
     return (df_event)
@@ -2343,7 +2355,7 @@ end # function filter_events
 """
     gif_animation_m3(TL_perm::AbstractMatrix, TL_induced::AbstractMatrix, TL_eddy::AbstractMatrix,
                      TL_aircraft::AbstractMatrix, B_unit::AbstractMatrix, y_nn::AbstractMatrix,
-                     y::Vector, y_hat::Vector, xyz::Union{XYZ1,XYZ20,XYZ21},
+                     y::Vector, y_hat::Vector, xyz::XYZ,
                      filt_lat::Vector = [],
                      filt_lon::Vector = [];
                      ind              = trues(xyz.traj.N),
@@ -2386,7 +2398,7 @@ gif_animation_m3(TL_perm, TL_induced, TL_eddy, TL_aircraft, B_unit,
 """
 function gif_animation_m3(TL_perm::AbstractMatrix, TL_induced::AbstractMatrix, TL_eddy::AbstractMatrix,
                           TL_aircraft::AbstractMatrix, B_unit::AbstractMatrix, y_nn::AbstractMatrix,
-                          y::Vector, y_hat::Vector, xyz::Union{XYZ1,XYZ20,XYZ21},
+                          y::Vector, y_hat::Vector, xyz::XYZ,
                           filt_lat::Vector = [],
                           filt_lon::Vector = [];
                           ind              = trues(xyz.traj.N),
@@ -2417,7 +2429,10 @@ function gif_animation_m3(TL_perm::AbstractMatrix, TL_induced::AbstractMatrix, T
     dir  = atand.(vns,ves)
 
     # convert fields to 2D "compass" projections
-    igrf_nav = get_igrf(xyz,ind;frame=:nav,norm_igrf=true)
+    igrf_nav = get_igrf(xyz,ind;
+                        frame     = :nav,
+                        norm_igrf = true,
+                        check_xyz = true)
 
     # compute dot product component of each field
     NN_component = vec(sum(y_nn        .* B_unit, dims=1))
@@ -2493,7 +2508,7 @@ end # function gif_animation_m3
 function gif_animation_m3(TL_perm::AbstractMatrix, TL_induced::AbstractMatrix, TL_eddy::AbstractMatrix,
                           TL_aircraft::AbstractMatrix, B_unit::AbstractMatrix, y_nn::AbstractMatrix,
                           y::Vector, y_hat::Vector, filt_lat::Vector, filt_lon::Vector,
-                          xyz::Union{XYZ1,XYZ20,XYZ21};
+                          xyz::XYZ;
                           ind             = trues(xyz.traj.N),
                           tt_lim::Tuple   = (0, (xyz.traj(ind).N-1)*xyz.traj.dt/60),
                           skip_every::Int = 5,

@@ -21,11 +21,11 @@ mapP = get_map(MagNav.ottawa_area_maps()*"/HighAlt_5181.h5")
 mapV = get_map(MagNav.emm720)
 mapV = map_trim(mapV,traj)
 
-mapSd  = MapSd(mapS.map,mapS.xx,mapS.yy,mapS.alt*one.(mapS.map))
+mapSd  = MapSd(mapS.info,mapS.map,mapS.xx,mapS.yy,mapS.alt*one.(mapS.map),mapS.mask)
 mapS3D = upward_fft(mapS,[mapS.alt,mapS.alt+5])
 
 @testset "map_interpolate tests" begin
-    @test itp_mapS(traj.lon[1],traj.lat[1]) ≈ grid_data["itp_map"]
+    @test itp_mapS(traj.lat[1],traj.lon[1]) ≈ grid_data["itp_map"]
     @test_nowarn map_interpolate(mapS  ,:linear)
     @test_nowarn map_interpolate(mapSd ,:quad)
     @test_nowarn map_interpolate(mapS3D,:cubic)
@@ -35,8 +35,8 @@ mapS3D = upward_fft(mapS,[mapS.alt,mapS.alt+5])
     @test_nowarn map_interpolate(mapV,:Z,:cubic)
     @test_throws ErrorException map_interpolate(mapV,:test)
     @test_throws ErrorException map_interpolate(mapV,:X,:test)
-    typeof(mapS3D(mapS3D.alt[1]  -1)) <: MapS
-    typeof(mapS3D(mapS3D.alt[end]+1)) <: MapS
+    mapS3D(mapS3D.alt[1]  -1) isa MapS
+    mapS3D(mapS3D.alt[end]+1) isa MapS
     @test mapS3D(mapS3D.alt[1]).map ≈ mapS.map
 end
 
@@ -71,75 +71,76 @@ add_igrf_date = get_years(2013,293)
                            add_igrf_date=add_igrf_date,map_units=:deg)
     @test_throws ErrorException map_correct_igrf(mapS.map,mapS.alt,mapS.xx,mapS.yy;
                                                  add_igrf_date=add_igrf_date,map_units=:test)
-    @test typeof(map_correct_igrf(mapS  ;add_igrf_date=add_igrf_date)) <: MapS
-    @test typeof(map_correct_igrf(mapSd ;add_igrf_date=add_igrf_date)) <: MapSd
-    @test typeof(map_correct_igrf(mapS3D;add_igrf_date=add_igrf_date)) <: MapS3D
+    @test map_correct_igrf(mapS  ;add_igrf_date=add_igrf_date) isa MapS
+    @test map_correct_igrf(mapSd ;add_igrf_date=add_igrf_date) isa MapSd
+    @test map_correct_igrf(mapS3D;add_igrf_date=add_igrf_date) isa MapS3D
 end
 
 @testset "map_fill tests" begin
-    @test typeof(map_fill(mapS.map,mapS.xx,mapS.yy)) <: Matrix
-    @test typeof(map_fill(mapS  )) <: MapS
-    @test typeof(map_fill(mapSd )) <: MapSd
-    @test typeof(map_fill(mapS3D)) <: MapS3D
+    @test map_fill(mapS.map,mapS.xx,mapS.yy) isa Matrix
+    @test map_fill(mapS  ) isa MapS
+    @test map_fill(mapSd ) isa MapSd
+    @test map_fill(mapS3D) isa MapS3D
 end
 
 @testset "map_chessboard tests" begin
     mapSd.alt[1,1] = mapS.alt+200
     mapSd.alt[2,2] = mapS.alt-601
-    @test typeof(map_chessboard(mapSd,mapS.alt;dz=200)) <: MapS
-    @test typeof(map_chessboard(mapSd,mapS.alt;down_cont=false,dz=200)) <: MapS
+    @test map_chessboard(mapSd,mapS.alt;dz=200) isa MapS
+    @test map_chessboard(mapSd,mapS.alt;down_cont=false,dz=200) isa MapS
 end
 
 (zone_utm,is_north) = utm_zone(mean(rad2deg.(mapS.yy)),mean(rad2deg.(mapS.xx)))
-lla2utm  = UTMfromLLA(zone_utm,is_north,WGS84)
-utm_temp = lla2utm.(LLA.(rad2deg.(mapS.yy),rad2deg.(mapS.xx)))
-mapUTM   = MapS( mapS.map,[utm_temp[i].x for i in eachindex(mapS.xx)],
-                          [utm_temp[i].y for i in eachindex(mapS.yy)],mapS.alt)
-mapUTMd  = MapSd(mapS.map,[utm_temp[i].x for i in eachindex(mapS.xx)],
-                          [utm_temp[i].y for i in eachindex(mapS.yy)],mapSd.alt)
-mapUTM3D = MapS3D(mapUTM.map[:,:,[1,1]],mapUTM.xx,mapUTM.yy,[mapUTM.alt,mapUTM.alt+5])
+lla2utm   = UTMfromLLA(zone_utm,is_north,WGS84)
+utm_temp  = lla2utm.(LLA.(rad2deg.(mapS.yy),rad2deg.(mapS.xx)))
+mapUTM_xx = [utm_temp[i].x for i in eachindex(mapS.xx)]
+mapUTM_yy = [utm_temp[i].y for i in eachindex(mapS.yy)]
+mapUTM    = MapS( mapS.info,mapS.map,mapUTM_xx,mapUTM_yy, mapS.alt,mapS.mask)
+mapUTMd   = MapSd(mapS.info,mapS.map,mapUTM_xx,mapUTM_yy,mapSd.alt,mapS.mask)
+mapUTM3D  = MapS3D(mapUTM.info,mapUTM.map[:,:,[1,1]],mapUTM_xx,mapUTM_yy,
+                   [mapUTM.alt,mapUTM.alt+5],mapUTM.mask[:,:,[1,1]])
 
 @testset "map_utm2lla tests" begin
-    @test typeof(map_utm2lla(mapUTM.map,mapUTM.xx,mapUTM.yy,mapUTM.alt)[1]) <: Matrix
-    @test typeof(map_utm2lla(mapUTM  )) <: MapS
-    @test typeof(map_utm2lla(mapUTMd )) <: MapSd
-    @test typeof(map_utm2lla(mapUTM3D)) <: MapS3D
+    @test map_utm2lla(mapUTM.map,mapUTM.xx,mapUTM.yy,mapUTM.alt,mapUTM.mask)[1] isa Matrix
+    @test map_utm2lla(mapUTM  ) isa MapS
+    @test map_utm2lla(mapUTMd ) isa MapSd
+    @test map_utm2lla(mapUTM3D) isa MapS3D
 end
 
 @testset "map_gxf2h5 tests" begin
-    @test typeof(map_gxf2h5(gxf_file,5181;get_lla=true ,save_h5=false)) <: MapS
-    @test typeof(map_gxf2h5(gxf_file,5181;get_lla=false,save_h5=false)) <: MapS
-    @test typeof(map_gxf2h5(gxf_file,gxf_file,5181;
-                            up_cont=false,get_lla=true ,save_h5=false)) <: MapSd
-    @test typeof(map_gxf2h5(gxf_file,gxf_file,5181;
-                            up_cont=false,get_lla=false,save_h5=false)) <: MapSd
-    @test typeof(map_gxf2h5(gxf_file,gxf_file,120;
-                            up_cont=true ,get_lla=true ,save_h5=false)) <: MapS
-    @test typeof(map_gxf2h5(gxf_file,gxf_file,120;
-                            up_cont=true ,get_lla=false,save_h5=false)) <: MapS
+    @test map_gxf2h5(gxf_file,5181;get_lla=true ,save_h5=false) isa MapS
+    @test map_gxf2h5(gxf_file,5181;get_lla=false,save_h5=false) isa MapS
+    @test map_gxf2h5(gxf_file,gxf_file,5181;
+                     up_cont=false,get_lla=true ,save_h5=false) isa MapSd
+    @test map_gxf2h5(gxf_file,gxf_file,5181;
+                     up_cont=false,get_lla=false,save_h5=false) isa MapSd
+    @test map_gxf2h5(gxf_file,gxf_file,120;
+                     up_cont=true ,get_lla=true ,save_h5=false) isa MapS
+    @test map_gxf2h5(gxf_file,gxf_file,120;
+                     up_cont=true ,get_lla=false,save_h5=false) isa MapS
 end
 
 p1 = plot();
 
 @testset "plot_map tests" begin
-    @test typeof(plot_map!(p1,mapS)) <: Plots.Plot
-    @test typeof(plot_map(mapS;plot_units=:deg)) <: Plots.Plot
-    @test typeof(plot_map(mapS;plot_units=:rad)) <: Plots.Plot
-    @test typeof(plot_map(mapS;plot_units=:m  )) <: Plots.Plot
-    @test typeof(plot_map(mapS.map,rad2deg.(mapS.xx),rad2deg.(mapS.yy);
-                          map_units=:deg,plot_units=:deg)) <: Plots.Plot
-    @test typeof(plot_map(mapS.map,rad2deg.(mapS.xx),rad2deg.(mapS.yy);
-                          map_units=:deg,plot_units=:rad)) <: Plots.Plot
-    @test typeof(plot_map(mapS.map,rad2deg.(mapS.xx),rad2deg.(mapS.yy);
-                          map_units=:deg,plot_units=:m  )) <: Plots.Plot
-    @test typeof(plot_map(mapV)) <: Tuple
+    @test plot_map!(p1,mapS) isa Plots.Plot
+    @test plot_map(mapS;plot_units=:deg) isa Plots.Plot
+    @test plot_map(mapS;plot_units=:rad) isa Plots.Plot
+    @test plot_map(mapS;plot_units=:m  ) isa Plots.Plot
+    @test plot_map(mapS.map,rad2deg.(mapS.xx),rad2deg.(mapS.yy);
+                   map_units=:deg,plot_units=:deg) isa Plots.Plot
+    @test plot_map(mapS.map,rad2deg.(mapS.xx),rad2deg.(mapS.yy);
+                   map_units=:deg,plot_units=:rad) isa Plots.Plot
+    @test plot_map(mapS.map,rad2deg.(mapS.xx),rad2deg.(mapS.yy);
+                   map_units=:deg,plot_units=:m  ) isa Plots.Plot
+    @test plot_map(mapV) isa Tuple
     @test_throws ErrorException plot_map(mapS;map_units=:test)
     @test_throws ErrorException plot_map(mapS;plot_units=:test)
 end
 
 @testset "map_cs tests" begin
     for map_color in [:usgs,:gray,:gray1,:gray2,:plasma,:magma]
-        @test typeof(MagNav.map_cs(map_color)) <: Plots.ColorGradient
+        @test MagNav.map_cs(map_color) isa Plots.ColorGradient
     end
 end
 
@@ -147,16 +148,16 @@ p1 = plot_path(traj;show_plot=false);
 
 @testset "plot_path tests" begin
     @test_nowarn plot_path!(p1,traj;show_plot=false,path_color=:black)
-    @test typeof(plot_path(traj;Nmax=50,show_plot=false)) <: Plots.Plot
+    @test plot_path(traj;Nmax=50,show_plot=false) isa Plots.Plot
 end
 
-p1 = plot_basic(traj.tt,traj.lat);
+p1 = plot_basic(traj.tt,traj.lat;show_plot=false);
 df_event = DataFrame(flight=:test,tt=49.5*60,event="test")
 
 @testset "plot_events! tests" begin
     @test_nowarn plot_events!(p1,df_event.tt[1]/60,df_event.event[1])
     @test_nowarn plot_events!(p1,df_event,df_event.flight[1])
-    @test typeof(plot_events!(p1,df_event.flight[1],df_event)) <: Plots.Plot # deprecated
+    @test plot_events!(p1,df_event.flight[1],df_event) isa Plots.Plot # deprecated
 end
 
 @testset "map_check tests" begin
@@ -219,18 +220,18 @@ itp_mapS_namad_2   = map_interpolate(mapS_namad_2)
 
 # test that same alt bucket maps are used as within map_cache
 @testset "Map_Cache tests" begin
-    @test map_cache(lat,lon,alt_315) ≈ itp_mapS_300_305(lon,lat) # using map at 305 m (> 300 m)
-    @test map_cache(lat,lon,alt_610) ≈ itp_mapS_600_305(lon,lat) # using map at 600 m (> 305 m)
-    @test map_cache(lat,lon,alt_965) ≈ itp_mapS_900_915(lon,lat) # using map at 915 m (> 900 m)
-    @test map_cache(lat,lon,alt_out) ≈ itp_mapS_namad_1(lon,lat) # NAMAD fallback, alt < all maps alts
-    @test map_cache(lat_out,lon_out,alt_315) ≈ itp_mapS_namad_2(lon_out,lat_out) # NAMAD fallback, failed map_check()
+    @test map_cache(lat,lon,alt_315) ≈ itp_mapS_300_305(lat,lon) # using map at 305 m (> 300 m)
+    @test map_cache(lat,lon,alt_610) ≈ itp_mapS_600_305(lat,lon) # using map at 600 m (> 305 m)
+    @test map_cache(lat,lon,alt_965) ≈ itp_mapS_900_915(lat,lon) # using map at 915 m (> 900 m)
+    @test map_cache(lat,lon,alt_out) ≈ itp_mapS_namad_1(lat,lon) # NAMAD fallback, alt < all maps alts
+    @test map_cache(lat_out,lon_out,alt_315) ≈ itp_mapS_namad_2(lat_out,lon_out) # NAMAD fallback, failed map_check()
 end
 
 @testset "map_border tests" begin
-    @test typeof(map_border(map_map,map_xx,map_yy;inner=true,sort_border=true)) <: Tuple
-    @test typeof(map_border(mapS  ;inner=true ,sort_border=true )) <: Tuple
-    @test typeof(map_border(mapSd ;inner=true ,sort_border=false)) <: Tuple
-    @test typeof(map_border(mapS3D;inner=false,sort_border=false)) <: Tuple
+    @test map_border(map_map,map_xx,map_yy;inner=true,sort_border=true) isa Tuple
+    @test map_border(mapS  ;inner=true ,sort_border=true ) isa Tuple
+    @test map_border(mapSd ;inner=true ,sort_border=false) isa Tuple
+    @test map_border(mapS3D;inner=false,sort_border=false) isa Tuple
     @test MagNav.map_border_clean(trues(3,3)) == trues(3,3)
 end
 
@@ -247,7 +248,7 @@ mapS_fallback = upward_fft(map_fill(map_trim(get_map(),
                 xx_lim=xx_lim,yy_lim=yy_lim)),mapS.alt)
 
 @testset "map_combine tests" begin
-    @test typeof(map_combine(mapS,mapS_fallback)) <: MapS
-    @test typeof(map_combine([mapS,upward_fft(mapS,mapS.alt+5)],mapS_fallback)) <: MapS3D
-    @test typeof(map_combine([mapS,upward_fft(mapS,mapS.alt+5)];use_fallback=false)) <: MapS3D
+    @test map_combine(mapS,mapS_fallback) isa MapS
+    @test map_combine([mapS,upward_fft(mapS,mapS.alt+5)],mapS_fallback) isa MapS3D
+    @test map_combine([mapS,upward_fft(mapS,mapS.alt+5)];use_fallback=false) isa MapS3D
 end

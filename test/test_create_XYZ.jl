@@ -83,15 +83,15 @@ ins  = create_ins(traj;
                   acc_tau        = acc_tau,
                   gyro_tau       = gyro_tau)
 
-(mag_1_uc,_) = corrupt_mag(mag_1_c,flux_a_x,flux_a_y,flux_a_z;
-                           dt           = dt,
-                           cor_sigma    = cor_sigma,
-                           cor_tau      = cor_tau,
-                           cor_var      = cor_var,
-                           cor_drift    = cor_drift,
-                           cor_perm_mag = cor_perm_mag,
-                           cor_ind_mag  = cor_ind_mag,
-                           cor_eddy_mag = cor_eddy_mag)
+(mag_1_uc,_,_) = corrupt_mag(mag_1_c,flux_a_x,flux_a_y,flux_a_z;
+                             dt           = dt,
+                             cor_sigma    = cor_sigma,
+                             cor_tau      = cor_tau,
+                             cor_var      = cor_var,
+                             cor_drift    = cor_drift,
+                             cor_perm_mag = cor_perm_mag,
+                             cor_ind_mag  = cor_ind_mag,
+                             cor_eddy_mag = cor_eddy_mag)
 
 mapS = get_map(MagNav.namad)
 mapS = map_trim(mapS,traj)
@@ -108,12 +108,12 @@ mapV = map_trim(mapV,traj)
 xyz_h5 = joinpath(@__DIR__,"test_create_XYZ0.h5")
 
 @testset "create_XYZ0 tests" begin
-    @test typeof(create_XYZ0(mapS;alt=2000,t=10,mapV=mapV,
-                 save_h5=true,xyz_h5=xyz_h5)) <: MagNav.XYZ0
+    @test create_XYZ0(mapS;alt=2000,t=10,mapV=mapV,
+                      save_h5=true,xyz_h5=xyz_h5) isa MagNav.XYZ0
     @test_throws ErrorException create_XYZ0(mapS;t=10,mapV=mapV,VRW_sigma=1e6)
-    @test typeof(create_XYZ0(mapS_mod;N_waves=0,mapV=mapV,
-                 ll1 = rad2deg.((traj.lat[1],traj.lon[1])),
-                 ll2 = rad2deg.((traj.lat[end],traj.lon[end])))) <: MagNav.XYZ0
+    @test create_XYZ0(mapS_mod;N_waves=0,mapV=mapV,
+                      ll1 = rad2deg.((traj.lat[1],traj.lon[1])),
+                      ll2 = rad2deg.((traj.lat[end],traj.lon[end]))) isa MagNav.XYZ0
 end
 
 rm(xyz_h5)
@@ -133,29 +133,14 @@ end
     @test minimum(abs.(mag_1_uc-mag_1_c) .< mean(abs.(mag_1_c)))
 end
 
-year    = 2020
-doy     = 185
-use_vec = :flux_a
-use_mag = :mag_1_uc
-
-# initialize with XYZ0 struct
-xyz = create_XYZ0(mapS; alt=2000, t=10, mapV=mapV)
-
-# create XYZ1 struct with incorrect IGRF field
-mag_1_c  = xyz.mag_1_c
-mag_1_uc = xyz.mag_1_uc
-xyz = MagNav.XYZ1(xyz.traj, xyz.ins, xyz.flux_a, xyz.flux_a,
-                  xyz.flight, xyz.line, year*one.(mag_1_c), doy*one.(mag_1_c),
-                  zero.(mag_1_c), zero.(mag_1_c), mag_1_c, mag_1_c, mag_1_c,
-                  mag_1_uc, mag_1_uc, mag_1_uc, mag_1_c, mag_1_c, mag_1_c)
-
-# correct IGRF field within XYZ1 struct
-igrf_vec  = get_igrf(xyz; check_xyz=false)
-xyz.igrf .= norm.(igrf_vec)
-
+# create original XYZ0 struct
+xyz  = create_XYZ0(mapS; alt=2000, t=10, mapV=mapV)
 ind  = get_ind(xyz)
 traj = get_traj(xyz,ind)
 
+# create displaced XYZ0 struct
+use_vec   = :flux_a
+use_mag   = :mag_1_uc
 TL_coef   = create_TL_coef(getfield(xyz,use_vec), getfield(xyz,use_mag), ind;
                            terms=[:p,:e,:i], λ=0.025)
 xyz_disp  = create_informed_xyz(xyz, ind, mapS, use_mag, use_vec, TL_coef)
