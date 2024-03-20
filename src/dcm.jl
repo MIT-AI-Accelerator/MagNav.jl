@@ -44,7 +44,7 @@ function euler2dcm(roll, pitch, yaw, order::Symbol=:body2nav)
     cy = cos.(y)
     sy = sin.(y)
 
-    dcm = zeros(3,3,length(roll))
+    dcm = zeros(Float64,3,3,length(roll))
 
     if order == :body2nav # Cnb, shown in Titterton & Weston (pg. 41)
         dcm[1,1,:] .=  cp.*cy
@@ -156,7 +156,7 @@ eq. 10.10 (pg. 284) and eq. 12.6 (pg. 342).
 function correct_Cnb(Cnb, tilt_err)
 
     N = size(tilt_err,2)
-    Cnb_estimate = zeros(3,3,N)
+    Cnb_estimate = zeros(Float64,3,3,N)
     for i = 1:N
         m = norm(tilt_err[:,i])
         if m != 0

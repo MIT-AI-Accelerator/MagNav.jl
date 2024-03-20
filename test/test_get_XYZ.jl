@@ -59,20 +59,20 @@ write_field(xyz_h5,:ins_alt,ins.alt)
 write_field(xyz_h5,:mag_1_uc,xyz.mag_1_uc)
 
 @testset "get_xyz tests" begin
-    @test typeof(get_XYZ0(xyz_csv ;silent=true)) <: MagNav.XYZ0
-    @test typeof(get_XYZ1(traj_csv;silent=true)) <: MagNav.XYZ1
-    @test typeof(get_XYZ0(traj_mat,traj_field,:none,
-                          flight = 1,
-                          line   = 1,
-                          dt     = 1,
-                          silent = true)) <: MagNav.XYZ0
-    @test typeof(get_XYZ1(xyz_mat,traj_field,ins_field,
-                          flight = 1,
-                          line   = 1,
-                          dt     = 1,
-                          silent = true)) <: MagNav.XYZ1
-    @test typeof(get_XYZ0(xyz_h5;silent=true)) <: MagNav.XYZ0
-    @test typeof(get_XYZ1(xyz_h5;silent=true)) <: MagNav.XYZ1
+    @test get_XYZ0(xyz_csv ;silent=true) isa MagNav.XYZ0
+    @test get_XYZ1(traj_csv;silent=true) isa MagNav.XYZ1
+    @test get_XYZ0(traj_mat,traj_field,:none,
+                   flight = 1,
+                   line   = 1,
+                   dt     = 1,
+                   silent = true) isa MagNav.XYZ0
+    @test get_XYZ1(xyz_mat,traj_field,ins_field,
+                   flight = 1,
+                   line   = 1,
+                   dt     = 1,
+                   silent = true) isa MagNav.XYZ1
+    @test get_XYZ0(xyz_h5;silent=true) isa MagNav.XYZ0
+    @test get_XYZ1(xyz_h5;silent=true) isa MagNav.XYZ1
     delete_field(xyz_h5,:tt)
     delete_field(xyz_h5,:ins_tt)
     delete_field(xyz_h5,:mag_1_uc)
@@ -87,33 +87,33 @@ write_field(xyz_h5,:mag_1_uc,xyz.mag_1_uc)
     write_field(xyz_h5,:ins_roll,zero(ins.lat))
     write_field(xyz_h5,:ins_pitch,zero(ins.lat))
     write_field(xyz_h5,:ins_yaw,zero(ins.lat))
-    @test typeof(get_XYZ0(xyz_h5;silent=true)) <: MagNav.XYZ0
+    @test get_XYZ0(xyz_h5;silent=true) isa MagNav.XYZ0
     MagNav.overwrite_field(xyz_h5,:ins_alt,ins.alt*NaN)
     @test_throws ErrorException get_XYZ0(xyz_h5;silent=true)
     @test_throws AssertionError get_XYZ0("test")
 end
 
 @testset "get_traj tests" begin
-    @test typeof(get_traj(traj_csv           ;silent=true)) <: MagNav.Traj
-    @test typeof(get_traj(traj_mat,traj_field;silent=true)) <: MagNav.Traj
+    @test get_traj(traj_csv           ;silent=true) isa MagNav.Traj
+    @test get_traj(traj_mat,traj_field;silent=true) isa MagNav.Traj
     @test get_traj(xyz,ind).Cnb == traj(ind).Cnb
     @test_throws AssertionError get_traj("test")
 end
 
 @testset "get_ins tests" begin
-    @test typeof(get_ins(xyz_csv          ;silent=true)) <: MagNav.INS
-    @test typeof(get_ins(xyz_mat,ins_field;silent=true)) <: MagNav.INS
+    @test get_ins(xyz_csv          ;silent=true) isa MagNav.INS
+    @test get_ins(xyz_mat,ins_field;silent=true) isa MagNav.INS
     @test get_ins(xyz,ind).P == ins(ind).P
     @test get_ins(xyz,ind;t_zero_ll=10).lat[1:10] == traj.lat[ind][1:10]
-    @test typeof(MagNav.zero_ins_ll(ins.lat,ins.lon,1,
-                                    traj.lat[1:1],traj.lon[1:1])) <: Tuple
+    @test MagNav.zero_ins_ll(ins.lat,ins.lon,1,
+                             traj.lat[1:1],traj.lon[1:1]) isa Tuple
     @test_throws AssertionError get_ins("test")
 end
 
 @testset "get_flux tests" begin
-    @test typeof(get_flux(traj_csv,:flux_a           )) <: MagNav.MagV
-    @test typeof(get_flux(traj_mat,:flux_a,traj_field)) <: MagNav.MagV
-    @test typeof(flux_a(ind)) <: MagNav.MagV
+    @test get_flux(traj_csv,:flux_a           ) isa MagNav.MagV
+    @test get_flux(traj_mat,:flux_a,traj_field) isa MagNav.MagV
+    @test flux_a(ind) isa MagNav.MagV
 end
 
 rm(traj_csv)
@@ -148,7 +148,7 @@ end
 
 df_flight[:,:xyz_type] .= :XYZ21
 
-#* not actually XYZ21, should still pass, keeping this way until public release
+# todo: update with v1.2.1
 @testset "get_XYZ21 tests" begin
     @test_nowarn get_XYZ21(xyz_files[1];tt_sort=true,silent=true)
     @test_nowarn get_XYZ(flights[1],df_flight;tt_sort=true,silent=true)

@@ -6,10 +6,12 @@ map_data  = matopen(test_data_map,"r") do file
     read(file,"map_data")
 end
 
-map_map = map_data["map"]
-map_xx  = deg2rad.(vec(map_data["xx"]))
-map_yy  = deg2rad.(vec(map_data["yy"]))
-map_alt = map_data["alt"]
+map_info = "Map"
+map_map  = map_data["map"]
+map_xx   = deg2rad.(vec(map_data["xx"]))
+map_yy   = deg2rad.(vec(map_data["yy"]))
+map_alt  = map_data["alt"]
+map_mask = MagNav.map_params(map_map,map_xx,map_yy)[2]
 
 ind = trues(length(map_xx))
 ind[51:end] .= false
@@ -66,24 +68,24 @@ map_names = [:map_1,:map_2,:map_3,:map_4,:map_5,:map_6,:map_7,:map_8,:map_9,
              :map_10,:map_11]
 df_map    = DataFrame(map_h5=map_files,map_name=map_names)
 
-mapV   = MagNav.MapV(map_map,map_map,map_map,map_xx,map_yy,map_alt)
+mapV   = MagNav.MapV(map_info,map_map,map_map,map_map,map_xx,map_yy,map_alt,map_mask)
 mapS   = get_map(map_files[1])
 map_h5 = joinpath(@__DIR__,"test_save_map")
 
 @testset "save_map tests" begin
-    @test typeof(save_map(mapV,map_h5)) <: Nothing
-    @test typeof(save_map(mapS,map_h5;map_units=:rad,file_units=:deg)) <: Nothing
-    @test typeof(save_map(mapS,map_h5;map_units=:deg,file_units=:rad)) <: Nothing
-    @test typeof(save_map(mapS,map_h5;map_units=:rad,file_units=:rad)) <: Nothing
+    @test save_map(mapV,map_h5) isa Nothing
+    @test save_map(mapS,map_h5;map_units=:rad,file_units=:deg) isa Nothing
+    @test save_map(mapS,map_h5;map_units=:deg,file_units=:rad) isa Nothing
+    @test save_map(mapS,map_h5;map_units=:rad,file_units=:rad) isa Nothing
     @test_throws ErrorException save_map(mapS,map_h5;map_units=:rad,file_units=:utm)
-    @test typeof(save_map(mapS,map_h5;map_units=:test,file_units=:test )) <: Nothing
-    @test typeof(save_map(upward_fft(mapS,[mapS.alt,mapS.alt+5]),map_h5)) <: Nothing
+    @test save_map(mapS,map_h5;map_units=:test,file_units=:test ) isa Nothing
+    @test save_map(upward_fft(mapS,[mapS.alt,mapS.alt+5]),map_h5) isa Nothing
 end
 
 map_h5 = MagNav.add_extension(map_h5,".h5")
 
 @testset "get_map tests" begin
-    @test typeof(get_map(map_h5)) <: MagNav.MapS3D
+    @test get_map(map_h5) isa MagNav.MapS3D
     for map_file in map_files
         println(map_file)
         @test_nowarn get_map(map_file)
@@ -92,9 +94,9 @@ map_h5 = MagNav.add_extension(map_h5,".h5")
         println(map_name)
         @test_nowarn get_map(map_name,df_map)
     end
-    @test typeof(get_map(map_files[6];map_units=:deg,file_units=:rad)) <: MagNav.MapS
+    @test get_map(map_files[6];map_units=:deg,file_units=:rad) isa MagNav.MapS
     @test_throws ErrorException get_map(map_files[6];map_units=:utm,file_units=:deg)
-    @test typeof(get_map(map_files[1];map_units=:utm,file_units=:utm)) <: MagNav.MapS
+    @test get_map(map_files[1];map_units=:utm,file_units=:utm) isa MagNav.MapS
     @test_throws AssertionError get_map("test")
     @test_throws ErrorException get_map(test_data_map_badS)
     @test_throws ErrorException get_map(test_data_map_badV)
@@ -120,9 +122,9 @@ model_type = :plsr
 @save comp_params_bad_bson model_type
 
 @testset "get_comp_params individual parameters tests" begin
-    @test typeof(get_comp_params(comp_params_lin_bson)) <: MagNav.LinCompParams
-    @test typeof(get_comp_params(comp_params_nn_bson )) <: MagNav.NNCompParams
-    @test typeof(get_comp_params(comp_params_bad_bson)) <: MagNav.LinCompParams
+    @test get_comp_params(comp_params_lin_bson) isa MagNav.LinCompParams
+    @test get_comp_params(comp_params_nn_bson ) isa MagNav.NNCompParams
+    @test get_comp_params(comp_params_bad_bson) isa MagNav.LinCompParams
 end
 
 comp_params_lin_bson = MagNav.add_extension(comp_params_lin_bson,".bson")
@@ -136,8 +138,8 @@ comp_params = NNCompParams()
 @save comp_params_nn_bson comp_params
 
 @testset "get_comp_params full parameters tests" begin
-    @test typeof(get_comp_params(comp_params_lin_bson)) <: MagNav.LinCompParams
-    @test typeof(get_comp_params(comp_params_nn_bson )) <: MagNav.NNCompParams
+    @test get_comp_params(comp_params_lin_bson) isa MagNav.LinCompParams
+    @test get_comp_params(comp_params_nn_bson ) isa MagNav.NNCompParams
 end
 
 rm(test_data_map_badS)

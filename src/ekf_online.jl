@@ -26,7 +26,7 @@ Extended Kalman filter (EKF) with online learning of Tolles-Lawson coefficients.
 - `meas`:         scalar magnetometer measurement [nT]
 - `Bx`,`By`,`Bz`: vector magnetometer measurements [nT]
 - `dt`:           measurement time step [s]
-- `itp_mapS`:     scalar map interpolation function
+- `itp_mapS`:     scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
 - `x0_TL`:        initial Tolles-Lawson coefficient states
 - `P0`:           initial covariance matrix
 - `Qd`:           discrete time process/system noise matrix
@@ -59,16 +59,15 @@ function ekf_online(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
     nx     = size(P0,1)
     nx_TL  = length(x0_TL)
     nx_vec = nx - 18 - nx_TL
-    x_out  = zeros(nx,N)
-    P_out  = zeros(nx,nx,N)
-    r_out  = zeros(ny,N)
-
-    x = zeros(nx) # state estimate
-    P = P0        # covariance matrix
-    A = create_TL_A(Bx,By,Bz;
-                    # Bt       = meas[:,1],
-                    terms    = terms,
-                    Bt_scale = Bt_scale)
+    x_out  = zeros(eltype(P0),nx,N)
+    P_out  = zeros(eltype(P0),nx,nx,N)
+    r_out  = zeros(eltype(P0),ny,N)
+    x      = zeros(eltype(P0),nx) # state estimate
+    P      = P0        # covariance matrix
+    A      = create_TL_A(Bx,By,Bz;
+                         # Bt       = meas[:,1],
+                         terms    = terms,
+                         Bt_scale = Bt_scale)
 
     # function f(Bx,By,Bz,meas,terms,Bt_scale,x_TL)
     #     create_TL_A(Bx,By,Bz;
@@ -81,11 +80,11 @@ function ekf_online(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
 
     vec_states = nx_vec > 0 ? true : false
 
-    map_cache = (typeof(itp_mapS) <: Map_Cache) ? itp_mapS : nothing
+    map_cache = itp_mapS isa Map_Cache ? itp_mapS : nothing
 
     for t = 1:N
         # custom itp_mapS from map cache, if available
-        if typeof(map_cache) <: Map_Cache
+        if map_cache isa Map_Cache
             itp_mapS = get_cached_map(map_cache,lat[t],lon[t],alt[t];silent=true)
         end
 
@@ -121,9 +120,9 @@ function ekf_online(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
             HBz = x_TL[3] / meas[t,1] +
                   (A[t,1]*x_TL[6] + A[t,2]*x_TL[8] + 2*A[t,3]*x_TL[9]) / Bt_scale +
                   (A[t,10:12]'*x_TL[16:18]) / A[t,4] * A[t,1] / Bt_scale
-            H1  = [Hll[1:2]; zeros(nx-3-nx_vec-nx_TL); A[t,:]; HBx; HBy; HBz; 1]
+            H1  = [Hll[1:2]; zeros(eltype(Hll),nx-3-nx_vec-nx_TL); A[t,:]; HBx; HBy; HBz; 1]
         else
-            H1  = [Hll[1:2]; zeros(nx-3-nx_TL); A[t,:]; 1]
+            H1  = [Hll[1:2]; zeros(eltype(Hll),nx-3-nx_TL); A[t,:]; 1]
         end
 
         H = repeat(H1',ny,1)
@@ -168,7 +167,7 @@ Extended Kalman filter (EKF) with online learning of Tolles-Lawson coefficients.
 - `ins`:      `INS` inertial navigation system struct
 - `meas`:     scalar magnetometer measurement [nT]
 - `flux`:     `MagV` vector magnetometer measurement struct
-- `itp_mapS`: scalar map interpolation function
+- `itp_mapS`: scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
 - `x0_TL`:    initial Tolles-Lawson coefficient states
 - `P0`:       initial covariance matrix
 - `Qd`:       discrete time process/system noise matrix
@@ -266,7 +265,7 @@ function ekf_online_setup(flux::MagV, meas, ind=trues(length(meas));
     N_min = 10
     @assert N >= N_min "increase N_sigma to $N_min or use more data"
 
-    coef_set = zeros(size(A,2),N)
+    coef_set = zeros(eltype(A),size(A,2),N)
     for i = 1:N
         coef_set[:,i] = create_TL_coef(flux,meas,inds[i:end+i-N];
                                        Bt=Bt,λ=λ,terms=terms,pass1=pass1,

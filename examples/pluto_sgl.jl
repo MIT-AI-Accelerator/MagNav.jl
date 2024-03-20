@@ -37,7 +37,7 @@ The DataFrames listed below provide useful information about the flight data (co
 Dataframe  | Description
 :--------- | :----------
 `df_map`   | map files relevant for SGL flights
-`df_comp`  | SGL calibration flight lines
+`df_cal`   | SGL calibration flight lines
 `df_flight`| SGL flight files
 `df_all`   | all flight lines
 `df_nav`   | all *navigation-capable* flight lines
@@ -92,13 +92,13 @@ begin
 end;
 
 # ╔═╡ f665ea95-dac3-4823-94af-c7ba58cd4401
-md"Select a flight line (row of `df_comp`) & get the flight data Boolean indices (mask) for Tolles-Lawson calibration. The full list of calibration flight line options is in `df_comp`.
+md"Select a flight line (row of `df_cal`) & get the flight data Boolean indices (mask) for Tolles-Lawson calibration. The full list of calibration flight line options is in `df_cal`.
 "
 
 # ╔═╡ 5346a989-cf32-436c-9181-d7aff6dd44a1
 begin
 	TL_i   = 6 # select first calibration box of 1006.04
-	TL_ind = get_ind(xyz;tt_lim=[df_comp.t_start[TL_i],df_comp.t_end[TL_i]])
+	TL_ind = get_ind(xyz;tt_lim=[df_cal.t_start[TL_i],df_cal.t_end[TL_i]])
 end;
 
 # ╔═╡ db7dc866-b889-4fb7-81d4-97cd8435636e

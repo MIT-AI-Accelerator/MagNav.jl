@@ -33,7 +33,7 @@ The filter also assumes NON-correlated measurements to speed up computation.
 - `Cnb`:      direction cosine matrix (body to navigation) [-]
 - `meas`:     scalar magnetometer measurement [nT]
 - `dt`:       measurement time step [s]
-- `itp_mapS`: scalar map interpolation function
+- `itp_mapS`: scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
 - `P0`:       (optional) initial covariance matrix
 - `Qd`:       (optional) discrete time process/system noise matrix
 - `R`:        (optional) measurement (white) noise variance
@@ -68,30 +68,31 @@ function mpf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS;
     nxn    = 2            # non-linear state dimension (inherent to this model)
     nxl    = nx - nxn     # linear state dimension
     ny     = size(meas,2) # measurement dimension
+    T2     = eltype(P0)   # floating precision type
 
-    H      = [zeros(1,nxl-1) 1] # linear measurement Jacobian
-    x_out  = zeros(nx,N)        # filtered states, i.e., E[x(t) | y_1,..,y_t]
-    Pn_out = zeros(nxn,nxn,N)   # non-linear portion of covariance matrix
-    Pl_out = zeros(nxl,nxl,N)   # linear portion of covariance matrix
-    resid  = zeros(ny,N)        # measurement residuals
+    H      = [zeros(T2,1,nxl-1) 1] # linear measurement Jacobian
+    x_out  = zeros(T2,nx,N)        # filtered states, i.e., E[x(t) | y_1,..,y_t]
+    Pn_out = zeros(T2,nxn,nxn,N)   # non-linear portion of covariance matrix
+    Pl_out = zeros(T2,nxl,nxl,N)   # linear portion of covariance matrix
+    resid  = zeros(T2,ny,N)        # measurement residuals
 
     # initialize non-linear states
-    xn = chol(P0[1:nxn,1:nxn])'*randn(nxn,np) # 2 x np
+    xn = chol(P0[1:nxn,1:nxn])'*randn(T2,nxn,np) # 2 x np
 
     # initialize conditionally linear Gaussian states
-    xl = zeros(nxl,np) # 16 x np
+    xl = zeros(T2,nxl,np) # 16 x np
 
     # initialize linear portion of covariance matrix
     Pl = P0[nxn+1:end,nxn+1:end] # 16 x 16
 
     # initialize particle weights
-    q = ones(eltype(xn),np)/np # np
+    q = ones(T2,np)/np # np
 
-    map_cache = (typeof(itp_mapS) <: Map_Cache) ? itp_mapS : nothing
+    map_cache = itp_mapS isa Map_Cache ? itp_mapS : nothing
 
     for t = 1:N
         # custom itp_mapS from map cache, if available
-        if typeof(map_cache) <: Map_Cache
+        if map_cache isa Map_Cache
             itp_mapS = get_cached_map(map_cache,lat[t],lon[t],alt[t];silent=true)
         end
 
@@ -117,7 +118,7 @@ function mpf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS;
             # weighting only works for NON-correlated measurements
         end
         # check divergence, resample, store non-linear portion
-        if sum(q) > eps(eltype(xn)) # filter has not diverged
+        if sum(q) > eps(T2) # filter has not diverged
             q = q/sum(q) # normalize particle weights
 
             # store non-linear particle states
@@ -133,7 +134,7 @@ function mpf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS;
                 ind = sys_resample(q) # resample
                 xn  = xn[:,ind] # resampled non-linear particles
                 xl  = xl[:,ind] # resampled linear particles
-                q   = ones(eltype(xn),np)/np
+                q   = ones(T2,np)/np
             end
         else # filter has diverged, so exit
             converge = false
@@ -167,7 +168,7 @@ function mpf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS;
 
         # particle filter propagation                               # eq 25b
         xn_temp = xn
-        xn = An_n*xn_temp + An_l*xl_temp + chol(M)'*randn(nxn,np)
+        xn = An_n*xn_temp + An_l*xl_temp + chol(M)'*randn(T2,nxn,np)
 
         # Kalman filter mean propagation
         z  = xn - An_n*xn_temp                                      # eq 24a
@@ -205,7 +206,7 @@ The filter also assumes NON-correlated measurements to speed up computation.
 **Arguments:**
 - `ins`:      `INS` inertial navigation system struct
 - `meas`:     scalar magnetometer measurement [nT]
-- `itp_mapS`: scalar map interpolation function
+- `itp_mapS`: scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
 - `P0`:       (optional) initial covariance matrix
 - `Qd`:       (optional) discrete time process/system noise matrix
 - `R`:        (optional) measurement (white) noise variance
@@ -251,7 +252,7 @@ end # function mpf
 function sys_resample(q)
     qc = cumsum(q)
     np = length(q)
-    u  = ((1:np) .- rand(1)) ./ np
+    u  = ((1:np) .- rand(eltype(q),1)) ./ np
     i  = zeros(Int,np)
     k  = 1
 
@@ -277,7 +278,7 @@ function filter_exit(Pl_out, Pn_out, t, converge::Bool=true)
     nxn   = size(Pn_out,1)
     nx    = nxl+nxn
     N     = size(Pl_out,3)
-    P_out = zeros(nx,nx,N) # covariance matrix
+    P_out = zeros(eltype(Pl_out),nx,nx,N) # covariance matrix
     P_out[1:nxn,1:nxn,:]         = Pn_out # non-linear portion
     P_out[nxn+1:end,nxn+1:end,:] = Pl_out # linear portion
     converge || @info("filter diverged, particle weights ~0 at time step $t")

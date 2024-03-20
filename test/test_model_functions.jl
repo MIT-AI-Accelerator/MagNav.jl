@@ -35,10 +35,12 @@ xn = vec(grid_data["xn"])
 xl = vec(grid_data["xl"])
 x  = vec(grid_data["x"])
 
-map_map = map_data["map"]
-map_xx  = deg2rad.(vec(map_data["xx"]))
-map_yy  = deg2rad.(vec(map_data["yy"]))
-map_alt = map_data["alt"]
+map_info = "Map"
+map_map  = map_data["map"]
+map_xx   = deg2rad.(vec(map_data["xx"]))
+map_yy   = deg2rad.(vec(map_data["yy"]))
+map_alt  = map_data["alt"]
+map_mask = MagNav.map_params(map_map,map_xx,map_yy)[2]
 
 dt             = params["dt"]
 init_pos_sigma = params["init_pos_sigma"]
@@ -82,7 +84,7 @@ fogm_data_XO = [-0.00573724460026025
                  0.06685250250778804
                  0.04552990438603038] # Xoshiro
 
-mapS = MagNav.MapS(map_map,map_xx,map_yy,map_alt)
+mapS = MagNav.MapS(map_info,map_map,map_xx,map_yy,map_alt,map_mask)
 (itp_mapS  ,der_mapS  ) = map_interpolate(mapS,:linear;return_vert_deriv=true) # linear to match MATLAB
 (itp_mapS3D,der_mapS3D) = map_interpolate(upward_fft(mapS,[mapS.alt,mapS.alt+5]),
                                                :linear;return_vert_deriv=true)

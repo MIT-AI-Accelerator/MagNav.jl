@@ -2,8 +2,11 @@
     get_XYZ0(xyz_file::String,
              traj_field::Symbol = :traj,
              ins_field::Symbol  = :ins_data;
+             info::String       = splitpath(xyz_file)[end],
              flight             = 1,
              line               = 1,
+             year               = 2023,
+             doy                = 154,
              dt                 = 0.1,
              silent::Bool       = false)
 
@@ -28,7 +31,7 @@ If a CSV or HDF5 file is provided, the possible columns/fields in the file are:
 |`fn`      |vector | north specific force [m/s]
 |`fe`      |vector | east  specific force [m/s]
 |`fd`      |vector | down  specific force [m/s]
-|`Cnb`     |3x3xN  | direction cosine matrix (body to navigation) [-], not valid for CSV file
+|`Cnb`     |3x3xN  | direction cosine matrix (body to navigation) [-], not valid for CSV file (use `roll`, `pitch`, & `yaw` instead)
 |`roll`    |vector | roll [deg]
 |`pitch`   |vector | pitch [deg]
 |`yaw`     |vector | yaw [deg]
@@ -43,7 +46,7 @@ If a CSV or HDF5 file is provided, the possible columns/fields in the file are:
 |`ins_fn`  |vector | INS north specific force [m/s]
 |`ins_fe`  |vector | INS east  specific force [m/s]
 |`ins_fd`  |vector | INS down  specific force [m/s]
-|`ins_Cnb` |3x3xN  | INS direction cosine matrix (body to navigation) [-], not valid for CSV file
+|`ins_Cnb` |3x3xN  | INS direction cosine matrix (body to navigation) [-], not valid for CSV file (use `ins_roll`, `ins_pitch`, & `ins_yaw` instead)
 |`ins_roll`|vector | INS roll [deg]
 |`ins_pitch`|vector| INS pitch [deg]
 |`ins_yaw` |vector | INS yaw [deg]
@@ -54,6 +57,8 @@ If a CSV or HDF5 file is provided, the possible columns/fields in the file are:
 |`flux_a_t`|vector | Flux A total magnetic field [nT]
 |`flight`  |vector | flight number(s)
 |`line`    |vector | line number(s), i.e., segments within `flight`
+|`year`    |vector | year
+|`doy`     |vector | day of year
 |`mag_1_c` |vector | Mag 1 compensated (clean) scalar magnetometer measurements [nT]
 |`mag_1_uc`|vector | Mag 1 uncompensated (corrupted) scalar magnetometer measurements [nT]
 
@@ -66,8 +71,11 @@ INS fields should be within the specified `ins_field` MAT struct and without
 - `xyz_file`:   path/name of flight data CSV, HDF5, or MAT file (`.csv`, `.h5`, or `.mat` extension required)
 - `traj_field`: (optional) trajectory struct field within MAT file to use, not relevant for CSV or HDF5 file
 - `ins_field`:  (optional) INS struct field within MAT file to use, `:none` if unavailable, not relevant for CSV or HDF5 file
+- `info`:       (optional) flight data information, only used if not in `xyz_file`
 - `flight`:     (optional) flight number, only used if not in `xyz_file`
 - `line`:       (optional) line number, i.e., segment within `flight`, only used if not in `xyz_file`
+- `year`:       (optional) year, only used if not in `xyz_file`
+- `doy`:        (optional) day of year, only used if not in `xyz_file`
 - `dt`:         (optional) measurement time step [s], only used if not in `xyz_file`
 - `silent`:     (optional) if true, no print outs
 
@@ -77,8 +85,11 @@ INS fields should be within the specified `ins_field` MAT struct and without
 function get_XYZ0(xyz_file::String,
                   traj_field::Symbol = :traj,
                   ins_field::Symbol  = :ins_data;
+                  info::String       = splitpath(xyz_file)[end],
                   flight             = 1,
                   line               = 1,
+                  year               = 2023,
+                  doy                = 154,
                   dt                 = 0.1,
                   silent::Bool       = false)
 
@@ -98,8 +109,13 @@ function get_XYZ0(xyz_file::String,
         end
 
         # these fields might not be included
+        info     = "info"     in names(d) ? d[:,"info"    ] : info
         flight   = "flight"   in names(d) ? d[:,"flight"  ] : flight
         line     = "line"     in names(d) ? d[:,"line"    ] : line
+        year     = "year"     in names(d) ? d[:,"year"    ] : year
+        doy      = "doy"      in names(d) ? d[:,"doy"     ] : doy
+        diurnal  = "diurnal"  in names(d) ? d[:,"diurnal" ] : NaN
+        igrf     = "igrf"     in names(d) ? d[:,"igrf"    ] : NaN
         mag_1_c  = "mag_1_c"  in names(d) ? d[:,"mag_1_c" ] : NaN
         mag_1_uc = "mag_1_uc" in names(d) ? d[:,"mag_1_uc"] : NaN
 
@@ -117,10 +133,17 @@ function get_XYZ0(xyz_file::String,
         end
 
         # these fields might not be included
+        info     = read_check(d,:info,info)
         flight_  = read_check(d,:flight,1,true)
         line_    = read_check(d,:line  ,1,true)
+        year_    = read_check(d,:year  ,1,true)
+        doy_     = read_check(d,:doy   ,1,true)
         flight   = any(isnan.(flight_)) ? flight : flight_
-        line     = any(isnan.(line_))   ? line   : line_
+        line     = any(isnan.(line_  )) ? line   : line_
+        year     = any(isnan.(year_  )) ? year   : year_
+        doy      = any(isnan.(doy_   )) ? doy    : doy_
+        diurnal  = read_check(d,:diurnal ,1,true)
+        igrf     = read_check(d,:igrf    ,1,true)
         mag_1_c  = read_check(d,:mag_1_c ,1,true)
         mag_1_uc = read_check(d,:mag_1_uc,1,true)
 
@@ -140,18 +163,27 @@ function get_XYZ0(xyz_file::String,
         end
 
         # these fields might not be included
+        info     = haskey(d,"info"    ) ? d["info"    ] : info
         flight   = haskey(d,"flight"  ) ? d["flight"]   : flight
         line     = haskey(d,"line"    ) ? d["line"]     : line
+        year     = haskey(d,"year"    ) ? d["year"    ] : year
+        doy      = haskey(d,"doy"     ) ? d["doy"     ] : doy
+        diurnal  = haskey(d,"diurnal" ) ? d["diurnal" ] : NaN
+        igrf     = haskey(d,"igrf"    ) ? d["igrf"    ] : NaN
         mag_1_c  = haskey(d,"mag_1_c" ) ? d["mag_1_c" ] : NaN
         mag_1_uc = haskey(d,"mag_1_uc") ? d["mag_1_uc"] : NaN
 
     end
 
     # ensure vectors
-    flight   = length(flight  ) > 1 ? vec(flight  ) : one.(traj.lat)*flight[1]
-    line     = length(line    ) > 1 ? vec(line    ) : one.(traj.lat)*line[1]
-    mag_1_c  = length(mag_1_c ) > 1 ? vec(mag_1_c ) : one.(traj.lat)*mag_1_c[1]
-    mag_1_uc = length(mag_1_uc) > 1 ? vec(mag_1_uc) : one.(traj.lat)*mag_1_uc[1]
+    flight   = length(flight  ) > 1 ? vec(flight  ) : fill(  flight[1],traj.N)
+    line     = length(line    ) > 1 ? vec(line    ) : fill(    line[1],traj.N)
+    year     = length(year    ) > 1 ? vec(year    ) : fill(    year[1],traj.N)
+    doy      = length(doy     ) > 1 ? vec(doy     ) : fill(     doy[1],traj.N)
+    diurnal  = length(diurnal ) > 1 ? vec(diurnal ) : fill( diurnal[1],traj.N)
+    igrf     = length(igrf    ) > 1 ? vec(igrf    ) : fill(    igrf[1],traj.N)
+    mag_1_c  = length(mag_1_c ) > 1 ? vec(mag_1_c ) : fill( mag_1_c[1],traj.N)
+    mag_1_uc = length(mag_1_uc) > 1 ? vec(mag_1_uc) : fill(mag_1_uc[1],traj.N)
 
     # if needed, create flux_a
     flux_a = get_flux(xyz_file,:flux_a,traj_field)
@@ -160,29 +192,56 @@ function get_XYZ0(xyz_file::String,
         flux_a = create_flux(traj)
     end
 
+    any(isnan.(mag_1_c)) && any(isnan.(mag_1_uc)) && error("mag_1_c or mag_1_uc must be provided")
+
+    diurnal_ = fogm(1,600,traj.dt,traj.N)
+
     # if needed, create mag_1_c
     if any(isnan.(mag_1_c))
         silent || @info("creating compensated scalar magnetometer data")
-        A       = create_TL_A(flux_a)
-        TL_coef = create_TL_coef(flux_a,mag_1_uc)
-        mag_1_c = mag_1_uc - detrend(A*TL_coef;mean_only=true)
+        A        = create_TL_A(flux_a)
+        TL_coef  = create_TL_coef(flux_a,mag_1_uc)
+        mag_1_c  = mag_1_uc - detrend(A*TL_coef;mean_only=true)
     end
 
     # if needed, create mag_1_uc
     if any(isnan.(mag_1_uc))
         silent || @info("creating uncompensated scalar magnetometer data")
-        (mag_1_uc,_) = corrupt_mag(mag_1_c,flux_a;dt=dt)
+        (mag_1_uc,_,diurnal_) = corrupt_mag(mag_1_c,flux_a;dt=dt)
     end
 
-    return XYZ0(traj, ins, flux_a, flight, line, mag_1_c, mag_1_uc)
+    # if needed, create diurnal
+    if any(isnan.(diurnal))
+        silent || @info("creating diurnal data")
+        diurnal = diurnal_
+    end
+
+    flight = convert.(eltype(traj.lat),flight)
+    line   = convert.(eltype(traj.lat),line)
+    year   = convert.(eltype(traj.lat),year)
+    doy    = convert.(eltype(traj.lat),doy)
+
+    igrf = zero.(traj.lat)
+    xyz  = XYZ0(info, traj, ins, flux_a, flight, line,
+                year, doy, diurnal, igrf, mag_1_c, mag_1_uc)
+    igrf = norm.(get_igrf(xyz;
+                          frame     = :body,
+                          norm_igrf = false,
+                          check_xyz = false))
+    xyz.igrf .= igrf
+
+    return (xyz)
 end # function get_XYZ0
 
 """
     get_XYZ1(xyz_file::String,
              traj_field::Symbol = :traj,
              ins_field::Symbol  = :ins_data;
+             info::String       = splitpath(xyz_file)[end],
              flight             = 1,
              line               = 1,
+             year               = 2023,
+             doy                = 154,
              dt                 = 0.1,
              silent::Bool       = false)
 
@@ -211,7 +270,7 @@ If a CSV or HDF5 file is provided, the possible columns/fields in the file are:
 |`fn`      |vector | north specific force [m/s]
 |`fe`      |vector | east  specific force [m/s]
 |`fd`      |vector | down  specific force [m/s]
-|`Cnb`     |3x3xN  | direction cosine matrix (body to navigation) [-], not valid for CSV file
+|`Cnb`     |3x3xN  | direction cosine matrix (body to navigation) [-], not valid for CSV file (use `roll`, `pitch`, & `yaw` instead)
 |`roll`    |vector | roll [deg]
 |`pitch`   |vector | pitch [deg]
 |`yaw`     |vector | yaw [deg]
@@ -226,7 +285,7 @@ If a CSV or HDF5 file is provided, the possible columns/fields in the file are:
 |`ins_fn`  |vector | INS north specific force [m/s]
 |`ins_fe`  |vector | INS east  specific force [m/s]
 |`ins_fd`  |vector | INS down  specific force [m/s]
-|`ins_Cnb` |3x3xN  | INS direction cosine matrix (body to navigation) [-], not valid for CSV file
+|`ins_Cnb` |3x3xN  | INS direction cosine matrix (body to navigation) [-], not valid for CSV file (use `ins_roll`, `ins_pitch`, & `ins_yaw` instead)
 |`ins_roll`|vector | INS roll [deg]
 |`ins_pitch`|vector| INS pitch [deg]
 |`ins_yaw` |vector | INS yaw [deg]
@@ -264,8 +323,11 @@ INS fields should be within the specified `ins_field` MAT struct and without
 - `xyz_file`:   path/name of flight data CSV, HDF5, or MAT file (`.csv`, `.h5`, or `.mat` extension required)
 - `traj_field`: (optional) trajectory struct field within MAT file to use, not relevant for CSV or HDF5 file
 - `ins_field`:  (optional) INS struct field within MAT file to use, `:none` if unavailable, not relevant for CSV or HDF5 file
+- `info`:       (optional) flight data information, only used if not in `xyz_file`
 - `flight`:     (optional) flight number, only used if not in `xyz_file`
 - `line`:       (optional) line number, i.e., segment within `flight`, only used if not in `xyz_file`
+- `year`:       (optional) year, only used if not in `xyz_file`
+- `doy`:        (optional) day of year, only used if not in `xyz_file`
 - `dt`:         (optional) measurement time step [s], only used if not in `xyz_file`
 - `silent`:     (optional) if true, no print outs
 
@@ -275,25 +337,36 @@ INS fields should be within the specified `ins_field` MAT struct and without
 function get_XYZ1(xyz_file::String,
                   traj_field::Symbol = :traj,
                   ins_field::Symbol  = :ins_data;
+                  info::String       = splitpath(xyz_file)[end],
                   flight             = 1,
                   line               = 1,
+                  year               = 2023,
+                  doy                = 154,
                   dt                 = 0.1,
                   silent::Bool       = false)
 
     @assert any(occursin.([".csv",".h5",".mat"],xyz_file)) "$xyz_file flight data file must have .csv, .h5, or .mat extension"
 
     xyz = get_XYZ0(xyz_file,traj_field,ins_field;
+                   info   = info,
                    flight = flight,
                    line   = line,
+                   year   = year,
+                   doy    = doy,
                    dt     = dt,
                    silent = silent)
 
     # these fields can be extracted using XYZ0 functionality
+    info     = xyz.info
     traj     = xyz.traj
     ins      = xyz.ins
     flux_a   = xyz.flux_a
     flight   = xyz.flight
     line     = xyz.line
+    year     = xyz.year
+    doy      = xyz.doy
+    diurnal  = xyz.diurnal
+    igrf     = xyz.igrf
     mag_1_c  = xyz.mag_1_c
     mag_1_uc = xyz.mag_1_uc
 
@@ -304,10 +377,6 @@ function get_XYZ1(xyz_file::String,
         d = DataFrame(CSV.File(xyz_file))
 
         # these fields might not be included
-        year     = "year"     in names(d) ? d[:,"year"    ] : NaN
-        doy      = "doy"      in names(d) ? d[:,"doy"     ] : NaN
-        diurnal  = "diurnal"  in names(d) ? d[:,"diurnal" ] : NaN
-        igrf     = "igrf"     in names(d) ? d[:,"igrf"    ] : NaN
         mag_2_c  = "mag_2_c"  in names(d) ? d[:,"mag_2_c" ] : NaN
         mag_3_c  = "mag_3_c"  in names(d) ? d[:,"mag_3_c" ] : NaN
         mag_2_uc = "mag_2_uc" in names(d) ? d[:,"mag_2_uc"] : NaN
@@ -321,10 +390,6 @@ function get_XYZ1(xyz_file::String,
         d = h5open(xyz_file,"r") # read-only
 
         # these fields might not be included
-        year     = read_check(d,:year    ,1,true)
-        doy      = read_check(d,:doy     ,1,true)
-        diurnal  = read_check(d,:diurnal ,1,true)
-        igrf     = read_check(d,:igrf    ,1,true)
         mag_2_c  = read_check(d,:mag_2_c ,1,true)
         mag_3_c  = read_check(d,:mag_3_c ,1,true)
         mag_2_uc = read_check(d,:mag_2_uc,1,true)
@@ -342,10 +407,6 @@ function get_XYZ1(xyz_file::String,
         end
 
         # these fields might not be included
-        year     = haskey(d,"year"    ) ? d["year"    ] : NaN
-        doy      = haskey(d,"doy"     ) ? d["doy"     ] : NaN
-        diurnal  = haskey(d,"diurnal" ) ? d["diurnal" ] : NaN
-        igrf     = haskey(d,"igrf"    ) ? d["igrf"    ] : NaN
         mag_2_c  = haskey(d,"mag_2_c" ) ? d["mag_2_c" ] : NaN
         mag_3_c  = haskey(d,"mag_3_c" ) ? d["mag_3_c" ] : NaN
         mag_2_uc = haskey(d,"mag_2_uc") ? d["mag_2_uc"] : NaN
@@ -357,19 +418,15 @@ function get_XYZ1(xyz_file::String,
     end
 
     # ensure vectors
-    year     = length(year    ) > 1 ? vec(year    ) : one.(traj.lat)*year[1]
-    doy      = length(doy     ) > 1 ? vec(doy     ) : one.(traj.lat)*doy[1]
-    diurnal  = length(diurnal ) > 1 ? vec(diurnal ) : one.(traj.lat)*diurnal[1]
-    igrf     = length(igrf    ) > 1 ? vec(igrf    ) : one.(traj.lat)*igrf[1]
-    mag_2_c  = length(mag_2_c ) > 1 ? vec(mag_2_c ) : one.(traj.lat)*mag_2_c[1]
-    mag_3_c  = length(mag_3_c ) > 1 ? vec(mag_3_c ) : one.(traj.lat)*mag_3_c[1]
-    mag_2_uc = length(mag_2_uc) > 1 ? vec(mag_2_uc) : one.(traj.lat)*mag_2_uc[1]
-    mag_3_uc = length(mag_3_uc) > 1 ? vec(mag_3_uc) : one.(traj.lat)*mag_3_uc[1]
-    aux_1    = length(aux_1   ) > 1 ? vec(aux_1   ) : one.(traj.lat)*aux_1[1]
-    aux_2    = length(aux_2   ) > 1 ? vec(aux_2   ) : one.(traj.lat)*aux_2[1]
-    aux_3    = length(aux_3   ) > 1 ? vec(aux_3   ) : one.(traj.lat)*aux_3[1]
+    mag_2_c  = length(mag_2_c ) > 1 ? vec(mag_2_c ) : fill( mag_2_c[1],traj.N)
+    mag_3_c  = length(mag_3_c ) > 1 ? vec(mag_3_c ) : fill( mag_3_c[1],traj.N)
+    mag_2_uc = length(mag_2_uc) > 1 ? vec(mag_2_uc) : fill(mag_2_uc[1],traj.N)
+    mag_3_uc = length(mag_3_uc) > 1 ? vec(mag_3_uc) : fill(mag_3_uc[1],traj.N)
+    aux_1    = length(aux_1   ) > 1 ? vec(aux_1   ) : fill(   aux_1[1],traj.N)
+    aux_2    = length(aux_2   ) > 1 ? vec(aux_2   ) : fill(   aux_2[1],traj.N)
+    aux_3    = length(aux_3   ) > 1 ? vec(aux_3   ) : fill(   aux_3[1],traj.N)
 
-    return XYZ1(traj, ins, flux_a, flux_b, flight, line, year, doy,
+    return XYZ1(info, traj, ins, flux_a, flux_b, flight, line, year, doy,
                 diurnal, igrf, mag_1_c, mag_2_c, mag_3_c,
                 mag_1_uc, mag_2_uc, mag_3_uc, aux_1, aux_2, aux_3)
 end # function get_XYZ1
@@ -441,11 +498,11 @@ function get_flux(flux_file::String,
     end
 
     # ensure vectors
-    l = ones(eltype(x),maximum(length.([x,y,z,t])))
-    x = length(x) > 1 ? vec(x) : one.(l)*x[1]
-    y = length(y) > 1 ? vec(y) : one.(l)*y[1]
-    z = length(z) > 1 ? vec(z) : one.(l)*z[1]
-    t = length(t) > 1 ? vec(t) : one.(l)*t[1]
+    N = maximum(length.([x,y,z,t]))
+    x = length(x) > 1 ? vec(x) : fill(x[1],N)
+    y = length(y) > 1 ? vec(y) : fill(y[1],N)
+    z = length(z) > 1 ? vec(z) : fill(z[1],N)
+    t = length(t) > 1 ? vec(t) : fill(t[1],N)
 
     # in case total field not filled, but others are
     any(isnan.(t)) && (t = sqrt.(x.^2 + y.^2 + z.^2))
@@ -476,7 +533,7 @@ If a CSV or HDF5 file is provided, the possible columns/fields in the file are:
 |`fn`      |vector | north specific force [m/s]
 |`fe`      |vector | east  specific force [m/s]
 |`fd`      |vector | down  specific force [m/s]
-|`Cnb`     |3x3xN  | direction cosine matrix (body to navigation) [-], not valid for CSV file
+|`Cnb`     |3x3xN  | direction cosine matrix (body to navigation) [-], not valid for CSV file (use `roll`, `pitch`, & `yaw` instead)
 |`roll`    |vector | roll [deg]
 |`pitch`   |vector | pitch [deg]
 |`yaw`     |vector | yaw [deg]
@@ -577,19 +634,20 @@ function get_traj(traj_file::String, field::Symbol=:traj; dt=0.1, silent::Bool=f
     end
 
     # ensure vectors
+    N     = length(lat)
     lat   = vec(lat) # assume lat always exists as vector
-    lon   = length(lon  ) > 1 ? vec(lon  ) : one.(lat)*lon[1]
-    alt   = length(alt  ) > 1 ? vec(alt  ) : one.(lat)*alt[1]
-    tt    = length(tt   ) > 1 ? vec(tt   ) : one.(lat)*tt[1]
-    vn    = length(vn   ) > 1 ? vec(vn   ) : one.(lat)*vn[1]
-    ve    = length(ve   ) > 1 ? vec(ve   ) : one.(lat)*ve[1]
-    vd    = length(vd   ) > 1 ? vec(vd   ) : one.(lat)*vd[1]
-    fn    = length(fn   ) > 1 ? vec(fn   ) : one.(lat)*fn[1]
-    fe    = length(fe   ) > 1 ? vec(fe   ) : one.(lat)*fe[1]
-    fd    = length(fd   ) > 1 ? vec(fd   ) : one.(lat)*fd[1]
-    roll  = length(roll ) > 1 ? vec(roll ) : one.(lat)*roll[1]
-    pitch = length(pitch) > 1 ? vec(pitch) : one.(lat)*pitch[1]
-    yaw   = length(yaw  ) > 1 ? vec(yaw  ) : one.(lat)*yaw[1]
+    lon   = length(lon  ) > 1 ? vec(lon  ) : fill(  lon[1],N)
+    alt   = length(alt  ) > 1 ? vec(alt  ) : fill(  alt[1],N)
+    tt    = length(tt   ) > 1 ? vec(tt   ) : fill(   tt[1],N)
+    vn    = length(vn   ) > 1 ? vec(vn   ) : fill(   vn[1],N)
+    ve    = length(ve   ) > 1 ? vec(ve   ) : fill(   ve[1],N)
+    vd    = length(vd   ) > 1 ? vec(vd   ) : fill(   vd[1],N)
+    fn    = length(fn   ) > 1 ? vec(fn   ) : fill(   fn[1],N)
+    fe    = length(fe   ) > 1 ? vec(fe   ) : fill(   fe[1],N)
+    fd    = length(fd   ) > 1 ? vec(fd   ) : fill(   fd[1],N)
+    roll  = length(roll ) > 1 ? vec(roll ) : fill( roll[1],N)
+    pitch = length(pitch) > 1 ? vec(pitch) : fill(pitch[1],N)
+    yaw   = length(yaw  ) > 1 ? vec(yaw  ) : fill(  yaw[1],N)
 
     # convert deg to rad
     lat   = deg2rad.(lat)
@@ -597,8 +655,6 @@ function get_traj(traj_file::String, field::Symbol=:traj; dt=0.1, silent::Bool=f
     roll  = deg2rad.(roll)
     pitch = deg2rad.(pitch)
     yaw   = deg2rad.(yaw)
-
-    N = length(lat)
 
     # if needed, create tt, otherwise get dt from tt
     if any(isnan.(tt))
@@ -661,7 +717,7 @@ If a CSV or HDF5 file is provided, the possible columns/fields in the file are:
 |`ins_fn`  |vector | INS north specific force [m/s]
 |`ins_fe`  |vector | INS east  specific force [m/s]
 |`ins_fd`  |vector | INS down  specific force [m/s]
-|`ins_Cnb` |3x3xN  | INS direction cosine matrix (body to navigation) [-], not valid for CSV file
+|`ins_Cnb` |3x3xN  | INS direction cosine matrix (body to navigation) [-], not valid for CSV file (use `ins_roll`, `ins_pitch`, & `ins_yaw` instead)
 |`ins_roll`|vector | INS roll [deg]
 |`ins_pitch`|vector| INS pitch [deg]
 |`ins_yaw` |vector | INS yaw [deg]
@@ -766,19 +822,20 @@ function get_ins(ins_file::String, field::Symbol=:ins_data; dt=0.1, silent::Bool
     end
 
     # ensure vectors
+    N     = length(lat)
     lat   = vec(lat) # assume lat always exists as vector
-    lon   = length(lon  ) > 1 ? vec(lon  ) : one.(lat)*lon[1]
-    alt   = length(alt  ) > 1 ? vec(alt  ) : one.(lat)*alt[1]
-    tt    = length(tt   ) > 1 ? vec(tt   ) : one.(lat)*tt[1]
-    vn    = length(vn   ) > 1 ? vec(vn   ) : one.(lat)*vn[1]
-    ve    = length(ve   ) > 1 ? vec(ve   ) : one.(lat)*ve[1]
-    vd    = length(vd   ) > 1 ? vec(vd   ) : one.(lat)*vd[1]
-    fn    = length(fn   ) > 1 ? vec(fn   ) : one.(lat)*fn[1]
-    fe    = length(fe   ) > 1 ? vec(fe   ) : one.(lat)*fe[1]
-    fd    = length(fd   ) > 1 ? vec(fd   ) : one.(lat)*fd[1]
-    roll  = length(roll ) > 1 ? vec(roll ) : one.(lat)*roll[1]
-    pitch = length(pitch) > 1 ? vec(pitch) : one.(lat)*pitch[1]
-    yaw   = length(yaw  ) > 1 ? vec(yaw  ) : one.(lat)*yaw[1]
+    lon   = length(lon  ) > 1 ? vec(lon  ) : fill(  lon[1],N)
+    alt   = length(alt  ) > 1 ? vec(alt  ) : fill(  alt[1],N)
+    tt    = length(tt   ) > 1 ? vec(tt   ) : fill(   tt[1],N)
+    vn    = length(vn   ) > 1 ? vec(vn   ) : fill(   vn[1],N)
+    ve    = length(ve   ) > 1 ? vec(ve   ) : fill(   ve[1],N)
+    vd    = length(vd   ) > 1 ? vec(vd   ) : fill(   vd[1],N)
+    fn    = length(fn   ) > 1 ? vec(fn   ) : fill(   fn[1],N)
+    fe    = length(fe   ) > 1 ? vec(fe   ) : fill(   fe[1],N)
+    fd    = length(fd   ) > 1 ? vec(fd   ) : fill(   fd[1],N)
+    roll  = length(roll ) > 1 ? vec(roll ) : fill( roll[1],N)
+    pitch = length(pitch) > 1 ? vec(pitch) : fill(pitch[1],N)
+    yaw   = length(yaw  ) > 1 ? vec(yaw  ) : fill(  yaw[1],N)
 
     # convert deg to rad
     lat   = deg2rad.(lat)
@@ -786,8 +843,6 @@ function get_ins(ins_file::String, field::Symbol=:ins_data; dt=0.1, silent::Bool
     roll  = deg2rad.(roll)
     pitch = deg2rad.(pitch)
     yaw   = deg2rad.(yaw)
-
-    N = length(lat)
 
     # if needed, create tt, otherwise get dt from tt
     if any(isnan.(tt))
@@ -829,7 +884,7 @@ function get_ins(ins_file::String, field::Symbol=:ins_data; dt=0.1, silent::Bool
     # if needed, create P
     if any(isnan.(P))
         silent || @info("creating INS covariance matrix data (zeros)")
-        P = zeros(1,1,N) # unknown
+        P = zeros(eltype(lat),1,1,N) # unknown
     end
 
     return INS(N, dt, tt, lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, P)
@@ -1010,19 +1065,26 @@ function (flux::MagV)(ind=trues(length(flux.x)))
 end # function MagV
 
 """
-    get_XYZ20(xyz_h5::String; tt_sort::Bool=true, silent::Bool=false)
+    get_XYZ20(xyz_h5::String;
+              info::String  = splitpath(xyz_h5)[end],
+              tt_sort::Bool = true,
+              silent::Bool  = false)
 
 Get `XYZ20` flight data from saved HDF5 file. Based on SGL 2020 data fields.
 
 **Arguments:**
 - `xyz_h5`:  path/name of flight data HDF5 file (`.h5` extension optional)
+- `info`:    (optional) flight data information
 - `tt_sort`: (optional) if true, sort data by time (instead of line)
 - `silent`:  (optional) if true, no print outs
 
 **Returns:**
 - `xyz`: `XYZ20` flight data struct
 """
-function get_XYZ20(xyz_h5::String; tt_sort::Bool=true, silent::Bool=false)
+function get_XYZ20(xyz_h5::String;
+                   info::String  = splitpath(xyz_h5)[end],
+                   tt_sort::Bool = true,
+                   silent::Bool  = false)
 
     xyz_h5 = add_extension(xyz_h5,".h5")
 
@@ -1037,6 +1099,14 @@ function get_XYZ20(xyz_h5::String; tt_sort::Bool=true, silent::Bool=false)
 
     for field in xyz_fields(fields)
         field != :ignore && push!(d,field=>read_check(xyz,field,N,silent)[ind])
+    end
+
+    field = :info
+    info  = read_check(xyz,field,info)
+    push!(d,field => info)
+
+    for field in [:aux_1,:aux_2,:aux_3]
+        push!(d,field => read_check(xyz,field,N,true))
     end
 
     close(xyz)
@@ -1061,16 +1131,16 @@ function get_XYZ20(xyz_h5::String; tt_sort::Bool=true, silent::Bool=false)
     push!(d,:fd =>  fdm(d[:vd])    / dt .- g_earth)
 
     # Cnb direction cosine matrix (body to navigation) from yaw, pitch, roll
-    push!(d,:Cnb     => zeros(3,3,N)) # unknown
+    push!(d,:Cnb     => zeros(Float64,3,3,N)) # unknown
     push!(d,:ins_Cnb => euler2dcm(d[:ins_roll],d[:ins_pitch],d[:ins_yaw],:body2nav))
-    push!(d,:ins_P   => zeros(1,1,N)) # unknown
+    push!(d,:ins_P   => zeros(Float64,1,1,N)) # unknown
 
     # INS velocities in NED direction
     push!(d,:ins_ve => -d[:ins_vw])
     push!(d,:ins_vd => -d[:ins_vu])
 
     # INS specific forces from measurements, rotated wander angle (CW for NED)
-    ins_f = zeros(N,3)
+    ins_f = zeros(Float64,N,3)
     for i = 1:N
         ins_f[i,:] = euler2dcm(0,0,-d[:ins_wander][i],:body2nav) *
                      [d[:ins_acc_x][i],-d[:ins_acc_y][i],-d[:ins_acc_z][i]]
@@ -1085,7 +1155,8 @@ function get_XYZ20(xyz_h5::String; tt_sort::Bool=true, silent::Bool=false)
     # push!(d,:ins_fe => fdm(-d[:ins_ve]) / dt)
     # push!(d,:ins_fd => fdm(-d[:ins_vd]) / dt .- g_earth)
 
-    return XYZ20(Traj(N,  dt, d[:tt], d[:lat], d[:lon], d[:utm_z], d[:vn],
+    return XYZ20(d[:info],
+                 Traj(N,  dt, d[:tt], d[:lat], d[:lon], d[:utm_z], d[:vn],
                       d[:ve], d[:vd], d[:fn] , d[:fe] , d[:fd]   , d[:Cnb]),
                  INS( N, dt, d[:tt], d[:ins_lat], d[:ins_lon], d[:ins_alt],
                       d[:ins_vn]   , d[:ins_ve] , d[:ins_vd] , d[:ins_fn] ,
@@ -1111,11 +1182,14 @@ function get_XYZ20(xyz_h5::String; tt_sort::Bool=true, silent::Bool=false)
                  d[:vol_bat_2] , d[:vol_res_p] , d[:vol_res_n] , d[:vol_back_p],
                  d[:vol_back_n], d[:vol_gyro_1], d[:vol_gyro_2], d[:vol_acc_p] ,
                  d[:vol_acc_n] , d[:vol_block] , d[:vol_back]  , d[:vol_srvo]  ,
-                 d[:vol_cabt]  , d[:vol_fan]   )
+                 d[:vol_cabt]  , d[:vol_fan]   , d[:aux_1]     , d[:aux_2]     ,
+                 d[:aux_3])
 end # function get_XYZ20
 
 """
-    get_XYZ20(xyz_160_h5::String, xyz_h5::String; silent::Bool=false)
+    get_XYZ20(xyz_160_h5::String, xyz_h5::String;
+              info::String = splitpath(xyz_160_h5)[end] * " & " * splitpath(xyz_h5)[end],
+              silent::Bool = false)
 
 Get 160 Hz (partial) `XYZ20` flight data from saved HDF5 file and
 combine with 10 Hz `XYZ20` flight data from another saved HDF5 file.
@@ -1124,12 +1198,15 @@ Data is time sorted to ensure data is aligned.
 **Arguments:**
 - `xyz_160_h5`: path/name of 160 Hz flight data HDF5 file (`.h5` extension optional)
 - `xyz_h5`:     path/name of 10  Hz flight data HDF5 file (`.h5` extension optional)
+- `info`:       (optional) flight data information
 - `silent`:     (optional) if true, no print outs
 
 **Returns:**
 - `xyz`: `XYZ20` flight data struct
 """
-function get_XYZ20(xyz_160_h5::String, xyz_h5::String; silent::Bool=false)
+function get_XYZ20(xyz_160_h5::String, xyz_h5::String;
+                   info::String = splitpath(xyz_160_h5)[end] * " & " * splitpath(xyz_h5)[end],
+                   silent::Bool = false)
 
     xyz_160_h5 = add_extension(xyz_160_h5,".h5")
     xyz_h5     = add_extension(xyz_h5    ,".h5")
@@ -1149,7 +1226,7 @@ function get_XYZ20(xyz_160_h5::String, xyz_h5::String; silent::Bool=false)
 
     close(xyz)
 
-    xyz = get_XYZ20(xyz_h5;tt_sort=true,silent=silent)
+    xyz = get_XYZ20(xyz_h5;info=info,tt_sort=true,silent=silent)
 
     xyz.mag_1_uc .= d[:mag_1_uc]
     xyz.mag_2_uc .= d[:mag_2_uc]
@@ -1178,19 +1255,26 @@ function get_XYZ20(xyz_160_h5::String, xyz_h5::String; silent::Bool=false)
 end # function get_XYZ20
 
 """
-    get_XYZ21(xyz_h5::String; tt_sort::Bool=true, silent::Bool=false)
+    get_XYZ21(xyz_h5::String;
+              info::String  = splitpath(xyz_h5)[end],
+              tt_sort::Bool = true,
+              silent::Bool  = false)
 
 Get `XYZ21` flight data from saved HDF5 file. Based on SGL 2021 data fields.
 
 **Arguments:**
 - `xyz_h5`:  path/name of flight data HDF5 file (`.h5` extension optional)
+- `info`:    (optional) flight data information
 - `tt_sort`: (optional) if true, sort data by time (instead of line)
 - `silent`:  (optional) if true, no print outs
 
 **Returns:**
 - `xyz`: `XYZ21` flight data struct
 """
-function get_XYZ21(xyz_h5::String; tt_sort::Bool=true, silent::Bool=false)
+function get_XYZ21(xyz_h5::String;
+                   info::String  = splitpath(xyz_h5)[end],
+                   tt_sort::Bool = true,
+                   silent::Bool  = false)
 
     xyz_h5 = add_extension(xyz_h5,".h5")
 
@@ -1205,6 +1289,14 @@ function get_XYZ21(xyz_h5::String; tt_sort::Bool=true, silent::Bool=false)
 
     for field in xyz_fields(fields)
         field != :ignore && push!(d,field=>read_check(xyz,field,N,silent)[ind])
+    end
+
+    field = :info
+    info  = read_check(xyz,field,info)
+    push!(d,field => info)
+
+    for field in [:aux_1,:aux_2,:aux_3]
+        push!(d,field => read_check(xyz,field,N,true))
     end
 
     close(xyz)
@@ -1228,16 +1320,16 @@ function get_XYZ21(xyz_h5::String; tt_sort::Bool=true, silent::Bool=false)
     push!(d,:fd =>  fdm(d[:vd])    / dt .- g_earth)
 
     # Cnb direction cosine matrix (body to navigation) from yaw, pitch, roll
-    push!(d,:Cnb     => zeros(3,3,N)) # unknown
+    push!(d,:Cnb     => zeros(Float64,3,3,N)) # unknown
     push!(d,:ins_Cnb => euler2dcm(d[:ins_roll],d[:ins_pitch],d[:ins_yaw],:body2nav))
-    push!(d,:ins_P   => zeros(1,1,N)) # unknown
+    push!(d,:ins_P   => zeros(Float64,1,1,N)) # unknown
 
     # INS velocities in NED direction
     push!(d,:ins_ve => -d[:ins_vw])
     push!(d,:ins_vd => -d[:ins_vu])
 
     # INS specific forces from measurements, rotated wander angle (CW for NED)
-    ins_f = zeros(N,3)
+    ins_f = zeros(Float64,N,3)
     for i = 1:N
         ins_f[i,:] = euler2dcm(0,0,-d[:ins_wander][i],:body2nav) *
                      [d[:ins_acc_x][i],-d[:ins_acc_y][i],-d[:ins_acc_z][i]]
@@ -1252,7 +1344,8 @@ function get_XYZ21(xyz_h5::String; tt_sort::Bool=true, silent::Bool=false)
     # push!(d,:ins_fe => fdm(-d[:ins_ve]) / dt)
     # push!(d,:ins_fd => fdm(-d[:ins_vd]) / dt .- g_earth)
 
-    return XYZ21(Traj(N,  dt, d[:tt], d[:lat], d[:lon], d[:utm_z], d[:vn],
+    return XYZ21(d[:info],
+                 Traj(N,  dt, d[:tt], d[:lat], d[:lon], d[:utm_z], d[:vn],
                       d[:ve], d[:vd], d[:fn] , d[:fe] , d[:fd]   , d[:Cnb]),
                  INS( N, dt, d[:tt], d[:ins_lat], d[:ins_lon], d[:ins_alt],
                       d[:ins_vn]   , d[:ins_ve] , d[:ins_vd] , d[:ins_fn] ,
@@ -1267,7 +1360,8 @@ function get_XYZ21(xyz_h5::String; tt_sort::Bool=true, silent::Bool=false)
                  d[:mag_1_uc]  , d[:mag_2_uc]  , d[:mag_3_uc]  , d[:mag_4_uc]  ,
                  d[:mag_5_uc]  , d[:cur_com_1] , d[:cur_ac_hi] , d[:cur_ac_lo] ,
                  d[:cur_tank]  , d[:cur_flap]  , d[:cur_strb]  , d[:vol_block] ,
-                 d[:vol_back]  , d[:vol_cabt]  , d[:vol_fan]   )
+                 d[:vol_back]  , d[:vol_cabt]  , d[:vol_fan]   , d[:aux_1]     ,
+                 d[:aux_2]     , d[:aux_3])
 end # function get_XYZ21
 
 """
@@ -1283,7 +1377,7 @@ Get `XYZ` flight data from saved HDF5 file via DataFrame lookup.
 |:--|:--|:--
 `flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
 `xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
-`xyz_set` |`Real`  | flight dataset number (used to prevent inproper mixing of datasets, such as different magnetometer locations)
+`xyz_set` |`Real`  | flight dataset number (used to prevent improper mixing of datasets, such as different magnetometer locations)
 `xyz_h5`  |`String`| path/name of flight data HDF5 file (`.h5` extension optional)
 - `tt_sort`:      (optional) if true, sort data by time (instead of line)
 - `reorient_vec`: (optional) if true, align vector magnetometer measurements with body frame
@@ -1300,7 +1394,7 @@ function get_XYZ(flight::Symbol, df_flight::DataFrame; tt_sort::Bool=true,
     if df_flight.xyz_type[ind] == :XYZ20
         xyz = get_XYZ20(df_flight.xyz_h5[ind];tt_sort=tt_sort,silent=silent)
     elseif df_flight.xyz_type[ind] == :XYZ21
-        xyz = get_XYZ21(df_flight.xyz_h5[ind];tt_sort=false,silent=silent)
+        xyz = get_XYZ21(df_flight.xyz_h5[ind];tt_sort=false,silent=silent) # todo: update with v1.2.1
     end
 
     reorient_vec && xyz_reorient_vec!(xyz)
@@ -1314,11 +1408,10 @@ get_xyz = get_XYZ
     read_check(xyz::HDF5.File, field::Symbol, N::Int=1, silent::Bool=false)
 
 Internal helper function to check for NaNs or missing data (returned as NaNs)
-in opened flight data HDF5 file. Prints out warning for any field that
-contains NaNs.
+in opened HDF5 file. Prints out warning for any field that contains NaNs.
 
 **Arguments:**
-- `xyz`:    opened flight data HDF5 file
+- `xyz`:    opened HDF5 file
 - `field`:  data field to read
 - `N`:      number of samples (instances)
 - `silent`: (optional) if true, no print outs
@@ -1327,19 +1420,38 @@ contains NaNs.
 - `val`: data returned for `field`
 """
 function read_check(xyz::HDF5.File, field::Symbol, N::Int=1, silent::Bool=false)
-    field = string.(field)
+    field = string(field)
     if field in keys(xyz)
         val = read(xyz,field)
-        !any(isnan.(val)) || silent || @info("$field field contains NaNs")
     else
-        val = zeros(N)*NaN
-        silent || @info("$field field contains NaNs")
+        val = fill(NaN,N)
     end
+    !any(isnan.(val)) || silent || @info("$field field contains NaNs")
     return (val)
 end # function read_check
 
 """
-    xyz_reorient_vec!(xyz::Union{XYZ1,XYZ20,XYZ21})
+    read_check(xyz::HDF5.File, field::Symbol, default::String)
+
+Internal helper function to check for missing string (returned as `default`)
+in opened HDF5 file.
+
+**Arguments:**
+- `xyz`:     opened HDF5 file
+- `field`:   data field to read
+- `default`: default string
+
+**Returns:**
+- `val`: string returned for `field`
+"""
+function read_check(xyz::HDF5.File, field::Symbol, default::String)
+    field = string(field)
+    val   = field in keys(xyz) ? read(xyz,field) : default
+    return (val)
+end # function read_check
+
+"""
+    xyz_reorient_vec!(xyz::XYZ)
 
 Internal helper function to reorient all vector magnetometer data to best
 align with the IGRF direction in the body frame. Operates in place on passed-in
@@ -1351,15 +1463,18 @@ align with the IGRF direction in the body frame. Operates in place on passed-in
 **Returns:**
 - `nothing`: `xyz` is mutated with reoriented vector magnetometer data
 """
-function xyz_reorient_vec!(xyz::Union{XYZ1,XYZ20,XYZ21})
+function xyz_reorient_vec!(xyz::XYZ)
     for use_vec in field_check(xyz,MagV)
         flux = getfield(xyz,use_vec) # get vector magnetometer data
         if any(isnan,flux.t) | any(flux.t.≈0)
             @info("found NaNs, not reorienting $use_vec")
         else
-            # get start time of flight (seconds past midnight) and compute IGRF directions
-            ind      = trues(length(flux.x)) # do for whole flight
-            igrf_vec = get_igrf(xyz,ind;frame=:body,norm_igrf=true)
+            # get start time of flight (fiducial seconds past midnight UTC) & compute IGRF directions
+            ind      = trues(length(flux.x)) # entire flight
+            igrf_vec = get_igrf(xyz,ind;
+                                frame     = :body,
+                                norm_igrf = true,
+                                check_xyz = true)
 
             # compute optimal rotation matrix for this flight
             igrf_matrix = permutedims(reduce(hcat,igrf_vec))

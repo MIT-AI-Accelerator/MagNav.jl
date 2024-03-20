@@ -2,8 +2,8 @@
     map2kmz(map_map::Matrix, map_xx::Vector, map_yy::Vector,
             map_kmz::String   = "map.kmz";
             map_units::Symbol = :rad,
-            plot_alt          = 0,
-            opacity           = 0.75,
+            plot_alt::Real    = 0,
+            opacity::Real     = 0.75,
             clims::Tuple      = (0,0))
 
 Create KMZ file of map for use with Google Earth. Generates an "icon" overlay,
@@ -25,8 +25,8 @@ and is thus not meant for large maps (e.g., > 5 deg x 5 deg).
 function map2kmz(map_map::Matrix, map_xx::Vector, map_yy::Vector,
                  map_kmz::String   = "map.kmz";
                  map_units::Symbol = :rad,
-                 plot_alt          = 0,
-                 opacity           = 0.75,
+                 plot_alt::Real    = 0,
+                 opacity::Real     = 0.75,
                  clims::Tuple      = (0,0))
 
     if map_units == :rad
@@ -112,8 +112,9 @@ end # function map2kmz
 """
     map2kmz(mapS::Union{MapS,MapSd,MapS3D},
             map_kmz::String = "map.kmz";
-            plot_alt        = 0,
-            opacity         = 0.75,
+            use_mask::Bool  = true,
+            plot_alt::Real  = 0,
+            opacity::Real   = 0.75,
             clims::Tuple    = (0,0))
 
 Create KMZ file of map for use with Google Earth. Generates an "icon" overlay,
@@ -122,6 +123,7 @@ and is thus not meant for large maps (e.g., > 5 deg x 5 deg).
 **Arguments:**
 - `mapS`:     `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct
 - `map_kmz`:  (optional) path/name of map KMZ file to save (`.kmz` extension optional)
+- `use_mask`: (optional) if true, apply `mapS` mask to map
 - `plot_alt`: (optional) map altitude in Google Earth [m]
 - `opacity`:  (optional) map opacity {0:1}
 - `clims`:    (optional) map color scale limits
@@ -131,11 +133,13 @@ and is thus not meant for large maps (e.g., > 5 deg x 5 deg).
 """
 function map2kmz(mapS::Union{MapS,MapSd,MapS3D},
                  map_kmz::String = "map.kmz";
-                 plot_alt        = 0,
-                 opacity         = 0.75,
+                 use_mask::Bool  = true,
+                 plot_alt::Real  = 0,
+                 opacity::Real   = 0.75,
                  clims::Tuple    = (0,0))
-    typeof(mapS) <: MapS3D && @info("3D map provided, using map at lowest altitude")
-    map2kmz(mapS.map[:,:,1],mapS.xx,mapS.yy,map_kmz;
+    mapS isa MapS3D && @info("3D map provided, using map at lowest altitude")
+    map_mask = use_mask ? mapS.mask[:,:,1] : trues(size(mapS.map[:,:,1]))
+    map2kmz(mapS.map[:,:,1].*map_mask,mapS.xx,mapS.yy,map_kmz;
             map_units = :rad,
             plot_alt  = plot_alt,
             opacity   = opacity,
@@ -324,9 +328,9 @@ function path2kml(path::Path,
                   points::Bool     = false)
 
     if isempty(color1)
-        typeof(path) <: Traj    && (color1 = "ffff8500")
-        typeof(path) <: INS     && (color1 = "ff2b50ec")
-        typeof(path) <: FILTout && (color1 = "ff319b00")
+        path isa Traj    && (color1 = "ffff8500")
+        path isa INS     && (color1 = "ff2b50ec")
+        path isa FILTout && (color1 = "ff319b00")
     end
 
     color1 in ["black","k"] && (color1 = "ff000000")

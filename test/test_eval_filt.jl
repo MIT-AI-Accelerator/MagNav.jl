@@ -26,10 +26,12 @@ ins_fe   = vec(ins_data["fe"])
 ins_fd   = vec(ins_data["fd"])
 ins_Cnb  = ins_data["Cnb"]
 
+map_info = "Map"
 map_map  = map_data["map"]
 map_xx   = deg2rad.(vec(map_data["xx"]))
 map_yy   = deg2rad.(vec(map_data["yy"]))
 map_alt  = map_data["alt"]
+map_mask = MagNav.map_params(map_map,map_xx,map_yy)[2]
 
 tt       = vec(traj_data["tt"])
 lat      = deg2rad.(vec(traj_data["lat"]))
@@ -57,37 +59,37 @@ ins  = MagNav.INS( N,dt,tt,ins_lat,ins_lon,ins_alt,ins_vn,ins_ve,ins_vd,
 ins2 = MagNav.INS( N,dt,tt,ins_lat,ins_lon,ins_alt,ins_vn,ins_ve,ins_vd,
                    ins_fn,ins_fe,ins_fd,ins_Cnb,ones(3,3,N))
 
-mapS       = MagNav.MapS(map_map,map_xx,map_yy,map_alt)
+mapS       = MagNav.MapS(map_info,map_map,map_xx,map_yy,map_alt,map_mask)
 itp_mapS   = map_interpolate(mapS,:linear) # linear to match MATLAB
 itp_mapS3D = map_interpolate(upward_fft(mapS,[mapS.alt,mapS.alt+5]),:linear)
-map_val    = itp_mapS.(lon,lat)
+map_val    = itp_mapS.(lat,lon)
 
 @testset "run_filt tests" begin
-    @test typeof(run_filt(traj,ins,mag_1_c,itp_mapS,:ekf;
-                          extract  = true,
-                          run_crlb = true))  <: Tuple{MagNav.CRLBout,MagNav.INSout,MagNav.FILTout}
-    @test typeof(run_filt(traj,ins,mag_1_c,itp_mapS,:ekf;
-                          extract  = true,
-                          run_crlb = false)) <: MagNav.FILTout
-    @test typeof(run_filt(traj,ins,mag_1_c,itp_mapS,:mpf;
-                          extract  = false,
-                          run_crlb = true))  <: Tuple{MagNav.FILTres,Array}
+    @test run_filt(traj,ins,mag_1_c,itp_mapS,:ekf;
+                   extract  = true,
+                   run_crlb = true)  isa Tuple{MagNav.CRLBout,MagNav.INSout,MagNav.FILTout}
+    @test run_filt(traj,ins,mag_1_c,itp_mapS,:ekf;
+                   extract  = true,
+                   run_crlb = false) isa MagNav.FILTout
+    @test run_filt(traj,ins,mag_1_c,itp_mapS,:mpf;
+                   extract  = false,
+                   run_crlb = true)  isa Tuple{MagNav.FILTres,Array}
           Tuple{MagNav.CRLBout,MagNav.INSout,MagNav.FILTout}
-    @test typeof(run_filt(traj,ins,mag_1_c,itp_mapS,:mpf;
-                          extract  = false,
-                          run_crlb = false)) <: MagNav.FILTres
-    @test_throws ErrorException typeof(run_filt(traj,ins,mag_1_c,itp_mapS,:test))
-    @test typeof(run_filt(traj,ins,mag_1_c,itp_mapS,[:ekf,:mpf])) <: Nothing
+    @test run_filt(traj,ins,mag_1_c,itp_mapS,:mpf;
+                   extract  = false,
+                   run_crlb = false) isa MagNav.FILTres
+    @test_throws ErrorException run_filt(traj,ins,mag_1_c,itp_mapS,:test)
+    @test run_filt(traj,ins,mag_1_c,itp_mapS,[:ekf,:mpf]) isa Nothing
 end
 
 (filt_res,crlb_P) = run_filt(traj,ins,mag_1_c,itp_mapS,:ekf;extract=false)
 
 @testset "eval_results tests" begin
-    @test typeof(eval_results(traj,ins,filt_res,crlb_P)) <:
+    @test eval_results(traj,ins,filt_res,crlb_P) isa
           Tuple{MagNav.CRLBout,MagNav.INSout,MagNav.FILTout}
-    @test typeof(eval_crlb(traj,crlb_P)) <: MagNav.CRLBout
-    @test typeof(eval_ins(traj,ins2)) <: MagNav.INSout
-    @test typeof(eval_filt(traj,ins2,filt_res)) <: MagNav.FILTout
+    @test eval_crlb(traj,crlb_P) isa MagNav.CRLBout
+    @test eval_ins(traj,ins2) isa MagNav.INSout
+    @test eval_filt(traj,ins2,filt_res) isa MagNav.FILTout
 end
 
 (crlb_out,ins_out,filt_out) = eval_results(traj,ins,filt_res,crlb_P)
@@ -104,12 +106,12 @@ end
     @test_nowarn plot_mag_map(traj,mag_1_c,itp_mapS  ;order=:magmap,show_plot=false);
     @test_nowarn plot_mag_map(traj,mag_1_c,itp_mapS3D;order=:mapmag,show_plot=false);
     @test_throws ErrorException plot_mag_map(traj,mag_1_c,itp_mapS;order=:test,show_plot=false);
-    @test typeof(plot_mag_map_err(traj,mag_1_c,itp_mapS  ;show_plot=false)) <: Plots.Plot
-    @test typeof(plot_mag_map_err(traj,mag_1_c,itp_mapS3D;show_plot=false)) <: Plots.Plot
+    @test plot_mag_map_err(traj,mag_1_c,itp_mapS  ;show_plot=false) isa Plots.Plot
+    @test plot_mag_map_err(traj,mag_1_c,itp_mapS3D;show_plot=false) isa Plots.Plot
 end
 
 @testset "plot_autocor tests" begin
-    @test typeof(plot_autocor(mag_1_c-map_val,dt,1;show_plot=false)) <: Plots.Plot
+    @test plot_autocor(mag_1_c-map_val,dt,1;show_plot=false) isa Plots.Plot
 end
 
 @testset "chisq tests" begin
@@ -130,18 +132,18 @@ ellipse_gif = joinpath(@__DIR__,"conf_ellipse")
 
 @testset "ellipse tests" begin
     ENV["GKSwstype"] = "100"
-    @test typeof(MagNav.points_ellipse(P[:,:,1])) <: Tuple{Vector,Vector}
+    @test MagNav.points_ellipse(P[:,:,1]) isa Tuple{Vector,Vector}
     @test_nowarn MagNav.conf_ellipse!(p1,P[:,:,1])
     @test_nowarn MagNav.conf_ellipse!(p1,P[:,:,1];plot_eigax=true)
     @test_nowarn MagNav.conf_ellipse(P[:,:,1])
-    @test typeof(MagNav.units_ellipse(P;conf_units=:deg)) <: Array
-    @test typeof(MagNav.units_ellipse(P;conf_units=:rad)) <: Array
-    @test typeof(MagNav.units_ellipse(filt_res,filt_out;conf_units=:ft)) <: Array
-    @test typeof(MagNav.units_ellipse(filt_res,filt_out;conf_units=:m )) <: Array
+    @test MagNav.units_ellipse(P;conf_units=:deg) isa Array
+    @test MagNav.units_ellipse(P;conf_units=:rad) isa Array
+    @test MagNav.units_ellipse(filt_res,filt_out;conf_units=:ft) isa Array
+    @test MagNav.units_ellipse(filt_res,filt_out;conf_units=:m ) isa Array
     @test_throws ErrorException MagNav.units_ellipse(filt_res,filt_out;conf_units=:test)
-    @test typeof(gif_ellipse(P;save_plot,ellipse_gif)) <: Plots.AnimatedGif
-    @test typeof(gif_ellipse(filt_res,filt_out;save_plot,ellipse_gif)) <: Plots.AnimatedGif
-    @test typeof(gif_ellipse(filt_res,filt_out,mapS;save_plot,ellipse_gif)) <: Plots.AnimatedGif
+    @test gif_ellipse(P;save_plot,ellipse_gif) isa Plots.AnimatedGif
+    @test gif_ellipse(filt_res,filt_out;save_plot,ellipse_gif) isa Plots.AnimatedGif
+    @test gif_ellipse(filt_res,filt_out,mapS;save_plot,ellipse_gif) isa Plots.AnimatedGif
 end
 
 ellipse_gif = MagNav.add_extension(ellipse_gif,".gif")

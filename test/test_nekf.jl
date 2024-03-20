@@ -21,8 +21,7 @@ x_nn = ((x .- x_bias) ./ x_scale) * v_scale
 
 @testset "nekf tests" begin
     @test_nowarn nekf_train(xyz,ind,xyz.mag_1_c,itp_mapS,x;epoch_adam=1,l_window=10)
-    @test typeof(nekf(ins(ind),xyz.mag_1_c[ind],itp_mapS,x_nn,m)) <: MagNav.FILTres
-    @test typeof(run_filt(traj(ind),ins(ind),xyz.mag_1_c[ind],itp_mapS,:nekf;
-                 x_nn=x_nn,m=m)) <: Tuple{MagNav.CRLBout,MagNav.INSout,MagNav.FILTout}
-    @test typeof(nekf_train(xyz,ind,xyz.mag_1_c,itp_mapS,x;epoch_adam=1,l_seq=10)) <: Tuple # deprecated
+    @test nekf(ins(ind),xyz.mag_1_c[ind],itp_mapS,x_nn,m) isa MagNav.FILTres
+    @test run_filt(traj(ind),ins(ind),xyz.mag_1_c[ind],itp_mapS,:nekf;
+                   x_nn=x_nn,m=m) isa Tuple{MagNav.CRLBout,MagNav.INSout,MagNav.FILTout}
 end

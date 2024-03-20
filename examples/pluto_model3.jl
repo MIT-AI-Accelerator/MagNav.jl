@@ -37,7 +37,7 @@ The DataFrames listed below provide useful information about the flight data (co
 Dataframe  | Description
 :--------- | :----------
 `df_map`   | map files relevant for SGL flights
-`df_comp`  | SGL calibration flight lines
+`df_cal`   | SGL calibration flight lines
 `df_flight`| SGL flight files
 `df_all`   | all flight lines
 `df_nav`   | all *navigation-capable* flight lines
@@ -47,7 +47,7 @@ Dataframe  | Description
 # ╔═╡ 3a55962c-bd1b-410c-b98a-3130fc11ee11
 md"## Train a (linear) Tolles-Lawson model
 
-Select Flight 1006 (see [readme](https://github.com/MIT-AI-Accelerator/MagNav.jl/blob/master/readmes/Flt1006_readme.txt)), load the flight data, & get the Boolean indices for a specific calibration flight line that will be used to fit the Tolles-Lawson coefficients. The full list of SGL flights is in `df_flight`, & the full list of calibration flight line options is in `df_comp`.
+Select Flight 1006 (see [readme](https://github.com/MIT-AI-Accelerator/MagNav.jl/blob/master/readmes/Flt1006_readme.txt)), load the flight data, & get the Boolean indices for a specific calibration flight line that will be used to fit the Tolles-Lawson coefficients. The full list of SGL flights is in `df_flight`, & the full list of calibration flight line options is in `df_cal`.
 "
 
 # ╔═╡ bf9f72f0-c351-48d3-a811-418ee965073c
@@ -62,9 +62,9 @@ xyz_train = get_XYZ(flight_train, df_flight;
 
 # ╔═╡ 99405ae1-580a-4fd3-a860-13cc5b22b045
 begin # select a calibration flight line to train Tolles-Lawson on
-	println(df_comp[df_comp.flight .== flight_train, :])
+	println(df_cal[df_cal.flight .== flight_train, :])
 	TL_i   = 6 # select first calibration box of 1006.04
-	TL_ind = get_ind(xyz_train;tt_lim=[df_comp.t_start[TL_i],df_comp.t_end[TL_i]])
+	TL_ind = get_ind(xyz_train;tt_lim=[df_cal.t_start[TL_i],df_cal.t_end[TL_i]])
 end;
 
 # ╔═╡ 3d438be1-537b-4c13-a422-7f5f48479e62

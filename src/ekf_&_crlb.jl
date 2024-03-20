@@ -27,7 +27,7 @@ Extended Kalman filter (EKF) for airborne magnetic anomaly navigation.
 - `Cnb`:      direction cosine matrix (body to navigation) [-]
 - `meas`:     scalar magnetometer measurement [nT]
 - `dt`:       measurement time step [s]
-- `itp_mapS`: scalar map interpolation function
+- `itp_mapS`: scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
 - `P0`:       (optional) initial covariance matrix
 - `Qd`:       (optional) discrete time process/system noise matrix
 - `R`:        (optional) measurement (white) noise variance
@@ -37,7 +37,7 @@ Extended Kalman filter (EKF) for airborne magnetic anomaly navigation.
 - `fogm_tau`: (optional) FOGM catch-all time constant [s]
 - `date`:     (optional) measurement date for IGRF [yr]
 - `core`:     (optional) if true, include core magnetic field in measurement
-- `der_mapS`: (optional) scalar map vertical derivative grid interpolation
+- `der_mapS`: (optional) scalar map vertical derivative map interpolation function (`f(lat,lon)` or (`f(lat,lon,alt)`)
 - `map_alt`:  (optional) map altitude [m]
 
 **Returns:**
@@ -59,9 +59,11 @@ function ekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS;
     N     = length(lat)
     nx    = size(P0,1)
     ny    = size(meas,2)
-    x_out = zeros(nx,N)
-    P_out = zeros(nx,nx,N)
-    r_out = zeros(ny,N)
+    x_out = zeros(eltype(P0),nx,N)
+    P_out = zeros(eltype(P0),nx,nx,N)
+    r_out = zeros(eltype(P0),ny,N)
+    x     = zeros(eltype(P0),nx) # state estimate
+    P     = P0 # covariance matrix
 
     if length(R) == 2
         adapt = true
@@ -71,13 +73,11 @@ function ekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS;
         adapt = false
     end
 
-    x = zeros(nx) # state estimate
-    P = P0        # covariance matrix
-    map_cache = (typeof(itp_mapS) <: Map_Cache) ? itp_mapS : nothing
+    map_cache = itp_mapS isa Map_Cache ? itp_mapS : nothing
 
     for t = 1:N
         # custom itp_mapS from map cache, if available
-        if typeof(map_cache) <: Map_Cache
+        if map_cache isa Map_Cache
             itp_mapS = get_cached_map(map_cache,lat[t],lon[t],alt[t];silent=true)
         end
 
@@ -86,7 +86,7 @@ function ekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS;
                       baro_tau,acc_tau,gyro_tau,fogm_tau,dt)
 
         # measurement residual [ny]
-        if (map_alt > 0) & (der_mapS !== nothing)
+        if (map_alt > 0) & !(der_mapS isa Nothing)
             resid = meas[t,:] .- get_h(itp_mapS,der_mapS,x,lat[t],lon[t],
                                        alt[t],map_alt;date=date,core=core)
         else
@@ -107,7 +107,7 @@ function ekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS;
                 r = r_out[:,(t-n):(t-1)] # ny x n
                 # println(((r*r')/n - H*P*H')[1][1])
                 R = clamp(((r*r')/n - H*P*H')[1][1],R_min,R_max) # ny x ny
-                mod(t,n) == 0 && println(t," ",sqrt(R))
+                t % n == 0 && println(t," ",sqrt(R))
             end
         end
 
@@ -152,7 +152,7 @@ Extended Kalman filter (EKF) for airborne magnetic anomaly navigation.
 **Arguments:**
 - `ins`:      `INS` inertial navigation system struct
 - `meas`:     scalar magnetometer measurement [nT]
-- `itp_mapS`: scalar map interpolation function
+- `itp_mapS`: scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
 - `P0`:       (optional) initial covariance matrix
 - `Qd`:       (optional) discrete time process/system noise matrix
 - `R`:        (optional) measurement (white) noise variance
@@ -162,7 +162,7 @@ Extended Kalman filter (EKF) for airborne magnetic anomaly navigation.
 - `fogm_tau`: (optional) FOGM catch-all time constant [s]
 - `date`:     (optional) measurement date for IGRF [yr]
 - `core`:     (optional) if true, include core magnetic field in measurement
-- `der_mapS`: (optional) scalar map vertical derivative grid interpolation
+- `der_mapS`: (optional) scalar map vertical derivative map interpolation function (`f(lat,lon)` or (`f(lat,lon,alt)`)
 - `map_alt`:  (optional) map altitude [m]
 
 **Returns:**
@@ -217,8 +217,8 @@ state vector, and measurement residual within `ekf_rt` struct.
 - `Cnb`:      direction cosine matrix (body to navigation) [-]
 - `meas`:     scalar magnetometer measurement [nT]
 - `t`:        time [s]
-- `itp_mapS`: scalar map interpolation function
-- `der_mapS`: (optional) scalar map vertical derivative grid interpolation
+- `itp_mapS`: scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
+- `der_mapS`: (optional) scalar map vertical derivative map interpolation function (`f(lat,lon)` or (`f(lat,lon,alt)`)
 - `map_alt`:  (optional) map altitude [m]
 - `dt`:       (optional) measurement time step [s], only used if `ekf_rt.t < 0`
 
@@ -239,12 +239,12 @@ function (ekf_rt::EKF_RT)(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, t,
                   o.baro_tau,o.acc_tau,o.gyro_tau,o.fogm_tau,dt)
 
     # get map interpolation function from map cache (based on location)
-    if typeof(itp_mapS) <: Map_Cache
+    if itp_mapS isa Map_Cache
         itp_mapS = get_cached_map(itp_mapS,lat,lon,alt)
         der_mapS = nothing
     end
 
-    if (map_alt > 0) & (der_mapS !== nothing)
+    if (map_alt > 0) & !(der_mapS isa Nothing)
         resid = meas .- get_h(itp_mapS,der_mapS,o.x,lat,lon,alt,map_alt;
                               date=o.date,core=o.core)
     else
@@ -302,7 +302,7 @@ Equations evaluated about true trajectory.
 - `fd`:       down  specific force [m/s^2]
 - `Cnb`:      direction cosine matrix (body to navigation) [-]
 - `dt`:       measurement time step [s]
-- `itp_mapS`: scalar map interpolation function
+- `itp_mapS`: scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
 - `P0`:       (optional) initial covariance matrix
 - `Qd`:       (optional) discrete time process/system noise matrix
 - `R`:        (optional) measurement (white) noise variance
@@ -329,21 +329,22 @@ function crlb(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, dt, itp_mapS;
 
     N     = length(lat)
     nx    = size(P0,1)
-    P_out = zeros(nx,nx,N)
+    P_out = zeros(eltype(P0),nx,nx,N)
+    x     = zeros(eltype(P0),nx) # state estimate
     P     = P0 # covariance matrix
 
     length(R) == 2 && (R = mean(R))
-    map_cache = (typeof(itp_mapS) <: Map_Cache) ? itp_mapS : nothing
+    map_cache = itp_mapS isa Map_Cache ? itp_mapS : nothing
 
     for t = 1:N
         # custom itp_mapS from map cache, if available
-        if typeof(map_cache) <: Map_Cache
+        if map_cache isa Map_Cache
             itp_mapS = get_cached_map(map_cache,lat[t],lon[t],alt[t];silent=true)
         end
         # Pinson matrix exponential
         Phi = get_Phi(nx,lat[t],vn[t],ve[t],vd[t],fn[t],fe[t],fd[t],Cnb[:,:,t],
                       baro_tau,acc_tau,gyro_tau,fogm_tau,dt)
-        H = get_H(itp_mapS,zeros(nx),lat[t],lon[t],alt[t];date=date,core=core)'
+        H = get_H(itp_mapS,x,lat[t],lon[t],alt[t];date=date,core=core)'
         S = H*P*H' .+ R
         K = (P*H') / S
         P = (I - K*H) * P
@@ -373,7 +374,7 @@ Equations evaluated about true trajectory.
 
 **Arguments:**
 - `traj`:     `Traj` trajectory struct
-- `itp_mapS`: scalar map interpolation function
+- `itp_mapS`: scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
 - `P0`:       (optional) initial covariance matrix
 - `Qd`:       (optional) discrete time process/system noise matrix
 - `R`:        (optional) measurement (white) noise variance

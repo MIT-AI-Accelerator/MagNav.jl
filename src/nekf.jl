@@ -28,7 +28,7 @@ for airborne magnetic anomaly navigation.
 - `Cnb`:      direction cosine matrix (body to navigation) [-]
 - `meas`:     scalar magnetometer measurement [nT]
 - `dt`:       measurement time step [s]
-- `itp_mapS`: scalar map interpolation function
+- `itp_mapS`: scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
 - `x_nn`:     `N` x `Nf` data matrix for neural network (`Nf` is number of features)
 - `m`:        neural network model
 - `P0`:       (optional) initial covariance matrix
@@ -60,18 +60,18 @@ function nekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS,
     N      = length(lat)
     nx     = size(P0,1)
     ny     = size(meas,2)
-    x_out  = zeros(nx,N)
-    P_out  = zeros(nx,nx,N)
-    r_out  = zeros(ny,N)
+    x_out  = zeros(eltype(P0),nx,N)
+    P_out  = zeros(eltype(P0),nx,nx,N)
+    r_out  = zeros(eltype(P0),ny,N)
     x_seqs = Flux.unstack(Float32.(x_nn);dims=1)
 
-    x = zeros(nx) # state estimate
-    P = P0        # covariance matrix
-    map_cache = (typeof(itp_mapS) <: Map_Cache) ? itp_mapS : nothing
+    x = zeros(eltype(P0),nx) # state estimate
+    P = P0 # covariance matrix
+    map_cache = itp_mapS isa Map_Cache ? itp_mapS : nothing
 
     for t = 1:N
         # custom itp_mapS from map cache, if available
-        if typeof(map_cache) <: Map_Cache
+        if map_cache isa Map_Cache
             itp_mapS = get_cached_map(map_cache,lat[t],lon[t],alt[t];silent=true)
         end
 
@@ -133,7 +133,7 @@ for airborne magnetic anomaly navigation.
 **Arguments:**
 - `ins`:      `INS` inertial navigation system struct
 - `meas`:     scalar magnetometer measurement [nT]
-- `itp_mapS`: scalar map interpolation function
+- `itp_mapS`: scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
 - `x_nn`:     `N` x `Nf` data matrix for neural network (`Nf` is number of features)
 - `m`:        neural network model
 - `P0`:       (optional) initial covariance matrix
@@ -181,7 +181,7 @@ end # function nekf
                P            = create_P0(),
                Qd           = create_Qd(),
                R            = 1.0,
-               x            = zeros(18);
+               x            = zeros(eltype(P),18);
                date         = get_years(2020,185),
                core::Bool   = false)
 
@@ -193,7 +193,7 @@ time step with a pre-computed `Phi` dynamics matrix.
 - `lon`:      longitude [rad]
 - `alt`:      altitude  [m]
 - `meas`:     scalar magnetometer measurement [nT]
-- `itp_mapS`: scalar map interpolation function
+- `itp_mapS`: scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
 - `x_nn`:     `N` x `Nf` data matrix for neural network (`Nf` is number of features)
 - `m`:        neural network model
 - `P`:        non-linear covariance matrix
@@ -213,14 +213,14 @@ function ekf_single(lat, lon, alt, Phi, meas, itp_mapS,
                     P            = create_P0(),
                     Qd           = create_Qd(),
                     R            = 1.0,
-                    x            = zeros(18);
+                    x            = zeros(eltype(P),18);
                     date         = get_years(2020,185),
                     core::Bool   = false)
 
     ny = length(meas)
 
     # get map interpolation function from map cache (based on location)
-    if typeof(itp_mapS) <: Map_Cache
+    if itp_mapS isa Map_Cache
         itp_mapS = get_cached_map(itp_mapS,lat,lon,alt)
     end
 
@@ -280,7 +280,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
 - `Cnb`:        direction cosine matrix (body to navigation) [-]
 - `meas`:       scalar magnetometer measurement [nT]
 - `dt`:         measurement time step [s]
-- `itp_mapS`:   scalar map interpolation function
+- `itp_mapS`:   scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
 - `x_nn`:       `N` x `Nf` data matrix for neural network (`Nf` is number of features)
 - `y_nn`:       `y` target matrix for neural network (`[latitude longitude]`)
 - `P0`:         (optional) initial covariance matrix
@@ -318,14 +318,8 @@ function nekf_train(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt,
                     hidden::Int          = 1,
                     activation::Function = swish,
                     l_window::Int        = 50,
-                    l_seq::Int           = 50,
                     date                 = get_years(2020,185),
                     core::Bool           = false)
-
-    if l_seq != 50
-        @warn("this version of nekf_train() is deprecated & will be removed in MagNav.jl v1.2.0, use nekf_train(; l_window::Int)")
-        l_window = l_seq
-    end
 
     x_seqs = chunk_data(Float32.(x_nn),zero(lat),l_window)[1]
     y_seqs = chunk_data(y_nn,zero(lat),l_window)[1]
@@ -335,21 +329,13 @@ function nekf_train(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt,
     m  = Chain(LSTM(Nf,hidden),Dense(hidden,Ny,activation))
 
     # pre-compute Phi
-    N = length(lat)
-    Phi = zeros(18,18,N)
+    N   = length(lat)
+    Phi = zeros(Float64,18,18,N)
     for t = 1:N
         Phi[:,:,t] = get_Phi(size(Phi)[1],lat[t],vn[t],ve[t],vd[t],
                              fn[t],fe[t],fd[t],Cnb[:,:,t],
                              baro_tau,acc_tau,gyro_tau,fogm_tau,dt)
     end
-
-    # lat  = Float32.(lat)
-    # lon  = Float32.(lon)
-    # alt  = Float32.(alt)
-    # meas = Float32.(meas)
-    # P    = Float32.(P0)
-    # Qd   = Float32.(Qd)
-    # R    = Float32.(R)
 
     P = P0
 
@@ -405,7 +391,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
 **Arguments:**
 - `ins`:        `INS` inertial navigation system struct
 - `meas`:       scalar magnetometer measurement [nT]
-- `itp_mapS`:   scalar map interpolation function
+- `itp_mapS`:   scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
 - `x_nn`:       `N` x `Nf` data matrix for neural network (`Nf` is number of features)
 - `y_nn`:       `y` target matrix for neural network (`[latitude longitude]`)
 - `P0`:         (optional) initial covariance matrix
@@ -442,14 +428,8 @@ function nekf_train(ins::INS, meas, itp_mapS, x_nn::Matrix, y_nn::Matrix;
                     hidden::Int          = 1,
                     activation::Function = swish,
                     l_window::Int        = 50,
-                    l_seq::Int           = 50,
                     date                 = get_years(2020,185),
                     core::Bool           = false)
-
-    if l_seq != 50
-        @warn("this version of nekf_train() is deprecated & will be removed in MagNav.jl v1.2.0, use nekf_train(; l_window::Int)")
-        l_window = l_seq
-    end
 
     nekf_train(ins.lat,ins.lon,ins.alt,ins.vn,ins.ve,ins.vd,
                ins.fn,ins.fe,ins.fd,ins.Cnb,meas,ins.dt,itp_mapS,x_nn,y_nn;
@@ -489,7 +469,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
 - `xyz`:        `XYZ` flight data struct
 - `ind`:        selected data indices
 - `meas`:       scalar magnetometer measurement [nT]
-- `itp_mapS`:   scalar map interpolation function
+- `itp_mapS`:   scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
 - `x`:          `N` x `Nf` data matrix (`Nf` is number of features)
 - `P0`:         (optional) initial covariance matrix
 - `Qd`:         (optional) discrete time process/system noise matrix
@@ -526,14 +506,8 @@ function nekf_train(xyz::XYZ, ind, meas, itp_mapS, x::Matrix;
                     hidden::Int          = 1,
                     activation::Function = swish,
                     l_window::Int        = 50,
-                    l_seq::Int           = 50,
                     date                 = get_years(2020,185),
                     core::Bool           = false)
-
-    if l_seq != 50
-        @warn("this version of nekf_train() is deprecated & will be removed in MagNav.jl v1.2.0, use nekf_train(; l_window::Int)")
-        l_window = l_seq
-    end
 
     # get traj, ins, and y_nn (position)
     traj = get_traj(xyz,ind)
