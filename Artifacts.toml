@@ -1,34 +1,34 @@
 [EMAG2]
-git-tree-sha1 = "8c6749c55eb76e4304a1b745765a6365f1623435"
+git-tree-sha1 = "b3593e0b5d1855d9f5d7f954f1e2acb63c7cd62c"
 lazy = true
 
     [[EMAG2.download]]
-    sha256 = "53d3e88727b60e0303a0a0cea4e3275dc2f90d9312451b5d845992015efec8ec"
-    url = "https://www.dropbox.com/s/ljn7w8kyibvougf/EMAG2_v1.tar.gz"
+    sha256 = "b05df33de9891418aa0abf8a9859b76aeb320f73e9bd3e530d97dd03547006da"
+    url = "https://www.dropbox.com/scl/fi/gyc9emlqssnrbnom8ebyg/EMAG2_v2.tar.gz?rlkey=b5zswj1ajs779av3lgdjtxcut"
 
 [EMM720_World]
-git-tree-sha1 = "a6974631e103f52b9c73cb303c480fe0a3f679c5"
+git-tree-sha1 = "384c84f4e1483e2f5d68f8f62d45ce474fa5c2b4"
 lazy = false
 
     [[EMM720_World.download]]
-    sha256 = "38d7ae8d1ab08e7a7366db73a5981690cfb99b00054da616b65c773545a713e7"
-    url = "https://www.dropbox.com/s/l7w1ro00jfo8ojm/EMM720_World_v1.tar.gz"
+    sha256 = "c4366daf1fe173e090e17c417f1be59e6fe902d7a34d0ca92775a708ab7948c4"
+    url = "https://www.dropbox.com/scl/fi/iaxj44zxfskpbi8rpaet5/EMM720_World_v2.tar.gz?rlkey=l6kxgezazdqcujt503es8smps"
 
 [NAMAD_305]
-git-tree-sha1 = "814e1f622f6b6d80b8e098931b309759ce00543c"
+git-tree-sha1 = "a70d291859f40a02e3dd2fc96d87adf42af49174"
 lazy = false
 
     [[NAMAD_305.download]]
-    sha256 = "8abe7156b3873dd191faa1898364f4604778ea89cbbc1ca9ced36795fbc4cf8b"
-    url = "https://www.dropbox.com/s/8j34yrncscdx267/NAMAD_305_v1.tar.gz"
+    sha256 = "d5caf508a33ec83da53cb911f56c57539bb4b08318f30ffcfc3116be36f3e8a4"
+    url = "https://www.dropbox.com/scl/fi/tdy8jwt4z9mhknplxmica/NAMAD_305_v2.tar.gz?rlkey=y9ixe82mdx67vc1ho9e2xvvy1"
 
 [ottawa_area_maps]
-git-tree-sha1 = "bf360d29207d6468a8cf783269191bda2cf1f679"
+git-tree-sha1 = "eb8d8339b55fb4b9b070eda7f3aede970ab53629"
 lazy = true
 
     [[ottawa_area_maps.download]]
-    sha256 = "16b24621e535b2c9ed0f161cf45e605fb5029883c28d7ca6fa3815d548606c2c"
-    url = "https://www.dropbox.com/scl/fi/466coruraj5um9qilrvpq/ottawa_area_maps_v2.tar.gz?rlkey=74fh2ekf39z3xrj9jbo2zoso9"
+    sha256 = "f34d2f2866cc78a2e31017934f8ec38828f2cd0ba3dd71e8d00b7ef2b4b760ea"
+    url = "https://www.dropbox.com/scl/fi/ttd2ru1cgl5l7vrngcl2j/ottawa_area_maps_v3.tar.gz?rlkey=5f365x4afackkhqhbbhkc87be"
 
 [ottawa_area_maps_gxf]
 git-tree-sha1 = "cc4f60945a2da360aae2e2d52f85d9fa552caf72"
@@ -39,20 +39,20 @@ lazy = true
     url = "https://www.dropbox.com/scl/fi/1f8kmj17uo0nmy7xc0k6m/ottawa_area_maps_gxf_v1.tar.gz?rlkey=bfs5x64sjy668p7pkuomly0k8"
 
 [sgl_2020_train]
-git-tree-sha1 = "c3f3d3462514a6c52576cf8017a650ea9d10e64b"
+git-tree-sha1 = "0e129dcdd8b6f8b14581407e3f57ead6c82b24c2"
 lazy = true
 
     [[sgl_2020_train.download]]
-    sha256 = "bcaa3cdc7b4730f06713c93fb0a9ccafe70a292fbc5819a0e86b98e23c1f74f2"
-    url = "https://www.dropbox.com/s/hp33v1gyof8amen/sgl_2020_train_v2.tar.gz"
+    sha256 = "9197872972a6f61dc755911e20324d0596e31e36eddd74cb02fdc6c883dc9e7b"
+    url = "https://www.dropbox.com/scl/fi/1jiwgfjqz5xfz4ucdlwci/sgl_2020_train_v3.tar.gz?rlkey=q6xs74oizb15lam8ycqt89lky"
 
 [sgl_fields]
 git-tree-sha1 = "1d46dc48ad1026df78a42a24d743de6796aa52d8"
 lazy = false
 
     [[sgl_fields.download]]
-    sha256 = "48457ec7c58d83e028000487181c546955664583388fe91424acc09563723fdf"
-    url = "https://www.dropbox.com/s/kuiri47pobzhp73/sgl_fields_v2.tar.gz"
+    sha256 = "22902a800e02c06934e5f8909f2037aebe359eae76fa896c24640b4313db271b"
+    url = "https://www.dropbox.com/scl/fi/p2f3sm4q7t74355hbzitq/sgl_fields_v3.tar.gz?rlkey=5mt945ide0xou1z34mee5uv7q"
 
 [util_files]
 git-tree-sha1 = "f12e9f7dd097517a8d310b696f61c5cc8128136d"
