@@ -136,21 +136,33 @@ module MagNav
     """
         const emag2
 
-    Earth Magnetic Anomaly Grid (2-arc-minute resolution)
+    Earth Magnetic Anomaly Grid with 2 arcminute resolution (EMAG2). Compiled
+    from satellite, marine, and airborne magnetic measurements. Reference:
+    https://www.ncei.noaa.gov/products/earth-magnetic-model-anomaly-grid-2
     """
     const emag2 = joinpath(artifact"EMAG2","EMAG2.h5")
 
     """
         const emm720
 
-    Enhanced Magnetic Model (vector magnetic anomaly map)
+    Enhanced Magnetic Model (EMM). Compiled from satellite, marine, airborne,
+    and ground magnetic measurements. Expands the scalar crustal field up to
+    spherical harmonic degree and order 720, providing a vector of the magnetic
+    field with approximately 15 arcminute resolution. Underlying crustal field
+    model derived from Earth Magnetic Anomaly Grid with 2-arc-minute resolution
+    (EMAG2). Reference:
+    https://www.ncei.noaa.gov/products/enhanced-magnetic-model
     """
     const emm720 = joinpath(artifact"EMM720_World","EMM720_World.h5")
 
     """
         const namad
 
-    North American Magnetic Anomaly Map
+    North American Magnetic Anomaly Database (NAMAD). Compiled from marine and
+    airborne magnetic measurements by the U.S. Geological Survey (USGS),
+    Geological Survey of Canada (GSC), and Consejo de Recursos Minerales of
+    Mexico (CRM). Reference:
+    https://www.usgs.gov/maps/magnetic-anomaly-map-north-america
     """
     const namad = joinpath(artifact"NAMAD_305","NAMAD_305.h5")
 
@@ -158,24 +170,20 @@ module MagNav
         ottawa_area_maps()
 
     Magnetic anomaly maps near Ottawa, Ontario, Canada, contains:
-    - `Eastern_395.h5`:   Eastern Ontario at 395 m HAE (`SEE NOTE`)
-    - `Eastern_drape.h5`: Eastern Ontario on drape (`SEE NOTE`)
-    - `Eastern_plot.h5`:  Eastern Ontario on drape, empty map areas left unfilled, used for plotting true survey area
-    - `Renfrew_395.h5`:   Renfrew at 395 m HAE (`SEE NOTE`)
-    - `Renfrew_555.h5`:   Renfrew at 555 m HAE (`SEE NOTE`)
-    - `Renfrew_drape.h5`: Renfrew on drape (`SEE NOTE`)
-    - `Renfrew_plot.h5`:  Renfrew on drape, empty map areas left unfilled, used for plotting true survey area
-    - `HighAlt_5181.h5`:  High Altitude mini-survey (within Renfrew)
-    - `Perth_800.h5`:     Perth mini-survey (within Eastern Ontario)
+    - `Eastern_395.h5`:   Eastern Ontario at 395 m HAE
+    - `Eastern_drape.h5`: Eastern Ontario on drape
+    - `Renfrew_395.h5`:   Renfrew at 395 m HAE
+    - `Renfrew_555.h5`:   Renfrew at 555 m HAE
+    - `Renfrew_drape.h5`: Renfrew on drape
+    - `HighAlt_5181.h5`:  High Altitude mini-survey (within Renfrew) at 5181 m HAE
+    - `Perth_800.h5`:     Perth mini-survey (within Eastern Ontario) at 800 m HAE
 
-    `NOTE`: Missing map data within `Eastern_395.h5`, `Eastern_drape.h5`,
-    `Renfrew_395.h5`, `Renfrew_555.h5`, and `Renfrew_drape.h5` has been filled
-    in (using k nearest neighbors) so that the grids are completely filled.
-    Care must be taken to not navigate in the filled-in areas, as this is not
-    real data and only done for more accurate upward continuation of the maps.
-    Use the `map_check` function on `Eastern_plot.h5` or `Renfrew_plot.h5` with
-    the desired flight path data to determine if the `Eastern` and/or `Renfrew`
-    maps may be used without navigating into any filled-in (artificial) areas.
+    `NOTE`: Missing map data within each map has been filled in (using k-nearest
+    neighbors) so that the grids are completely filled. Care must be taken to
+    not navigate in the filled-in areas, as this is not real data and only done
+    for more accurate and consistent upward continuation of the maps. Use the
+    `map_check` function on the desired map and flight path data to determine if
+    the map may be used without navigating into filled-in (artificial) areas.
     """
     ottawa_area_maps() = joinpath(artifact"ottawa_area_maps","ottawa_area_maps")
 
