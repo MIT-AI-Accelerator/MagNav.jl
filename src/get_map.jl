@@ -88,7 +88,7 @@ function get_map(map_file::String   = namad;
         map_xx .= rad2deg.(map_xx)
         map_yy .= rad2deg.(map_yy)
     elseif file_units != map_units
-        error("[$file_units] map file xx/yy units ≠ [$map_units] xx/yy map units")
+        error("[$file_units] map file xx/yy units ≠ [$map_units] map xx/yy units")
     elseif map_units ∉ [:rad,:deg]
         @info("[$map_units] map xx/yy units not defined")
     end
@@ -170,13 +170,13 @@ Save map data to HDF5 file. Maps are typically saved in `:deg` units, while
 
 **Arguments:**
 - `map_map`:   `ny` x `nx` (x `nz`) 2D or 3D gridded map data
-- `map_xx`:    `nx` map x-direction (longitude) coordinates [rad] or [m]
-- `map_yy`:    `ny` map y-direction (latitude)  coordinates [rad] or [m]
+- `map_xx`:    `nx` map x-direction (longitude) coordinates [rad] or [deg]
+- `map_yy`:    `ny` map y-direction (latitude)  coordinates [rad] or [deg]
 - `map_alt`:    map altitude(s) or `ny` x `nx` 2D gridded altitude map data [m]
 - `map_h5`:     (optional) path/name of map data HDF5 file to save (`.h5` extension optional)
 - `map_info`:   (optional) map information
 - `map_mask`:   (optional) `ny` x `nx` (x `nz`) mask for valid (not filled-in) map data
-- `map_border`: (optional) border for valid (not filled-in) map data
+- `map_border`: (optional) [xx yy] border for valid (not filled-in) map data [rad] or [deg]
 - `map_units`:  (optional) map xx/yy units used in `map_xx` & `map_yy` {`:rad`,`:deg`}
 - `file_units`: (optional) map xx/yy units to use in `map_h5` {`:rad`,`:deg`}
 
@@ -204,7 +204,7 @@ function save_map(map_map, map_xx, map_yy, map_alt, map_h5::String="map_data.h5"
         map_yy     = deg2rad.(map_yy)
         map_border = deg2rad.(map_border)
     elseif map_units != file_units
-        error("[$map_units] xx/yy map units ≠ [$file_units] map file xx/yy units")
+        error("[$map_units] map xx/yy units ≠ [$file_units] map file xx/yy units")
     elseif map_units ∉ [:rad,:deg]
         @info("[$map_units] map xx/yy units not defined")
     end
@@ -244,7 +244,7 @@ Save map data to HDF5 file. Maps are typically saved in `:deg` units, while
 **Arguments:**
 - `map_map`:    `Map` magnetic anomaly map struct
 - `map_h5`:     (optional) path/name of map data HDF5 file to save (`.h5` extension optional)
-- `map_border`: (optional) border for valid (not filled-in) map data
+- `map_border`: (optional) [xx yy] border for valid (not filled-in) map data [rad] or [deg]
 - `map_units`:  (optional) map xx/yy units used in `map_map` {`:rad`,`:deg`}
 - `file_units`: (optional) map xx/yy units to use in `map_h5` {`:rad`,`:deg`}
 
