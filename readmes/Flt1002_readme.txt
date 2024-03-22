@@ -1,7 +1,7 @@
 Flight 1002
 20-Jun-2020 (doy = 172/366)
 
-- 2 compensations (start & end)
+- 2 calibrations (start & end)
 - 10 repeat survey lines (5 Eastern Ontario & 5 Renfrew)
 - Eastern Ontario & Renfrew free-fly on drape
 - Renfrew free-fly at 555m
@@ -10,8 +10,8 @@ Flight 1002
   - Affected lines: 1002.02, 1369.00, 1002.20
 
 Start Time  End Time  Line Number    Description
-  45100.00  46370.00      1002.01    Transit to Compensation 1
-  46370.00  47600.00      1002.02    Compensation 1
+  45100.00  46370.00      1002.01    Transit to Calibration 1
+  46370.00  47600.00      1002.02    Calibration 1
   47600.00  49310.00      1002.03    Transit to Renfrew repeat lines
   49310.00  49838.10       158.00    Renfrew repeat line
   49838.10  50051.90      1002.04    Renfrew turn
@@ -40,6 +40,6 @@ Start Time  End Time  Line Number    Description
   63035.00  63935.00      1002.16    HOLD-OUT TESTING DATA
   63935.00  65812.00      1002.17    Renfrew Free-Fly at 555m
   65812.00  66310.00      1002.18    Climb to high altitude
-  66310.00  66560.00      1002.19    Transit to Compensation 2
-  66560.00  67850.00      1002.20    Compensation 2
+  66310.00  66560.00      1002.19    Transit to Calibration 2
+  66560.00  67850.00      1002.20    Calibration 2
   67850.00  68910.00      1002.21    Transit to base
