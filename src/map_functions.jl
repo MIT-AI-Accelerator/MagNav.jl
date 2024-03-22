@@ -1046,7 +1046,7 @@ end # function map_chessboard
 
 """
     map_utm2lla!(map_map::Matrix, map_xx::Vector, map_yy::Vector,
-                 alt, map_mask::BitMatrix = map_params(map_map,map_xx,map_yy)[2];
+                 alt, map_mask::BitMatrix;
                  map_info::String = "Map",
                  zone_utm::Int    = 18,
                  is_north::Bool   = true,
@@ -1060,7 +1060,7 @@ Convert map grid from `UTM` to `LLA`.
 - `map_xx`:   `nx` map x-direction (longitude) coordinates [m]
 - `map_yy`:   `ny` map y-direction (latitude)  coordinates [m]
 - `alt`:      map altitude(s) or altitude map [m]
-- `map_mask`: (optional) `ny` x `nx` mask for valid (not filled-in) map data
+- `map_mask`: `ny` x `nx` mask for valid (not filled-in) map data
 - `map_info`: (optional) map information
 - `zone_utm`: (optional) UTM zone
 - `is_north`: (optional) if true, map is in northern hemisphere
@@ -1071,19 +1071,21 @@ Convert map grid from `UTM` to `LLA`.
 - `nothing`: `map_map`, `map_xx`, `map_yy`, & `map_mask` (& `alt`) are mutated with `LLA` gridded map data
 """
 function map_utm2lla!(map_map::Matrix, map_xx::Vector, map_yy::Vector,
-                      alt, map_mask::BitMatrix = map_params(map_map,map_xx,map_yy)[2];
+                      alt, map_mask::BitMatrix;
                       map_info::String = "Map",
                       zone_utm::Int    = 18,
                       is_north::Bool   = true,
                       save_h5::Bool    = false,
                       map_h5::String   = "map_data.h5")
 
+    ind1    = map_params(map_map,map_xx,map_yy)[2]
     (ny,nx) = size(map_map)
     map_drp = (ny,nx) == size(alt) ? true : false
 
     # interpolation for original (UTM) map
-    itp_mask = map_itp(convert.(eltype(map_map),map_mask),map_xx,map_yy,:linear)
+    itp_ind1 = map_itp(convert.(eltype(map_map),ind1),map_xx,map_yy,:linear)
     itp_map  = map_itp(map_map,map_xx,map_yy,:linear)
+    itp_mask = map_itp(convert.(eltype(map_map),map_mask),map_xx,map_yy,:linear)
     map_drp && (itp_alt = map_itp(alt,map_xx,map_yy,:linear))
 
     # get xx/yy limits at 4 corners of data-containing UTM map for no data loss
@@ -1100,9 +1102,9 @@ function map_utm2lla!(map_map::Matrix, map_xx::Vector, map_yy::Vector,
     lla2utm = UTMfromLLA(zone_utm,is_north,WGS84)
     for i = 1:nx, j = 1:ny
         utm = lla2utm(LLA(map_yy[j],map_xx[i]))
-        if itp_mask(utm.y,utm.x) ≈ 1
+        if itp_ind1(utm.y,utm.x) ≈ 1
             @inbounds map_map[ j,i] = itp_map(utm.y,utm.x)
-            @inbounds map_mask[j,i] = true
+            @inbounds map_mask[j,i] = floor(itp_mask(utm.y,utm.x))
             map_drp && (@inbounds alt[j,i] = itp_alt(utm.y,utm.x))
         else
             @inbounds map_map[ j,i] = 0
@@ -1175,7 +1177,7 @@ end # function map_utm2lla!
 
 """
     map_utm2lla(map_map::Matrix, map_xx::Vector, map_yy::Vector,
-                alt, map_mask::BitMatrix = map_params(map_map,map_xx,map_yy)[2];
+                alt, map_mask::BitMatrix;
                 map_info::String = "Map",
                 zone_utm::Int    = 18,
                 is_north::Bool   = true,
@@ -1189,7 +1191,7 @@ Convert map grid from `UTM` to `LLA`.
 - `map_xx`:   `nx` map x-direction (longitude) coordinates [m]
 - `map_yy`:   `ny` map y-direction (latitude)  coordinates [m]
 - `alt`:      map altitude(s) or altitude map [m]
-- `map_mask`: (optional) `ny` x `nx` mask for valid (not filled-in) map data
+- `map_mask`: `ny` x `nx` mask for valid (not filled-in) map data
 - `map_info`: (optional) map information
 - `zone_utm`: (optional) UTM zone
 - `is_north`: (optional) if true, map is in northern hemisphere
@@ -1203,7 +1205,7 @@ Convert map grid from `UTM` to `LLA`.
 - `map_mask`: `ny` x `nx` mask for valid (not filled-in) map data on `LLA` grid
 """
 function map_utm2lla(map_map::Matrix, map_xx::Vector, map_yy::Vector,
-                     alt, map_mask::BitMatrix = map_params(map_map,map_xx,map_yy)[2];
+                     alt, map_mask::BitMatrix;
                      map_info::String = "Map",
                      zone_utm::Int    = 18,
                      is_north::Bool   = true,
@@ -2412,7 +2414,7 @@ function get_cached_map(map_cache::Map_Cache, lat::Real, lon::Real, alt::Real;
         end
         alt_lev == -1 || silent || @info("using cached map at $alt_lev m")
     catch _
-        @info("error encountered in using provided maps")
+        @info("unable to get cached map at LLA = $lat, $lon, $alt")
     end
 
     if alt_lev == -1
@@ -2560,7 +2562,7 @@ function map_border(mapS::Union{MapS,MapSd,MapS3D};
                     sort_border::Bool = false,
                     return_ind::Bool  = false)
     mapS isa MapS3D && @info("3D map provided, using map at lowest altitude")
-    map_border(mapS.map[:,:,1],mapS.xx,mapS.yy;
+    map_border(mapS.map[:,:,1].*mapS.mask[:,:,1],mapS.xx,mapS.yy;
                inner=inner,sort_border=sort_border,return_ind=return_ind)
 end # function map_border
 
@@ -2594,6 +2596,7 @@ function map_border_sort(yy::Vector, xx::Vector, dy, dx)
             ind_nn = nn(KDTree(ll_nn),pt)[1]
             ind    = vec(all(ll_nn[:,ind_nn] .≈ ll, dims=1))
         catch _
+            @info("full border not sorted")
             return (ll_out[1,1:i-1], ll_out[2,1:i-1])
         end
         ll_out[:,i] = ll[:,ind]
@@ -2712,8 +2715,7 @@ end # map_border_clean
 
 """
     map_resample(map_map::Matrix, map_xx::Vector, map_yy::Vector,
-                 map_xx_new::Vector, map_yy_new::Vector;
-                 map_mask::BitMatrix = map_params(map_map,map_xx,map_yy)[2])
+                 map_mask::BitMatrix, map_xx_new::Vector, map_yy_new::Vector)
 
 Resample map with new grid.
 
@@ -2721,17 +2723,16 @@ Resample map with new grid.
 - `map_map`:    `ny` x `nx` 2D gridded map data
 - `map_xx`:     `nx` map x-direction (longitude) coordinates
 - `map_yy`:     `ny` map y-direction (latitude)  coordinates
+- `map_mask`    `ny` x `nx` mask for valid (not filled-in) map data
 - `map_xx_new`: `nx_new` map x-direction (longitude) coordinates to use for resampling
 - `map_yy_new`: `ny_new` map y-direction (latitude)  coordinates to use for resampling
-- `map_mask`    (optional) `ny` x `nx` mask for valid (not filled-in) map data
 
 **Returns:**
 - `map_map`:  `ny_new` x `nx_new` 2D gridded map data, resampled
 - `map_mask`: `ny_new` x `nx_new` mask for valid (not filled-in) map data, resampled
 """
 function map_resample(map_map::Matrix, map_xx::Vector, map_yy::Vector,
-                      map_xx_new::Vector, map_yy_new::Vector;
-                      map_mask::BitMatrix = map_params(map_map,map_xx,map_yy)[2])
+                      map_mask::BitMatrix, map_xx_new::Vector, map_yy_new::Vector)
 
     map_map_  = deepcopy(map_map)
     map_mask_ = deepcopy(map_mask)
@@ -2742,6 +2743,8 @@ function map_resample(map_map::Matrix, map_xx::Vector, map_yy::Vector,
     map_map[ ind_yy,ind_xx] = map_map_
     map_mask[ind_yy,ind_xx] = map_mask_
 
+    ind1     = map_params(map_map,map_xx,map_yy)[2]
+    itp_ind1 = map_itp(convert.(eltype(map_map),ind1),map_xx,map_yy,:linear)
     itp_map  = map_itp(map_map,map_xx,map_yy,:linear)
     itp_mask = map_itp(convert.(eltype(map_map),map_mask),map_xx,map_yy,:linear)
     map_map  = zeros(eltype(map_map ),length.((map_yy_new,map_xx_new)))
@@ -2749,9 +2752,9 @@ function map_resample(map_map::Matrix, map_xx::Vector, map_yy::Vector,
 
     for (i,x) in enumerate(map_xx_new)
         for (j,y) in enumerate(map_yy_new)
-                if itp_mask(y,x) ≈ 1
+                if itp_ind1(y,x) ≈ 1
                     @inbounds map_map[ j,i] = itp_map(y,x)
-                    @inbounds map_mask[j,i] = true
+                    @inbounds map_mask[j,i] = floor(itp_mask(y,x))
                 end
         end
     end
@@ -2774,8 +2777,7 @@ Resample map with new grid.
 """
 function map_resample(mapS::MapS, map_xx_new::Vector, map_yy_new::Vector)
     (map_map,map_mask) = map_resample(mapS.map,mapS.xx,mapS.yy,
-                                      map_xx_new,map_yy_new;
-                                      map_mask = mapS.mask)
+                                      mapS.mask,map_xx_new,map_yy_new)
     return MapS(mapS.info, map_map, map_xx_new, map_yy_new, mapS.alt, map_mask)
 end # function map_resample
 
