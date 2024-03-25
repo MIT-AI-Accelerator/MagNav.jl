@@ -54,69 +54,71 @@ xyz    = MagNav.XYZ0("test",traj,ins,flux_a,val,val,val,val,val,val,mag_1_c,mag_
 ind = trues(N)
 ind[51:end] .= false
 
+show_plot = false
+
 @testset "plot_basic tests" begin
-    @test_nowarn plot_basic(tt,mag_1_c;show_plot=false);
-    @test_nowarn plot_basic(tt,mag_1_c,ind;
-                            lab       = "mag_1_c",
-                            xlab      = "time [min]",
-                            ylab      = "magnetic field [nT]",
-                            show_plot = false);
+    @test plot_basic(tt,mag_1_c;show_plot) isa Plot
+    @test plot_basic(tt,mag_1_c,ind;
+                     lab       = "mag_1_c",
+                     xlab      = "time [min]",
+                     ylab      = "magnetic field [nT]",
+                     show_plot = false) isa Plot
 end
 
 @testset "plot_activation tests" begin
-    @test_nowarn plot_activation(;show_plot=false);
-    @test_nowarn plot_activation([:relu,:swish];
-                                 plot_deriv = true,
-                                 show_plot  = false,
-                                 save_plot  = false);
+    @test plot_activation(;show_plot) isa Plot
+    @test plot_activation([:relu,:swish];
+                           plot_deriv = true,
+                           show_plot  = false,
+                           save_plot  = false) isa Plot
 end
 
 @testset "plot_mag tests" begin
-    @test_nowarn plot_mag(xyz;show_plot=false);
-    @test_nowarn plot_mag(xyz;use_mags=[:comp_mags],show_plot=false);
-    @test_nowarn plot_mag(xyz;use_mags=[:flux_a],show_plot=false);
-    @test_nowarn plot_mag(xyz;use_mags=[:flight],show_plot=false);
-    @test_nowarn plot_mag(xyz;
-                          ind          = ind,
-                          detrend_data = true,
-                          use_mags     = [:mag_1_c,:mag_1_uc],
-                          vec_terms    = [:all],
-                          ylim         = (-300,300),
-                          dpi          = 100,
-                          show_plot    = false,
-                          save_plot    = false);
-    @test_nowarn plot_mag(xyz;
-                          ind          = ind,
-                          detrend_data = true,
-                          use_mags     = [:comp_mags],
-                          vec_terms    = [:all],
-                          ylim         = (-1,1),
-                          dpi          = 100,
-                          show_plot    = false,
-                          save_plot    = false);
-    @test_nowarn plot_mag(xyz;
-                          ind          = ind,
-                          detrend_data = true,
-                          use_mags     = [:flux_a],
-                          vec_terms    = [:all],
-                          ylim         = (-1000,1000),
-                          dpi          = 100,
-                          show_plot    = false,
-                          save_plot    = false);
-    @test_nowarn plot_mag(xyz;
-                          ind          = ind,
-                          detrend_data = true,
-                          use_mags     = [:flight],
-                          vec_terms    = [:all],
-                          ylim         = (-1,1),
-                          dpi          = 100,
-                          show_plot    = false,
-                          save_plot    = false);
+    @test plot_mag(xyz;show_plot) isa Plot
+    @test plot_mag(xyz;use_mags=[:comp_mags],show_plot) isa Plot
+    @test plot_mag(xyz;use_mags=[:flux_a],show_plot) isa Plot
+    @test plot_mag(xyz;use_mags=[:flight],show_plot) isa Plot
+    @test plot_mag(xyz;
+                   ind          = ind,
+                   detrend_data = true,
+                   use_mags     = [:mag_1_c,:mag_1_uc],
+                   vec_terms    = [:all],
+                   ylim         = (-300,300),
+                   dpi          = 100,
+                   show_plot    = false,
+                   save_plot    = false) isa Plot
+    @test plot_mag(xyz;
+                   ind          = ind,
+                   detrend_data = true,
+                   use_mags     = [:comp_mags],
+                   vec_terms    = [:all],
+                   ylim         = (-1,1),
+                   dpi          = 100,
+                   show_plot    = false,
+                   save_plot    = false) isa Plot
+    @test plot_mag(xyz;
+                   ind          = ind,
+                   detrend_data = true,
+                   use_mags     = [:flux_a],
+                   vec_terms    = [:all],
+                   ylim         = (-1000,1000),
+                   dpi          = 100,
+                   show_plot    = false,
+                   save_plot    = false) isa Plot
+    @test plot_mag(xyz;
+                   ind          = ind,
+                   detrend_data = true,
+                   use_mags     = [:flight],
+                   vec_terms    = [:all],
+                   ylim         = (-1,1),
+                   dpi          = 100,
+                   show_plot    = false,
+                   save_plot    = false) isa Plot
 end
 
 @testset "plot_mag_c tests" begin
-    @test_nowarn plot_mag_c(xyz,xyz;show_plot=false);
-    @test_throws ErrorException plot_mag_c(xyz,xyz;use_mags=[:test],show_plot=false);
+    @test plot_mag_c(xyz,xyz;show_plot) isa Plot
+    @test_throws ErrorException plot_mag_c(xyz,xyz;use_mags=[:test],show_plot)
     @test plot_mag_c(xyz,xyz;
                      ind           = .!ind,
                      ind_comp      = ind,
@@ -138,62 +140,61 @@ end
 end
 
 @testset "plot_PSD tests" begin
-    @test_nowarn plot_PSD(mag_1_c;show_plot=false);
-    @test_nowarn plot_PSD(mag_1_c,1;
-                          window    = hamming,
-                          dpi       = 100,
-                          show_plot = false,
-                          save_plot = false);
+    @test plot_PSD(mag_1_c;show_plot) isa Plot
+    @test plot_PSD(mag_1_c,1;
+                   window    = hamming,
+                   dpi       = 100,
+                   show_plot = false,
+                   save_plot = false) isa Plot
 end
 
 @testset "plot_spectrogram tests" begin
-    @test_nowarn plot_spectrogram(mag_1_c;show_plot=false);
-    @test_nowarn plot_spectrogram(mag_1_c,1;
-                                  window    = hamming,
-                                  dpi       = 100,
-                                  show_plot = false,
-                                  save_plot = false);
+    @test plot_spectrogram(mag_1_c;show_plot) isa Plot
+    @test plot_spectrogram(mag_1_c,1;
+                           window    = hamming,
+                           dpi       = 100,
+                           show_plot = false,
+                           save_plot = false) isa Plot
 end
 
 @testset "plot_frequency tests" begin
-    @test_nowarn plot_frequency(xyz;show_plot=false);
-    @test_nowarn plot_frequency(xyz;
-                                ind          = ind,
-                                field        = :mag_1_c,
-                                freq_type    = :spec,
-                                detrend_data = false,
-                                window       = hamming,
-                                dpi          = 100,
-                                show_plot    = false,
-                                save_plot    = false);
+    @test plot_frequency(xyz;show_plot) isa Plot
+    @test plot_frequency(xyz;
+                         ind          = ind,
+                         field        = :mag_1_c,
+                         freq_type    = :spec,
+                         detrend_data = false,
+                         window       = hamming,
+                         dpi          = 100,
+                         show_plot    = false,
+                         save_plot    = false) isa Plot
 end
 
 @testset "plot_correlation tests" begin
-    @test_nowarn plot_correlation(xyz;show_plot=false);
-    @test_nowarn plot_correlation(xyz,:mag_1_uc,:mag_1_c,ind;
-                                  lim       = 0.5,
-                                  dpi       = 100,
-                                  show_plot = false,
-                                  save_plot = false,
-                                  silent    = true);
-    @test_nowarn plot_correlation(mag_1_uc,mag_1_c;show_plot=false);
-    @test_nowarn plot_correlation(mag_1_uc,mag_1_c,:mag_1_uc,:mag_1_c;
-                                  lim       = 0.5,
-                                  dpi       = 100,
-                                  show_plot = false,
-                                  save_plot = false,
-                                  silent    = true);
+    @test plot_correlation(xyz;show_plot) isa Plot
+    @test plot_correlation(xyz,:mag_1_uc,:mag_1_c,ind;
+                           lim       = 0.5,
+                           dpi       = 100,
+                           show_plot = false,
+                           save_plot = false,
+                           silent    = true) isa Plot
+    @test plot_correlation(mag_1_uc,mag_1_c;show_plot) isa Plot
+    @test plot_correlation(mag_1_uc,mag_1_c,:mag_1_uc,:mag_1_c;
+                           lim       = 0.5,
+                           dpi       = 100,
+                           show_plot = false,
+                           save_plot = false,
+                           silent    = true) isa Plot
 end
 
 feat_set  = [:mag_1_c,:mag_1_uc,:TL_A_flux_a,:flight]
-show_plot = false
 
 @testset "plot_correlation_matrix tests" begin
-    @test_nowarn plot_correlation_matrix(xyz,ind;show_plot);
-    @test_nowarn plot_correlation_matrix(xyz,ind,feat_set[1:2];show_plot)
-    @test_nowarn plot_correlation_matrix(xyz,ind,feat_set[3:3];show_plot)
-    @test_nowarn plot_correlation_matrix(xyz,ind,feat_set[2:3];show_plot)
-    @test_nowarn plot_correlation_matrix(xyz,ind,feat_set[1:3];show_plot)
+    @test plot_correlation_matrix(xyz,ind;show_plot) isa Plot
+    @test plot_correlation_matrix(xyz,ind,feat_set[1:2];show_plot) isa Plot
+    @test plot_correlation_matrix(xyz,ind,feat_set[3:3];show_plot) isa Plot
+    @test plot_correlation_matrix(xyz,ind,feat_set[2:3];show_plot) isa Plot
+    @test plot_correlation_matrix(xyz,ind,feat_set[1:3];show_plot) isa Plot
     @test_throws AssertionError plot_correlation_matrix(xyz,ind,feat_set[1:1];show_plot)
     @test_throws AssertionError plot_correlation_matrix(xyz,ind,feat_set[1:4];show_plot)
 end

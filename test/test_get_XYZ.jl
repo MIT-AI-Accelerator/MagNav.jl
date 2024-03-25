@@ -1,4 +1,5 @@
-using MagNav, Test, MAT, DataFrames, CSV
+using MagNav, Test, MAT
+using DataFrames, CSV
 using MagNav: delete_field, write_field
 
 traj_mat = joinpath(@__DIR__,"test_data/test_data_traj.mat")
@@ -58,7 +59,7 @@ write_field(xyz_h5,:ins_lon,rad2deg.(ins.lon))
 write_field(xyz_h5,:ins_alt,ins.alt)
 write_field(xyz_h5,:mag_1_uc,xyz.mag_1_uc)
 
-@testset "get_xyz tests" begin
+@testset "get_XYZ0 & get_XYZ1 tests" begin
     @test get_XYZ0(xyz_csv ;silent=true) isa MagNav.XYZ0
     @test get_XYZ1(traj_csv;silent=true) isa MagNav.XYZ1
     @test get_XYZ0(traj_mat,traj_field,:none,
@@ -106,7 +107,7 @@ end
     @test get_ins(xyz,ind).P == ins(ind).P
     @test get_ins(xyz,ind;t_zero_ll=10).lat[1:10] == traj.lat[ind][1:10]
     @test MagNav.zero_ins_ll(ins.lat,ins.lon,1,
-                             traj.lat[1:1],traj.lon[1:1]) isa Tuple
+                             traj.lat[1:1],traj.lon[1:1]) isa NTuple{2,Vector}
     @test_throws AssertionError get_ins("test")
 end
 
@@ -134,14 +135,17 @@ df_flight = DataFrame(flight   = flights,
 @testset "get_XYZ20 tests" begin
     for xyz_h5 in xyz_files
         xyz = get_XYZ20(xyz_h5;tt_sort=true,silent=true)
+        @test xyz isa MagNav.XYZ20
         @test xyz.traj.N ≈ length(xyz.traj.lat) ≈ length(xyz.traj.lon)
     end
-    for xyz_h5 in xyz_files #* not actually 160 Hz, should still pass
+    for xyz_h5 in xyz_files #* note: not actually 160 Hz, should still pass
         xyz = get_XYZ20(xyz_h5,xyz_h5;silent=true)
+        @test xyz isa MagNav.XYZ20
         @test xyz.traj.N ≈ length(xyz.traj.lat) ≈ length(xyz.traj.lon)
     end
     for flight in flights
         xyz = get_XYZ(flight,df_flight;tt_sort=true,reorient_vec=true,silent=true)
+        @test xyz isa MagNav.XYZ20
         @test xyz.traj.N ≈ length(xyz.traj.lat) ≈ length(xyz.traj.lon)
     end
 end

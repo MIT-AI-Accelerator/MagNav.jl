@@ -8,6 +8,7 @@
              year               = 2023,
              doy                = 154,
              dt                 = 0.1,
+             tt_sort::Bool      = true,
              silent::Bool       = false)
 
 Get the minimum dataset required for MagNav from saved CSV, HDF5, or MAT file.
@@ -71,13 +72,16 @@ INS fields should be within the specified `ins_field` MAT struct and without
 - `xyz_file`:   path/name of flight data CSV, HDF5, or MAT file (`.csv`, `.h5`, or `.mat` extension required)
 - `traj_field`: (optional) trajectory struct field within MAT file to use, not relevant for CSV or HDF5 file
 - `ins_field`:  (optional) INS struct field within MAT file to use, `:none` if unavailable, not relevant for CSV or HDF5 file
-- `info`:       (optional) flight data information, only used if not in `xyz_file`
-- `flight`:     (optional) flight number, only used if not in `xyz_file`
-- `line`:       (optional) line number, i.e., segment within `flight`, only used if not in `xyz_file`
-- `year`:       (optional) year, only used if not in `xyz_file`
-- `doy`:        (optional) day of year, only used if not in `xyz_file`
-- `dt`:         (optional) measurement time step [s], only used if not in `xyz_file`
+- `tt_sort`:    (optional) if true, sort data by time (instead of line)
 - `silent`:     (optional) if true, no print outs
+
+If not provided in `xyz_file`:
+- `info`:   (optional) flight data information
+- `flight`: (optional) flight number
+- `line`:   (optional) line number, i.e., segment within `flight`
+- `year`:   (optional) year
+- `doy`:    (optional) day of year
+- `dt`:     (optional) measurement time step [s]
 
 **Returns:**
 - `xyz`: `XYZ0` flight data struct
@@ -91,22 +95,24 @@ function get_XYZ0(xyz_file::String,
                   year               = 2023,
                   doy                = 154,
                   dt                 = 0.1,
+                  tt_sort::Bool      = true,
                   silent::Bool       = false)
 
     @assert any(occursin.([".csv",".h5",".mat"],xyz_file)) "$xyz_file flight data file must have .csv, .h5, or .mat extension"
 
-    traj = get_traj(xyz_file,traj_field;dt=dt,silent=silent)
+    traj = get_traj(xyz_file,traj_field;
+                    dt      = dt,
+                    tt_sort = false, # must do here
+                    silent  = silent)
+
+    insf = false # flag to create INS struct
 
     if occursin(".csv",xyz_file) # get data from CSV file
 
         d = DataFrame(CSV.File(xyz_file))
 
-        # if needed, create INS struct
-        if any(["ins_lat","ins_lon","ins_alt"] .∉ (names(d),))
-            ins = create_ins(traj)
-        else
-            ins = get_ins(xyz_file,ins_field;dt=traj.dt,silent=silent)
-        end
+        # if needed, set flag to create INS struct = true
+        any(["ins_lat","ins_lon","ins_alt"] .∉ (names(d),)) && (insf = true)
 
         # these fields might not be included
         info     = "info"     in names(d) ? d[:,"info"    ] : info
@@ -123,13 +129,11 @@ function get_XYZ0(xyz_file::String,
 
         d = h5open(xyz_file,"r") # read-only
 
-        # if needed, create INS struct
+        # if needed, set flag to create INS struct = true
         if any(isnan.(read_check(d,:ins_lat,1,true))) |
            any(isnan.(read_check(d,:ins_lon,1,true))) |
            any(isnan.(read_check(d,:ins_alt,1,true)))
-            ins = create_ins(traj)
-        else
-            ins = get_ins(xyz_file,ins_field;dt=traj.dt,silent=silent)
+           insf = true
         end
 
         # these fields might not be included
@@ -151,11 +155,14 @@ function get_XYZ0(xyz_file::String,
 
     elseif occursin(".mat",xyz_file) # get data from MAT file
 
-        # if needed, create INS struct
+        # if needed, set flag to create INS struct = true
         if ins_field == :none
-            ins = create_ins(traj)
+            insf = true
         else
-            ins = get_ins(xyz_file,ins_field;dt=traj.dt,silent=silent)
+            d_ = matopen(xyz_file,"r") do file
+                read(file,"$ins_field")
+            end
+            any(["lat","lon","alt"] .∉ (keys(d_),)) && (insf = true)
         end
 
         d = matopen(xyz_file,"r") do file
@@ -174,6 +181,14 @@ function get_XYZ0(xyz_file::String,
         mag_1_uc = haskey(d,"mag_1_uc") ? d["mag_1_uc"] : NaN
 
     end
+
+    # if needed, create INS struct
+    ins = insf ? create_ins(traj) : get_ins(xyz_file,ins_field;
+                                            dt      = traj.dt,
+                                            tt_sort = false, # must do here
+                                            silent  = silent)
+
+    @assert traj.tt ≈ ins.tt "traj & ins times do not agree"
 
     # ensure vectors
     flight   = length(flight  ) > 1 ? vec(flight  ) : fill(  flight[1],traj.N)
@@ -221,9 +236,11 @@ function get_XYZ0(xyz_file::String,
     year   = convert.(eltype(traj.lat),year)
     doy    = convert.(eltype(traj.lat),doy)
 
+    ind  = tt_sort ? sortperm(traj.tt) : trues(traj.N)
     igrf = zero.(traj.lat)
-    xyz  = XYZ0(info, traj, ins, flux_a, flight, line,
-                year, doy, diurnal, igrf, mag_1_c, mag_1_uc)
+    xyz  = XYZ0(info, traj(ind), ins(ind), flux_a(ind),
+                flight[ind], line[ind], year[ind], doy[ind],
+                diurnal[ind], igrf[ind], mag_1_c[ind], mag_1_uc[ind])
     igrf = norm.(get_igrf(xyz;
                           frame     = :body,
                           norm_igrf = false,
@@ -243,6 +260,7 @@ end # function get_XYZ0
              year               = 2023,
              doy                = 154,
              dt                 = 0.1,
+             tt_sort::Bool      = true,
              silent::Bool       = false)
 
 Get the minimum dataset required for MagNav from saved CSV, HDF5, or MAT file.
@@ -323,13 +341,16 @@ INS fields should be within the specified `ins_field` MAT struct and without
 - `xyz_file`:   path/name of flight data CSV, HDF5, or MAT file (`.csv`, `.h5`, or `.mat` extension required)
 - `traj_field`: (optional) trajectory struct field within MAT file to use, not relevant for CSV or HDF5 file
 - `ins_field`:  (optional) INS struct field within MAT file to use, `:none` if unavailable, not relevant for CSV or HDF5 file
-- `info`:       (optional) flight data information, only used if not in `xyz_file`
-- `flight`:     (optional) flight number, only used if not in `xyz_file`
-- `line`:       (optional) line number, i.e., segment within `flight`, only used if not in `xyz_file`
-- `year`:       (optional) year, only used if not in `xyz_file`
-- `doy`:        (optional) day of year, only used if not in `xyz_file`
-- `dt`:         (optional) measurement time step [s], only used if not in `xyz_file`
+- `tt_sort`:    (optional) if true, sort data by time (instead of line)
 - `silent`:     (optional) if true, no print outs
+
+If not provided in `xyz_file`:
+- `info`:   (optional) flight data information
+- `flight`: (optional) flight number
+- `line`:   (optional) line number, i.e., segment within `flight`
+- `year`:   (optional) year
+- `doy`:    (optional) day of year
+- `dt`:     (optional) measurement time step [s]
 
 **Returns:**
 - `xyz`: `XYZ1` flight data struct
@@ -343,18 +364,20 @@ function get_XYZ1(xyz_file::String,
                   year               = 2023,
                   doy                = 154,
                   dt                 = 0.1,
+                  tt_sort::Bool      = true,
                   silent::Bool       = false)
 
     @assert any(occursin.([".csv",".h5",".mat"],xyz_file)) "$xyz_file flight data file must have .csv, .h5, or .mat extension"
 
     xyz = get_XYZ0(xyz_file,traj_field,ins_field;
-                   info   = info,
-                   flight = flight,
-                   line   = line,
-                   year   = year,
-                   doy    = doy,
-                   dt     = dt,
-                   silent = silent)
+                   info    = info,
+                   flight  = flight,
+                   line    = line,
+                   year    = year,
+                   doy     = doy,
+                   dt      = dt,
+                   tt_sort = false, # must do here
+                   silent  = silent)
 
     # these fields can be extracted using XYZ0 functionality
     info     = xyz.info
@@ -426,9 +449,16 @@ function get_XYZ1(xyz_file::String,
     aux_2    = length(aux_2   ) > 1 ? vec(aux_2   ) : fill(   aux_2[1],traj.N)
     aux_3    = length(aux_3   ) > 1 ? vec(aux_3   ) : fill(   aux_3[1],traj.N)
 
-    return XYZ1(info, traj, ins, flux_a, flux_b, flight, line, year, doy,
-                diurnal, igrf, mag_1_c, mag_2_c, mag_3_c,
-                mag_1_uc, mag_2_uc, mag_3_uc, aux_1, aux_2, aux_3)
+    ind  = tt_sort ? sortperm(traj.tt) : trues(traj.N)
+
+    flux_b_ = any(isnan.([flux_b.x;flux_b.y;flux_b.z])) ? flux_b : flux_b(ind)
+
+    return XYZ1(info, traj(ind), ins(ind), flux_a(ind), flux_b_,
+                  flight[ind],     line[ind],     year[ind],
+                     doy[ind],  diurnal[ind],     igrf[ind],
+                 mag_1_c[ind],  mag_2_c[ind],  mag_3_c[ind],
+                mag_1_uc[ind], mag_2_uc[ind], mag_3_uc[ind],
+                   aux_1[ind],    aux_2[ind],    aux_3[ind])
 end # function get_XYZ1
 
 """
@@ -513,7 +543,10 @@ end # function get_flux
 get_MagV = get_magv = get_flux
 
 """
-    get_traj(traj_file::String, field::Symbol=:traj; dt=0.1, silent::Bool=false)
+    get_traj(traj_file::String, field::Symbol=:traj;
+             dt            = 0.1,
+             tt_sort::Bool = true,
+             silent::Bool  = false)
 
 Get trajectory data from saved CSV, HDF5, or MAT file. The only required fields
 are `lat`, `lon`, and `alt` (position).
@@ -551,11 +584,14 @@ MATLAB-companion outputs data.
 **Returns:**
 - `traj`: `Traj` trajectory struct
 """
-function get_traj(traj_file::String, field::Symbol=:traj; dt=0.1, silent::Bool=false)
+function get_traj(traj_file::String, field::Symbol=:traj;
+                  dt            = 0.1,
+                  tt_sort::Bool = true,
+                  silent::Bool  = false)
 
     @assert any(occursin.([".csv",".h5",".mat"],traj_file)) "$traj_file trajectory data file must have .csv, .h5, or .mat extension"
 
-    silent || @info("reading in data: $traj_file")
+    silent || @info("reading in Traj data: $traj_file")
 
     if occursin(".csv",traj_file) # get data from CSV file
 
@@ -693,11 +729,19 @@ function get_traj(traj_file::String, field::Symbol=:traj; dt=0.1, silent::Bool=f
         end
     end
 
-    return Traj(N, dt, tt, lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb)
+    ind = tt_sort ? sortperm(tt) : trues(N)
+
+    return Traj(  N     ,  dt     ,  tt[ind],
+                lat[ind], lon[ind], alt[ind],
+                 vn[ind],  ve[ind],  vd[ind],
+                 fn[ind],  fe[ind],  fd[ind], Cnb[:,:,ind])
 end # function get_traj
 
 """
-    get_ins(ins_file::String, field::Symbol=:ins_data; dt=0.1, silent::Bool=false)
+    get_ins(ins_file::String, field::Symbol=:ins_data;
+            dt            = 0.1,
+            tt_sort::Bool = true,
+            silent::Bool  = false)
 
 Get inertial navigation system data from saved CSV, HDF5, or MAT file. The only
 required fields are `ins_lat`, `ins_lon`, and `ins_alt` (position).
@@ -736,11 +780,14 @@ prefixes. This is the standard way the MATLAB-companion outputs data.
 **Returns:**
 - `ins`: `INS` inertial navigation system struct
 """
-function get_ins(ins_file::String, field::Symbol=:ins_data; dt=0.1, silent::Bool=false)
+function get_ins(ins_file::String, field::Symbol=:ins_data;
+                 dt            = 0.1,
+                 tt_sort::Bool = true,
+                 silent::Bool  = false)
 
     @assert any(occursin.([".csv",".h5",".mat"],ins_file)) "$ins_file INS data file must have .csv, .h5, or .mat extension"
 
-    silent || @info("reading in data: $ins_file")
+    silent || @info("reading in INS data: $ins_file")
 
     if occursin(".csv",ins_file) # get data from CSV file
 
@@ -887,7 +934,13 @@ function get_ins(ins_file::String, field::Symbol=:ins_data; dt=0.1, silent::Bool
         P = zeros(eltype(lat),1,1,N) # unknown
     end
 
-    return INS(N, dt, tt, lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, P)
+    ind = tt_sort ? sortperm(tt) : trues(N)
+
+    return INS(  N     ,  dt     ,  tt[ind],
+               lat[ind], lon[ind], alt[ind],
+                vn[ind],  ve[ind],  vd[ind],
+                fn[ind],  fe[ind],  fd[ind],
+                Cnb[:,:,ind], P[:,:,ind])
 end # function get_ins
 
 """
@@ -951,10 +1004,10 @@ function (ins::INS)(ind=trues(ins.N);
         (ins_lat,ins_lon) = (ins.lat[ind],ins.lon[ind])
     end
 
-    return INS(length(ind) ,  ins.dt      , ins.tt[ind]   ,
-               ins_lat     ,  ins_lon     , ins.alt[ind]  ,
-               ins.vn[ind] ,  ins.ve[ind] , ins.vd[ind]   ,
-               ins.fn[ind] ,  ins.fe[ind] , ins.fd[ind]   ,
+    return INS(length(ind), ins.dt     , ins.tt[ind] ,
+               ins_lat    , ins_lon    , ins.alt[ind],
+               ins.vn[ind], ins.ve[ind], ins.vd[ind] ,
+               ins.fn[ind], ins.fe[ind], ins.fd[ind] ,
                ins.Cnb[:,:,ind], ins.P[:,:,ind])
 end # function INS
 
@@ -1041,11 +1094,10 @@ function (traj::Traj)(ind=trues(traj.N))
 
     ind = findall((1:traj.N) .∈ ((1:traj.N)[ind],))
 
-    return Traj(length(ind)   , traj.dt        , traj.tt[ind]   ,
-                traj.lat[ind] , traj.lon[ind]  , traj.alt[ind]  ,
-                traj.vn[ind]  , traj.ve[ind]   , traj.vd[ind]   ,
-                traj.fn[ind]  , traj.fe[ind]   , traj.fd[ind]   ,
-                traj.Cnb[:,:,ind])
+    return Traj(length(ind)  , traj.dt      , traj.tt[ind] ,
+                traj.lat[ind], traj.lon[ind], traj.alt[ind],
+                traj.vn[ind] , traj.ve[ind] , traj.vd[ind] ,
+                traj.fn[ind] , traj.fe[ind] , traj.fd[ind] , traj.Cnb[:,:,ind])
 end # function Traj
 
 """
@@ -1061,6 +1113,8 @@ Get vector magnetometer measurements at specific indices.
 - `flux`: `MagV` vector magnetometer measurement struct at `ind`
 """
 function (flux::MagV)(ind=trues(length(flux.x)))
+    N   = length(flux.x)
+    ind = findall((1:N) .∈ ((1:N)[ind],))
     return MagV(flux.x[ind], flux.y[ind], flux.z[ind], flux.t[ind])
 end # function MagV
 
@@ -1090,7 +1144,7 @@ function get_XYZ20(xyz_h5::String;
 
     fields = :fields20
 
-    silent || @info("reading in data: $xyz_h5")
+    silent || @info("reading in XYZ20 data: $xyz_h5")
 
     xyz = h5open(xyz_h5,"r") # read-only
     N   = maximum([length(read(xyz,k)) for k in keys(xyz)])
@@ -1213,7 +1267,7 @@ function get_XYZ20(xyz_160_h5::String, xyz_h5::String;
 
     fields = :fields160
 
-    silent || @info("reading in data: $xyz_160_h5")
+    silent || @info("reading in XYZ20 data: $xyz_160_h5")
 
     xyz = h5open(xyz_160_h5,"r") # read-only
     N   = maximum([length(read(xyz,k)) for k in keys(xyz)])
@@ -1280,7 +1334,7 @@ function get_XYZ21(xyz_h5::String;
 
     fields = :fields21
 
-    silent || @info("reading in data: $xyz_h5")
+    silent || @info("reading in XYZ21 data: $xyz_h5")
 
     xyz = h5open(xyz_h5,"r") # read-only
     N   = maximum([length(read(xyz,k)) for k in keys(xyz)])
@@ -1365,8 +1419,10 @@ function get_XYZ21(xyz_h5::String;
 end # function get_XYZ21
 
 """
-    get_XYZ(flight::Symbol, df_flight::DataFrame; tt_sort::Bool=true,
-            reorient_vec::Bool=false, silent::Bool=false)
+    get_XYZ(flight::Symbol, df_flight::DataFrame;
+            tt_sort::Bool      = true,
+            reorient_vec::Bool = false,
+            silent::Bool       = false)
 
 Get `XYZ` flight data from saved HDF5 file via DataFrame lookup.
 
@@ -1386,15 +1442,25 @@ Get `XYZ` flight data from saved HDF5 file via DataFrame lookup.
 **Returns:**
 - `xyz`: `XYZ` flight data struct
 """
-function get_XYZ(flight::Symbol, df_flight::DataFrame; tt_sort::Bool=true,
-                 reorient_vec::Bool=false, silent::Bool=false)
+function get_XYZ(flight::Symbol, df_flight::DataFrame;
+                 tt_sort::Bool      = true,
+                 reorient_vec::Bool = false,
+                 silent::Bool       = false)
 
-    ind = findfirst(df_flight.flight .== flight)
+    ind      = findfirst(df_flight.flight .== flight)
+    xyz_type = df_flight.xyz_type[ind]
+    xyz_h5   = df_flight.xyz_h5[ind]
 
-    if df_flight.xyz_type[ind] == :XYZ20
-        xyz = get_XYZ20(df_flight.xyz_h5[ind];tt_sort=tt_sort,silent=silent)
-    elseif df_flight.xyz_type[ind] == :XYZ21
-        xyz = get_XYZ21(df_flight.xyz_h5[ind];tt_sort=false,silent=silent) # todo: update with v1.2.1
+    if xyz_type == nameof(XYZ0)
+        xyz = get_XYZ0( xyz_h5;tt_sort=tt_sort,silent=silent)
+    elseif xyz_type == nameof(XYZ1)
+        xyz = get_XYZ1( xyz_h5;tt_sort=tt_sort,silent=silent)
+    elseif xyz_type == nameof(XYZ20)
+        xyz = get_XYZ20(xyz_h5;tt_sort=tt_sort,silent=silent)
+    elseif xyz_type == nameof(XYZ21)
+        xyz = get_XYZ21(xyz_h5;tt_sort=tt_sort,silent=silent)
+    else
+        error("$xyz_type xyz_type not defined")
     end
 
     reorient_vec && xyz_reorient_vec!(xyz)
@@ -1483,7 +1549,7 @@ function xyz_reorient_vec!(xyz::XYZ)
 
             # correct vector magnetometer data
             for (i,Bt) in enumerate(flux.t)
-                  new_flux = Bt*R*flux_matrix[i,:]
+                  new_flux  = Bt*R*flux_matrix[i,:]
                   flux.x[i] = new_flux[1]
                   flux.y[i] = new_flux[2]
                   flux.z[i] = new_flux[3]

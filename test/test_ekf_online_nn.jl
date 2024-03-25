@@ -5,6 +5,7 @@ map_file  = joinpath(@__DIR__,"test_data/test_data_map.mat")
 traj_file = joinpath(@__DIR__,"test_data/test_data_traj.mat")
 
 mapS      = get_map(map_file)
+map_cache = Map_Cache(maps=[mapS])
 itp_mapS  = map_interpolate(mapS)
 
 xyz    = get_XYZ0(traj_file,:traj,:none;silent)
@@ -33,8 +34,9 @@ m = comp_params.model
                          P0_TL      = P0_nn)
 
 @testset "ekf_online_nn tests" begin
-    @test_nowarn ekf_online_nn_setup(x_norm,y_norm,m,y_norms;N_sigma=10)
-    @test_nowarn ekf_online_nn(ins,xyz.mag_1_c,itp_mapS,x_norm,m,y_norms,P0,Qd,R)
+    @test ekf_online_nn_setup(x_norm,y_norm,m,y_norms;N_sigma=10) isa Tuple{Matrix,Vector}
+    @test ekf_online_nn(ins,xyz.mag_1_c,itp_mapS ,x_norm,m,y_norms,P0,Qd,R) isa MagNav.FILTres
+    @test ekf_online_nn(ins,xyz.mag_1_c,map_cache,x_norm,m,y_norms,P0,Qd,R) isa MagNav.FILTres
     @test run_filt(traj,ins,xyz.mag_1_c,itp_mapS,:ekf_online_nn;
                    P0=P0,Qd=Qd,R=R,x_nn=x_norm,m=m,y_norms=y_norms) isa Tuple{MagNav.CRLBout,MagNav.INSout,MagNav.FILTout}
 end

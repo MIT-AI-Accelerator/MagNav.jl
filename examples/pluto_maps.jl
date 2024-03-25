@@ -102,8 +102,8 @@ end;
 begin
 	xx_lim = extrema(e_mapS_395.xx) .+ (-0.01,0.01)
 	yy_lim = extrema(e_mapS_395.yy) .+ (-0.01,0.01)
-	n_mapS_395 = upward_fft(map_fill(map_trim(
-				 get_map(),xx_lim=xx_lim,yy_lim=yy_lim)),e_mapS_395.alt)
+	n_mapS_395 = upward_fft(map_trim(get_map(MagNav.namad),
+                            xx_lim=xx_lim,yy_lim=yy_lim),e_mapS_395.alt)
 end;
 
 # ╔═╡ c111d83f-2883-4149-8ee2-53bf4b57640a

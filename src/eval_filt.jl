@@ -642,8 +642,8 @@ function plot_filt_err(traj::Traj, filt_out::FILTout, crlb_out::CRLBout;
     # plot!(p4,tt, filt_out.alt_err[i],lab="filter error",color=:black,lw=2)
     # plot!(p4,tt, filt_out.alt_std[i],lab="filter 1-σ",color=:blue)
     # plot!(p4,tt,-filt_out.alt_std[i],lab=lab=false,color=:blue)
-    # # plot!(p4,tt, crlb_out.alt_std[i],lab="CRLB 1-σ",color=:red,ls=:dash)
-    # # plot!(p4,tt,-crlb_out.alt_std[i],lab=false,color=:red,ls=:dash)
+    # plot!(p4,tt, crlb_out.alt_std[i],lab="CRLB 1-σ",color=:red,ls=:dash)
+    # plot!(p4,tt,-crlb_out.alt_std[i],lab=false,color=:red,ls=:dash)
     # show_plot && display(p4)
     # save_plot && png(p4,"altitude_error.png")
 
@@ -764,13 +764,6 @@ function plot_mag_map(path::Path, mag, itp_mapS;
     i  = downsample(1:path.N,Nmax)
     tt = (path.tt[i] .- path.tt[i][1]) / 60
 
-    # custom itp_mapS from map cache, using median path position
-    if itp_mapS isa Map_Cache # not the most accurate, but it runs
-        itp_mapS = get_cached_map(itp_mapS,median(path.lat[i]),
-                                           median(path.lon[i]),
-                                           median(path.alt[i]))
-    end
-
     map_val = itp_mapS.(path.lat[i],path.lon[i],path.alt[i])
     mag_val = detrend_data ? detrend(mag[i] ) : mag[i]
     map_val = detrend_data ? detrend(map_val) : map_val
@@ -835,13 +828,6 @@ function plot_mag_map_err(path::Path, mag, itp_mapS;
     p1 = plot(xlab="time [min]",ylab=l*"magnetic signal error [nT]",dpi=dpi)
 
     f = detrend_data ? detrend : x -> x
-
-    # custom itp_mapS from map cache, using median path position
-    if itp_mapS isa Map_Cache # not the most accurate, but it runs
-        itp_mapS = get_cached_map(itp_mapS,median(path.lat[i]),
-                                           median(path.lon[i]),
-                                           median(path.alt[i]))
-    end
 
     map_val = itp_mapS.(path.lat[i],path.lon[i],path.alt[i])
 
@@ -1085,6 +1071,7 @@ function conf_ellipse!(p1, P;
         plot!(p1,[-k,k]*eigax[2,1],[-k,k]*eigax[2,2],ls=:dash,lw=2,lc=:red)
     end
 
+    return (nothing)
 end # function conf_ellipse!
 
 """
@@ -1400,18 +1387,18 @@ function gif_ellipse(filt_res::FILTres,
     for i = 1:di:size(P,3)
 
         if (dx != 0) & (dy != 0) & !isnan(dx) & !isnan(dy)
-            xi   = findmin(abs.(map_map.xx.-filt_out.lon[i]))[2]
-            yi   = findmin(abs.(map_map.yy.-filt_out.lat[i]))[2]
-            xind = max(xi-num,1):min(xi+num,length(map_map.xx))
-            yind = max(yi-num,1):min(yi+num,length(map_map.yy))
-            p1   = plot_map(map_map.map[yind,xind,1],
-                            map_map.xx[xind],map_map.yy[yind];
-                            clims=clims,dpi=dpi,margin=margin,Nmax=10^10,
-                            legend=false,axis=false,
-                            map_color=map_color,bg_color=bg_color,
-                            map_units=:rad,plot_units=conf_units,b_e=b_e);
+            xi     = findmin(abs.(map_map.xx.-filt_out.lon[i]))[2]
+            yi     = findmin(abs.(map_map.yy.-filt_out.lat[i]))[2]
+            ind_xx = max(xi-num,1):min(xi+num,length(map_map.xx))
+            ind_yy = max(yi-num,1):min(yi+num,length(map_map.yy))
+            p1     = plot_map(map_map.map[ind_yy,ind_xx,1],
+                              map_map.xx[ind_xx],map_map.yy[ind_yy];
+                              clims=clims,dpi=dpi,margin=margin,Nmax=10^10,
+                              legend=false,axis=false,
+                              map_color=map_color,bg_color=bg_color,
+                              map_units=:rad,plot_units=conf_units,b_e=b_e)
         else
-            p1 = plot();
+            p1 = plot()
         end
 
         conf_ellipse!(p1,P[:,:,i];

@@ -53,7 +53,7 @@ function create_TL_A(Bx, By, Bz;
     Bz_hat_By_dot = Bz_hat .* By_dot ./ Bt_scale
     Bz_hat_Bz_dot = Bz_hat .* Bz_dot ./ Bt_scale
 
-    # # original (slightly incorrect) eddy current terms
+    # #* note: original (slightly incorrect) eddy current terms
     # Bx_hat_Bx_dot = Bx_hat .* fdm(Bx_hat) .* Bt ./ Bt_scale
     # Bx_hat_By_dot = Bx_hat .* fdm(By_hat) .* Bt ./ Bt_scale
     # Bx_hat_Bz_dot = Bx_hat .* fdm(Bz_hat) .* Bt ./ Bt_scale

@@ -10,8 +10,8 @@
 Plot data vs time.
 
 **Arguments:**
-- `tt`:        time [s]
-- `y`:         data vector
+- `tt`:        length-`N` time vector [s]
+- `y`:         length-`N` data vector
 - `ind`:       (optional) selected data indices
 - `lab`:       (optional) data (legend) label
 - `xlab`:      (optional) x-axis label
@@ -651,7 +651,7 @@ https://github.com/JuliaPlots/StatsPlots.jl
 
 **Arguments:**
 - `x`:         `N` x `Nf` data matrix (`Nf` is number of features)
-- `features`:  length `Nf` feature vector (including components of TL `A`, etc.)
+- `features`:  length-`Nf` feature vector (including components of TL `A`, etc.)
 - `dpi`:       (optional) dots per inch (image resolution)
 - `show_plot`: (optional) if true, `p1` will be shown
 - `save_plot`: (optional) if true, `p1` will be saved as `plot_png`

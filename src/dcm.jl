@@ -21,9 +21,9 @@ Reference: Titterton & Weston, Strapdown Inertial Navigation Technology, 2004,
 Section 3.6 (pg. 36-41 & 537).
 
 **Arguments:**
-- `roll`:  length `N` roll  angle [rad], right-handed rotation about x-axis
-- `pitch`: length `N` pitch angle [rad], right-handed rotation about y-axis
-- `yaw`:   length `N` yaw   angle [rad], right-handed rotation about z-axis
+- `roll`:  length-`N` roll  angle [rad], right-handed rotation about x-axis
+- `pitch`: length-`N` pitch angle [rad], right-handed rotation about y-axis
+- `yaw`:   length-`N` yaw   angle [rad], right-handed rotation about z-axis
 - `order`: (optional) rotation order {`:body2nav`,`:nav2body`}
 
 **Returns:**
@@ -104,9 +104,9 @@ Section 3.6 (pg. 36-41 & 537).
 - `order`: (optional) rotation order {`:body2nav`,`:nav2body`}
 
 **Returns:**
-- `roll`:  length `N` roll  angle [rad], right-handed rotation about x-axis
-- `pitch`: length `N` pitch angle [rad], right-handed rotation about y-axis
-- `yaw`:   length `N` yaw   angle [rad], right-handed rotation about z-axis
+- `roll`:  length-`N` roll  angle [rad], right-handed rotation about x-axis
+- `pitch`: length-`N` pitch angle [rad], right-handed rotation about y-axis
+- `yaw`:   length-`N` yaw   angle [rad], right-handed rotation about z-axis
 """
 function dcm2euler(dcm, order::Symbol=:body2nav)
 

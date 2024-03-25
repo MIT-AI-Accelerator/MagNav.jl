@@ -72,8 +72,8 @@ end # function dlon2de
 Linear regression with data matrix.
 
 **Arguments:**
-- `y`: observed data
-- `x`: input data
+- `y`: length-`N` observed data vector
+- `x`: `N` x `Nf` input data matrix (`Nf` is number of features)
 - `λ`: (optional) ridge parameter
 
 **Returns:**
@@ -89,11 +89,11 @@ end # function linreg
 Linear regression to determine best fit line for x = eachindex(y).
 
 **Arguments:**
-- `y`: observed data
+- `y`: length-`N` observed data vector
 - `λ`: (optional) ridge parameter
 
 **Returns:**
-- `coef`: length `2` linear regression coefficients
+- `coef`: length-`2` vector of linear regression coefficients
 """
 function linreg(y; λ=0)
     x    = [one.(y) eachindex(y)]
@@ -107,13 +107,13 @@ end # function linreg
 Detrend signal (remove mean and optionally slope).
 
 **Arguments:**
-- `y`:         observed data
-- `x`:         (optional) input data
+- `y`:         length-`N` observed data vector
+- `x`:         (optional) `N` x `Nf` input data matrix (`Nf` is number of features)
 - `λ`:         (optional) ridge parameter
 - `mean_only`: (optional) if true, only remove mean (not slope)
 
 **Returns:**
-- `y`: observed data, detrended
+- `y`: length-`N` observed data vector, detrended
 """
 function detrend(y, x=[eachindex(y);]; λ=0, mean_only::Bool=false)
     if mean_only
@@ -204,6 +204,7 @@ Bandpass (or low-pass or high-pass) filter vector or columns of matrix.
 """
 function bpf_data!(x; bpf=get_bpf())
     x .= bpf_data(x;bpf=bpf)
+    return (nothing)
 end # function bpf_data!
 
 """
@@ -247,9 +248,9 @@ Get `x` data matrix.
 - `bpf_mag`:          (optional) if true, bpf scalar magnetometer measurements
 
 **Returns:**
-- `x`:        `N` x `Nf` data matrix (`Nf` is number of features)
-- `no_norm`:  length `Nf` Boolean indices of features to not be normalized
-- `features`: length `Nf` feature vector (including components of TL `A`, etc.)
+- `x`:        ` data matrix (`Nf` is number of features)
+- `no_norm`:  length-`Nf` Boolean indices of features to not be normalized
+- `features`: length-`Nf` feature vector (including components of TL `A`, etc.)
 """
 function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
                features_setup::Vector{Symbol}   = [:mag_1_uc,:TL_A_flux_a];
@@ -436,8 +437,8 @@ Get `x` data matrix from multiple `XYZ` flight data structs.
 
 **Returns:**
 - `x`:        `N` x `Nf` data matrix (`Nf` is number of features)
-- `no_norm`:  length `Nf` Boolean indices of features to not be normalized
-- `features`: length `Nf` feature vector (including components of TL `A`, etc.)
+- `no_norm`:  length-`Nf` Boolean indices of features to not be normalized
+- `features`: length-`Nf` feature vector (including components of TL `A`, etc.)
 """
 function get_x(xyz_vec::Vector, ind_vec::Vector,
                features_setup::Vector{Symbol}   = [:mag_1_uc,:TL_A_flux_a];
@@ -512,9 +513,9 @@ Get `x` data matrix from multiple flight lines, possibly multiple flights.
 
 **Returns:**
 - `x`:        `N` x `Nf` data matrix (`Nf` is number of features)
-- `no_norm`:  length `Nf` Boolean indices of features to not be normalized
-- `features`: length `Nf` feature vector (including components of TL `A`, etc.)
-- `l_segs`:   length `N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
+- `no_norm`:  length-`Nf` Boolean indices of features to not be normalized
+- `features`: length-`Nf` feature vector (including components of TL `A`, etc.)
+- `l_segs`:   length-`N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
 """
 function get_x(lines, df_line::DataFrame, df_flight::DataFrame,
                features_setup::Vector{Symbol}   = [:mag_1_uc,:TL_A_flux_a];
@@ -608,7 +609,7 @@ Get `y` target vector.
 - `sub_igrf`:    (optional) if true, subtract IGRF from scalar magnetometer measurements
 
 **Returns:**
-- `y`: length `N` target vector
+- `y`: length-`N` target vector
 """
 function get_y(xyz::XYZ, ind = trues(xyz.traj.N),
                map_val           = -1;
@@ -707,7 +708,7 @@ Get `y` target vector from multiple flight lines, possibly multiple flights.
 - `silent`:      (optional) if true, no print outs
 
 **Returns:**
-- `y`: length `N` target vector
+- `y`: length-`N` target vector
 """
 function get_y(lines, df_line::DataFrame, df_flight::DataFrame,
                df_map::DataFrame;
@@ -850,11 +851,11 @@ and `B_dot` used to create the "external" Tolles-Lawson `A` matrix.
 **Returns:**
 - `A`:        `N` x `N_TL` "external" Tolles-Lawson `A` matrix (`N_TL` is number of Tolles-Lawson coefficients)
 - `x`:        `N` x `Nf` data matrix (`Nf` is number of features)
-- `y`:        length `N` target vector
-- `no_norm`:  length `Nf` Boolean indices of features to not be normalized
-- `features`: length `Nf` feature vector (including components of TL `A`, etc.)
-- `l_segs`:   length `N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
-- `Bt`:       if `return_B = true`, length `N` magnitude of total field measurements used to create `A` [nT]
+- `y`:        length-`N` target vector
+- `no_norm`:  length-`Nf` Boolean indices of features to not be normalized
+- `features`: length-`Nf` feature vector (including components of TL `A`, etc.)
+- `l_segs`:   length-`N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
+- `Bt`:       if `return_B = true`, length-`N` magnitude of total field measurements used to create `A` [nT]
 - `B_dot`:    if `return_B = true`, `N` x `3` finite differences of total field vector used to create `A` [nT]
 """
 function get_Axy(lines, df_line::DataFrame,
@@ -1286,13 +1287,13 @@ end # function sparse_group_lasso
 Remove mean error from multiple individual flight lines within larger dataset.
 
 **Arguments:**
-- `y_hat`:  length `N` prediction vector
-- `y`:      length `N` target vector
-- `l_segs`: length `N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
+- `y_hat`:  length-`N` prediction vector
+- `y`:      length-`N` target vector
+- `l_segs`: length-`N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
 - `silent`: (optional) if true, no print outs
 
 **Returns:**
-- `err`: length `N` mean-corrected (per line) error
+- `err`: length-`N` mean-corrected (per line) error
 """
 function err_segs(y_hat, y, l_segs; silent::Bool=true)
     err = y_hat - y
@@ -1319,7 +1320,7 @@ Normalize (or standardize) features (columns) of training data.
     - `:normalize`   = min-max normalization
     - `:scale`       = scale by maximum absolute value, bias = 0
     - `:none`        = scale by 1, bias = 0
-- `no_norm`: (optional) length `Nf` Boolean indices of features to not be normalized
+- `no_norm`: (optional) length-`Nf` Boolean indices of features to not be normalized
 
 **Returns:**
 - `train_bias`:  `1` x `Nf` training data biases (means, mins, or zeros)
@@ -1375,7 +1376,7 @@ Normalize (or standardize) features (columns) of training and testing data.
     - `:normalize`   = min-max normalization
     - `:scale`       = scale by maximum absolute value, bias = 0
     - `:none`        = scale by 1, bias = 0
-- `no_norm`: (optional) length `Nf` Boolean indices of features to not be normalized
+- `no_norm`: (optional) length-`Nf` Boolean indices of features to not be normalized
 
 **Returns:**
 - `train_bias`:  `1` x `Nf` training data biases (means, mins, or zeros)
@@ -1417,7 +1418,7 @@ testing data.
     - `:normalize`   = min-max normalization
     - `:scale`       = scale by maximum absolute value, bias = 0
     - `:none`        = scale by 1, bias = 0
-- `no_norm`: (optional) length `Nf` Boolean indices of features to not be normalized
+- `no_norm`: (optional) length-`Nf` Boolean indices of features to not be normalized
 
 **Returns:**
 - `train_bias`:  `1` x `Nf` training data biases (means, mins, or zeros)
@@ -1515,10 +1516,14 @@ Internal helper function to unpack data normalizations, some of which may
 not be present due to earlier package versions being used.
 
 **Arguments:**
-- `data_norms`: tuple of data normalizations, e.g., `(A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale)`
+- `data_norms`: length-`4` to `7` tuple of data normalizations,
+    - `4`: `(`_______________________`x_bias,x_scale,y_bias,y_scale)`
+    - `5`: `(`_______________`v_scale,x_bias,x_scale,y_bias,y_scale)`
+    - `6`: `(A_bias,A_scale,`________`x_bias,x_scale,y_bias,y_scale)`
+    - `7`: `(A_bias,A_scale,``v_scale,x_bias,x_scale,y_bias,y_scale)`
 
 **Returns:**
-- `data_norms`: length-7 tuple of data normalizations, `(A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale)`
+- `data_norms`: length-`7` tuple of data normalizations, `(A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale)`
 """
 function unpack_data_norms(data_norms::Tuple)
     if length(data_norms) == 7
@@ -1766,11 +1771,11 @@ end # function get_ind
 """
     chunk_data(x, y, l_window::Int)
 
-Break data into non-overlapping sequences of length `l_window`.
+Break data into non-overlapping sequences of length-`l_window`.
 
 **Arguments:**
 - `x`:        `N` x `Nf` data matrix (`Nf` is number of features)
-- `y`:        length `N` target vector
+- `y`:        length-`N` target vector
 - `l_window`: temporal window length
 
 **Returns:**
@@ -1819,7 +1824,7 @@ end # function predict_rnn_full
 """
     predict_rnn_windowed(m, x, l_window::Int)
 
-Apply model `m` to inputs by sliding a window of length `l_window` along `x`.
+Apply model `m` to inputs by sliding a window of length-`l_window` along `x`.
 
 **Arguments:**
 - `m`:        recurrent neural network model
@@ -1859,24 +1864,23 @@ function predict_rnn_windowed(m, x, l_window::Int)
 end # function predict_rnn_windowed
 
 """
-    krr(x_train, y_train, x_test, y_test;
+    krr(x_train, y_train, x_test;
         k=PolynomialKernel(;degree=1), λ=0.5)
 
 Kernel ridge regression (KRR).
 
 **Arguments:**
 - `x_train`: `N_train` x `Nf` training data matrix (`Nf` is number of features)
-- `y_train`: length `N_train` training target vector
+- `y_train`: length-`N_train` training target vector
 - `x_test`:  `N_test` x `Nf`  testing  data matrix (`Nf` is number of features)
-- `y_test`:  length `N_test`  testing  target vector
 - `k`:       (optional) kernel
 - `λ`:       (optional) ridge parameter
 
 **Returns:**
-- `y_train_hat`: length `N_train` training prediction vector
-- `y_test_hat`:  length `N_train` testing  prediction vector
+- `y_train_hat`: length-`N_train` training prediction vector
+- `y_test_hat`:  length-`N_train` testing  prediction vector
 """
-function krr(x_train, y_train, x_test, y_test;
+function krr(x_train, y_train, x_test;
              k=PolynomialKernel(;degree=1), λ=0.5)
 
     K  = kernelmatrix(k,x_train;obsdim=1)
@@ -1920,7 +1924,7 @@ Reference: https://nredell.github.io/ShapML.jl/dev/#Examples-1
 **Arguments:**
 - `m`:        neural network model
 - `x`:        `N` x `Nf` data matrix (`Nf` is number of features)
-- `features`: length `Nf` feature vector (including components of TL `A`, etc.)
+- `features`: length-`Nf` feature vector (including components of TL `A`, etc.)
 - `N`:        (optional) number of samples (instances) to use for explanation
 - `num_mc`:   (optional) number of Monte Carlo simulations
 
@@ -2047,7 +2051,7 @@ date in IGRF time (years since 0 CE), and reference frame.
 - `check_xyz`: (optional) if true, cross-check with `igrf` field in `xyz`
 
 **Returns:**
-- `igrf_vec`: length `N` stacked vector of `3` IGRF coordinates in `frame`
+- `igrf_vec`: length-`N` stacked vector of `3` IGRF coordinates in `frame`
 """
 function get_igrf(xyz::XYZ, ind=trues(xyz.traj.N);
                   frame::Symbol   = :body,
@@ -2345,11 +2349,11 @@ predicted scalar magnetic field.
 - `TL_aircraft`: `3` x `N` matrix of TL aircraft vector field
 - `B_unit`:      `3` x `N` matrix of normalized vector magnetometer measurements
 - `y_nn`:        `3` x `N` matrix of vector neural network correction (for scalar models, in direction of `Bt`)
-- `y`:           length `N` target vector
-- `y_hat`:       length `N` prediction vector
+- `y`:           length-`N` target vector
+- `y_hat`:       length-`N` prediction vector
 - `xyz`:         `XYZ` flight data struct
-- `filt_lat`:    (optional) length `N` filter output latitude  [rad]
-- `filt_lon`:    (optional) length `N` filter output longitude [rad]
+- `filt_lat`:    (optional) length-`N` filter output latitude  [rad]
+- `filt_lon`:    (optional) length-`N` filter output longitude [rad]
 - `ind`:         (optional) selected data indices
 - `tt_lim`:      (optional) 2-element (inclusive) start & end time limits. Defaults to use full time range [min]
 - `skip_every`:  (optional) number of time steps to skip between frames

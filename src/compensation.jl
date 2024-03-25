@@ -1,5 +1,5 @@
 """
-    nn_comp_1_train(x, y, no_norm;
+    nn_comp_1_train(x, y, no_norm = falses(size(x,2));
                     norm_type_x::Symbol  = :standardize,
                     norm_type_y::Symbol  = :standardize,
                     η_adam               = 0.001,
@@ -22,7 +22,7 @@
 
 Train neural network-based aeromagnetic compensation, model 1.
 """
-function nn_comp_1_train(x, y, no_norm;
+function nn_comp_1_train(x, y, no_norm = falses(size(x,2));
                          norm_type_x::Symbol  = :standardize,
                          norm_type_y::Symbol  = :standardize,
                          η_adam               = 0.001,
@@ -157,8 +157,10 @@ function nn_comp_1_train(x, y, no_norm;
             i % 5 == 0 && !silent && @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error,digits=2)) nT")
         end
         if i % 10 == 0 && !silent
-            err = nn_comp_1_test(x_norm,y,y_bias,y_scale,m;l_segs=l_segs,silent=true)[2]
-            @info("$i train error: $(round(std(err),digits=2)) nT")
+            train_err = std(nn_comp_1_test(x_norm,y,y_bias,y_scale,m;
+                                           l_segs = l_segs,
+                                           silent = true)[2])
+            @info("$i train error: $(round(train_err,digits=2)) nT")
             isempty(x_test) || @info("$i test  error: $(round((test_error),digits=2)) nT")
         end
     end
@@ -184,7 +186,9 @@ function nn_comp_1_train(x, y, no_norm;
     end
 
     # get results
-    (y_hat,err) = nn_comp_1_test(x_norm,y,y_bias,y_scale,m;l_segs=l_segs,silent=true)
+    (y_hat,err) = nn_comp_1_test(x_norm,y,y_bias,y_scale,m;
+                                 l_segs = l_segs,
+                                 silent = true)
     silent || @info("train error: $(round(std(err),digits=2)) nT")
 
     if !isempty(x_test)
@@ -287,11 +291,11 @@ function nn_comp_1_test(x::Matrix, y, data_norms::Tuple, model::Chain;
 end # function nn_comp_1_test
 
 """
-    nn_comp_2_train(A, x, y, no_norm;
+    nn_comp_2_train(A, x, y, no_norm = falses(size(x,2));
                     model_type::Symbol   = :m2a,
                     norm_type_A::Symbol  = :none,
                     norm_type_x::Symbol  = :standardize,
-                    norm_type_y::Symbol  = :standardize,
+                    norm_type_y::Symbol  = :none,
                     TL_coef::Vector      = zeros(Float32,18),
                     η_adam               = 0.001,
                     epoch_adam::Int      = 5,
@@ -314,7 +318,7 @@ end # function nn_comp_1_test
 
 Train neural network-based aeromagnetic compensation, model 2.
 """
-function nn_comp_2_train(A, x, y, no_norm;
+function nn_comp_2_train(A, x, y, no_norm = falses(size(x,2));
                          model_type::Symbol   = :m2a,
                          norm_type_A::Symbol  = :none,
                          norm_type_x::Symbol  = :standardize,
@@ -489,12 +493,12 @@ function nn_comp_2_train(A, x, y, no_norm;
             i % 5 == 0 && !silent && @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error,digits=2)) nT")
         end
         if i % 10 == 0 && !silent
-            err = nn_comp_2_test(A_norm,x_norm,y,y_bias,y_scale,m;
-                                 model_type   = model_type,
-                                 TL_coef_norm = TL_coef_norm,
-                                 l_segs       = l_segs,
-                                 silent       = true)[2]
-            @info("$i train error: $(round(std(err),digits=2)) nT")
+            train_err = std(nn_comp_2_test(A_norm,x_norm,y,y_bias,y_scale,m;
+                                           model_type   = model_type,
+                                           TL_coef_norm = TL_coef_norm,
+                                           l_segs       = l_segs,
+                                           silent       = true)[2])
+            @info("$i train error: $(round(train_err,digits=2)) nT")
             isempty(x_test) || @info("$i test  error: $(round((test_error),digits=2)) nT")
         end
     end
@@ -704,7 +708,7 @@ coefficients from the vector form.
 - `Bt_scale`: (optional) scaling factor for induced and eddy current terms [nT]
 
 **Returns:**
-- `TL_coef_p`: length `3` vector of permanent field coefficients
+- `TL_coef_p`: length-`3` vector of permanent field coefficients
 - `TL_coef_i`: `3` x `3`  symmetric matrix of induced field coefficients, denormalized
 - `TL_coef_e`: `3` x `3`  matrix of eddy current coefficients, denormalized
 """
@@ -759,7 +763,7 @@ Internal helper function to extract the vector form of Tolles-Lawson
 coefficients from the matrix form.
 
 **Arguments:**
-- `TL_coef_p`: length `3` vector of permanent field coefficients
+- `TL_coef_p`: length-`3` vector of permanent field coefficients
 - `TL_coef_i`: `3` x `3`  symmetric matrix of induced field coefficients, denormalized
 - `TL_coef_e`: `3` x `3`  matrix of eddy current coefficients, denormalized
 - `terms`:     Tolles-Lawson terms used {`:permanent`,`:induced`,`:eddy`}
@@ -802,7 +806,7 @@ end # function TL_mat2vec
 **Arguments:**
 - `B_vec`:        `3` x `N`  matrix of vector magnetometer measurements
 - `B_vec_dot`:    `3` x `N`  matrix of vector magnetometer measurement derivatives
-- `TL_coef_p`:    length `3` vector of permanent field coefficients
+- `TL_coef_p`:    length-`3` vector of permanent field coefficients
 - `TL_coef_i`:    `3` x `3`  symmetric matrix of induced field coefficients, denormalized
 - `TL_coef_e`:    `3` x `3`  matrix of eddy current coefficients, denormalized
 - `return_parts`: (optional) if true, also return `TL_perm`, `TL_induced`, & `TL_eddy`
@@ -922,7 +926,7 @@ function get_split(N::Int, frac_train::Real, window_type::Symbol = :none;
 end # function get_split
 
 """
-    nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
+    nn_comp_3_train(A, Bt, B_dot, x, y, no_norm = falses(size(x,2));
                     model_type::Symbol    = :m3s,
                     norm_type_x::Symbol   = :standardize,
                     norm_type_y::Symbol   = :standardize,
@@ -983,7 +987,7 @@ Earth field and leaves a large bias in the aircraft field prediction, e.g.,
     - `:m3w`  = `:m3s` with window NN for temporal dataset
     - `:m3tf` = `:m3s` with time series transformer for temporal dataset
 """
-function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
+function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm = falses(size(x,2));
                          model_type::Symbol    = :m3s,
                          norm_type_x::Symbol   = :standardize,
                          norm_type_y::Symbol   = :standardize,
@@ -1268,17 +1272,17 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
             i % 5 == 0 && !silent && @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error,digits=2)) nT")
         end
         if i % 10 == 0 && !silent
-            err = nn_comp_3_test(B_unit,B_vec,B_vec_dot,
-                                 x_norm,y,y_bias,y_scale,m,
-                                 TL_coef_p,TL_coef_i,TL_coef_e;
-                                 model_type = model_type,
-                                 y_type     = y_type,
-                                 l_segs     = l_segs,
-                                 use_nn     = use_nn,
-                                 denorm     = true,
-                                 testmode   = true,
-                                 silent     = true)[2]
-            @info("$i train error: $(round(std(err),digits=2)) nT")
+            train_err = std(nn_comp_3_test(B_unit,B_vec,B_vec_dot,
+                                           x_norm,y,y_bias,y_scale,m,
+                                           TL_coef_p,TL_coef_i,TL_coef_e;
+                                           model_type = model_type,
+                                           y_type     = y_type,
+                                           l_segs     = l_segs,
+                                           use_nn     = use_nn,
+                                           denorm     = true,
+                                           testmode   = true,
+                                           silent     = true)[2])
+            @info("$i train error: $(round(train_err,digits=2)) nT")
             isempty(x_test) || @info("$i test  error: $(round((test_error),digits=2)) nT")
         end
     end
@@ -1311,8 +1315,6 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
         lbfgs_train!(m,data,epoch_lbfgs,model_type,TL_coef_p,TL_coef_i.data,TL_coef_e,silent)
     end
 
-    TL_coef = TL_mat2vec(TL_coef_p,TL_coef_i,TL_coef_e,terms_A;Bt_scale=Bt_scale)
-
     # get results
     (y_hat,err) = nn_comp_3_test(B_unit,B_vec,B_vec_dot,
                                  x_norm,y,y_bias,y_scale,m,
@@ -1339,7 +1341,8 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm;
                        silent     = silent)
     end
 
-    model = m
+    model   = m
+    TL_coef = TL_mat2vec(TL_coef_p,TL_coef_i,TL_coef_e,terms_A;Bt_scale=Bt_scale)
 
     # pack data normalizations
     data_norms = (zeros(eltype(x_bias),1,1),zeros(eltype(x_bias),1,1),
@@ -1372,7 +1375,7 @@ optionally adds a scalar neural network correction for model `:m3s` or `:m3sc`.
 - `y_bias`:     `y` target vector bias (mean, min, or zero)
 - `y_scale`:    `y` target vector scaling factor (std dev, max-min, or one)
 - `model`:      neural network model
-- `TL_coef_p`:  length `3` vector of permanent field coefficients
+- `TL_coef_p`:  length-`3` vector of permanent field coefficients
 - `TL_coef_i`:  `3` x `3`  symmetric matrix of induced field coefficients, denormalized
 - `TL_coef_e`:  `3` x `3`  matrix of eddy current coefficients, denormalized
 - `model_type`: (optional) aeromagnetic compensation model type
@@ -1382,7 +1385,7 @@ optionally adds a scalar neural network correction for model `:m3s` or `:m3sc`.
 - `testmode`:   (optional) if true, turn on `Flux.testmode!`
 
 **Returns:**
-- `y_hat`: length `N` prediction vector
+- `y_hat`: length-`N` prediction vector
 """
 function nn_comp_3_fwd(B_unit, B_vec, B_vec_dot,
                        x_norm, y_bias, y_scale, model::Chain,
@@ -1562,10 +1565,11 @@ function nn_comp_3_test(A, Bt, B_dot, x, y, data_norms::Tuple, model::Chain;
 end # function nn_comp_3_test
 
 """
-    plsr_fit(x, y, k::Int=size(x,2);
-             l_segs::Vector   = [length(y)],
-             return_set::Bool = false,
-             silent::Bool     = false)
+    plsr_fit(x, y, k::Int = size(x,2), no_norm = falses(size(x,2));
+             data_norms::Tuple = (zeros(1,1),zeros(1,1),[0.0],[0.0]),
+             l_segs::Vector    = [length(y)],
+             return_set::Bool  = false,
+             silent::Bool      = false)
 
 Fit a multi-input, multi-output (MIMO) partial least squares regression (PLSR)
 model to data with a specified output dimension. PLSR is a type of regularized
@@ -1574,23 +1578,26 @@ regularization.
 
 **Arguments:**
 - `x`:          `N` x `Nf` data matrix (`Nf` is number of features)
-- `y`:          length `N` target vector
+- `y`:          length-`N` target vector
 - `k`:          (optional) number of components
-- `l_segs`:     (optional) length `N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
+- `no_norm`:    (optional) length-`Nf` Boolean indices of features to not be normalized
+- `data_norms`: (optional) length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
+- `l_segs`:     (optional) length-`N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
 - `return_set`: (optional) if true, return `coef_set` instead of other outputs
 - `silent`:     (optional) if true, no print outs
 
 **Returns:**
-- `model`:      tuple of PLSR-based model `(coefficients, bias=0)`
-- `data_norms`: tuple of data normalizations, e.g., `(x_bias,x_scale,y_bias,y_scale)`
-- `y_hat`:      length `N` prediction vector
-- `err`:        length `N` mean-corrected (per line) error
+- `model`:      length-`2` tuple of PLSR-based model, (length-`Nf` `coefficients`, `bias=0`)
+- `data_norms`: length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
+- `y_hat`:      length-`N` prediction vector
+- `err`:        length-`N` mean-corrected (per line) error
 - `coef_set`:   if `return_set = true`, set of coefficients (size `Nf` x `Ny` x `k`)
 """
-function plsr_fit(x, y, k::Int=size(x,2);   # N x Nf , N x Ny , k
-                  l_segs::Vector   = [length(y)],
-                  return_set::Bool = false,
-                  silent::Bool     = false)
+function plsr_fit(x, y, k::Int = size(x,2), no_norm = falses(size(x,2));
+                  data_norms::Tuple = (zeros(1,1),zeros(1,1),[0.0],[0.0]),
+                  l_segs::Vector    = [length(y)],
+                  return_set::Bool  = false,
+                  silent::Bool      = false)
 
 	Nf = size(x,2)
     Ny = size(y,2)
@@ -1600,9 +1607,18 @@ function plsr_fit(x, y, k::Int=size(x,2);   # N x Nf , N x Ny , k
         k = Nf
     end
 
-    # standardize data
-    (x_bias,x_scale,x_norm) = norm_sets(x;norm_type=:standardize)
-    (y_bias,y_scale,y_norm) = norm_sets(y;norm_type=:standardize)
+    norm_type_x = :standardize
+    norm_type_y = :standardize
+
+    # normalize data
+    if sum(data_norms[end]) == 0 # normalize data
+        (x_bias,x_scale,x_norm) = norm_sets(x;norm_type=norm_type_x,no_norm=no_norm)
+        (y_bias,y_scale,y_norm) = norm_sets(y;norm_type=norm_type_y)
+    else # unpack data normalizations
+        (x_bias,x_scale,y_bias,y_scale) = data_norms
+        x_norm = (x .- x_bias) ./ x_scale
+        y_norm = (y .- y_bias) ./ y_scale
+    end
 
     x_temp   = sum(x_norm.^2)           # scalar
     y_temp   = sum(y_norm.^2)           # scalar
@@ -1646,64 +1662,82 @@ function plsr_fit(x, y, k::Int=size(x,2);   # N x Nf , N x Ny , k
 
     end
 
-    return_set && return (coef_set)
-
-    coef = vec(u_out*inv(p_out'*u_out)*q_out') # Nf x Ny
-    bias = zero(eltype(coef))
-
     # input & output residue variance %
     silent || @info("input  residue variance = $(round(sum(x_norm.^2)/x_temp*100,digits=2)) %")
     silent || @info("output residue variance = $(round(sum(y_norm.^2)/y_temp*100,digits=2)) %")
 
+    return_set && return (coef_set)
+
+    # solve to get coefficients
+    coef = vec(u_out*inv(p_out'*u_out)*q_out') # Nf x Ny
+    bias = zero(eltype(coef))
+
+    model = (coef,bias)
+
     # get results
-    y_hat_norm = norm_sets(x;norm_type=:standardize)[3]*coef .+ bias
-    y_hat      = denorm_sets(y_bias,y_scale,y_hat_norm)
-    err        = err_segs(y_hat,y,l_segs;silent=silent_debug)
+    x_norm      = norm_sets(x;norm_type=norm_type_x,no_norm=no_norm)[3]
+    (y_hat,err) = linear_test(x_norm,y,y_bias,y_scale,model;
+                              l_segs = l_segs,
+                              silent = true)
     silent || @info("fit  error: $(round(std(err),digits=2)) nT")
 
     # pack data normalizations
     data_norms = (x_bias,x_scale,y_bias,y_scale)
 
-    return ((coef, bias), data_norms, y_hat, err)
+    return (model, data_norms, y_hat, err)
 end # function plsr_fit
 
-# #* note: the existing PLSR Julia package (PartialLeastSquaresRegressor.jl)
-# #* gives the exact same result, but takes 3x longer, requires more
-# #* dependencies, has issues working in src, and only provides output for a
-# #* single k per evaluation
+# #* note: PLSR Julia package (PartialLeastSquaresRegressor.jl) is available
+# provides exact same result, but takes 3x longer, requires more dependencies
+# has issues working in src, & only provides output for single k per evaluation
 # regressor = PLSRegressor(n_factors=k) # create model
 # plsr_p = @pipeline Standardizer regressor target=Standardizer # build pipeline
 # plsr_m = machine(plsr_p,DataFrame(x,features),y) # create machine
 # fit!(plsr_m) # fit model
 
 """
-    elasticnet_fit(x, y, α=0.99;  λ = -1,
-                   l_segs::Vector = [length(y)],
-                   silent::Bool   = false)
+    elasticnet_fit(x, y, α::Real = 0.99, no_norm = falses(size(x,2));
+                   λ::Real           = -1,
+                   data_norms::Tuple = (zeros(1,1),zeros(1,1),[0.0],[0.0]),
+                   l_segs::Vector    = [length(y)],
+                   silent::Bool      = false)
 
 Fit an elastic net (ridge regression and/or Lasso) model to data.
 
 **Arguments:**
-- `x`:      `N` x `Nf` data matrix (`Nf` is number of features)
-- `y`:      length `N` target vector
-- `α`:      (optional) ridge regression (`α=0`) vs Lasso (`α=1`) balancing parameter {0:1}
-- `λ`:      (optional) elastic net parameter (otherwise determined with cross-validation), `-1` to ignore
-- `l_segs`: (optional) length `N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
-- `silent`: (optional) if true, no print outs
+- `x`:          `N` x `Nf` data matrix (`Nf` is number of features)
+- `y`:          length-`N` target vector
+- `α`:          (optional) ridge regression (`α=0`) vs Lasso (`α=1`) balancing parameter {0:1}
+- `no_norm`:    (optional) length-`Nf` Boolean indices of features to not be normalized
+- `λ`:          (optional) elastic net parameter (otherwise determined with cross-validation), `-1` to ignore
+- `data_norms`: (optional) length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
+- `l_segs`:     (optional) length-`N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
+- `silent`:     (optional) if true, no print outs
 
 **Returns:**
-- `model`:      tuple of elastic net-based model `(coefficients,bias)`
-- `data_norms`: tuple of data normalizations, e.g., `(x_bias,x_scale,y_bias,y_scale)`
-- `y_hat`:      length `N` prediction vector
-- `err`:        length `N` mean-corrected (per line) error
+- `model`:      length-`2` tuple of elastic net-based model, (length-`Nf` `coefficients`, `bias`)
+- `data_norms`: length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
+- `y_hat`:      length-`N` prediction vector
+- `err`:        length-`N` mean-corrected (per line) error
 """
-function elasticnet_fit(x, y, α=0.99;  λ = -1,
-                        l_segs::Vector = [length(y)],
-                        silent::Bool   = false)
+function elasticnet_fit(x, y, α::Real = 0.99, no_norm = falses(size(x,2));
+                        λ::Real           = -1,
+                        data_norms::Tuple = (zeros(1,1),zeros(1,1),[0.0],[0.0]),
+                        l_segs::Vector    = [length(y)],
+                        silent::Bool      = false)
 
-    # standardize data
-    (x_bias,x_scale,x_norm) = norm_sets(x;norm_type=:standardize)
-    (y_bias,y_scale,y_norm) = norm_sets(y;norm_type=:standardize)
+    norm_type_x = :standardize
+    norm_type_y = :standardize
+
+    # normalize data
+    if sum(data_norms[end]) == 0 # normalize data
+        (x_bias,x_scale,x_norm) = norm_sets(x;norm_type=norm_type_x,no_norm=no_norm)
+        (y_bias,y_scale,y_norm) = norm_sets(y;norm_type=norm_type_y)
+    else # unpack data normalizations
+        (x_bias,x_scale,y_bias,y_scale) = data_norms
+        x_norm = (x .- x_bias) ./ x_scale
+        y_norm = (y .- y_bias) ./ y_scale
+    end
 
     if λ < 0
         # determine best λ with cross-validation with GLMNet
@@ -1715,29 +1749,33 @@ function elasticnet_fit(x, y, α=0.99;  λ = -1,
         λl      =    α *λ
     end
 
-    # get coefficients and bias with MLJLinearModels
+    # MLJLinearModels to get coefficients (and bias)
     glr_mlj = ElasticNetRegression(λr,λl;scale_penalty_with_samples=false)
     fit_mlj = fit(glr_mlj,x_norm,y_norm)
     coef    = fit_mlj[1:end-1]
     bias    = fit_mlj[end]
 
+    model = (coef,bias)
+
     # get results
-    y_hat_norm = x_norm*coef .+ bias
-    y_hat      = denorm_sets(y_bias,y_scale,y_hat_norm)
-    err        = err_segs(y_hat,y,l_segs;silent=silent_debug)
+    (y_hat,err) = linear_test(x_norm,y,y_bias,y_scale,model;
+                              l_segs = l_segs,
+                              silent = true)
     silent || @info("fit  error: $(round(std(err),digits=2)) nT")
 
     # pack data normalizations
     data_norms = (x_bias,x_scale,y_bias,y_scale)
 
-    return ((coef, bias), data_norms, y_hat, err)
+    return (model, data_norms, y_hat, err)
 end # function elasticnet_fit
 
 """
-    linear_fit(x, y;
-               trim::Int=0, λ=0,
+    linear_fit(x, y, no_norm = falses(size(x,2));
+               trim::Int           = 0,
+               λ::Real             = 0,
                norm_type_x::Symbol = :none,
                norm_type_y::Symbol = :none,
+               data_norms::Tuple   = (zeros(1,1),zeros(1,1),[0.0],[0.0]),
                l_segs::Vector      = [length(y)],
                silent::Bool        = false)
 
@@ -1745,30 +1783,40 @@ Fit a linear regression model to data.
 
 **Arguments:**
 - `x`:           `N` x `Nf` data matrix (`Nf` is number of features)
-- `y`:           length `N` target vector
+- `y`:           length-`N` target vector
+- `no_norm`:     (optional) length-`Nf` Boolean indices of features to not be normalized
 - `trim`:        (optional) number of elements to trim (e.g., due to bpf)
 - `λ`:           (optional) ridge parameter
 - `norm_type_x`: (optional) normalization for `x` data matrix
 - `norm_type_y`: (optional) normalization for `y` target vector
-- `l_segs`:      (optional) length `N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
+- `data_norms`:  (optional) length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
+- `l_segs`:      (optional) length-`N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
 - `silent`:      (optional) if true, no print outs
 
 **Returns:**
-- `model`:      tuple of linear regression model `(coefficients, bias=0)`
-- `data_norms`: tuple of data normalizations, e.g., `(x_bias,x_scale,y_bias,y_scale)`
-- `y_hat`:      length `N` prediction vector
-- `err`:        length `N` mean-corrected (per line) error
+- `model`:      length-`2` tuple of linear regression model, (length-`Nf` `coefficients`, `bias=0`)
+- `data_norms`: length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
+- `y_hat`:      length-`N` prediction vector
+- `err`:        length-`N` mean-corrected (per line) error
 """
-function linear_fit(x, y;
-                    trim::Int=0, λ=0,
+function linear_fit(x, y, no_norm = falses(size(x,2));
+                    trim::Int           = 0,
+                    λ::Real             = 0,
                     norm_type_x::Symbol = :none,
                     norm_type_y::Symbol = :none,
+                    data_norms::Tuple   = (zeros(1,1),zeros(1,1),[0.0],[0.0]),
                     l_segs::Vector      = [length(y)],
                     silent::Bool        = false)
 
-    # standardize data
-    (x_bias,x_scale,x_norm) = norm_sets(x;norm_type=norm_type_x)
-    (y_bias,y_scale,y_norm) = norm_sets(y;norm_type=norm_type_y)
+    # normalize data
+    if sum(data_norms[end]) == 0 # normalize data
+        (x_bias,x_scale,x_norm) = norm_sets(x;norm_type=norm_type_x,no_norm=no_norm)
+        (y_bias,y_scale,y_norm) = norm_sets(y;norm_type=norm_type_y)
+    else # unpack data normalizations
+        (x_bias,x_scale,y_bias,y_scale) = data_norms
+        x_norm = (x .- x_bias) ./ x_scale
+        y_norm = (y .- y_bias) ./ y_scale
+    end
 
     # trim each line
     ind = []
@@ -1781,16 +1829,19 @@ function linear_fit(x, y;
     coef = vec(linreg(y_norm[ind,:],x_norm[ind,:];λ=λ))
     bias = zero(eltype(coef))
 
-    y_hat_norm = x_norm*coef .+ bias
-    y_hat      = denorm_sets(y_bias,y_scale,y_hat_norm)
-    err        = err_segs(y_hat,y,l_segs;silent=silent_debug)
+    model = (coef,bias)
+
+    # get results
+    (y_hat,err) = linear_test(x_norm,y,y_bias,y_scale,model;
+                              l_segs = l_segs,
+                              silent = true)
     silent || @info("fit  error: $(round(std(err),digits=2)) nT")
     silent || @info("note that fit error may be misleading if using bpf")
 
     # pack data normalizations
     data_norms = (x_bias,x_scale,y_bias,y_scale)
 
-    return ((coef, bias), data_norms, y_hat, err)
+    return (model, data_norms, y_hat, err)
 end # function linear_fit
 
 """
@@ -1802,10 +1853,10 @@ Evaluate performance of linear model.
 - `x_norm`:  `N` x `Nf` normalized data matrix (`Nf` is number of features)
 - `y_bias`:  `y` target vector bias (mean, min, or zero)
 - `y_scale`: `y` target vector scaling factor (std dev, max-min, or one)
-- `model`:   tuple of model `(coefficients,bias)`
+- `model`:   length-`2` tuple of model, (length-`Nf` `coefficients`, `bias`)
 
 **Returns:**
-- `y_hat`: length `N` prediction vector
+- `y_hat`: length-`N` prediction vector
 """
 function linear_fwd(x_norm, y_bias, y_scale, model)
 
@@ -1826,11 +1877,11 @@ Evaluate performance of linear model.
 
 **Arguments:**
 - `x`:          `N` x `Nf` data matrix (`Nf` is number of features)
-- `data_norms`: tuple of data normalizations, e.g., `(x_bias,x_scale,y_bias,y_scale)`
-- `model`:      tuple of model `(coefficients,bias)`
+- `data_norms`: length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
+- `model`:      length-`2` tuple of model, (length-`Nf` `coefficients`, `bias`)
 
 **Returns:**
-- `y_hat`: length `N` prediction vector
+- `y_hat`: length-`N` prediction vector
 """
 function linear_fwd(x, data_norms::Tuple, model)
 
@@ -1853,16 +1904,16 @@ Evaluate performance of linear model.
 
 **Arguments:**
 - `x_norm`:  `N` x `Nf` normalized data matrix (`Nf` is number of features)
-- `y`:       length `N` target vector
+- `y`:       length-`N` target vector
 - `y_bias`:  `y` target vector bias bias (mean, min, or zero)
 - `y_scale`: `y` target vector bias scaling factor (std dev, max-min, or one)
-- `model`:   tuple of model `(coefficients,bias)`
-- `l_segs`:  (optional) length `N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
+- `model`:   length-`2` tuple of model, (length-`Nf` `coefficients`, `bias`)
+- `l_segs`:  (optional) length-`N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
 - `silent`:  (optional) if true, no print outs
 
 **Returns:**
-- `y_hat`: length `N` prediction vector
-- `err`:   length `N` mean-corrected (per line) error
+- `y_hat`: length-`N` prediction vector
+- `err`:   length-`N` mean-corrected (per line) error
 """
 function linear_test(x_norm, y, y_bias, y_scale, model;
                      l_segs::Vector = [length(y)],
@@ -1885,15 +1936,15 @@ Evaluate performance of linear model.
 
 **Arguments:**
 - `x`:          `N` x `Nf` data matrix (`Nf` is number of features)
-- `y`:          length `N` target vector
-- `data_norms`: tuple of data normalizations, e.g., `(x_bias,x_scale,y_bias,y_scale)`
-- `model`:      tuple of model `(coefficients,bias)`
-- `l_segs`:     (optional) length `N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
+- `y`:          length-`N` target vector
+- `data_norms`: length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
+- `model`:      length-`2` tuple of model, (length-`Nf` `coefficients`, `bias`)
+- `l_segs`:     (optional) length-`N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
 - `silent`:     (optional) if true, no print outs
 
 **Returns:**
-- `y_hat`: length `N` prediction vector
-- `err`:   length `N` mean-corrected (per line) error
+- `y_hat`: length-`N` prediction vector
+- `err`:   length-`N` mean-corrected (per line) error
 """
 function linear_test(x, y, data_norms::Tuple, model;
                      l_segs::Vector = [length(y)],
@@ -1945,10 +1996,10 @@ Train an aeromagnetic compensation model.
 
 **Returns:**
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct
-- `y`:           length `N` target vector
-- `y_hat`:       length `N` prediction vector
-- `err`:         length `N` compensation error
-- `features`:    length `Nf` feature vector (including components of TL `A`, etc.)
+- `y`:           length-`N` target vector
+- `y_hat`:       length-`N` prediction vector
+- `err`:         length-`N` compensation error
+- `features`:    length-`Nf` feature vector (including components of TL `A`, etc.)
 """
 function comp_train(comp_params::CompParams, xyz::XYZ, ind,
                     mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
@@ -1985,12 +2036,22 @@ function comp_train(comp_params::CompParams, xyz::XYZ, ind,
     end
 
     if (model_type in [:TL,:mod_TL]) & (y_type != :e)
-        silent || @info("forcing y_type $(y_type) => :e (BPF'd total field)")
+        silent || @info("forcing y_type $y_type => :e (BPF'd total field)")
         y_type = :e
     end
     if (model_type in [:map_TL]) & (y_type != :c)
-        silent || @info("forcing y_type $(y_type) => :c (aircraft field #1, using map)")
+        silent || @info("forcing y_type $y_type => :c (aircraft field #1, using map)")
         y_type = :c
+    end
+    if model_type in [:elasticnet,:plsr]
+        if norm_type_x != :standardize
+            silent || @info("forcing norm_type_x $norm_type_x => :standardize for $model_type")
+            norm_type_x = :standardize
+        end
+        if norm_type_y != :standardize
+            silent || @info("forcing norm_type_y $norm_type_y => :standardize for $model_type")
+            norm_type_y = :standardize
+        end
     end
     if model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc,:m3w,:m3tf]
         for term in terms_A
@@ -2253,6 +2314,8 @@ function comp_train(comp_params::CompParams, xyz::XYZ, ind,
                                 dropout_prob  = dropout_prob,
                                 N_tf_head     = N_tf_head,
                                 tf_gain       = tf_gain,
+                                data_norms    = data_norms,
+                                model         = model,
                                 A_test        = A_test,
                                 Bt_test       = Bt_test,
                                 B_dot_test    = B_dot_test,
@@ -2263,9 +2326,11 @@ function comp_train(comp_params::CompParams, xyz::XYZ, ind,
             trim = model_type in [:TL,:mod_TL] ? 20 : 0
             (model,data_norms,y_hat,err) =
                 linear_fit(A,y;
-                           trim=trim, λ=λ_TL,
+                           trim        = trim,
+                           λ           = λ_TL,
                            norm_type_x = norm_type_A,
                            norm_type_y = norm_type_y,
+                           data_norms  = data_norms,
                            silent      = silent)
             if model_type in [:TL,:mod_TL]
                 (y_hat,err) = linear_test(A_no_bpf,y_no_bpf,data_norms,model;
@@ -2273,10 +2338,14 @@ function comp_train(comp_params::CompParams, xyz::XYZ, ind,
             end
         elseif model_type in [:elasticnet]
             (model,data_norms,y_hat,err) =
-                elasticnet_fit(x,y; silent=silent)
+                elasticnet_fit(x,y,0.99,no_norm;
+                               data_norms = data_norms,
+                               silent     = silent)
         elseif model_type in [:plsr]
             (model,data_norms,y_hat,err) =
-                plsr_fit(x,y,k_plsr; silent=silent)
+                plsr_fit(x,y,k_plsr,no_norm;
+                         data_norms = data_norms,
+                         silent     = silent)
         else
             error("$model_type model type not defined")
         end
@@ -2338,10 +2407,10 @@ Train an aeromagnetic compensation model.
 
 **Returns:**
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct
-- `y`:           length `N` target vector
-- `y_hat`:       length `N` prediction vector
-- `err`:         length `N` compensation error
-- `features`:    length `Nf` feature vector (including components of TL `A`, etc.)
+- `y`:           length-`N` target vector
+- `y_hat`:       length-`N` prediction vector
+- `err`:         length-`N` compensation error
+- `features`:    length-`Nf` feature vector (including components of TL `A`, etc.)
 """
 function comp_train(comp_params::CompParams, xyz_vec::Vector, ind_vec::Vector,
                     mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
@@ -2378,12 +2447,22 @@ function comp_train(comp_params::CompParams, xyz_vec::Vector, ind_vec::Vector,
     end
 
     if (model_type in [:TL,:mod_TL]) & (y_type != :e)
-        silent || @info("forcing y_type $(y_type) => :e (BPF'd total field)")
+        silent || @info("forcing y_type $y_type => :e (BPF'd total field)")
         y_type = :e
     end
     if (model_type in [:map_TL]) & (y_type != :c)
-        silent || @info("forcing y_type $(y_type) => :c (aircraft field #1, using map)")
+        silent || @info("forcing y_type $y_type => :c (aircraft field #1, using map)")
         y_type = :c
+    end
+    if model_type in [:elasticnet,:plsr]
+        if norm_type_x != :standardize
+            silent || @info("forcing norm_type_x $norm_type_x => :standardize for $model_type")
+            norm_type_x = :standardize
+        end
+        if norm_type_y != :standardize
+            silent || @info("forcing norm_type_y $norm_type_y => :standardize for $model_type")
+            norm_type_y = :standardize
+        end
     end
     if model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc,:m3w,:m3tf]
         for term in terms_A
@@ -2694,6 +2773,8 @@ function comp_train(comp_params::CompParams, xyz_vec::Vector, ind_vec::Vector,
                                 dropout_prob  = dropout_prob,
                                 N_tf_head     = N_tf_head,
                                 tf_gain       = tf_gain,
+                                data_norms    = data_norms,
+                                model         = model,
                                 A_test        = A_test,
                                 Bt_test       = Bt_test,
                                 B_dot_test    = B_dot_test,
@@ -2704,9 +2785,11 @@ function comp_train(comp_params::CompParams, xyz_vec::Vector, ind_vec::Vector,
             trim = model_type in [:TL,:mod_TL] ? 20 : 0
             (model,data_norms,y_hat,err) =
                 linear_fit(A,y;
-                           trim=trim, λ=λ_TL,
+                           trim        = trim,
+                           λ           = λ_TL,
                            norm_type_x = norm_type_A,
                            norm_type_y = norm_type_y,
+                           data_norms  = data_norms,
                            silent      = silent)
             if model_type in [:TL,:mod_TL]
                 (y_hat,err) = linear_test(A_no_bpf,y_no_bpf,data_norms,model;
@@ -2714,10 +2797,14 @@ function comp_train(comp_params::CompParams, xyz_vec::Vector, ind_vec::Vector,
             end
         elseif model_type in [:elasticnet]
             (model,data_norms,y_hat,err) =
-                elasticnet_fit(x,y; silent=silent)
+                elasticnet_fit(x,y,0.99,no_norm;
+                               data_norms = data_norms,
+                               silent     = silent)
         elseif model_type in [:plsr]
             (model,data_norms,y_hat,err) =
-                plsr_fit(x,y,k_plsr; silent=silent)
+                plsr_fit(x,y,k_plsr,no_norm;
+                         data_norms = data_norms,
+                         silent     = silent)
         else
             error("$model_type model type not defined")
         end
@@ -2798,10 +2885,10 @@ Train an aeromagnetic compensation model.
 
 **Returns:**
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct
-- `y`:           length `N` target vector
-- `y_hat`:       length `N` prediction vector
-- `err`:         length `N` mean-corrected (per line) compensation error
-- `features`:    length `Nf` feature vector (including components of TL `A`, etc.)
+- `y`:           length-`N` target vector
+- `y_hat`:       length-`N` prediction vector
+- `err`:         length-`N` mean-corrected (per line) compensation error
+- `features`:    length-`Nf` feature vector (including components of TL `A`, etc.)
 """
 function comp_train(comp_params::CompParams, lines,
                     df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame;
@@ -2836,12 +2923,22 @@ function comp_train(comp_params::CompParams, lines,
     end
 
     if (model_type in [:TL,:mod_TL]) & (y_type != :e)
-        silent || @info("forcing y_type $(y_type) => :e (BPF'd total field)")
+        silent || @info("forcing y_type $y_type => :e (BPF'd total field)")
         y_type = :e
     end
     if (model_type in [:map_TL]) & (y_type != :c)
-        silent || @info("forcing y_type $(y_type) => :c (aircraft field #1, using map)")
+        silent || @info("forcing y_type $y_type => :c (aircraft field #1, using map)")
         y_type = :c
+    end
+    if model_type in [:elasticnet,:plsr]
+        if norm_type_x != :standardize
+            silent || @info("forcing norm_type_x $norm_type_x => :standardize for $model_type")
+            norm_type_x = :standardize
+        end
+        if norm_type_y != :standardize
+            silent || @info("forcing norm_type_y $norm_type_y => :standardize for $model_type")
+            norm_type_y = :standardize
+        end
     end
     if model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc,:m3w,:m3tf]
         for term in terms_A
@@ -3079,9 +3176,11 @@ function comp_train(comp_params::CompParams, lines,
             trim = model_type in [:TL,:mod_TL] ? 20 : 0
             (model,data_norms,y_hat,err) =
                 linear_fit(A,y;
-                           trim=trim, λ=λ_TL,
+                           trim        = trim,
+                           λ           = λ_TL,
                            norm_type_x = norm_type_A,
                            norm_type_y = norm_type_y,
+                           data_norms  = data_norms,
                            l_segs      = l_segs,
                            silent      = silent)
             if model_type in [:TL,:mod_TL]
@@ -3106,13 +3205,15 @@ function comp_train(comp_params::CompParams, lines,
                                           silent=silent)
             end
         elseif model_type in [:elasticnet]
-            (model,data_norms,y_hat,err) = elasticnet_fit(x,y;
-                                                          l_segs = l_segs,
-                                                          silent = silent)
+            (model,data_norms,y_hat,err) = elasticnet_fit(x,y,0.99,no_norm;
+                                                          data_norms = data_norms,
+                                                          l_segs     = l_segs,
+                                                          silent     = silent)
         elseif model_type in [:plsr]
-            (model,data_norms,y_hat,err) = plsr_fit(x,y,k_plsr;
-                                                    l_segs = l_segs,
-                                                    silent = silent)
+            (model,data_norms,y_hat,err) = plsr_fit(x,y,k_plsr,no_norm;
+                                                    data_norms = data_norms,
+                                                    l_segs     = l_segs,
+                                                    silent     = silent)
         else
             error("$model_type model type not defined")
         end
@@ -3155,10 +3256,10 @@ Evaluate performance of an aeromagnetic compensation model.
 - `silent`:   (optional) if true, no print outs
 
 **Returns:**
-- `y`:        length `N` target vector
-- `y_hat`:    length `N` prediction vector
-- `err`:      length `N` compensation error
-- `features`: length `Nf` feature vector (including components of TL `A`, etc.)
+- `y`:        length-`N` target vector
+- `y_hat`:    length-`N` prediction vector
+- `err`:      length-`N` compensation error
+- `features`: length-`Nf` feature vector (including components of TL `A`, etc.)
 """
 function comp_test(comp_params::CompParams, xyz::XYZ, ind,
                    mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
@@ -3186,11 +3287,11 @@ function comp_test(comp_params::CompParams, xyz::XYZ, ind,
     end
 
     if ((model_type in [:TL,:mod_TL]) & (y_type != :d)) | (y_type == :e)
-        silent || @info("forcing y_type $(y_type) => :d (Δmag)")
+        silent || @info("forcing y_type $y_type => :d (Δmag)")
         y_type = :d
     end
     if (model_type in [:map_TL]) & (y_type != :c)
-        silent || @info("forcing y_type $(y_type) => :c (aircraft field #1, using map)")
+        silent || @info("forcing y_type $y_type => :c (aircraft field #1, using map)")
         y_type = :c
     end
     if model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc,:m3w,:m3tf]
@@ -3375,10 +3476,10 @@ Evaluate performance of an aeromagnetic compensation model.
 - `silent`:   (optional) if true, no print outs
 
 **Returns:**
-- `y`:        length `N` target vector
-- `y_hat`:    length `N` prediction vector
-- `err`:      length `N` mean-corrected (per line) compensation error
-- `features`: length `Nf` feature vector (including components of TL `A`, etc.)
+- `y`:        length-`N` target vector
+- `y_hat`:    length-`N` prediction vector
+- `err`:      length-`N` mean-corrected (per line) compensation error
+- `features`: length-`Nf` feature vector (including components of TL `A`, etc.)
 """
 function comp_test(comp_params::CompParams, lines,
                    df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame;
@@ -3406,11 +3507,11 @@ function comp_test(comp_params::CompParams, lines,
     end
 
     if ((model_type in [:TL,:mod_TL]) & (y_type != :d)) | (y_type == :e)
-        silent || @info("forcing y_type $(y_type) => :d (Δmag)")
+        silent || @info("forcing y_type $y_type => :d (Δmag)")
         y_type = :d
     end
     if (model_type in [:map_TL]) & (y_type != :c)
-        silent || @info("forcing y_type $(y_type) => :c (aircraft field #1, using map)")
+        silent || @info("forcing y_type $y_type => :c (aircraft field #1, using map)")
         y_type = :c
     end
     if model_type in [:m3tl,:m3s,:m3v,:m3sc,:m3vc,:m3w,:m3tf]
@@ -3608,12 +3709,12 @@ model 2b or 2c with additional outputs for explainability.
 - `silent`: (optional) if true, no print outs
 
 **Returns:**
-- `y_nn`:     length `N` neural network compensation portion
-- `y_TL`:     length `N` Tolles-Lawson  compensation portion
-- `y`:        length `N` target vector
-- `y_hat`:    length `N` prediction vector
-- `err`:      length `N` mean-corrected (per line) compensation error
-- `features`: length `Nf` feature vector (including components of TL `A`, etc.)
+- `y_nn`:     length-`N` neural network compensation portion
+- `y_TL`:     length-`N` Tolles-Lawson  compensation portion
+- `y`:        length-`N` target vector
+- `y_hat`:    length-`N` prediction vector
+- `err`:      length-`N` mean-corrected (per line) compensation error
+- `features`: length-`Nf` feature vector (including components of TL `A`, etc.)
 """
 function comp_m2bc_test(comp_params::NNCompParams, lines,
                         df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame;
@@ -3730,10 +3831,10 @@ with additional outputs for explainability.
 - `B_vec`:        `3` x `N` matrix of vector magnetometer measurements
 - `y_nn`:         `3` x `N` matrix of vector neural network correction (for scalar models, in direction of `Bt`)
 - `vec_aircraft`: `3` x `N` matrix of predicted aircraft vector field
-- `y`:            length `N` target vector
-- `y_hat`:        length `N` prediction vector
-- `err`:          length `N` mean-corrected (per line) compensation error
-- `features`:     length `Nf` feature vector (including components of TL `A`, etc.)
+- `y`:            length-`N` target vector
+- `y_hat`:        length-`N` prediction vector
+- `err`:          length-`N` mean-corrected (per line) compensation error
+- `features`:     length-`Nf` feature vector (including components of TL `A`, etc.)
 """
 function comp_m3_test(comp_params::NNCompParams, lines,
                       df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame;
@@ -3873,13 +3974,13 @@ Train and evaluate performance of an aeromagnetic compensation model.
 
 **Returns:**
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct
-- `y_train`:     length `N_train` training target vector
-- `y_train_hat`: length `N_train` training prediction vector
-- `err_train`:   length `N_train` training compensation error
-- `y_test`:      length `N_test` testing target vector
-- `y_test_hat`:  length `N_test` testing prediction vector
-- `err_test`:    length `N_test` testing compensation error
-- `features`:    length `Nf` feature vector (including components of TL `A`, etc.)
+- `y_train`:     length-`N_train` training target vector
+- `y_train_hat`: length-`N_train` training prediction vector
+- `err_train`:   length-`N_train` training compensation error
+- `y_test`:      length-`N_test` testing target vector
+- `y_test_hat`:  length-`N_test` testing prediction vector
+- `err_test`:    length-`N_test` testing compensation error
+- `features`:    length-`Nf` feature vector (including components of TL `A`, etc.)
 """
 function comp_train_test(comp_params::CompParams,
                          xyz_train::XYZ, xyz_test::XYZ, ind_train, ind_test,
@@ -3976,13 +4077,13 @@ Train and evaluate performance of an aeromagnetic compensation model.
 
 **Returns:**
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct
-- `y_train`:     length `N_train` training target vector
-- `y_train_hat`: length `N_train` training prediction vector
-- `err_train`:   length `N_train` mean-corrected (per line) training compensation error
-- `y_test`:      length `N_test` testing target vector
-- `y_test_hat`:  length `N_test` testing prediction vector
-- `err_test`:    length `N_test` mean-corrected (per line) testing compensation error
-- `features`:    length `Nf` feature vector (including components of TL `A`, etc.)
+- `y_train`:     length-`N_train` training target vector
+- `y_train_hat`: length-`N_train` training prediction vector
+- `err_train`:   length-`N_train` mean-corrected (per line) training compensation error
+- `y_test`:      length-`N_test` testing target vector
+- `y_test_hat`:  length-`N_test` testing prediction vector
+- `err_test`:    length-`N_test` mean-corrected (per line) testing compensation error
+- `features`:    length-`Nf` feature vector (including components of TL `A`, etc.)
 """
 function comp_train_test(comp_params::CompParams, lines_train, lines_test,
                          df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame;

@@ -1,4 +1,5 @@
-using MagNav, Test, MAT, DataFrames, LinearAlgebra, Plots, Statistics
+using MagNav, Test, MAT
+using DataFrames, LinearAlgebra, Plots, Statistics
 using MagNav: MapS, MapSd, MapS3D, MapV
 using Geodesy: LLA, LLAfromUTM, UTM, UTMfromLLA, WGS84, utm_zone
 
@@ -23,16 +24,17 @@ mapV = map_trim(mapV,traj)
 
 mapSd  = MapSd(mapS.info,mapS.map,mapS.xx,mapS.yy,mapS.alt*one.(mapS.map),mapS.mask)
 mapS3D = upward_fft(mapS,[mapS.alt,mapS.alt+5])
+mapS_  = MapS("Map",[0.0 1; 1 1],map_xx[1:2],map_yy[1:2],mapS.alt,trues(2,2))
 
 @testset "map_interpolate tests" begin
     @test itp_mapS(traj.lat[1],traj.lon[1]) ≈ grid_data["itp_map"]
-    @test_nowarn map_interpolate(mapS  ,:linear)
-    @test_nowarn map_interpolate(mapSd ,:quad)
-    @test_nowarn map_interpolate(mapS3D,:cubic)
+    @test map_interpolate(mapS  ,:linear) isa Function
+    @test map_interpolate(mapSd ,:quad  ) isa Function
+    @test map_interpolate(mapS3D,:cubic ) isa Function
     @test_throws ErrorException map_interpolate(mapS,:test)
-    @test_nowarn map_interpolate(mapV,:X,:linear)
-    @test_nowarn map_interpolate(mapV,:Y,:quad)
-    @test_nowarn map_interpolate(mapV,:Z,:cubic)
+    @test map_interpolate(mapV,:X,:linear) isa Function
+    @test map_interpolate(mapV,:Y,:quad  ) isa Function
+    @test map_interpolate(mapV,:Z,:cubic ) isa Function
     @test_throws ErrorException map_interpolate(mapV,:test)
     @test_throws ErrorException map_interpolate(mapV,:X,:test)
     mapS3D(mapS3D.alt[1]  -1) isa MapS
@@ -41,16 +43,16 @@ mapS3D = upward_fft(mapS,[mapS.alt,mapS.alt+5])
 end
 
 @testset "map_get_gxf tests" begin
-    @test_nowarn map_get_gxf(gxf_file)
+    @test map_get_gxf(gxf_file) isa Tuple{Matrix,Vector,Vector}
 end
 
 @testset "map_params tests" begin
-    @test_nowarn MagNav.map_params(mapS)
-    @test_nowarn MagNav.map_params(mapV)
+    @test MagNav.map_params(mapS) isa Tuple{BitMatrix,BitMatrix,Int,Int}
+    @test MagNav.map_params(mapV) isa Tuple{BitMatrix,BitMatrix,Int,Int}
 end
 
 @testset "map_lla_lim tests" begin
-    @test_nowarn MagNav.map_lla_lim(map_xx,map_yy)
+    @test MagNav.map_lla_lim(map_xx,map_yy) isa NTuple{2,Vector}
 end
 
 @testset "map_trim tests" begin
@@ -105,11 +107,14 @@ mapUTM3D  = MapS3D(mapUTM.info,mapUTM.map[:,:,[1,1]],mapUTM_xx,mapUTM_yy,
     @test map_utm2lla(mapUTM  ) isa MapS
     @test map_utm2lla(mapUTMd ) isa MapSd
     @test map_utm2lla(mapUTM3D) isa MapS3D
+    @test map_utm2lla(mapS_.map,mapUTM.xx[1:2],mapUTM.yy[1:2],mapS_.alt,mapS_.mask)[1] isa Matrix
 end
+
+map_h5 = joinpath(@__DIR__,"test_map_functions.h5")
 
 @testset "map_gxf2h5 tests" begin
     @test map_gxf2h5(gxf_file,5181;get_lla=true ,save_h5=false) isa MapS
-    @test map_gxf2h5(gxf_file,5181;get_lla=false,save_h5=false) isa MapS
+    @test map_gxf2h5(gxf_file,5181;get_lla=false,save_h5=true,map_h5=map_h5) isa MapS
     @test map_gxf2h5(gxf_file,gxf_file,5181;
                      up_cont=false,get_lla=true ,save_h5=false) isa MapSd
     @test map_gxf2h5(gxf_file,gxf_file,5181;
@@ -118,9 +123,13 @@ end
                      up_cont=true ,get_lla=true ,save_h5=false) isa MapS
     @test map_gxf2h5(gxf_file,gxf_file,120;
                      up_cont=true ,get_lla=false,save_h5=false) isa MapS
+    @test map_gxf2h5(gxf_file,gxf_file,-1;
+                     up_cont=true ,get_lla=false,save_h5=true,map_h5=map_h5) isa MapS
 end
 
-p1 = plot();
+rm(map_h5)
+
+p1 = plot()
 
 @testset "plot_map tests" begin
     @test plot_map!(p1,mapS) isa Plots.Plot
@@ -133,7 +142,7 @@ p1 = plot();
                    map_units=:deg,plot_units=:rad) isa Plots.Plot
     @test plot_map(mapS.map,rad2deg.(mapS.xx),rad2deg.(mapS.yy);
                    map_units=:deg,plot_units=:m  ) isa Plots.Plot
-    @test plot_map(mapV) isa Tuple
+    @test plot_map(mapV) isa Tuple{Plots.Plot,Plots.Plot,Plots.Plot}
     @test_throws ErrorException plot_map(mapS;map_units=:test)
     @test_throws ErrorException plot_map(mapS;plot_units=:test)
 end
@@ -144,19 +153,20 @@ end
     end
 end
 
-p1 = plot_path(traj;show_plot=false);
+show_plot = false
+p1 = plot_path(traj;show_plot)
 
 @testset "plot_path tests" begin
-    @test_nowarn plot_path!(p1,traj;show_plot=false,path_color=:black)
-    @test plot_path(traj;Nmax=50,show_plot=false) isa Plots.Plot
+    @test plot_path!(p1,traj;show_plot,path_color=:black) isa Plots.Plot
+    @test plot_path(traj;Nmax=50,show_plot) isa Plots.Plot
 end
 
-p1 = plot_basic(traj.tt,traj.lat;show_plot=false);
+p1 = plot_basic(traj.tt,traj.lat;show_plot)
 df_event = DataFrame(flight=:test,tt=49.5*60,event="test")
 
 @testset "plot_events! tests" begin
-    @test_nowarn plot_events!(p1,df_event.tt[1]/60,df_event.event[1])
-    @test_nowarn plot_events!(p1,df_event,df_event.flight[1])
+    @test plot_events!(p1,df_event.tt[1]/60,df_event.event[1]) isa Plots.Plot
+    @test plot_events!(p1,df_event,df_event.flight[1]) isa Plots.Plot
 end
 
 @testset "map_check tests" begin
@@ -168,19 +178,17 @@ end
            get_map_val(mapSd ,traj.lat[1],traj.lon[1],traj.alt[1]),
            get_map_val(mapS3D,traj.lat[1],traj.lon[1],traj.alt[1])] ==
            get_map_val([mapS,mapSd,mapS3D],traj,1)
-    @test_nowarn get_map_val(mapS3D,traj.lat[1],traj.lon[1],mapS3D.alt[1]-1)
-    @test_nowarn get_map_val(mapS3D,traj.lat[1],traj.lon[1],mapS3D.alt[end]+1)
+    @test get_map_val(mapS3D,traj.lat[1],traj.lon[1],mapS3D.alt[1]-1) isa Real
+    @test get_map_val(mapS3D,traj.lat[1],traj.lon[1],mapS3D.alt[end]+1) isa Real
 end
 
-# create map_cache
-map_305   = mapS;
-map_915   = upward_fft(map_305,3*map_305.alt);
-xx_lim    = MagNav.get_lim(map_305.xx,0.2);
-yy_lim    = MagNav.get_lim(map_305.yy,0.2);
-namad     = map_fill(map_trim(get_map(MagNav.namad);
-                              xx_lim=xx_lim,yy_lim=yy_lim));
-map_cache = Map_Cache(maps=[map_305,map_915], # 2 maps, at 305 & 915 m
-                      fallback=namad)         # trimmed NAMAD for speed
+# create map_cache (2 maps at 305 & 915 m, trimmed NAMAD for speed)
+map_305   = mapS
+map_915   = upward_fft(map_305,3*map_305.alt)
+xx_lim    = MagNav.get_lim(map_305.xx,0.2)
+yy_lim    = MagNav.get_lim(map_305.yy,0.2)
+namad     = map_trim(get_map();xx_lim=xx_lim,yy_lim=yy_lim)
+map_cache = Map_Cache(maps=[map_305,map_915],fallback=namad)
 
 # test lat & lon point
 lat = mean(map_305.yy)
@@ -227,27 +235,28 @@ itp_mapS_namad_2   = map_interpolate(mapS_namad_2)
 end
 
 @testset "map_border tests" begin
-    @test map_border(map_map,map_xx,map_yy;inner=true,sort_border=true) isa Tuple
-    @test map_border(mapS  ;inner=true ,sort_border=true ) isa Tuple
-    @test map_border(mapSd ;inner=true ,sort_border=false) isa Tuple
-    @test map_border(mapS3D;inner=false,sort_border=false) isa Tuple
+    @test map_border(map_map,map_xx,map_yy;inner=true,sort_border=true) isa NTuple{2,Vector}
+    @test map_border(mapS  ;inner=true ,sort_border=true ) isa NTuple{2,Vector}
+    @test map_border(mapSd ;inner=true ,sort_border=false) isa NTuple{2,Vector}
+    @test map_border(mapS3D;inner=false,sort_border=false) isa NTuple{2,Vector}
+    @test map_border(mapS_ ;inner=false,sort_border=false) isa NTuple{2,Vector}
     @test MagNav.map_border_clean(trues(3,3)) == trues(3,3)
+    @test MagNav.map_border_sort([1:3;],[1,0,1],1,1) == ([1],[1])
 end
 
 ind = [1,100]
 
 @testset "map_resample tests" begin
     @test map_resample(mapS,mapS.xx[ind],mapS.yy[ind]).map ≈ mapS.map[ind,ind]
-    @test_nowarn map_resample(mapS,mapS)
+    @test map_resample(mapS,mapS) isa MapS
 end
 
 xx_lim = extrema(mapS.xx) .+ (-0.01,0.01)
 yy_lim = extrema(mapS.yy) .+ (-0.01,0.01)
-mapS_fallback = upward_fft(map_fill(map_trim(get_map(),
-                xx_lim=xx_lim,yy_lim=yy_lim)),mapS.alt)
+namad  = upward_fft(map_trim(get_map(),xx_lim=xx_lim,yy_lim=yy_lim),mapS.alt)
 
 @testset "map_combine tests" begin
-    @test map_combine(mapS,mapS_fallback) isa MapS
-    @test map_combine([mapS,upward_fft(mapS,mapS.alt+5)],mapS_fallback) isa MapS3D
+    @test map_combine(mapS,namad) isa MapS
+    @test map_combine([mapS,upward_fft(mapS,mapS.alt+5)],namad) isa MapS3D
     @test map_combine([mapS,upward_fft(mapS,mapS.alt+5)];use_fallback=false) isa MapS3D
 end

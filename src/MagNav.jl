@@ -984,7 +984,7 @@ module MagNav
     |`y_type`          |Symbol          | `y` target type (`see below`)
     |`use_mag`         |Symbol          | uncompensated scalar magnetometer to use for `y` target vector {`:mag_1_uc`, etc.}, only used for `y_type = :c, :d, :e`
     |`use_vec`         |Symbol          | vector magnetometer (fluxgate) to use for "external" Tolles-Lawson `A` matrix {`:flux_a`, etc.}, only used for `model_type = :TL, :mod_TL, :map_TL`
-    |`data_norms`      |Tuple           | tuple of data normalizations, e.g., `(A_bias,A_scale,x_bias,x_scale,y_bias,y_scale)`
+    |`data_norms`      |Tuple           | length-`4` tuple of data normalizations, `(A_bias,A_scale,y_bias,y_scale)` for `model_type = :TL, :mod_TL, :map_TL` or `(x_bias,x_scale,y_bias,y_scale)` for `model_type = :elasticnet, :plsr`
     |`model`           |Tuple           | linear model coefficients
     |`terms`           |Vector{`Symbol`}| Tolles-Lawson terms to use for Tolles-Lawson `A` matrix (or matrices) within `x` data matrix {`:permanent`,`:induced`,`:eddy`}, only used for `model_type = :elasticnet, :plsr`
     |`terms_A`         |Vector{`Symbol`}| Tolles-Lawson terms to use for "external" Tolles-Lawson `A` matrix {`:permanent`,`:induced`,`:eddy`,`:bias`}, only used for `model_type = :TL, :mod_TL, :map_TL`
@@ -1065,7 +1065,7 @@ module MagNav
     |`y_type`          |Symbol          | `y` target type (`see below`)
     |`use_mag`         |Symbol          | uncompensated scalar magnetometer to use for `y` target vector {`:mag_1_uc`, etc.}, only used for `y_type = :c, :d, :e`
     |`use_vec`         |Symbol          | vector magnetometer (fluxgate) to use for "external" Tolles-Lawson `A` matrix {`:flux_a`, etc.}, not used for `model_type = :m1`
-    |`data_norms`      |Tuple           | tuple of data normalizations, e.g., `(A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale)`
+    |`data_norms`      |Tuple           | length-`7` tuple of data normalizations, `(A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale)`
     |`model`           |Chain           | neural network model
     |`terms`           |Vector{`Symbol`}| Tolles-Lawson terms to use for Tolles-Lawson `A` matrix (or matrices) within `x` data matrix {`:permanent`,`:induced`,`:eddy`}
     |`terms_A`         |Vector{`Symbol`}| Tolles-Lawson terms to use for "external" Tolles-Lawson `A` matrix {`:permanent`,`:induced`,`:eddy`,`:bias`}, not used for `model_type = :m1`
@@ -1231,9 +1231,9 @@ module MagNav
     @with_kw mutable struct Map_Cache
         maps           :: Vector{MapS{Float64}}
         map_sort_ind   :: Vector{Int64}         = sortperm([m.alt for m in maps])
-        fallback       :: MapS{Float64}         = map_fill(map_trim(get_map(namad)))
-        map_cache      :: Dict                  = Dict{Tuple{Int64,Int64},Any}()
-        fallback_cache :: Dict                  = Dict{Int64,Any}()
+        fallback       :: MapS{Float64}         = get_map(namad)
+        map_cache      :: Dict                  = Dict{Tuple{Int64,Int64},Function}()
+        fallback_cache :: Dict                  = Dict{Int64,Function}()
         dz             :: Real                  = 100
     end # mutable struct Map_Cache
 
@@ -1294,7 +1294,7 @@ module MagNav
     create_TL_A,create_TL_coef,fdm,
     xyz2h5
 
-    # #* tried various combinations of function calls, always worse, WIP
+    # #* note: tried various combinations of function calls, always worse, WIP
     # @setup_workload begin
     #     map_map  = ones(3,3)
     #     map_xx   = map_yy = [0.1:0.1:0.3;]

@@ -1,4 +1,5 @@
-using MagNav, Test, MAT, Statistics
+using MagNav, Test, MAT
+using Statistics
 
 test_file = joinpath(@__DIR__,"test_data/test_data_params.mat")
 params    = matopen(test_file,"r") do file
@@ -48,25 +49,25 @@ end
                  [:i3,:e3,:f3]]
 
     for terms in terms_set
-        @test_nowarn create_TL_A(flux_a_x,flux_a_y,flux_a_z;terms=terms)
-        @test_nowarn create_TL_coef(flux_a_x,flux_a_y,flux_a_z,mag_1_uc;
-                                    terms=terms)
+        @test create_TL_A(flux_a_x,flux_a_y,flux_a_z;terms=terms) isa Matrix
+        @test create_TL_coef(flux_a_x,flux_a_y,flux_a_z,mag_1_uc;
+                             terms=terms) isa Vector
     end
 
-    @test_nowarn create_TL_coef(flux_a_x,flux_a_y,flux_a_z,mag_1_uc;
-                                fs=fs,pass1=0)
-    @test_nowarn create_TL_coef(flux_a_x,flux_a_y,flux_a_z,mag_1_uc;
-                                fs=fs,pass2=fs)
+    @test create_TL_coef(flux_a_x,flux_a_y,flux_a_z,mag_1_uc;
+                         fs=fs,pass1=0) isa Vector
+    @test create_TL_coef(flux_a_x,flux_a_y,flux_a_z,mag_1_uc;
+                         fs=fs,pass2=fs) isa Vector
     @test std(create_TL_coef(flux_a_x,flux_a_y,flux_a_z,mag_1_uc;
-                              fs=fs,pass1=0,pass2=fs)) >= 0
+                             fs=fs,pass1=0,pass2=fs)) >= 0
 end
 
 @testset "fdm tests" begin
-    @test_nowarn fdm(mag_1_c_d;scheme=:backward)
-    @test_nowarn fdm(mag_1_c_d;scheme=:forward)
-    @test_nowarn fdm(mag_1_c_d;scheme=:central)
-    @test_nowarn fdm(mag_1_c_d;scheme=:backward2)
-    @test_nowarn fdm(mag_1_c_d;scheme=:forward2)
-    @test_nowarn fdm(mag_1_c_d;scheme=:fourth)
-    @test_nowarn fdm(mag_1_c_d;scheme=:test)
+    @test fdm(mag_1_c_d;scheme=:backward ) isa Vector
+    @test fdm(mag_1_c_d;scheme=:forward  ) isa Vector
+    @test fdm(mag_1_c_d;scheme=:central  ) isa Vector
+    @test fdm(mag_1_c_d;scheme=:backward2) isa Vector
+    @test fdm(mag_1_c_d;scheme=:forward2 ) isa Vector
+    @test fdm(mag_1_c_d;scheme=:fourth   ) isa Vector
+    @test fdm(mag_1_c_d;scheme=:test     ) isa Vector
 end

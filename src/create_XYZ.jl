@@ -855,8 +855,8 @@ Internal helper function to estimate a direction cosine matrix using known
 heading with FOGM noise.
 
 **Arguments:**
-- `vn`:    length `N` north velocity [m/s]
-- `ve`:    length `N` east  velocity [m/s]
+- `vn`:    length-`N` north velocity [m/s]
+- `ve`:    length-`N` east  velocity [m/s]
 - `dt`:    (optional) measurement time step [s]
 - `order`: (optional) rotation order {`:body2nav`,`:nav2body`}
 

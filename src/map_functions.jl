@@ -633,7 +633,7 @@ function map_correct_igrf!(map_map::Matrix, map_alt,
 
     (_,ind1,nx,ny) = map_params(map_map,map_xx,map_yy)
 
-    all(map_alt .< 0)    && (map_alt = 300) # in case drape map altitude provided (uses alt = -1)
+    all(map_alt .< 0)    && (map_alt = 300) # in case -1 map_gxf2h5() default provided
     length(map_alt) == 1 && (map_alt = fill(map_alt,size(map_map))) # in case single altitude provided
     map_alt = convert.(eltype(map_map),map_alt)
 
@@ -1369,7 +1369,7 @@ function map_gxf2h5(map_gxf::String, alt_gxf::String, alt::Real;
 
     if up_cont # upward/downward continue to alt
         if alt < 0
-            @info("not upward continuing to $alt < 0")
+            @info("not upward continuing to altitude $alt < 0")
         else
             map_chessboard!(map_map,map_alt,map_xx,map_yy,alt;
                             down_cont = down_cont,
@@ -1593,11 +1593,11 @@ function plot_map!(p1, map_map::Matrix,
     # set data points without actual data to NaN (not plotted)
     map_map[ind0] .= NaN
 
-    xind = downsample(1:nx,Nmax)
-    yind = downsample(1:ny,Nmax)
+    ind_xx = downsample(1:nx,Nmax)
+    ind_yy = downsample(1:ny,Nmax)
 
     b_e # backend
-    contourf!(p1,map_xx[xind],map_yy[yind],map_map[yind,xind],dpi=dpi,lw=0,
+    contourf!(p1,map_xx[ind_xx],map_yy[ind_yy],map_map[ind_yy,ind_xx],dpi=dpi,lw=0,
               c=c,bg=bg_color,clims=clims,margin=margin*mm,legend=legend,
               axis=axis,xticks=axis,yticks=axis,xlab=xlab,ylab=ylab,lab=false);
 
@@ -2391,7 +2391,7 @@ Get cached map at specific location.
 - `silent`:    (optional) if true, no print outs
 
 **Returns:**
-- `itp_mapS`: scalar map interpolation function (`f(lat,lon)`)
+- `itp_mapS`: scalar map interpolation function (`f(lat,lon)` at `alt`)
 """
 function get_cached_map(map_cache::Map_Cache, lat::Real, lon::Real, alt::Real;
                         silent::Bool = false)
@@ -2434,7 +2434,7 @@ function get_cached_map(map_cache::Map_Cache, lat::Real, lon::Real, alt::Real;
 end # function get_cached_map
 
 """
-    (map_cache::Map_Cache)(lat::Real, lon::Real, alt::Real; silent::Bool=false)
+    (map_cache::Map_Cache)(lat::Real, lon::Real, alt::Real; silent::Bool=true)
 
 Get cached map value at specific location.
 
@@ -2448,7 +2448,7 @@ Get cached map value at specific location.
 **Returns:**
 - `map_val`: scalar magnetic anomaly map value
 """
-function (map_cache::Map_Cache)(lat::Real, lon::Real, alt::Real; silent::Bool=false)
+function (map_cache::Map_Cache)(lat::Real, lon::Real, alt::Real; silent::Bool=true)
     get_cached_map(map_cache,lat,lon,alt;silent=silent)(lat,lon)
 end # function Map_Cache
 
