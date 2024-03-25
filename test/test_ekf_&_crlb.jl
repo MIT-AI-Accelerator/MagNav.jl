@@ -1,4 +1,6 @@
-using MagNav, Test, MAT, LinearAlgebra
+using MagNav, Test, MAT
+using LinearAlgebra
+using MagNav: FILTres
 
 test_file = joinpath(@__DIR__,"test_data/test_data_ekf.mat")
 ekf_data  = matopen(test_file,"r") do file
@@ -69,9 +71,10 @@ N        = length(lat)
 
 traj = MagNav.Traj(N,dt,tt,lat,lon,alt,vn,ve,vd,fn,fe,fd,Cnb)
 ins  = MagNav.INS( N,dt,tt,ins_lat,ins_lon,ins_alt,ins_vn,ins_ve,ins_vd,
-                   ins_fn,ins_fe,ins_fd,ins_Cnb,zeros(1,1,1))
+                   ins_fn,ins_fe,ins_fd,ins_Cnb,zeros(3,3,N))
 
 mapS = MagNav.MapS(map_info,map_map,map_xx,map_yy,map_alt,map_mask)
+map_cache = Map_Cache(maps=[mapS])
 (itp_mapS,der_mapS) = map_interpolate(mapS,:linear;return_vert_deriv=true) # linear to match MATLAB
 
 crlb_P = crlb(lat,lon,alt,vn,ve,vd,fn,fe,fd,Cnb,dt,itp_mapS;
@@ -84,36 +87,6 @@ crlb_P = crlb(lat,lon,alt,vn,ve,vd,fn,fe,fd,Cnb,dt,itp_mapS;
               fogm_tau = fogm_tau,
               core     = false)
 
-# ## temp
-# xyz_h5   = normpath(MagNav.sgl_2020_train()*"/Flt1002_train.h5");
-# xyz      = get_XYZ20(xyz_h5;silent=true);
-# ind      = get_ind(xyz;lines=(1002.17));
-# traj     = get_traj(xyz,ind);
-# ins      = get_ins(xyz,ind;N_zero_ll=1);
-# mag_1_c  = xyz.mag_1_c[ind];
-# mapS     = get_map(MagNav.ottawa_area_maps()*"/Renfrew_555.h5");
-# mapS3D   = upward_fft(mapS,[mapS.alt,mapS.alt+5]);
-# itp_mapS = map_interpolate(mapS,:cubic);
-# itp_mapS3D = map_interpolate(mapS3D,:linear);
-# using BenchmarkTools
-
-# ## temp
-# @btime ekf(ins,mag_1_c,itp_mapS);
-
-# ## temp
-# lat = traj.lat;
-# lon = traj.lon;
-# alt = one.(lat)*mapS.alt .+ 2.5;
-# for type in [:linear,:quad,:cubic]
-#     itp_mapS   = map_interpolate(mapS  ,type);
-#     itp_mapS3D = map_interpolate(mapS3D,type);
-#     itp_mapS.(  lat,lon);
-#     itp_mapS3D.(lat,lon,alt);
-#     @btime itp_mapS.(  lat,lon);
-#     @btime itp_mapS3D.(lat,lon,alt);
-# end
-
-## temp
 filt_res = ekf(ins_lat,ins_lon,ins_alt,ins_vn,ins_ve,ins_vd,
                ins_fn,ins_fe,ins_fd,ins_Cnb,mag_1_c,dt,itp_mapS;
                P0       = P0,
@@ -128,7 +101,8 @@ filt_res = ekf(ins_lat,ins_lon,ins_alt,ins_vn,ins_ve,ins_vd,
 @testset "crlb tests" begin
     @test isapprox(crlb_P[:,:,1]  ,ekf_data["crlb_P"][:,:,1]  ,atol=1e-6)
     @test isapprox(crlb_P[:,:,end],ekf_data["crlb_P"][:,:,end],atol=1e-6)
-    @test_nowarn crlb(traj,itp_mapS)
+    @test size(crlb(traj,itp_mapS )) == (18,18,100)
+    @test size(crlb(traj,map_cache)) == (18,18,100)
 end
 
 @testset "ekf tests" begin
@@ -136,9 +110,10 @@ end
     @test isapprox(filt_res.x[:,end]  ,ekf_data["x_out"][:,end]  ,atol=1e-3)
     @test isapprox(filt_res.P[:,:,1]  ,ekf_data["P_out"][:,:,1]  ,atol=1e-6)
     @test isapprox(filt_res.P[:,:,end],ekf_data["P_out"][:,:,end],atol=1e-3)
-    @test_nowarn ekf(ins,mag_1_c,itp_mapS;R=(1,10))
-    @test_nowarn ekf(ins,mag_1_c,itp_mapS;core=true)
-    @test_nowarn ekf(ins,mag_1_c,itp_mapS;der_mapS=der_mapS,map_alt=map_alt)
+    @test ekf(ins,mag_1_c,itp_mapS) isa FILTres
+    @test ekf(ins,mag_1_c,map_cache;core=true) isa FILTres
+    @test ekf(ins,mag_1_c,itp_mapS;R=(1,10)) isa FILTres
+    @test ekf(ins,mag_1_c,itp_mapS;der_mapS,map_alt) isa FILTres
 end
 
 # create EKF_RT struct with EKF initializations and parameters
@@ -151,11 +126,11 @@ a  = EKF_RT(P        = P0,
             gyro_tau = gyro_tau,
             fogm_tau = fogm_tau,
             core     = false,
-            ny       = ny);
+            ny       = ny)
 
-x = zeros(a.nx,N);
-P = zeros(a.nx,a.nx,N);
-r = zeros(a.ny,N);
+x = zeros(a.nx,N)
+P = zeros(a.nx,a.nx,N)
+r = zeros(a.ny,N)
 for t = 1:N
     filt_res_ = a(ins_lat[t], ins_lon[t], ins_alt[t],
                   ins_vn[t] , ins_ve[t] , ins_vd[t] ,
@@ -174,4 +149,7 @@ end
     @test P[:,:,end] ≈ filt_res.P[:,:,end]
     @test r[:,1]     ≈ filt_res.r[:,1]
     @test r[:,end]   ≈ filt_res.r[:,end]
+    @test a(ins(N),mag_1_c[N],itp_mapS ) isa FILTres
+    @test a(ins(N),mag_1_c[N],map_cache) isa FILTres
+    @test a(ins(N),mag_1_c[N],itp_mapS;der_mapS,map_alt) isa FILTres
 end

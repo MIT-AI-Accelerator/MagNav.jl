@@ -1,5 +1,5 @@
 using MagNav, Test, MAT
-using DataFrames, Flux, LinearAlgebra, Plots, Statistics
+using DataFrames, DSP, Flux, LinearAlgebra, Plots, Statistics
 using MagNav: project_vec_to_2d, unpack_data_norms
 
 test_file = joinpath(@__DIR__,"test_data/test_data_params.mat")
@@ -58,20 +58,20 @@ end
 end
 
 @testset "get_bpf tests" begin
-    @test_nowarn get_bpf(;pass1=0.1,pass2=0.9)
-    @test_nowarn get_bpf(;pass1= -1,pass2=0.9)
-    @test_nowarn get_bpf(;pass1=Inf,pass2=0.9)
-    @test_nowarn get_bpf(;pass1=0.1,pass2= -1)
-    @test_nowarn get_bpf(;pass1=0.1,pass2=Inf)
+    @test get_bpf(;pass1=0.1,pass2=0.9) isa DSP.Filters.ZeroPoleGain
+    @test get_bpf(;pass1= -1,pass2=0.9) isa DSP.Filters.ZeroPoleGain
+    @test get_bpf(;pass1=Inf,pass2=0.9) isa DSP.Filters.ZeroPoleGain
+    @test get_bpf(;pass1=0.1,pass2= -1) isa DSP.Filters.ZeroPoleGain
+    @test get_bpf(;pass1=0.1,pass2=Inf) isa DSP.Filters.ZeroPoleGain
     @test_throws ErrorException get_bpf(;pass1=-1,pass2=-1)
     @test_throws ErrorException get_bpf(;pass1=Inf,pass2=Inf)
 end
 
 @testset "bpf_data tests" begin
-    @test_nowarn bpf_data(A_a_f_t)
-    @test_nowarn bpf_data(mag_1_uc_f_t)
-    @test_nowarn bpf_data!(A_a_f_t)
-    @test_nowarn bpf_data!(mag_1_uc_f_t)
+    @test bpf_data( A_a_f_t     ) isa Matrix
+    @test bpf_data( mag_1_uc_f_t) isa Vector
+    @test bpf_data!(A_a_f_t     ) isa Nothing
+    @test bpf_data!(mag_1_uc_f_t) isa Nothing
 end
 
 flight   = :Flt1003
@@ -104,25 +104,25 @@ df_map = DataFrame(map_name = map_name,
                    map_h5   = map_h5)
 
 @testset "get_x tests" begin
-    @test_nowarn get_x(xyz,ind)
-    @test_nowarn get_x(xyz,ind,[:flight])
+    @test get_x(xyz,ind) isa Tuple{Matrix,Vector,Vector}
+    @test get_x(xyz,ind,[:flight]) isa Tuple{Matrix,Vector,Vector}
     @test_throws ErrorException get_x(xyz,ind,[:test])
     @test_throws ErrorException get_x(xyz,ind,[:mag_6_uc])
-    @test_nowarn get_x([xyz,xyz],[ind,ind])
-    @test_nowarn get_x(line2,df_line,df_flight)
-    @test get_x(lines,df_line,df_flight)[1] isa Matrix
-    @test get_x([line2,line3],df_line,df_flight)[1] isa Matrix
+    @test get_x([xyz,xyz],[ind,ind]) isa Tuple{Matrix,Vector,Vector}
+    @test get_x(line2,df_line,df_flight) isa Tuple{Matrix,Vector,Vector,Vector}
+    @test get_x(lines,df_line,df_flight) isa Tuple{Matrix,Vector,Vector,Vector}
+    @test get_x([line2,line3],df_line,df_flight) isa Tuple{Matrix,Vector,Vector,Vector}
     @test_throws AssertionError get_x([line2,line2],df_line,df_flight)
 end
 
 map_val = randn(sum(ind))
 
 @testset "get_y tests" begin
-    @test_nowarn get_y(xyz,ind;y_type=:a)
-    @test_nowarn get_y(xyz,ind,map_val;y_type=:b)
-    @test_nowarn get_y(xyz,ind,map_val;y_type=:c)
-    @test_nowarn get_y(xyz,ind;y_type=:d)
-    @test_nowarn get_y(xyz,ind;y_type=:e,use_mag=:flux_a)
+    @test get_y(xyz,ind;y_type=:a) isa Vector
+    @test get_y(xyz,ind,map_val;y_type=:b) isa Vector
+    @test get_y(xyz,ind,map_val;y_type=:c) isa Vector
+    @test get_y(xyz,ind;y_type=:d) isa Vector
+    @test get_y(xyz,ind;y_type=:e,use_mag=:flux_a) isa Vector
     @test_throws ErrorException get_y(xyz,ind;y_type=:test)
     @test get_y(line2,df_line,df_flight,df_map;y_type=:a) isa Vector
     @test get_y(lines,df_line,df_flight,df_map;y_type=:c) isa Vector
@@ -131,27 +131,27 @@ map_val = randn(sum(ind))
 end
 
 @testset "get_Axy tests" begin
-    @test_nowarn get_Axy(line2,df_line,df_flight,df_map;y_type=:a,mod_TL=true,return_B=true)
-    @test get_Axy(lines,df_line,df_flight,df_map;y_type=:b,map_TL=true)[1] isa Matrix
-    @test get_Axy([line2,line3],df_line,df_flight,df_map)[1] isa Matrix
+    @test get_Axy(line2,df_line,df_flight,df_map;y_type=:a,mod_TL=true,return_B=true)[1] isa Matrix
+    @test get_Axy(lines,df_line,df_flight,df_map;y_type=:b,map_TL=true)[2] isa Matrix
+    @test get_Axy([line2,line3],df_line,df_flight,df_map)[3] isa Vector
     @test_throws AssertionError get_Axy([line2,line2],df_line,df_flight,df_map)
 end
 
 @testset "get_nn_m tests" begin
-    @test_nowarn get_nn_m(1,1;hidden=[])
-    @test_nowarn get_nn_m(1,1;hidden=[1])
-    @test_nowarn get_nn_m(1,1;hidden=[1,1])
-    @test_nowarn get_nn_m(1,1;hidden=[1,1,1])
-    @test_nowarn get_nn_m(1,1;hidden=[1],final_bias=false)
-    @test_nowarn get_nn_m(1,1;hidden=[1],skip_con=true)
-    @test_nowarn get_nn_m(1,1;hidden=[1]  ,model_type=:m3w,dropout_prob=0)
-    @test_nowarn get_nn_m(1,1;hidden=[1]  ,model_type=:m3w,dropout_prob=0.5)
-    @test_nowarn get_nn_m(1,1;hidden=[1,1],model_type=:m3w,dropout_prob=0)
-    @test_nowarn get_nn_m(1,1;hidden=[1,1],model_type=:m3w,dropout_prob=0.5)
-    @test_nowarn get_nn_m(1,1;hidden=[1]  ,model_type=:m3tf,tf_layer_type=:prelayer ,tf_norm_type=:layer,N_tf_head=1)
-    @test_nowarn get_nn_m(1,1;hidden=[1]  ,model_type=:m3tf,tf_layer_type=:postlayer,tf_norm_type=:layer,N_tf_head=1)
-    @test_nowarn get_nn_m(1,1;hidden=[1,1],model_type=:m3tf,tf_layer_type=:prelayer ,tf_norm_type=:batch,N_tf_head=1)
-    @test_nowarn get_nn_m(1,1;hidden=[1,1],model_type=:m3tf,tf_layer_type=:postlayer,tf_norm_type=:none ,N_tf_head=1)
+    @test get_nn_m(1,1;hidden=[]) isa Chain
+    @test get_nn_m(1,1;hidden=[1]) isa Chain
+    @test get_nn_m(1,1;hidden=[1,1]) isa Chain
+    @test get_nn_m(1,1;hidden=[1,1,1]) isa Chain
+    @test get_nn_m(1,1;hidden=[1],final_bias=false) isa Chain
+    @test get_nn_m(1,1;hidden=[1],skip_con=true) isa Chain
+    @test get_nn_m(1,1;hidden=[1]  ,model_type=:m3w,dropout_prob=0  ) isa Chain
+    @test get_nn_m(1,1;hidden=[1]  ,model_type=:m3w,dropout_prob=0.5) isa Chain
+    @test get_nn_m(1,1;hidden=[1,1],model_type=:m3w,dropout_prob=0  ) isa Chain
+    @test get_nn_m(1,1;hidden=[1,1],model_type=:m3w,dropout_prob=0.5) isa Chain
+    @test get_nn_m(1,1;hidden=[1]  ,model_type=:m3tf,tf_layer_type=:prelayer ,tf_norm_type=:layer,N_tf_head=1) isa Chain
+    @test get_nn_m(1,1;hidden=[1]  ,model_type=:m3tf,tf_layer_type=:postlayer,tf_norm_type=:layer,N_tf_head=1) isa Chain
+    @test get_nn_m(1,1;hidden=[1,1],model_type=:m3tf,tf_layer_type=:prelayer ,tf_norm_type=:batch,N_tf_head=1) isa Chain
+    @test get_nn_m(1,1;hidden=[1,1],model_type=:m3tf,tf_layer_type=:postlayer,tf_norm_type=:none ,N_tf_head=1) isa Chain
     @test_throws ErrorException get_nn_m(1,1;hidden=[1,1,1,1])
     @test_throws ErrorException get_nn_m(1,1;hidden=[1,1],skip_con=true)
     @test_throws ErrorException get_nn_m(1,1;hidden=[],model_type=:m3w)
@@ -180,12 +180,12 @@ y = randn(Float32,5)
 
 @testset "norm_sets tests" begin
     for norm_type in [:standardize,:normalize,:scale,:none]
-        @test_nowarn norm_sets(x;norm_type=norm_type,no_norm=2)
-        @test_nowarn norm_sets(x,x;norm_type=norm_type,no_norm=2)
-        @test_nowarn norm_sets(x,x,x;norm_type=norm_type,no_norm=2)
-        @test_nowarn norm_sets(y;norm_type=norm_type)
-        @test_nowarn norm_sets(y,y;norm_type=norm_type)
-        @test_nowarn norm_sets(y,y,y;norm_type=norm_type)
+        @test norm_sets(x    ;norm_type=norm_type,no_norm=2) isa NTuple{3,Matrix}
+        @test norm_sets(x,x  ;norm_type=norm_type,no_norm=2) isa NTuple{4,Matrix}
+        @test norm_sets(x,x,x;norm_type=norm_type,no_norm=2) isa NTuple{5,Matrix}
+        @test norm_sets(y    ;norm_type=norm_type) isa NTuple{3,Vector}
+        @test norm_sets(y,y  ;norm_type=norm_type) isa NTuple{4,Vector}
+        @test norm_sets(y,y,y;norm_type=norm_type) isa NTuple{5,Vector}
     end
     @test_throws ErrorException norm_sets(x;norm_type=:test)
     @test_throws ErrorException norm_sets(x,x;norm_type=:test)
@@ -253,27 +253,27 @@ end
 m_rnn = Chain(GRU(3,1),Dense(1,1))
 
 @testset "predict_rnn tests" begin
-    @test_nowarn predict_rnn_full(m_rnn,x)
-    @test_nowarn predict_rnn_windowed(m_rnn,x,3)
+    @test predict_rnn_full(m_rnn,x) isa Vector
+    @test predict_rnn_windowed(m_rnn,x,3) isa Vector
 end
 
 @testset "krr tests" begin
-    @test krr(x,y,x,y) isa Tuple{Vector,Vector}
+    @test krr(x,y,x) isa NTuple{2,Vector}
 end
 
 features = [:f1,:f2,:f3]
 (df_shap,baseline_shap) = eval_shapley(m,x,features)
 
 @testset "shapley & gsa tests" begin
-    @test_nowarn MagNav.predict_shapley(m,DataFrame(x,features))
-    @test_nowarn eval_shapley(m,x,features)
-    @test_nowarn plot_shapley(df_shap,baseline_shap)
+    @test MagNav.predict_shapley(m,DataFrame(x,features)) isa DataFrame
+    @test eval_shapley(m,x,features) isa Tuple{DataFrame,Real}
+    @test plot_shapley(df_shap,baseline_shap) isa Plots.Plot
     @test eval_gsa(m,x) isa Vector
 end
 
 @testset "get_igrf tests" begin
-    @test_nowarn get_igrf(xyz,ind)
-    @test_nowarn get_igrf(xyz,ind;frame=:nav,norm_igrf=true)
+    @test get_igrf(xyz,ind) isa Vector
+    @test get_igrf(xyz,ind;frame=:nav,norm_igrf=true) isa Vector
 end
 
 vec_nav  = randn(3)
@@ -285,11 +285,11 @@ Cnb      = xyz.ins.Cnb[:,:,ind]
     @test_throws AssertionError project_vec_to_2d(vec_nav,[1,0,0],[1,0,0])
     @test_throws AssertionError project_vec_to_2d(vec_nav,[1,1,0],[0,1,0])
     @test_throws AssertionError project_vec_to_2d(vec_nav,[1,0,0],[1,1,0])
-    @test_nowarn project_vec_to_2d(vec_nav,[1,0,0],[0,1,0])
+    @test project_vec_to_2d(vec_nav,[1,0,0],[0,1,0]) isa Vector
 end
 
 @testset "project_body_field_to_2d_igrf tests" begin
-    @test_nowarn project_body_field_to_2d_igrf(vec_body,igrf_nav,Cnb[:,:,1])
+    @test project_body_field_to_2d_igrf(vec_body,igrf_nav,Cnb[:,:,1]) isa Vector
 
     # create "north" vector in navigation frame
     north_vec_nav = vec([1.0, 0.0, 0.0])
@@ -323,7 +323,7 @@ end
     @test_throws AssertionError get_optimal_rotation_matrix([1 0],vec_body')
     @test_throws AssertionError get_optimal_rotation_matrix([1 0],[1 0 0])
     @test_throws AssertionError get_optimal_rotation_matrix([1 0 0],[1 0])
-    @test_nowarn get_optimal_rotation_matrix(vec_nav',vec_body')
+    @test size(get_optimal_rotation_matrix(vec_nav',vec_body')) == (3,3)
 end
 
 x = [-1,0,1]

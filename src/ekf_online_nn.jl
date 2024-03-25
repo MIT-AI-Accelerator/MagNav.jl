@@ -27,7 +27,7 @@ Extended Kalman filter (EKF) with online learning of neural network weights.
 - `itp_mapS`: scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
 - `x_nn`:     `N` x `Nf` data matrix for neural network (`Nf` is number of features)
 - `m`:        neural network model, does not work with skip connections
-- `y_norms`:  tuple of `y` normalizations, i.e., `(y_bias,y_scale)`
+- `y_norms`:  length-`2` tuple of `y` normalizations, `(y_bias,y_scale)`
 - `P0`:       initial covariance matrix
 - `Qd`:       discrete time process/system noise matrix
 - `R`:        measurement (white) noise variance
@@ -163,7 +163,7 @@ Extended Kalman filter (EKF) with online learning of neural network weights.
 - `itp_mapS`: scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
 - `x_nn`:     `N` x `Nf` data matrix for neural network (`Nf` is number of features)
 - `m`:        neural network model, does not work with skip connections
-- `y_norms`:  tuple of `y` normalizations, i.e., `(y_bias,y_scale)`
+- `y_norms`:  length-`2` tuple of `y` normalizations, `(y_bias,y_scale)`
 - `P0`:       initial covariance matrix
 - `Qd`:       discrete time process/system noise matrix
 - `R`:        measurement (white) noise variance
@@ -195,7 +195,7 @@ function ekf_online_nn(ins::INS, meas, itp_mapS, x_nn, m, y_norms, P0, Qd, R;
                   core     = core)
 end # function ekf_online_nn
 
-# # old attempt
+# #* note: original initialization attempt
 # function ekf_online_nn_setup(x, y, m, y_norms; N_sigma::Int=1000)
 
 #     (y_bias,y_scale) = y_norms # unpack normalizations
@@ -231,7 +231,7 @@ Setup for extended Kalman filter (EKF) with online learning of neural network we
 
 **Arguments:**
 - `x`:       `N` x `Nf` data matrix (`Nf` is number of features)
-- `y`:       length `N` target vector
+- `y`:       length-`N` target vector
 - `m`:       neural network model, does not work with skip connections
 - `y_norms`: tuple of `y` normalizations, i.e., `(y_bias,y_scale)`
 - `N_sigma`: (optional) number of neural network weights sets to use to create `nn_sigma`

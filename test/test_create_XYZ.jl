@@ -1,4 +1,5 @@
-using MagNav, Test, MAT, LinearAlgebra, Random, Statistics
+using MagNav, Test, MAT
+using LinearAlgebra, Random, Statistics
 Random.seed!(2)
 
 test_file = joinpath(@__DIR__,"test_data/test_data_ins.mat")
@@ -93,8 +94,7 @@ ins  = create_ins(traj;
                              cor_ind_mag  = cor_ind_mag,
                              cor_eddy_mag = cor_eddy_mag)
 
-mapS = get_map(MagNav.namad)
-mapS = map_trim(mapS,traj)
+mapS = map_trim(get_map(),traj)
 
 mapS_mod   = deepcopy(mapS)
 N_mod      = ceil(Int,length(mapS.map)*0.01)

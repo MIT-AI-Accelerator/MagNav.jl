@@ -1,6 +1,6 @@
-##* top-level file for running unit tests
-#*  note that all non-hardcoded test data was generated using the MagNav
-#*  MATLAB-companion (run test_baseline.m & copy the test_data folder over)
+#* top-level file for running unit tests
+#* note: all non-hardcoded test data was generated using the MagNav
+#* MATLAB-companion (run test_baseline.m & copy the test_data folder over)
 using TestItemRunner
 
 @testitem "analysis_util  " begin include("test_analysis_util.jl") end

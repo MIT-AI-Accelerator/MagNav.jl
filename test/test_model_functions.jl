@@ -1,4 +1,5 @@
-using MagNav, Test, MAT, Random
+using MagNav, Test, MAT
+using Random
 Random.seed!(2)
 
 test_file = joinpath(@__DIR__,"test_data/test_data_ekf.mat")
@@ -129,8 +130,8 @@ end
                             fogm_tau   = fogm_tau,
                             vec_states = false,
                             fogm_state = true) ≈ pinson_data["P18"]
-    @test_nowarn MagNav.get_pinson(17+3,lat[1],vn,ve,vd,fn,fe,fd,Cnb;
-                                   vec_states=true,fogm_state=false)
+    @test MagNav.get_pinson(17+3,lat[1],vn,ve,vd,fn,fe,fd,Cnb;
+                            vec_states=true,fogm_state=false) isa Matrix
 end
 
 @testset "get_Phi tests" begin
@@ -140,22 +141,22 @@ end
 
 @testset "get_H tests" begin
     @test MagNav.get_H(itp_mapS,x,lat,lon,alt;core=false) ≈ grid_data["H"]
-    @test_nowarn MagNav.get_H(itp_mapS3D,x,lat,lon,alt)
+    @test MagNav.get_H(itp_mapS3D,x,lat,lon,alt) isa Vector
 end
 
 @testset "get_h tests" begin
     @test MagNav.get_h(itp_mapS,x,lat,lon,alt;core=false)[1] ≈ grid_data["h"]
     @test MagNav.get_h(itp_mapS,[xn;0;xl[2:end]],lat,lon,alt;core=false)[1] ≈ grid_data["hRBPF"]
-    @test_nowarn MagNav.get_h(itp_mapS3D,x,lat,lon,alt)
-    @test_nowarn MagNav.get_h(itp_mapS,der_mapS,x,lat,lon,alt,map_alt;core=false)
-    @test_nowarn MagNav.get_h(itp_mapS,der_mapS,x,lat,lon,alt,map_alt;core=true)
-    @test_nowarn MagNav.get_h(itp_mapS3D,der_mapS3D,x,lat,lon,alt,map_alt;core=false)
-    @test_nowarn MagNav.get_h(itp_mapS3D,der_mapS3D,x,lat,lon,alt,map_alt;core=true)
+    @test MagNav.get_h(itp_mapS3D,x,lat,lon,alt) isa Vector
+    @test MagNav.get_h(itp_mapS,der_mapS,x,lat,lon,alt,map_alt;core=false) isa Vector
+    @test MagNav.get_h(itp_mapS,der_mapS,x,lat,lon,alt,map_alt;core=true) isa Vector
+    @test MagNav.get_h(itp_mapS3D,der_mapS3D,x,lat,lon,alt,map_alt;core=false) isa Vector
+    @test MagNav.get_h(itp_mapS3D,der_mapS3D,x,lat,lon,alt,map_alt;core=true) isa Vector
 end
 
 @testset "map_grad tests" begin
     @test MagNav.map_grad(itp_mapS,lat,lon,alt)[1:2] ≈ reverse(vec(grid_data["grad"]))
-    @test_nowarn MagNav.map_grad(itp_mapS3D,lat,lon,alt)
+    @test MagNav.map_grad(itp_mapS3D,lat,lon,alt) isa Vector
 end
 
 @testset "fogm tests" begin

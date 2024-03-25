@@ -196,8 +196,11 @@ function ekf(ins::INS, meas, itp_mapS;
 end # function ekf
 
 """
-    (ekf_rt::EKF_RT)(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, t,
-                     itp_mapS; der_mapS=nothing, map_alt=-1, dt=0.1)
+    (ekf_rt::EKF_RT)(lat, lon, alt, vn, ve, vd, fn, fe, fd,
+                     Cnb, meas, t, itp_mapS;
+                     der_mapS = nothing,
+                     map_alt  = -1,
+                     dt       = 0.1)
 
 Real-time (RT) extended Kalman filter (EKF) for airborne magnetic anomaly
 navigation. Receives individual samples and updates time, covariance matrix,
@@ -226,8 +229,11 @@ state vector, and measurement residual within `ekf_rt` struct.
 - `filt_res`: `FILTres` filter results struct,
 - `ekf_rt`:   `t`, `P`, `x`, and `r` fields are mutated
 """
-function (ekf_rt::EKF_RT)(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, t,
-                          itp_mapS; der_mapS=nothing, map_alt=-1, dt=0.1)
+function (ekf_rt::EKF_RT)(lat, lon, alt, vn, ve, vd, fn, fe, fd,
+                          Cnb, meas, t, itp_mapS;
+                          der_mapS = nothing,
+                          map_alt  = -1,
+                          dt       = 0.1)
 
     o = ekf_rt
 
@@ -273,6 +279,38 @@ function (ekf_rt::EKF_RT)(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, t,
     o.P = Phi*o.P*Phi' + o.Qd
 
     return FILTres(x_out, P_out, r_out, true)
+end # function EKF_RT
+
+"""
+    (ekf_rt::EKF_RT)(ins::INS, meas, itp_mapS;
+                     der_mapS = nothing,
+                     map_alt  = -1)
+
+Real-time (RT) extended Kalman filter (EKF) for airborne magnetic anomaly
+navigation. Receives individual samples and updates time, covariance matrix,
+state vector, and measurement residual within `ekf_rt` struct.
+
+**Arguments:**
+- `ekf_rt`:   `EKF_RT` real-time extended Kalman filter struct
+- `ins`:      `INS` inertial navigation system struct with individual sample (`ins.N=1`)
+- `meas`:     scalar magnetometer measurement [nT]
+- `itp_mapS`: scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
+- `der_mapS`: (optional) scalar map vertical derivative map interpolation function (`f(lat,lon)` or (`f(lat,lon,alt)`)
+- `map_alt`:  (optional) map altitude [m]
+
+**Returns:**
+- `filt_res`: `FILTres` filter results struct,
+- `ekf_rt`:   `t`, `P`, `x`, and `r` fields are mutated
+"""
+function (ekf_rt::EKF_RT)(ins::INS, meas, itp_mapS;
+                          der_mapS = nothing,
+                          map_alt  = -1)
+    @assert ins.N == 1 "only individual samples are supported for EKF_RT"
+    ekf_rt(ins.lat[1],ins.lon[1],ins.alt[1],ins.vn[1],ins.ve[1],ins.vd[1],
+           ins.fn[1],ins.fe[1],ins.fd[1],ins.Cnb[:,:,1],meas,ins.tt[1],itp_mapS;
+           der_mapS = der_mapS,
+           map_alt  = map_alt,
+           dt       = ins.dt)
 end # function EKF_RT
 
 """

@@ -217,12 +217,9 @@ function ekf_single(lat, lon, alt, Phi, meas, itp_mapS,
                     date         = get_years(2020,185),
                     core::Bool   = false)
 
-    ny = length(meas)
+    @assert !(itp_mapS isa Map_Cache) "Map_Cache not supported for nEKF training"
 
-    # get map interpolation function from map cache (based on location)
-    if itp_mapS isa Map_Cache
-        itp_mapS = get_cached_map(itp_mapS,lat,lon,alt)
-    end
+    ny = length(meas)
 
     # measurement residual [ny]
     resid = meas .- get_h(itp_mapS,x,lat,lon,alt;date=date,core=core)
@@ -430,7 +427,6 @@ function nekf_train(ins::INS, meas, itp_mapS, x_nn::Matrix, y_nn::Matrix;
                     l_window::Int        = 50,
                     date                 = get_years(2020,185),
                     core::Bool           = false)
-
     nekf_train(ins.lat,ins.lon,ins.alt,ins.vn,ins.ve,ins.vd,
                ins.fn,ins.fe,ins.fd,ins.Cnb,meas,ins.dt,itp_mapS,x_nn,y_nn;
                P0=P0,Qd=Qd,R=R,
@@ -492,7 +488,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
 
 **Returns:**
 - `m`:          neural network model
-- `data_norms`: tuple of data normalizations, e.g., `(v_scale,x_bias,x_scale)`
+- `data_norms`: length-`3` tuple of data normalizations, `(v_scale,x_bias,x_scale)`
 """
 function nekf_train(xyz::XYZ, ind, meas, itp_mapS, x::Matrix;
                     P0                   = create_P0(),

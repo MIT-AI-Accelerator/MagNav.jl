@@ -1,4 +1,5 @@
-using MagNav, Test, MAT, Plots
+using MagNav, Test, MAT
+using Plots
 
 test_file = joinpath(@__DIR__,"test_data/test_data_ins.mat")
 ins_data  = matopen(test_file,"r") do file
@@ -55,11 +56,12 @@ dt       = tt[2] - tt[1]
 
 traj = MagNav.Traj(N,dt,tt,lat,lon,alt,vn,ve,vd,fn,fe,fd,Cnb)
 ins  = MagNav.INS( N,dt,tt,ins_lat,ins_lon,ins_alt,ins_vn,ins_ve,ins_vd,
-                   ins_fn,ins_fe,ins_fd,ins_Cnb,zeros(1,1,1))
+                   ins_fn,ins_fe,ins_fd,ins_Cnb,zeros(3,3,N))
 ins2 = MagNav.INS( N,dt,tt,ins_lat,ins_lon,ins_alt,ins_vn,ins_ve,ins_vd,
                    ins_fn,ins_fe,ins_fd,ins_Cnb,ones(3,3,N))
 
 mapS       = MagNav.MapS(map_info,map_map,map_xx,map_yy,map_alt,map_mask)
+map_cache  = Map_Cache(maps=[mapS])
 itp_mapS   = map_interpolate(mapS,:linear) # linear to match MATLAB
 itp_mapS3D = map_interpolate(upward_fft(mapS,[mapS.alt,mapS.alt+5]),:linear)
 map_val    = itp_mapS.(lat,lon)
@@ -94,24 +96,27 @@ end
 
 (crlb_out,ins_out,filt_out) = eval_results(traj,ins,filt_res,crlb_P)
 
-p1 = plot();
+show_plot = false
+p1 = plot()
 
 @testset "plot_filt tests" begin
-    @test_nowarn plot_filt!(p1,traj,ins,filt_out;vel_plot=true,show_plot=false);
-    @test_nowarn plot_filt(traj,ins,filt_out;vel_plot=true,show_plot=false);
-    @test_nowarn plot_filt_err(traj,filt_out,crlb_out;vel_plot=true,show_plot=false);
+    @test plot_filt!(p1,traj,ins,filt_out;vel_plot=true,show_plot) isa NTuple{5,Plots.Plot}
+    @test plot_filt(traj,ins,filt_out;vel_plot=true,show_plot) isa NTuple{5,Plots.Plot}
+    @test plot_filt_err(traj,filt_out,crlb_out;vel_plot=true,show_plot) isa NTuple{4,Plots.Plot}
 end
 
 @testset "plot_mag_map tests" begin
-    @test_nowarn plot_mag_map(traj,mag_1_c,itp_mapS  ;order=:magmap,show_plot=false);
-    @test_nowarn plot_mag_map(traj,mag_1_c,itp_mapS3D;order=:mapmag,show_plot=false);
-    @test_throws ErrorException plot_mag_map(traj,mag_1_c,itp_mapS;order=:test,show_plot=false);
-    @test plot_mag_map_err(traj,mag_1_c,itp_mapS  ;show_plot=false) isa Plots.Plot
-    @test plot_mag_map_err(traj,mag_1_c,itp_mapS3D;show_plot=false) isa Plots.Plot
+    @test plot_mag_map(traj,mag_1_c,itp_mapS  ;order=:magmap,show_plot) isa Plots.Plot
+    @test plot_mag_map(traj,mag_1_c,map_cache ;order=:magmap,show_plot) isa Plots.Plot
+    @test plot_mag_map(traj,mag_1_c,itp_mapS3D;order=:mapmag,show_plot) isa Plots.Plot
+    @test_throws ErrorException plot_mag_map(traj,mag_1_c,itp_mapS;order=:test,show_plot)
+    @test plot_mag_map_err(traj,mag_1_c,itp_mapS  ;show_plot) isa Plots.Plot
+    @test plot_mag_map_err(traj,mag_1_c,map_cache ;show_plot) isa Plots.Plot
+    @test plot_mag_map_err(traj,mag_1_c,itp_mapS3D;show_plot) isa Plots.Plot
 end
 
 @testset "plot_autocor tests" begin
-    @test plot_autocor(mag_1_c-map_val,dt,1;show_plot=false) isa Plots.Plot
+    @test plot_autocor(mag_1_c-map_val,dt,1;show_plot) isa Plots.Plot
 end
 
 @testset "chisq tests" begin
@@ -125,17 +130,17 @@ end
 
 P = crlb_P[1:2,1:2,:]
 
-p1 = plot();
+p1 = plot()
 
 save_plot   = true
 ellipse_gif = joinpath(@__DIR__,"conf_ellipse")
 
 @testset "ellipse tests" begin
     ENV["GKSwstype"] = "100"
-    @test MagNav.points_ellipse(P[:,:,1]) isa Tuple{Vector,Vector}
-    @test_nowarn MagNav.conf_ellipse!(p1,P[:,:,1])
-    @test_nowarn MagNav.conf_ellipse!(p1,P[:,:,1];plot_eigax=true)
-    @test_nowarn MagNav.conf_ellipse(P[:,:,1])
+    @test MagNav.points_ellipse(P[:,:,1]) isa NTuple{2,Vector}
+    @test MagNav.conf_ellipse!(p1,P[:,:,1]) isa Nothing
+    @test MagNav.conf_ellipse!(p1,P[:,:,1];plot_eigax=true) isa Nothing
+    @test MagNav.conf_ellipse(P[:,:,1]) isa Plots.Plot
     @test MagNav.units_ellipse(P;conf_units=:deg) isa Array
     @test MagNav.units_ellipse(P;conf_units=:rad) isa Array
     @test MagNav.units_ellipse(filt_res,filt_out;conf_units=:ft) isa Array

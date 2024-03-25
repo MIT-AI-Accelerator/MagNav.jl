@@ -1,4 +1,5 @@
-using MagNav, Test, MAT, DataFrames
+using MagNav, Test, MAT
+using DataFrames
 using BSON: bson, @save
 
 test_data_map = joinpath(@__DIR__,"test_data/test_data_map.mat")
@@ -85,11 +86,11 @@ map_h5 = MagNav.add_extension(map_h5,".h5")
     @test get_map(map_h5) isa MagNav.MapS3D
     for map_file in map_files
         println(map_file)
-        @test_nowarn get_map(map_file)
+        @test get_map(map_file) isa MagNav.Map
     end
     for map_name in map_names
         println(map_name)
-        @test_nowarn get_map(map_name,df_map)
+        @test get_map(map_name,df_map) isa MagNav.Map
     end
     @test get_map(map_files[6];map_units=:deg,file_units=:rad) isa MagNav.MapS
     @test_throws ErrorException get_map(map_files[6];map_units=:utm,file_units=:deg)
