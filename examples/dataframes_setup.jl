@@ -9,12 +9,12 @@ df_cal[!,:map_name] = Symbol.(df_cal[!,:map_name])
 df_flight = DataFrame(CSV.File("dataframes/df_flight.csv"))
 df_flight[!,:flight]   = Symbol.(df_flight[!,:flight])
 df_flight[!,:xyz_type] = Symbol.(df_flight[!,:xyz_type])
-df_flight[!,:xyz_h5]   = String.(df_flight[!,:xyz_h5])
+df_flight[!,:xyz_file] = String.(df_flight[!,:xyz_file])
 #* to store/load the data locally uncomment the for loop below
-#* and make sure the file locations match up with the xyz_h5 column
+#* and make sure the file locations match up with the xyz_file column
 for (i,flight) in enumerate(df_flight.flight)
     if df_flight.xyz_type[i] == :XYZ20
-        df_flight.xyz_h5[i] = MagNav.sgl_2020_train()*"/$(flight)_train.h5"
+        df_flight.xyz_file[i] = MagNav.sgl_2020_train()*"/$(flight)_train.h5"
     end
 end
 
@@ -22,11 +22,11 @@ end
 df_map = DataFrame(CSV.File("dataframes/df_map.csv"))
 df_map[!,:map_name] = Symbol.(df_map[!,:map_name])
 df_map[!,:map_type] = Symbol.(df_map[!,:map_type])
-df_map[!,:map_h5]   = String.(df_map[!,:map_h5])
+df_map[!,:map_file] = String.(df_map[!,:map_file])
 #* to store/load the maps locally, uncomment the for loop below
-#* and make sure the file locations match up with the map_h5 column
+#* and make sure the file locations match up with the map_file column
 for (i,map_name) in enumerate(df_map.map_name)
-    df_map.map_h5[i] = MagNav.ottawa_area_maps()*"/$map_name.h5"
+    df_map.map_file[i] = MagNav.ottawa_area_maps()*"/$map_name.h5"
 end
 
 ## all flight lines

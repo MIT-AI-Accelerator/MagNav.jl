@@ -1,4 +1,4 @@
-map_name,map_h5,map_type,map_alt
+map_name,map_file,map_type,map_alt
 Eastern_395,../maps/Eastern_395.h5,HAE,395
 Eastern_drape,../maps/Eastern_drape.h5,drape,-1
 Renfrew_395,../maps/Renfrew_395.h5,HAE,395

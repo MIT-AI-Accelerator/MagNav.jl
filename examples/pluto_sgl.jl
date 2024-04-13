@@ -358,7 +358,8 @@ begin
 	plot!(p7,tt,mag_3_uc,lab="mag_3_uc")
 	plot!(p7,tt,mag_4_uc,lab="mag_4_uc")
 	plot!(p7,tt,mag_5_uc,lab="mag_5_uc")
-	plot_events!(p7,df_event,flight;t0=t0)
+	plot_events!(p7,flight,df_event;t0=t0,t_units=:min)
+    display(p7)
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
