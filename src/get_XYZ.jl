@@ -17,6 +17,8 @@ data required in the CSV, HDF5, or MAT file includes:
 - `lat`, `lon`, `alt` (position)
 - `mag_1_c` OR `mag_1_uc` (scalar magnetometer measurements)
 
+All other fields can be computed/simulated.
+
 If a CSV or HDF5 file is provided, the possible columns/fields in the file are:
 
 |**Field**|**Type**|**Description**
@@ -60,6 +62,8 @@ If a CSV or HDF5 file is provided, the possible columns/fields in the file are:
 |`line`    |vector | line number(s), i.e., segments within `flight`
 |`year`    |vector | year
 |`doy`     |vector | day of year
+|`diurnal` |vector | measured diurnal, i.e., temporal variations or space weather effects [nT]
+|`igrf`    |vector | International Geomagnetic Reference Field (IGRF), i.e., core field [nT]
 |`mag_1_c` |vector | Mag 1 compensated (clean) scalar magnetometer measurements [nT]
 |`mag_1_uc`|vector | Mag 1 uncompensated (corrupted) scalar magnetometer measurements [nT]
 
@@ -269,9 +273,8 @@ data required in the CSV, HDF5, or MAT file includes:
 - `lat`, `lon`, `alt` (position)
 - `mag_1_c` OR `mag_1_uc` (scalar magnetometer measurements)
 
-All other fields will be computed/simulated, except `flux_b`, `year`, `doy`,
-`diurnal`, `igrf`, `mag_2_c`, `mag_3_c`, `mag_2_uc`, `mag_3_uc`, `aux_1`,
-`aux_2`, and `aux_3`.
+All other fields can be computed/simulated, except `flux_b`, `mag_2_c`,
+`mag_3_c`, `mag_2_uc`, `mag_3_uc`, `aux_1`, `aux_2`, and `aux_3`.
 
 If a CSV or HDF5 file is provided, the possible columns/fields in the file are:
 
@@ -543,7 +546,7 @@ end # function get_flux
 get_MagV = get_magv = get_flux
 
 """
-    get_traj(traj_file::String, field::Symbol=:traj;
+    get_traj(traj_file::String, field::Symbol = :traj;
              dt            = 0.1,
              tt_sort::Bool = true,
              silent::Bool  = false)
@@ -584,7 +587,7 @@ MATLAB-companion outputs data.
 **Returns:**
 - `traj`: `Traj` trajectory struct
 """
-function get_traj(traj_file::String, field::Symbol=:traj;
+function get_traj(traj_file::String, field::Symbol = :traj;
                   dt            = 0.1,
                   tt_sort::Bool = true,
                   silent::Bool  = false)
@@ -738,7 +741,7 @@ function get_traj(traj_file::String, field::Symbol=:traj;
 end # function get_traj
 
 """
-    get_ins(ins_file::String, field::Symbol=:ins_data;
+    get_ins(ins_file::String, field::Symbol = :ins_data;
             dt            = 0.1,
             tt_sort::Bool = true,
             silent::Bool  = false)
@@ -780,7 +783,7 @@ prefixes. This is the standard way the MATLAB-companion outputs data.
 **Returns:**
 - `ins`: `INS` inertial navigation system struct
 """
-function get_ins(ins_file::String, field::Symbol=:ins_data;
+function get_ins(ins_file::String, field::Symbol = :ins_data;
                  dt            = 0.1,
                  tt_sort::Bool = true,
                  silent::Bool  = false)
@@ -944,8 +947,10 @@ function get_ins(ins_file::String, field::Symbol=:ins_data;
 end # function get_ins
 
 """
-    get_ins(xyz::XYZ, ind=trues(xyz.traj.N);
-            N_zero_ll::Int=0, t_zero_ll=0, err=0.0)
+    get_ins(xyz::XYZ, ind = trues(xyz.traj.N);
+            N_zero_ll::Int  = 0,
+            t_zero_ll::Real = 0,
+            err::Real       = 0.0)
 
 Get inertial navigation system data at specific indices, possibly zeroed.
 
@@ -953,52 +958,54 @@ Get inertial navigation system data at specific indices, possibly zeroed.
 - `xyz`:       `XYZ` flight data struct
 - `ind`:       (optional) selected data indices
 - `N_zero_ll`: (optional) number of samples (instances) to zero INS lat/lon to truth (`xyz.traj`)
-- `t_zero_ll`: (optional) length of time to zero INS lat/lon to truth (`xyz.traj`), will overwrite `N_zero_ll`
-- `err`:       (optional) initial INS latitude and longitude error [m]
+- `t_zero_ll`: (optional) length of time to zero INS lat/lon to truth (`xyz.traj`), overwrites `N_zero_ll`
+- `err`:       (optional) additional position error [m]
 
 **Returns:**
 - `ins`: `INS` inertial navigation system struct at `ind`
 """
-function get_ins(xyz::XYZ, ind=trues(xyz.ins.N);
-                 N_zero_ll::Int=0, t_zero_ll=0, err=0.0)
-    N_zero_ll = t_zero_ll > 0 ? round(Int,t_zero_ll/xyz.ins.dt) : N_zero_ll
-    lat = xyz.traj.lat[ind][1:N_zero_ll]
-    lon = xyz.traj.lon[ind][1:N_zero_ll]
-    xyz.ins(ind;N_zero_ll=N_zero_ll,err=err,lat=lat,lon=lon)
+function get_ins(xyz::XYZ, ind = trues(xyz.ins.N);
+                 N_zero_ll::Int  = 0,
+                 t_zero_ll::Real = 0,
+                 err::Real       = 0.0)
+    N_zero = t_zero_ll > 0 ? floor(Int,t_zero_ll/xyz.ins.dt+1) : N_zero_ll
+    if N_zero > 0
+        lat = xyz.traj.lat[ind][1:N_zero]
+        lon = xyz.traj.lon[ind][1:N_zero]
+        xyz.ins(ind;err=err,lat=lat,lon=lon)
+    else
+        xyz.ins(ind;err=err)
+    end
 end # function get_ins
 
 get_INS = get_ins
 
 """
-    (ins::INS)(ind=trues(ins.N);
-               N_zero_ll::Int=0, t_zero_ll=0, err=0.0,
-               lat=zero(ins.lat[ind]),
-               lon=zero(ins.lon[ind]))
+    (ins::INS)(ind = trues(ins.N);
+               err::Real   = 0.0,
+               lat::Vector = [zero(ins.lat[ind]);],
+               lon::Vector = [zero(ins.lon[ind]);])
 
 Get inertial navigation system data at specific indices, possibly zeroed.
 
 **Arguments:**
-- `ins`:       `INS` inertial navigation system struct
-- `ind`:       (optional) selected data indices
-- `N_zero_ll`: (optional) number of samples (instances) to zero INS lat/lon to truth (`xyz.traj`)
-- `t_zero_ll`: (optional) length of time to zero INS lat/lon to truth (`xyz.traj`), will overwrite `N_zero_ll`
-- `err`:       (optional) initial INS latitude and longitude error [m]
-- `lat`:       (optional) best-guess (truth) initial latitude  [rad]
-- `lon`:       (optional) best-guess (truth) initial longitude [rad]
+- `ins`: `INS` inertial navigation system struct
+- `ind`: (optional) selected data indices
+- `err`: (optional) additional position error [m]
+- `lat`: (optional) initial truth latitude  [rad]
+- `lon`: (optional) initial truth longitude [rad]
 
 **Returns:**
 - `ins`: `INS` inertial navigation system struct at `ind`
 """
-function (ins::INS)(ind=trues(ins.N);
-                    N_zero_ll::Int=0, t_zero_ll=0, err=0.0,
-                    lat=zero(ins.lat[ind]),
-                    lon=zero(ins.lon[ind]))
+function (ins::INS)(ind = trues(ins.N);
+                    err::Real   = 0.0,
+                    lat::Vector = [ins.lat[ind];],
+                    lon::Vector = [ins.lon[ind];])
 
     ind = findall((1:ins.N) .∈ ((1:ins.N)[ind],))
 
-    # set first N_zero_ll INS lat & lon to specified lat & lon
-    N_zero_ll = t_zero_ll > 0 ? round(Int,t_zero_ll/ins.dt) : N_zero_ll
-    if N_zero_ll > 0
+    if (lat != ins.lat[ind]) | (lon != ins.lon[ind])
         (ins_lat,ins_lon) = zero_ins_ll(ins.lat[ind],ins.lon[ind],err,lat,lon)
     else
         (ins_lat,ins_lon) = (ins.lat[ind],ins.lon[ind])
@@ -1012,56 +1019,58 @@ function (ins::INS)(ind=trues(ins.N);
 end # function INS
 
 """
-    zero_ins_ll(ins_lat, ins_lon, err=0.0, lat=ins_lat[1:1], lon=ins_lon[1:1])
+    zero_ins_ll(ins_lat::Vector, ins_lon::Vector, err::Real = 0.0,
+                lat::Vector = ins_lat[1:1], lon::Vector = ins_lon[1:1])
 
 Zero INS latitude and longitude starting position, with optional error.
 
 **Arguments:**
-- `ins_lat`: INS latitude  vector [rad]
-- `ins_lon`: INS longitude vector [rad]
-- `err`:     (optional) initial INS latitude and longitude error [m]
-- `lat`:     (optional) best-guess (truth) initial latitude  [rad]
-- `lon`:     (optional) best-guess (truth) initial longitude [rad]
+- `ins_lat`: INS latitude  [rad]
+- `ins_lon`: INS longitude [rad]
+- `err`:     (optional) additional position error [m]
+- `lat`:     (optional) initial truth latitude  [rad]
+- `lon`:     (optional) initial truth longitude [rad]
 
 **Returns:**
-- `ins_lat`: zeroed INS latitude  vector [rad]
-- `ins_lon`: zeroed INS longitude vector [rad]
+- `ins_lat`: INS latitude,  zeroed [rad]
+- `ins_lon`: INS longitude, zeroed [rad]
 """
-function zero_ins_ll(ins_lat, ins_lon, err=0.0, lat=ins_lat[1:1], lon=ins_lon[1:1])
+function zero_ins_ll(ins_lat::Vector, ins_lon::Vector, err::Real = 0.0,
+                     lat::Vector = ins_lat[1:1], lon::Vector = ins_lon[1:1])
 
     # check that INS vectors are the same length and get length
     N_lat = length(ins_lat)
     N_lon = length(ins_lon)
-    N_lat == N_lon ? (N=N_lat) : error("N_ins_lat ≂̸ N_ins_lon")
+    N_lat == N_lon ? (N = N_lat) : error("N_ins_lat ≂̸ N_ins_lon")
 
     # check that truth vectors (or scalar) are the same length and get length
     N_zero_lat = length(lat)
     N_zero_lon = length(lon)
-    N_zero_lat == N_zero_lon ? (N0=N_zero_lat) : error("N_lat ≂̸ N_lon")
+    N_zero_lat == N_zero_lon ? (N_zero = N_zero_lat) : error("N_lat ≂̸ N_lon")
 
     # avoid modifying original data (possibly in xyz struct)
     ins_lat = deepcopy(ins_lat)
     ins_lon = deepcopy(ins_lon)
 
-    # correct 1:N0
-    δlat = ins_lat[1:N0] - lat
-    δlon = ins_lon[1:N0] - lon
-    ins_lat[1:N0] .-= (δlat .- sign.(δlat) .* dn2dlat.(err,lat))
-    ins_lon[1:N0] .-= (δlon .- sign.(δlon) .* de2dlon.(err,lat))
+    # correct 1:N_zero
+    δlat = ins_lat[1:N_zero] - lat
+    δlon = ins_lon[1:N_zero] - lon
+    ins_lat[1:N_zero] .-= (δlat .- sign.(δlat) .* dn2dlat.(err,lat))
+    ins_lon[1:N_zero] .-= (δlon .- sign.(δlon) .* de2dlon.(err,lat))
 
-    # correct N0+1:end
-    if N > N0
+    # correct N_zero+1:end
+    if N > N_zero
         δlat_end = δlat[end] .- sign.(δlat[end]) .* dn2dlat.(err,lat[end])
         δlon_end = δlon[end] .- sign.(δlon[end]) .* de2dlon.(err,lat[end])
-        ins_lat[N0+1:end] .-= δlat_end
-        ins_lon[N0+1:end] .-= δlon_end
+        ins_lat[N_zero+1:end] .-= δlat_end
+        ins_lon[N_zero+1:end] .-= δlon_end
     end
 
     return (ins_lat, ins_lon)
 end # function zero_ins_ll
 
 """
-    get_traj(xyz::XYZ, ind=trues(xyz.traj.N))
+    get_traj(xyz::XYZ, ind = trues(xyz.traj.N))
 
 Get trajectory data at specific indices.
 
@@ -1072,14 +1081,14 @@ Get trajectory data at specific indices.
 **Returns:**
 - `traj`: `Traj` trajectory struct at `ind`
 """
-function get_traj(xyz::XYZ, ind=trues(xyz.traj.N))
+function get_traj(xyz::XYZ, ind = trues(xyz.traj.N))
     xyz.traj(ind)
 end # function get_traj
 
 get_Traj = get_traj
 
 """
-    (traj::Traj)(ind=trues(traj.N))
+    (traj::Traj)(ind = trues(traj.N))
 
 Get trajectory data at specific indices.
 
@@ -1090,7 +1099,7 @@ Get trajectory data at specific indices.
 **Returns:**
 - `traj`: `Traj` trajectory struct at `ind`
 """
-function (traj::Traj)(ind=trues(traj.N))
+function (traj::Traj)(ind = trues(traj.N))
 
     ind = findall((1:traj.N) .∈ ((1:traj.N)[ind],))
 
@@ -1101,7 +1110,7 @@ function (traj::Traj)(ind=trues(traj.N))
 end # function Traj
 
 """
-    (flux::MagV)(ind=trues(length(flux.x)))
+    (flux::MagV)(ind = trues(length(flux.x)))
 
 Get vector magnetometer measurements at specific indices.
 
@@ -1112,7 +1121,7 @@ Get vector magnetometer measurements at specific indices.
 **Returns:**
 - `flux`: `MagV` vector magnetometer measurement struct at `ind`
 """
-function (flux::MagV)(ind=trues(length(flux.x)))
+function (flux::MagV)(ind = trues(length(flux.x)))
     N   = length(flux.x)
     ind = findall((1:N) .∈ ((1:N)[ind],))
     return MagV(flux.x[ind], flux.y[ind], flux.z[ind], flux.t[ind])
@@ -1124,7 +1133,7 @@ end # function MagV
               tt_sort::Bool = true,
               silent::Bool  = false)
 
-Get `XYZ20` flight data from saved HDF5 file. Based on SGL 2020 data fields.
+Get `XYZ20` flight data from saved HDF5 file. Based on 2020 SGL data fields.
 
 **Arguments:**
 - `xyz_h5`:  path/name of flight data HDF5 file (`.h5` extension optional)
@@ -1176,7 +1185,7 @@ function get_XYZ20(xyz_h5::String;
     # provided IGRF for convenience
     push!(d,:igrf => d[:mag_1_dc] - d[:mag_1_igrf])
 
-    # trajectory velocities and specific forces from position
+    # trajectory velocities & specific forces from position
     push!(d,:vn =>  fdm(d[:utm_y]) / dt)
     push!(d,:ve =>  fdm(d[:utm_x]) / dt)
     push!(d,:vd => -fdm(d[:utm_z]) / dt)
@@ -1184,7 +1193,7 @@ function get_XYZ20(xyz_h5::String;
     push!(d,:fe =>  fdm(d[:ve])    / dt)
     push!(d,:fd =>  fdm(d[:vd])    / dt .- g_earth)
 
-    # Cnb direction cosine matrix (body to navigation) from yaw, pitch, roll
+    # Cnb direction cosine matrix (body to navigation) from roll, pitch, yaw
     push!(d,:Cnb     => zeros(Float64,3,3,N)) # unknown
     push!(d,:ins_Cnb => euler2dcm(d[:ins_roll],d[:ins_pitch],d[:ins_yaw],:body2nav))
     push!(d,:ins_P   => zeros(Float64,1,1,N)) # unknown
@@ -1314,7 +1323,7 @@ end # function get_XYZ20
               tt_sort::Bool = true,
               silent::Bool  = false)
 
-Get `XYZ21` flight data from saved HDF5 file. Based on SGL 2021 data fields.
+Get `XYZ21` flight data from saved HDF5 file. Based on 2021 SGL data fields.
 
 **Arguments:**
 - `xyz_h5`:  path/name of flight data HDF5 file (`.h5` extension optional)
@@ -1365,7 +1374,7 @@ function get_XYZ21(xyz_h5::String;
     # provided IGRF for convenience
     push!(d,:igrf => d[:mag_1_dc] - d[:mag_1_igrf])
 
-    # trajectory velocities and specific forces from position
+    # trajectory velocities & specific forces from position
     push!(d,:vn =>  fdm(d[:utm_y]) / dt)
     push!(d,:ve =>  fdm(d[:utm_x]) / dt)
     push!(d,:vd => -fdm(d[:utm_z]) / dt)
@@ -1373,7 +1382,7 @@ function get_XYZ21(xyz_h5::String;
     push!(d,:fe =>  fdm(d[:ve])    / dt)
     push!(d,:fd =>  fdm(d[:vd])    / dt .- g_earth)
 
-    # Cnb direction cosine matrix (body to navigation) from yaw, pitch, roll
+    # Cnb direction cosine matrix (body to navigation) from roll, pitch, yaw
     push!(d,:Cnb     => zeros(Float64,3,3,N)) # unknown
     push!(d,:ins_Cnb => euler2dcm(d[:ins_roll],d[:ins_pitch],d[:ins_yaw],:body2nav))
     push!(d,:ins_P   => zeros(Float64,1,1,N)) # unknown
@@ -1428,13 +1437,13 @@ Get `XYZ` flight data from saved HDF5 file via DataFrame lookup.
 
 **Arguments:**
 - `flight`:       flight name (e.g., `:Flt1001`)
-- `df_flight`:    lookup table (DataFrame) of flight data HDF5 files
+- `df_flight`:    lookup table (DataFrame) of flight data files
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
 `xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
 `xyz_set` |`Real`  | flight dataset number (used to prevent improper mixing of datasets, such as different magnetometer locations)
-`xyz_h5`  |`String`| path/name of flight data HDF5 file (`.h5` extension optional)
+`xyz_file`|`String`| path/name of flight data CSV, HDF5, or MAT file (`.csv`, `.h5`, or `.mat` extension required)
 - `tt_sort`:      (optional) if true, sort data by time (instead of line)
 - `reorient_vec`: (optional) if true, align vector magnetometer measurements with body frame
 - `silent`:       (optional) if true, no print outs
@@ -1449,16 +1458,16 @@ function get_XYZ(flight::Symbol, df_flight::DataFrame;
 
     ind      = findfirst(df_flight.flight .== flight)
     xyz_type = df_flight.xyz_type[ind]
-    xyz_h5   = df_flight.xyz_h5[ind]
+    xyz_file = df_flight.xyz_file[ind]
 
     if xyz_type == nameof(XYZ0)
-        xyz = get_XYZ0( xyz_h5;tt_sort=tt_sort,silent=silent)
+        xyz = get_XYZ0( xyz_file;tt_sort=tt_sort,silent=silent)
     elseif xyz_type == nameof(XYZ1)
-        xyz = get_XYZ1( xyz_h5;tt_sort=tt_sort,silent=silent)
+        xyz = get_XYZ1( xyz_file;tt_sort=tt_sort,silent=silent)
     elseif xyz_type == nameof(XYZ20)
-        xyz = get_XYZ20(xyz_h5;tt_sort=tt_sort,silent=silent)
+        xyz = get_XYZ20(xyz_file;tt_sort=tt_sort,silent=silent)
     elseif xyz_type == nameof(XYZ21)
-        xyz = get_XYZ21(xyz_h5;tt_sort=tt_sort,silent=silent)
+        xyz = get_XYZ21(xyz_file;tt_sort=tt_sort,silent=silent)
     else
         error("$xyz_type xyz_type not defined")
     end
@@ -1471,7 +1480,7 @@ end # function get_XYZ
 get_xyz = get_XYZ
 
 """
-    read_check(xyz::HDF5.File, field::Symbol, N::Int=1, silent::Bool=false)
+    read_check(xyz::HDF5.File, field::Symbol, N::Int = 1, silent::Bool = false)
 
 Internal helper function to check for NaNs or missing data (returned as NaNs)
 in opened HDF5 file. Prints out warning for any field that contains NaNs.
@@ -1485,7 +1494,7 @@ in opened HDF5 file. Prints out warning for any field that contains NaNs.
 **Returns:**
 - `val`: data returned for `field`
 """
-function read_check(xyz::HDF5.File, field::Symbol, N::Int=1, silent::Bool=false)
+function read_check(xyz::HDF5.File, field::Symbol, N::Int = 1, silent::Bool = false)
     field = string(field)
     if field in keys(xyz)
         val = read(xyz,field)
@@ -1556,4 +1565,5 @@ function xyz_reorient_vec!(xyz::XYZ)
             end
         end
     end
+    return (nothing)
 end # function xyz_reorient_vec!

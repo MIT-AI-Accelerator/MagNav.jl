@@ -1,6 +1,6 @@
 # ------------------------------------------------------------------------------
 # Build a Docker image containing Julia, Jupyter, Pluto, MagNav.jl, & examples.
-# It will take a while to build. The image is large, about 6 GB. This uses:
+# Takes a while to build. The image is large, about 6 GB. This uses:
 # https://jupyter-docker-stacks.readthedocs.io/en/latest/using/selecting.html#jupyter-julia-notebook
 # ------------------------------------------------------------------------------
 # Build/Run commands via Docker
@@ -8,7 +8,7 @@
 # docker run -p 8888:8888 magnav
 # ------------------------------------------------------------------------------
 
-# Get Julia, Jupyter, & Pluto image, might not use latest Julia
+# Get Julia, Jupyter, & Pluto image, should use latest Julia version
 FROM jupyter/julia-notebook:latest
 
 # Add packages & precompile

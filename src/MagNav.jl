@@ -22,14 +22,14 @@ module MagNav
     using Interpolations: Linear, OnGrid, Quadratic, ScaledInterpolation
     using Interpolations: interpolate, linear_interpolation, scale
     using IterTools: ncycle
-    using KernelFunctions: PolynomialKernel, kernelmatrix
+    using KernelFunctions: Kernel, PolynomialKernel, kernelmatrix
     using MAT: matopen
     using MLJLinearModels: ElasticNetRegression, fit
     using NearestNeighbors: KDTree, knn, nn
     using Optim: LBFGS, Options, only_fg!, optimize
     using Parameters: @unpack, @with_kw
     using Pkg.Artifacts: @artifact_str
-    using Plots: annotate!, contourf!, heatmap, mm, plot, plot!, scatter
+    using Plots: Plot, annotate!, contourf!, heatmap, mm, plot, plot!, scatter
     using PrecompileTools
     using Random: rand, randn, randperm, seed!, shuffle
     using RecipesBase: @recipe
@@ -88,7 +88,7 @@ module MagNav
         const usgs
 
     RBG file for the standard non-linear, pseudo-log, color scale used by the
-    USGS. Same as the color scale for the "Bouguer gravity anomaly map."
+    USGS. Same as the color scale used for the "Bouguer gravity anomaly map."
 
     Reference: https://mrdata.usgs.gov/magnetic/namag.png
     """
@@ -121,7 +121,8 @@ module MagNav
     """
         sgl_2020_train()
 
-    Flight data from SGL 2020 data collection - training portion, contains:
+    Flight data from the 2020 SGL flight data collection - training portion,
+    contains:
     - `Flt1002_train.h5`
     - `Flt1003_train.h5`
     - `Flt1004_train.h5`
@@ -179,10 +180,10 @@ module MagNav
     - `Perth_800.h5`:     Perth mini-survey (within Eastern Ontario) at 800 m HAE
 
     `NOTE`: Missing map data within each map has been filled in (using k-nearest
-    neighbors) so that the grids are completely filled. Care must be taken to
+    neighbors) so that the maps are fully filled. Care must be taken to
     not navigate in the filled-in areas, as this is not real data and only done
     for more accurate and consistent upward continuation of the maps. Use the
-    `map_check` function on the desired map and flight path data to determine if
+    `map_check` function with the desired map and flight path data to check if
     the map may be used without navigating into filled-in (artificial) areas.
     """
     ottawa_area_maps() = joinpath(artifact"ottawa_area_maps","ottawa_area_maps")
@@ -191,8 +192,8 @@ module MagNav
         ottawa_area_maps_gxf()
 
     GXF versions of small magnetic anomaly maps near Ottawa, Ontario, Canada, contains:
-    - `HighAlt_Mag.gxf`: High Altitude mini-survey (within Renfrew)
-    - `Perth_Mag.gxf`:   Perth mini-survey (within Eastern Ontario)
+    - `HighAlt_Mag.gxf`: High Altitude mini-survey (within Renfrew) at 5181 m HAE
+    - `Perth_Mag.gxf`:   Perth mini-survey (within Eastern Ontario) at 800 m HAE
     """
     ottawa_area_maps_gxf() = joinpath(artifact"ottawa_area_maps_gxf","ottawa_area_maps_gxf")
 
@@ -506,7 +507,7 @@ module MagNav
     """
         XYZ20{T1 <: Signed, T2 <: AbstractFloat} <: XYZ{T1, T2}
 
-    Subtype of `XYZ` for SGL 2020 datasets.
+    Subtype of `XYZ` for 2020 SGL datasets.
 
     |**Field**|**Type**|**Description**
     |:--|:--|:--
@@ -677,7 +678,7 @@ module MagNav
     """
         XYZ21{T1 <: Signed, T2 <: AbstractFloat} <: XYZ{T1, T2}
 
-    Subtype of `XYZ` for SGL 2021 datasets.
+    Subtype of `XYZ` for 2021 SGL datasets.
 
     |**Field**|**Type**|**Description**
     |:--|:--|:--
@@ -1077,13 +1078,13 @@ module MagNav
     |`norm_type_x`     |Symbol          | normalization for `x` data matrix (`see below`)
     |`norm_type_y`     |Symbol          | normalization for `y` target vector (`see below`)
 
-    - `model_type` options are broken into 3 architectures, with `1` being a standard feedforward neural network and `2,3` being used in conjunction with Tolles-Lawson
+    - `model_type` options are broken into 3 architectures, with `1` being a standard feedforward neural network and `2` & `3` being used in conjunction with Tolles-Lawson
         - `:m1`   = standard feedforward neural network (NN)
         - `:m2a`  = NN determines Tolles-Lawson (TL) coefficients
         - `:m2b`  = NN determines additive correction to classical TL
         - `:m2c`  = NN determines additive correction to classical TL, TL coefficients tuned as well
         - `:m2d`  = NN determines additive correction to each TL coefficient
-        - `:m3tl` = no NN, TL coefficients fine-tuned via SGD, without Taylor expansion for `y_type` :b and :c (for testing)
+        - `:m3tl` = no NN, TL coefficients fine-tuned via SGD, without Taylor expansion for `y_type = :b, :c` (for testing)
         - `:m3s`  = NN determines scalar correction to TL, using expanded TL vector terms for explainability
         - `:m3v`  = NN determines vector correction to TL, using expanded TL vector terms for explainability
         - `:m3sc` = `:m3s` with curriculum learning based on TL error
@@ -1176,6 +1177,33 @@ module MagNav
     end # struct NNCompParams
 
     """
+        TempParams
+
+    Temporary (WIP) parameters struct.
+
+    |**Field**|**Type**|**Description**
+    |:--|:--|:--
+    |`σ_curriculum` |Float64| standard deviation threshold, only used for `model_type = :m3sc, :m3vc`
+    |`l_window`     |Int64  | temporal window length, only used for `model_type = :m3w, :m3tf`
+    |`window_type`  |Symbol | type of windowing, `:sliding` for overlapping or `:contiguous` for non-overlapping, only used for `model_type = :m3w, :m3tf`
+    |`tf_layer_type`|Symbol | transformer normalization layer before or after skip connection {`:prelayer`,`:postlayer`}, only used for `model_type = :m3tf`
+    |`tf_norm_type` |Symbol | normalization for transformer encoder {`:batch`,`:layer`,`:none`}, only used for `model_type = :m3tf`
+    |`dropout_prob` |Float64| dropout rate, only used for `model_type = :m3w, :m3tf`
+    |`N_tf_head`    |Int64  | number of attention heads, only used for `model_type = :m3tf`
+    |`tf_gain`      |Float64| weight initialization parameter, only used for `model_type = :m3tf`
+    """
+    @with_kw struct TempParams
+        σ_curriculum  :: Float64 = 1.0
+        l_window      :: Int64   = 5
+        window_type   :: Symbol  = :sliding
+        tf_layer_type :: Symbol  = :postlayer
+        tf_norm_type  :: Symbol  = :batch
+        dropout_prob  :: Float64 = 0.2
+        N_tf_head     :: Int64   = 8
+        tf_gain       :: Float64 = 1.0
+    end # struct TempParams
+
+    """
         EKF_RT
 
     Real-time (RT) extended Kalman filter (EKF) struct, mutable.
@@ -1263,7 +1291,7 @@ module MagNav
     dn2dlat,de2dlon,dlat2dn,dlon2de,linreg,detrend,get_bpf,bpf_data,bpf_data!,
     get_x,get_y,get_Axy,get_nn_m,sparse_group_lasso,err_segs,
     norm_sets,denorm_sets,get_ind,chunk_data,predict_rnn_full,
-    predict_rnn_windowed,krr,eval_shapley,plot_shapley,eval_gsa,
+    predict_rnn_windowed,krr_fit,krr_test,eval_shapley,plot_shapley,eval_gsa,
     get_IGRF,get_igrf,project_body_field_to_2d_igrf,get_optimal_rotation_matrix,
     get_days_in_year,get_years,filter_events!,filter_events,gif_animation_m3,
     plot_basic,plot_activation,plot_mag,plot_mag_c,plot_PSD,plot_spectrogram,
@@ -1283,10 +1311,10 @@ module MagNav
     get_flux,get_magv,get_MagV,get_traj,get_Traj,get_ins,get_INS,
     map2kmz,path2kml,
     upward_fft,vector_fft,downward_L,psd,
-    map_interpolate,map_itp,map_get_gxf,map_trim,
-    map_correct_igrf!,map_correct_igrf,map_fill!,map_fill,
-    map_chessboard!,map_chessboard,map_utm2lla!,map_utm2lla,map_gxf2h5,
-    plot_map!,plot_map,plot_path!,plot_path,plot_events!,map_check,get_map_val,
+    map_interpolate,map_itp,map_get_gxf,map_trim,map_correct_igrf!,
+    map_correct_igrf,map_fill!,map_fill,map_chessboard!,map_chessboard,
+    map_utm2lla!,map_utm2lla,map_gxf2h5,plot_map!,plot_map,
+    plot_path!,plot_path,plot_events!,plot_events,map_check,get_map_val,
     get_cached_map,map_border,map_border_sort,map_resample,map_combine,
     create_model,fogm,
     mpf,

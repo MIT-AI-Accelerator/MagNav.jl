@@ -45,16 +45,16 @@ map_kmz  = joinpath(@__DIR__,"test")
 path_kml = joinpath(@__DIR__,"test")
 
 @testset "map2kmz tests" begin
-    @test_nowarn map2kmz(map_map,map_xx,map_yy,map_kmz)
-    @test_nowarn map2kmz(map_map,map_xx,map_yy,map_kmz;map_units=:deg)
+    @test map2kmz(mapS,map_kmz;plot_alt=mapS.alt) isa Nothing
+    @test map2kmz(map_map,map_xx,map_yy,map_kmz ) isa Nothing
+    @test map2kmz(map_map,map_xx,map_yy,map_kmz;map_units=:deg) isa Nothing
     @test_throws ErrorException map2kmz(map_map,map_xx,map_yy,map_kmz;map_units=:test)
-    @test_nowarn map2kmz(mapS,map_kmz;plot_alt=mapS.alt)
 end
 
 @testset "path2kml tests" begin
-    @test_nowarn path2kml(lat,lon,alt,path_kml)
+    @test path2kml(lat,lon,alt,path_kml) isa Nothing
+    @test path2kml(traj(ind),path_kml;points=true) isa Nothing
     @test_throws ErrorException path2kml(lat,lon,alt,path_kml;path_units=:test)
-    @test_nowarn path2kml(traj(ind),path_kml;points=true)
 end
 
 map_kmz  = MagNav.add_extension(map_kmz ,".kmz")

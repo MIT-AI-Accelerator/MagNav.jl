@@ -190,7 +190,7 @@ end
 feat_set  = [:mag_1_c,:mag_1_uc,:TL_A_flux_a,:flight]
 
 @testset "plot_correlation_matrix tests" begin
-    @test plot_correlation_matrix(xyz,ind;show_plot) isa Plot
+    @test plot_correlation_matrix(xyz,ind;Nmax=10      ,show_plot) isa Plot
     @test plot_correlation_matrix(xyz,ind,feat_set[1:2];show_plot) isa Plot
     @test plot_correlation_matrix(xyz,ind,feat_set[3:3];show_plot) isa Plot
     @test plot_correlation_matrix(xyz,ind,feat_set[2:3];show_plot) isa Plot

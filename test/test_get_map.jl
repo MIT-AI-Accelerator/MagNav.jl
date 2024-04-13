@@ -52,19 +52,19 @@ end
 data_dir         = MagNav.ottawa_area_maps()
 Eastern_395_h5   = data_dir*"/Eastern_395.h5"
 Eastern_drape_h5 = data_dir*"/Eastern_drape.h5"
-HighAlt_5181_h5  = data_dir*"/HighAlt_5181.h5"
-Perth_800_h5     = data_dir*"/Perth_800.h5"
 Renfrew_395_h5   = data_dir*"/Renfrew_395.h5"
 Renfrew_555_h5   = data_dir*"/Renfrew_555.h5"
 Renfrew_drape_h5 = data_dir*"/Renfrew_drape.h5"
+HighAlt_5181_h5  = data_dir*"/HighAlt_5181.h5"
+Perth_800_h5     = data_dir*"/Perth_800.h5"
 
 # emag2, emm720, & namad all tested elsewhere
 map_files = [test_data_map,test_data_map_drpS,
-             Eastern_drape_h5,Eastern_drape_h5,
-             HighAlt_5181_h5,Perth_800_h5,
-             Renfrew_395_h5,Renfrew_555_h5,Renfrew_drape_h5]
+             Eastern_395_h5,Eastern_drape_h5,
+             Renfrew_395_h5,Renfrew_555_h5,Renfrew_drape_h5,
+             HighAlt_5181_h5,Perth_800_h5]
 map_names = [:map_1,:map_2,:map_3,:map_4,:map_5,:map_6,:map_7,:map_8,:map_9]
-df_map    = DataFrame(map_h5=map_files,map_name=map_names)
+df_map    = DataFrame(map_file=map_files,map_name=map_names)
 
 mapV   = MagNav.MapV(map_info,map_map,map_map,map_map,map_xx,map_yy,map_alt,map_mask)
 mapS   = get_map(map_files[1])
@@ -105,8 +105,8 @@ comp_params_nn_bson  = joinpath(@__DIR__,"test_save_comp_params_nn")
 comp_params_bad_bson = joinpath(@__DIR__,"test_save_comp_params_bad")
 
 @testset "save_comp_params tests" begin
-    @test_nowarn save_comp_params(LinCompParams(),comp_params_lin_bson)
-    @test_nowarn save_comp_params(NNCompParams() ,comp_params_nn_bson)
+    @test save_comp_params(LinCompParams(),comp_params_lin_bson) isa Nothing
+    @test save_comp_params(NNCompParams() ,comp_params_nn_bson ) isa Nothing
 end
 
 comp_params_bad_bson = MagNav.add_extension(comp_params_bad_bson,".bson")

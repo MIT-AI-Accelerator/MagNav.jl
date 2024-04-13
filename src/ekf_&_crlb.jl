@@ -117,15 +117,15 @@ function ekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS;
         # Kalman gain
         K = (P*H') / S          # K_t [nx x ny]
 
-        # state and covariance update
+        # state & covariance update
         x = x + K*resid         # x_t [nx]
         P = (I - K*H) * P       # P_t [nx x nx]
 
-        # state and covariance store
+        # state & covariance store
         x_out[:,t]   = x
         P_out[:,:,t] = P
 
-        # state and covariance propagate (predict)
+        # state & covariance propagate (predict)
         x = Phi*x               # x_t|t-1 [nx]
         P = Phi*P*Phi' + Qd     # P_t|t-1 [nx x nx]
     end
@@ -227,7 +227,7 @@ state vector, and measurement residual within `ekf_rt` struct.
 
 **Returns:**
 - `filt_res`: `FILTres` filter results struct,
-- `ekf_rt`:   `t`, `P`, `x`, and `r` fields are mutated
+- `ekf_rt`:   `t`, `P`, `x`, & `r` fields are mutated
 """
 function (ekf_rt::EKF_RT)(lat, lon, alt, vn, ve, vd, fn, fe, fd,
                           Cnb, meas, t, itp_mapS;
@@ -270,7 +270,7 @@ function (ekf_rt::EKF_RT)(lat, lon, alt, vn, ve, vd, fn, fe, fd,
     o.x = o.x + K*resid
     o.P = (I - K*H) * o.P
 
-    # state, covariance, and residual store, matching ekf()
+    # state, covariance, & residual store, matching ekf()
     x_out = reshape(o.x,(size(o.x)...,1))
     P_out = reshape(o.P,(size(o.P)...,1))
     r_out = reshape(o.r,(size(o.r)...,1))
@@ -300,7 +300,7 @@ state vector, and measurement residual within `ekf_rt` struct.
 
 **Returns:**
 - `filt_res`: `FILTres` filter results struct,
-- `ekf_rt`:   `t`, `P`, `x`, and `r` fields are mutated
+- `ekf_rt`:   `t`, `P`, `x`, & `r` fields are mutated
 """
 function (ekf_rt::EKF_RT)(ins::INS, meas, itp_mapS;
                           der_mapS = nothing,

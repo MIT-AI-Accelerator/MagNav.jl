@@ -95,16 +95,16 @@ function ekf_online_nn(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
         # Kalman gain
         K = (P*H') / S          # K_t [nx x ny]
 
-        # state and covariance update
+        # state & covariance update
         x = x + K*resid         # x_t [nx]
         P = (I - K*H) * P   # P_t [nx x nx]
 
-        # state, covariance, and residual store
+        # state, covariance, & residual store
         x_out[:,t]   = x
         P_out[:,:,t] = P
         r_out[:,t]   = resid
 
-        # state and covariance propagate (predict)
+        # state & covariance propagate (predict)
         x = Phi*x               # x_t|t-1 [nx]
         P = Phi*P*Phi' + Qd     # P_t|t-1 [nx x nx]
     end
@@ -196,7 +196,7 @@ function ekf_online_nn(ins::INS, meas, itp_mapS, x_nn, m, y_norms, P0, Qd, R;
 end # function ekf_online_nn
 
 # #* note: original initialization attempt
-# function ekf_online_nn_setup(x, y, m, y_norms; N_sigma::Int=1000)
+# function ekf_online_nn_setup(x, y, m, y_norms; N_sigma::Int = 1000)
 
 #     (y_bias,y_scale) = y_norms # unpack normalizations
 
@@ -225,7 +225,7 @@ end # function ekf_online_nn
 # end # function ekf_online_nn_setup
 
 """
-    ekf_online_nn_setup(x, y, m, y_norms; N_sigma::Int=1000)
+    ekf_online_nn_setup(x, y, m, y_norms; N_sigma::Int = 1000)
 
 Setup for extended Kalman filter (EKF) with online learning of neural network weights.
 
@@ -240,7 +240,7 @@ Setup for extended Kalman filter (EKF) with online learning of neural network we
 - `P0_nn`:    initial neural network weights covariance matrix
 - `nn_sigma`: initial neural network weights estimate std dev
 """
-function ekf_online_nn_setup(x, y, m, y_norms; N_sigma::Int=1000)
+function ekf_online_nn_setup(x, y, m, y_norms; N_sigma::Int = 1000)
     N_sigma_min = 10
     @assert N_sigma >= N_sigma_min "increase N_sigma to $N_sigma_min"
     (y_bias,y_scale) = y_norms # unpack normalizations

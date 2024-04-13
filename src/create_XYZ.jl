@@ -370,7 +370,7 @@ function create_traj(mapS::Union{MapS,MapSd,MapS3D} = get_map(namad);
     lla2utm = UTMfromLLA(zone_utm,is_north,WGS84)
     utms    = lla2utm.(LLA.(rad2deg.(lat),rad2deg.(lon)))
 
-    # velocities and specific forces from position
+    # velocities & specific forces from position
     vn = fdm([utm.y for utm in utms]) / dt
     ve = fdm([utm.x for utm in utms]) / dt
     vd = zero(lat)
@@ -849,7 +849,7 @@ function create_flux(path::Path, mapV::MapV = get_map(emm720);
 end # function create_flux
 
 """
-    create_dcm(vn, ve, dt=0.1, order::Symbol=:body2na)
+    create_dcm(vn, ve, dt = 0.1, order::Symbol = :body2nav)
 
 Internal helper function to estimate a direction cosine matrix using known
 heading with FOGM noise.
@@ -863,7 +863,7 @@ heading with FOGM noise.
 **Returns:**
 - `dcm`: `3` x `3` x `N` direction cosine matrix [-]
 """
-function create_dcm(vn, ve, dt=0.1, order::Symbol=:body2nav)
+function create_dcm(vn, ve, dt = 0.1, order::Symbol = :body2nav)
 
     N     = length(vn)
     roll  = fogm(deg2rad(2  ),2,dt,N)
@@ -894,7 +894,7 @@ Internal helper function to get the imputed Earth vector between two locations.
 - `set_igrf`: if true, set the `igrf` field in `xyz`
 - `TL_coef`:  Tolles-Lawson coefficients
 - `terms`:    (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`}
-- `Bt_scale`: (optional) scaling factor for induced and eddy current terms [nT]
+- `Bt_scale`: (optional) scaling factor for induced & eddy current terms [nT]
 
 **Returns:**
 - `TL_aircraft`: `3` x `N` matrix of TL aircraft vector field
@@ -948,7 +948,7 @@ information to update the expected changes due to the alternative map location
 over into `use_mag` in the new `XYZ` data.
 
 **Arguments:**
-- `xyz`:      (original) `XYZ` flight data struct
+- `xyz`:      `XYZ` flight data struct
 - `ind`:      selected data indices
 - `mapS`:     `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct
 - `use_mag`:  uncompensated scalar magnetometer to use for `y` target vector {`:mag_1_uc`, etc.}
@@ -958,10 +958,10 @@ over into `use_mag` in the new `XYZ` data.
 - `disp_min`: (optional) minimum trajectory displacement [m]
 - `disp_max`: (optional) maximum trajectory displacement [m]
 - `Bt_disp`:  (optional) target total magnetic field magnitude displacement offset [nT]
-- `Bt_scale`: (optional) scaling factor for induced and eddy current terms [nT]
+- `Bt_scale`: (optional) scaling factor for induced & eddy current terms [nT]
 
 **Returns:**
-- `xyz_disp`: `XYZ` flight data struct with displaced trajectory and modified magnetometer readings
+- `xyz_disp`: `XYZ` flight data struct with displaced trajectory & modified magnetometer readings
 """
 function create_informed_xyz(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D},
                              use_mag::Symbol, use_vec::Symbol, TL_coef::Vector;
@@ -974,7 +974,7 @@ function create_informed_xyz(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D},
     @assert any([:permanent,:p,:permanent3,:p3] .∈ (terms,)) "permanent terms are required"
     @assert any([:induced,:i,:induced6,:i6,:induced5,:i5,:induced3,:i3] .∈ (terms,)) "induced terms are required"
     @assert any([:eddy,:e,:eddy9,:e9,:eddy8,:e8,:eddy3,:e3] .∈ (terms,)) "eddy current terms are required"
-    @assert !any([:fdm,:f,:fdm3,:f3,:bias,:b] .∈ (terms,)) "derivative and bias terms may not be used"
+    @assert !any([:fdm,:f,:fdm3,:f3,:bias,:b] .∈ (terms,)) "derivative & bias terms may not be used"
 
     N = length(TL_coef)
     A_test = create_TL_A([1.0],[1.0],[1.0];terms=terms)
@@ -987,7 +987,7 @@ function create_informed_xyz(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D},
     # map values along trajectory & map
     (map_val,itp_mapS) = get_map_val(mapS,traj;α=200,return_itp=true)
 
-    # compute vector aircraft component and vector flux along trajectory
+    # compute vector aircraft component & vector flux along trajectory
     set_igrf = false
     (TL_aircraft,B_earth) =
         calculate_imputed_TL_earth(xyz,ind,map_val,set_igrf,TL_coef,
@@ -998,7 +998,7 @@ function create_informed_xyz(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D},
     spacing = floor(Int, traj.N / 100)
     pts     = 1:spacing:traj.N
 
-    # average lat/lon points on trajectory and map
+    # average lat & lon points on trajectory & map
     traj_avg = mean.([traj.lat[pts],traj.lon[pts]])
     map_avg  = mean.([mapS.yy,mapS.xx])
 
@@ -1022,7 +1022,7 @@ function create_informed_xyz(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D},
     disp_rad  = clamp(disp_rad,disp_min,disp_max) # limit displacement range
     disp_ll   = disp_rad * dir_disp # set correct direction
 
-    # copy and displace trajectory (uniformally; no acceleration changes!)
+    # copy & displace trajectory (uniformally; no acceleration changes!)
     xyz_disp = deepcopy(xyz)
     xyz_disp.traj.lat[ind] .+= disp_ll[1]
     xyz_disp.traj.lon[ind] .+= disp_ll[2]
@@ -1032,7 +1032,7 @@ function create_informed_xyz(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D},
     # map values along trajectory
     map_val_disp = get_map_val(mapS,xyz_disp.traj(ind);α=200)
 
-    # calculate Earth's vector flux and TL component from that on new trajectory
+    # calculate Earth's vector flux & TL component from that on new trajectory
     set_igrf = true
     (TL_aircraft_disp,B_earth_disp) =
         calculate_imputed_TL_earth(xyz_disp,ind,map_val_disp,set_igrf,TL_coef,
@@ -1042,7 +1042,7 @@ function create_informed_xyz(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D},
     # calculate Earth-induced field that would occur along this trajectory
     ΔB_TL    = TL_aircraft_disp - TL_aircraft # known part from aircraft
     ΔB_earth = B_earth_disp     - B_earth     # known part from Earth
-    ΔB       = ΔB_TL + ΔB_earth # total difference in vector field from different Earth locale and aircraft
+    ΔB       = ΔB_TL + ΔB_earth # total difference in vector field from different Earth locale & aircraft
     Δmap_val = map_val_disp - map_val # differnece in map values
 
     # update displaced vector magnetometer values used in learning

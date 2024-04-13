@@ -137,9 +137,7 @@ typically saved in `:deg` units, while `:rad` is used internally.
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `map_name`|`Symbol`| name of magnetic anomaly map
-`map_h5`  |`String`| path/name of map data HDF5 file (`.h5` extension optional)
-`map_type`|`Symbol`| (optional) type of magnetic anomaly map {`drape`,`HAE`}
-`map_alt` |`Real`  | (optional) map altitude, -1 for drape map [m]
+`map_file`|`String`| path/name of map data HDF5 or MAT file (`.h5` or `.mat` extension required)
 - `map_info`:   (optional) map information, only used if not in `map_file`
 - `map_units`:  (optional) map xx/yy units to use in `map_map` {`:rad`,`:deg`}
 - `file_units`: (optional) map xx/yy units used in files within `df_map` {`:rad`,`:deg`}
@@ -151,14 +149,14 @@ function get_map(map_name::Symbol, df_map::DataFrame;
                  map_info::String   = "$map_name",
                  map_units::Symbol  = :rad,
                  file_units::Symbol = :deg)
-    get_map(df_map.map_h5[df_map.map_name .== map_name][1];
+    get_map(df_map.map_file[df_map.map_name .== map_name][1];
             map_info   = map_info,
             map_units  = map_units,
             file_units = file_units)
 end # function get_map
 
 """
-    save_map(map_map, map_xx, map_yy, map_alt, map_h5::String="map_data.h5";
+    save_map(map_map, map_xx, map_yy, map_alt, map_h5::String = "map_data.h5";
              map_info::String   = "Map",
              map_mask::BitArray = falses(1,1),
              map_border::Matrix = zeros(eltype(map_alt),1,1),
@@ -183,7 +181,7 @@ Save map data to HDF5 file. Maps are typically saved in `:deg` units, while
 **Returns:**
 - `nothing`: `map_h5` is created
 """
-function save_map(map_map, map_xx, map_yy, map_alt, map_h5::String="map_data.h5";
+function save_map(map_map, map_xx, map_yy, map_alt, map_h5::String = "map_data.h5";
                   map_info::String   = "Map",
                   map_mask::BitArray = falses(1,1),
                   map_border::Matrix = zeros(eltype(map_alt),1,1),
@@ -226,14 +224,15 @@ function save_map(map_map, map_xx, map_yy, map_alt, map_h5::String="map_data.h5"
         write(file,"xx" ,map_xx)
         write(file,"yy" ,map_yy)
         write(file,"alt",map_alt)
-        sum(map_mask  ) != 0 ? write(file,"mask"  ,map_mask)   : nothing
-        sum(map_border) != 0 ? write(file,"border",map_border) : nothing
+        sum(map_mask  ) != 0 && write(file,"mask"  ,map_mask)
+        sum(map_border) != 0 && write(file,"border",map_border)
     end
 
+    return (nothing)
 end # function save_map
 
 """
-    save_map(map_map::Map, map_h5::String="map_data.h5";
+    save_map(map_map::Map, map_h5::String = "map_data.h5";
              map_border::Matrix = zeros(eltype(map_map.alt),1,1),
              map_units::Symbol  = :rad,
              file_units::Symbol = :deg)
@@ -251,7 +250,7 @@ Save map data to HDF5 file. Maps are typically saved in `:deg` units, while
 **Returns:**
 - `nothing`: `map_h5` is created
 """
-function save_map(map_map::Map, map_h5::String="map_data.h5";
+function save_map(map_map::Map, map_h5::String = "map_data.h5";
                   map_border::Matrix = zeros(eltype(map_map.alt),1,1),
                   map_units::Symbol  = :rad,
                   file_units::Symbol = :deg)
@@ -266,10 +265,11 @@ function save_map(map_map::Map, map_h5::String="map_data.h5";
                  map_mask=map_map.mask,map_border=map_border,
                  map_units=map_units,file_units=file_units)
     end
+    return (nothing)
 end # function save_map
 
 """
-    get_comp_params(comp_params_bson::String, silent::Bool=false)
+    get_comp_params(comp_params_bson::String, silent::Bool = false)
 
 Get aeromagnetic compensation parameters from saved BSON file.
 
@@ -282,7 +282,7 @@ Get aeromagnetic compensation parameters from saved BSON file.
     - `NNCompParams`:  neural network-based aeromagnetic compensation parameters struct
     - `LinCompParams`: linear aeromagnetic compensation parameters struct
 """
-function get_comp_params(comp_params_bson::String, silent::Bool=false)
+function get_comp_params(comp_params_bson::String, silent::Bool = false)
 
     comp_params_bson = add_extension(comp_params_bson,".bson")
 
@@ -389,7 +389,8 @@ function get_comp_params(comp_params_bson::String, silent::Bool=false)
 end # function get_comp_params
 
 """
-    save_comp_params(comp_params::CompParams, comp_params_bson::String="comp_params.bson")
+    save_comp_params(comp_params::CompParams,
+                     comp_params_bson::String = "comp_params.bson")
 
 Save aeromagnetic compensation parameters to BSON file.
 
@@ -402,7 +403,8 @@ Save aeromagnetic compensation parameters to BSON file.
 **Returns:**
 - `nothing`: `comp_params_bson` is created
 """
-function save_comp_params(comp_params::CompParams, comp_params_bson::String="comp_params.bson")
+function save_comp_params(comp_params::CompParams,
+                          comp_params_bson::String = "comp_params.bson")
     comp_params_bson = add_extension(comp_params_bson,".bson")
     d = Dict{Symbol,Any}()
     # push!(d,:comp_params => comp_params) # do NOT do this, version issue
@@ -410,4 +412,5 @@ function save_comp_params(comp_params::CompParams, comp_params_bson::String="com
         push!(d,field => getfield(comp_params,field))
     end
     bson(comp_params_bson,d)
+    return (nothing)
 end # function save_comp_params

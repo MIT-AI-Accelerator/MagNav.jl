@@ -93,16 +93,16 @@ function nekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS,
         # Kalman gain
         K = (P*H') / S          # K_t [nx x ny]
 
-        # state and covariance update
+        # state & covariance update
         x = x + K*resid         # x_t [nx]
         P = (I - K*H) * P       # P_t [nx x nx]
 
-        # state, covariance, and residual store
+        # state, covariance, & residual store
         x_out[:,t]   = x
         P_out[:,:,t] = P
         r_out[:,t]   = resid
 
-        # state and covariance propagate (predict)
+        # state & covariance propagate (predict)
         x = Phi*x               # x_t|t-1 [nx]
         P = Phi*P*Phi' + Qd     # P_t|t-1 [nx x nx]
     end
@@ -233,11 +233,11 @@ function ekf_single(lat, lon, alt, Phi, meas, itp_mapS,
     # Kalman gain
     K = (P*H') / S          # K_t [nx x ny]
 
-    # state and covariance update
+    # state & covariance update
     x = x + K*resid         # x_t [nx]
     P = (I - K*H) * P       # P_t [nx x nx]
 
-    # state and covariance propagate (predict)
+    # state & covariance propagate (predict)
     x = Phi*x               # x_t|t-1 [nx]
     P = Phi*P*Phi' + Qd     # P_t|t-1 [nx x nx]
 
@@ -505,7 +505,7 @@ function nekf_train(xyz::XYZ, ind, meas, itp_mapS, x::Matrix;
                     date                 = get_years(2020,185),
                     core::Bool           = false)
 
-    # get traj, ins, and y_nn (position)
+    # get traj, ins, & y_nn (position)
     traj = get_traj(xyz,ind)
     ins  = get_ins(xyz,ind;N_zero_ll=1)
     y_nn = [traj.lat traj.lon]

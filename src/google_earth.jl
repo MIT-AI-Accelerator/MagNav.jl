@@ -4,10 +4,10 @@
             map_units::Symbol = :rad,
             plot_alt::Real    = 0,
             opacity::Real     = 0.75,
-            clims::Tuple      = (0,0))
+            clims::Tuple      = ())
 
 Create KMZ file of map for use with Google Earth. Generates an "icon" overlay,
-and is thus not meant for large maps (e.g., > 5 deg x 5 deg).
+thus not suitable for large maps (e.g., > 5 deg x 5 deg).
 
 **Arguments:**
 - `map_map`:   `ny` x `nx` 2D gridded map data
@@ -17,7 +17,7 @@ and is thus not meant for large maps (e.g., > 5 deg x 5 deg).
 - `map_units`: (optional) map xx/yy units {`:rad`,`:deg`}
 - `plot_alt`:  (optional) map altitude in Google Earth [m]
 - `opacity`:   (optional) map opacity {0:1}
-- `clims`:     (optional) map color scale limits
+- `clims`:     (optional) length-`2` map colorbar limits `(cmin,cmax)`
 
 **Returns:**
 - `nothing`: `map_kmz` is created
@@ -27,7 +27,7 @@ function map2kmz(map_map::Matrix, map_xx::Vector, map_yy::Vector,
                  map_units::Symbol = :rad,
                  plot_alt::Real    = 0,
                  opacity::Real     = 0.75,
-                 clims::Tuple      = (0,0))
+                 clims::Tuple      = ())
 
     if map_units == :rad
         map_west  = rad2deg(minimum(map_xx))
@@ -52,7 +52,7 @@ function map2kmz(map_map::Matrix, map_xx::Vector, map_yy::Vector,
     p1  = plot_map(map_map;
                    clims     = clims,
                    dpi       = 200,
-                   margin    = -2, # includes 2mm otherwise
+                   margin    = -2, # remove 2mm default margin
                    Nmax      = 10^10,
                    legend    = false,
                    axis      = false,
@@ -107,6 +107,7 @@ function map2kmz(map_map::Matrix, map_xx::Vector, map_yy::Vector,
     rm(map_kml)
     rm(map_png)
 
+    return (nothing)
 end # function map2kmz
 
 """
@@ -115,10 +116,10 @@ end # function map2kmz
             use_mask::Bool  = true,
             plot_alt::Real  = 0,
             opacity::Real   = 0.75,
-            clims::Tuple    = (0,0))
+            clims::Tuple    = ())
 
 Create KMZ file of map for use with Google Earth. Generates an "icon" overlay,
-and is thus not meant for large maps (e.g., > 5 deg x 5 deg).
+thus not suitable for large maps (e.g., > 5 deg x 5 deg).
 
 **Arguments:**
 - `mapS`:     `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct
@@ -126,7 +127,7 @@ and is thus not meant for large maps (e.g., > 5 deg x 5 deg).
 - `use_mask`: (optional) if true, apply `mapS` mask to map
 - `plot_alt`: (optional) map altitude in Google Earth [m]
 - `opacity`:  (optional) map opacity {0:1}
-- `clims`:    (optional) map color scale limits
+- `clims`:    (optional) length-`2` map colorbar limits `(cmin,cmax)`
 
 **Returns:**
 - `nothing`: `map_kmz` is created
@@ -136,7 +137,7 @@ function map2kmz(mapS::Union{MapS,MapSd,MapS3D},
                  use_mask::Bool  = true,
                  plot_alt::Real  = 0,
                  opacity::Real   = 0.75,
-                 clims::Tuple    = (0,0))
+                 clims::Tuple    = ())
     mapS isa MapS3D && @info("3D map provided, using map at lowest altitude")
     map_mask = use_mask ? mapS.mask[:,:,1] : trues(size(mapS.map[:,:,1]))
     map2kmz(mapS.map[:,:,1].*map_mask,mapS.xx,mapS.yy,map_kmz;
@@ -144,6 +145,7 @@ function map2kmz(mapS::Union{MapS,MapSd,MapS3D},
             plot_alt  = plot_alt,
             opacity   = opacity,
             clims     = clims)
+    return (nothing)
 end # function map2kmz
 
 """
@@ -297,6 +299,7 @@ function path2kml(lat::Vector, lon::Vector, alt::Vector,
             "</kml> ")
         end
     end
+    return (nothing)
 end # function path2kml
 
 """
@@ -342,4 +345,5 @@ function path2kml(path::Path,
              color1     = color1,
              color2     = color2,
              points     = points)
+    return (nothing)
 end # function path2kml

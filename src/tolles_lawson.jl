@@ -6,13 +6,13 @@
                 return_B = false)
 
 Create Tolles-Lawson `A` matrix using vector magnetometer measurements.
-Optionally returns the magnitude and derivatives of total field.
+Optionally returns the magnitude & derivatives of total field.
 
 **Arguments:**
 - `Bx`,`By`,`Bz`: vector magnetometer measurements [nT]
 - `Bt`:           (optional) magnitude of vector magnetometer measurements or scalar magnetometer measurements for modified Tolles-Lawson [nT]
 - `terms`:        (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
-- `Bt_scale`:     (optional) scaling factor for induced and eddy current terms [nT]
+- `Bt_scale`:     (optional) scaling factor for induced & eddy current terms [nT]
 - `return_B`:     (optional) if true, also return `Bt` & `B_dot`
 
 **Returns:**
@@ -126,21 +126,21 @@ function create_TL_A(Bx, By, Bz;
 end # function create_TL_A
 
 """
-    create_TL_A(flux::MagV, ind=trues(length(flux.x));
+    create_TL_A(flux::MagV, ind = trues(length(flux.x));
                 Bt       = sqrt.(flux.x.^2+flux.y.^2+flux.z.^2)[ind],
                 terms    = [:permanent,:induced,:eddy],
                 Bt_scale = 50000,
                 return_B = false)
 
 Create Tolles-Lawson `A` matrix using vector magnetometer measurements.
-Optionally returns the magnitude and derivatives of total field.
+Optionally returns the magnitude & derivatives of total field.
 
 **Arguments:**
 - `flux`:     `MagV` vector magnetometer measurement struct
 - `ind`:      (optional) selected data indices
 - `Bt`:       (optional) magnitude of vector magnetometer measurements or scalar magnetometer measurements for modified Tolles-Lawson [nT]
 - `terms`:    (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
-- `Bt_scale`: (optional) scaling factor for induced and eddy current terms [nT]
+- `Bt_scale`: (optional) scaling factor for induced & eddy current terms [nT]
 - `return_B`: (optional) if true, also return `Bt` & `B_dot`
 
 **Returns:**
@@ -148,7 +148,7 @@ Optionally returns the magnitude and derivatives of total field.
 - `Bt`:    if `return_B = true`, magnitude of total field measurements [nT]
 - `B_dot`: if `return_B = true`, finite differences of total field vector [nT]
 """
-function create_TL_A(flux::MagV, ind=trues(length(flux.x));
+function create_TL_A(flux::MagV, ind = trues(length(flux.x));
                      Bt       = sqrt.(flux.x.^2+flux.y.^2+flux.z.^2)[ind],
                      terms    = [:permanent,:induced,:eddy],
                      Bt_scale = 50000,
@@ -171,8 +171,8 @@ end # function create_TL_A
                    Bt_scale   = 50000,
                    return_var = false)
 
-Create Tolles-Lawson coefficients using vector and scalar magnetometer
-measurements and a bandpass, low-pass or high-pass filter.
+Create Tolles-Lawson coefficients using vector & scalar magnetometer
+measurements with a bandpass, low-pass, or high-pass filter.
 
 **Arguments:**
 - `Bx`,`By`,`Bz`: vector magnetometer measurements [nT]
@@ -185,7 +185,7 @@ measurements and a bandpass, low-pass or high-pass filter.
 - `fs`:           (optional) sampling frequency [Hz]
 - `pole`:         (optional) number of poles for Butterworth filter
 - `trim`:         (optional) number of elements to trim after filtering
-- `Bt_scale`:     (optional) scaling factor for induced and eddy current terms [nT]
+- `Bt_scale`:     (optional) scaling factor for induced & eddy current terms [nT]
 - `return_var`:   (optional) if true, also return `B_var`
 
 **Returns:**
@@ -216,7 +216,7 @@ function create_TL_coef(Bx, By, Bz, B;
     # create Tolles-Lawson `A` matrix
     A = create_TL_A(Bx,By,Bz;Bt=Bt,terms=terms,Bt_scale=Bt_scale)
 
-    # filter columns of A (e.g., Bx_hat) & measurements and trim edges
+    # filter columns of A (e.g., Bx_hat) & measurements + trim edges
     perform_filter && (A = bpf_data(A;bpf=bpf)[trim+1:end-trim,:])
     perform_filter && (B = bpf_data(B;bpf=bpf)[trim+1:end-trim,:])
 
@@ -233,7 +233,7 @@ function create_TL_coef(Bx, By, Bz, B;
 end # function create_TL_coef
 
 """
-    create_TL_coef(flux::MagV, B, ind=trues(length(flux.x));
+    create_TL_coef(flux::MagV, B, ind = trues(length(flux.x));
                    Bt         = sqrt.(flux.x.^2+flux.y.^2+flux.z.^2)[ind],
                    λ          = 0,
                    terms      = [:permanent,:induced,:eddy],
@@ -245,8 +245,8 @@ end # function create_TL_coef
                    Bt_scale   = 50000,
                    return_var = false)
 
-Create Tolles-Lawson coefficients using vector and scalar magnetometer
-measurements and a bandpass, low-pass or high-pass filter.
+Create Tolles-Lawson coefficients using vector & scalar magnetometer
+measurements with a bandpass, low-pass, or high-pass filter.
 
 **Arguments:**
 - `flux`:       `MagV` vector magnetometer measurement struct
@@ -260,14 +260,14 @@ measurements and a bandpass, low-pass or high-pass filter.
 - `fs`:         (optional) sampling frequency [Hz]
 - `pole`:       (optional) number of poles for Butterworth filter
 - `trim`:       (optional) number of elements to trim after filtering
-- `Bt_scale`:   (optional) scaling factor for induced and eddy current terms [nT]
+- `Bt_scale`:   (optional) scaling factor for induced & eddy current terms [nT]
 - `return_var`: (optional) if true, also return `B_var`
 
 **Returns:**
 - `coef`:  Tolles-Lawson coefficients
 - `B_var`: if `return_var = true`, fit error variance
 """
-function create_TL_coef(flux::MagV, B, ind=trues(length(flux.x));
+function create_TL_coef(flux::MagV, B, ind = trues(length(flux.x));
                         Bt         = sqrt.(flux.x.^2+flux.y.^2+flux.z.^2)[ind],
                         λ          = 0,
                         terms      = [:permanent,:induced,:eddy],
@@ -314,7 +314,7 @@ function get_TL_term_ind(term::Symbol, terms)
 end # function get_TL_term_ind
 
 """
-    fdm(x::Vector; scheme::Symbol=:central)
+    fdm(x::Vector; scheme::Symbol = :central)
 
 Finite difference method (FDM) applied to `x`.
 
@@ -331,7 +331,7 @@ Finite difference method (FDM) applied to `x`.
 **Returns:**
 - `dif`: vector of finite differences (length of `x`)
 """
-function fdm(x::Vector; scheme::Symbol=:central)
+function fdm(x::Vector; scheme::Symbol = :central)
 
     N = length(x)
 

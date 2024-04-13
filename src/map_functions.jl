@@ -153,7 +153,7 @@ end # function map_interpolate
 map_itp = map_interpolate
 
 """
-    (mapS3D::MapS3D)(alt::Real=mapS3D.alt[1])
+    (mapS3D::MapS3D)(alt::Real = mapS3D.alt[1])
 
 Get scalar magnetic anomaly map at specific altitude.
 
@@ -164,7 +164,7 @@ Get scalar magnetic anomaly map at specific altitude.
 **Returns:**
 - `mapS`: `MapS` scalar magnetic anomaly map struct at `alt`
 """
-function (mapS3D::MapS3D)(alt::Real=mapS3D.alt[1])
+function (mapS3D::MapS3D)(alt::Real = mapS3D.alt[1])
     alt_lev = LinRange(extrema(mapS3D.alt)...,length(mapS3D.alt))
 
     if alt < alt_lev[1] # desired map below data, take lowest (closest) map
@@ -313,7 +313,7 @@ end # function map_params
                 zone_utm::Int  = 18,
                 is_north::Bool = true)
 
-Internal helper function to get lat/lon limits at 4 corners of `UTM` map.
+Internal helper function to get equivalent `LLA` limits of `UTM` map.
 
 **Arguments:**
 - `map_xx`:   `nx` map x-direction (longitude) coordinates [m]
@@ -326,8 +326,8 @@ Internal helper function to get lat/lon limits at 4 corners of `UTM` map.
 - `is_north`: (optional) if true, map is in northern hemisphere
 
 **Returns:**
-- `lons`: longitudes for each of 4 corners of `UTM` map [deg]
-- `lats`: latitudes  for each of 4 corners of `UTM` map [deg]
+- `lons`: longitude limits at each of 4 corners of `UTM` map [deg]
+- `lats`: latitude  limits at each of 4 corners of `UTM` map [deg]
 """
 function map_lla_lim(map_xx::Vector, map_yy::Vector;
                      xx_1::Int      = 1,
@@ -372,7 +372,7 @@ end # function map_lla_lim
              silent::Bool      = true)
 
 Trim map by removing large areas that are missing map data. Returns
-indices for the original map that will produce the appropriate trimmed map.
+indices for the original map that produces the appropriate trimmed map.
 
 **Arguments:**
 - `map_map`:   `ny` x `nx` 2D gridded map data
@@ -483,7 +483,7 @@ function map_trim(map_map::Matrix,
 
     silent || @info("set map padding: $([pad_xx_1,pad_xx_nx,pad_yy_1,pad_yy_ny])")
 
-    # indices that will remove zero rows/columns with padding (per edge)
+    # indices that remove zero rows/columns with padding (per edge)
     ind_xx   = xx_1-pad_xx_1:xx_nx+pad_xx_nx
     ind_yy   = yy_1-pad_yy_1:yy_ny+pad_yy_ny
 
@@ -566,7 +566,7 @@ end # function map_trim
              silent::Bool      = true)
 
 Trim map by removing large areas far away from `path`. Do not use prior to
-upward continuation, as it will result in edge effect errors. Returns trimmed
+upward continuation, as this causes in edge effect errors. Returns trimmed
 magnetic anomaly map struct.
 
 **Arguments:**
@@ -674,6 +674,7 @@ function map_correct_igrf!(map_map::Matrix, map_alt,
 
     end
 
+    return (nothing)
 end # function map_correct_igrf!
 
 """
@@ -806,7 +807,7 @@ function map_correct_igrf(mapS::Union{MapS,MapSd,MapS3D};
 end # function map_correct_igrf
 
 """
-    map_fill!(map_map::Matrix, map_xx::Vector, map_yy::Vector; k::Int=3)
+    map_fill!(map_map::Matrix, map_xx::Vector, map_yy::Vector; k::Int = 3)
 
 Fill areas that are missing map data.
 
@@ -819,7 +820,7 @@ Fill areas that are missing map data.
 **Returns:**
 - `nothing`: `map_map` is mutated with filled map data
 """
-function map_fill!(map_map::Matrix, map_xx::Vector, map_yy::Vector; k::Int=3)
+function map_fill!(map_map::Matrix, map_xx::Vector, map_yy::Vector; k::Int = 3)
 
     (ind0,ind1,nx,ny) = map_params(map_map,map_xx,map_yy)
 
@@ -839,10 +840,11 @@ function map_fill!(map_map::Matrix, map_xx::Vector, map_yy::Vector; k::Int=3)
         end
     end
 
+    return (nothing)
 end # function map_fill!
 
 """
-    map_fill!(mapS::Union{MapS,MapSd,MapS3D}; k::Int=3)
+    map_fill!(mapS::Union{MapS,MapSd,MapS3D}; k::Int = 3)
 
 Fill areas that are missing map data.
 
@@ -853,7 +855,7 @@ Fill areas that are missing map data.
 **Returns:**
 - `nothing`: `map` field within `mapS` is mutated with filled map data
 """
-function map_fill!(mapS::Union{MapS,MapSd,MapS3D}; k::Int=3)
+function map_fill!(mapS::Union{MapS,MapSd,MapS3D}; k::Int = 3)
     if mapS isa MapS
         map_fill!(mapS.map,mapS.xx,mapS.yy;k=k)
     elseif mapS isa MapSd
@@ -864,10 +866,11 @@ function map_fill!(mapS::Union{MapS,MapSd,MapS3D}; k::Int=3)
             mapS.map[:,:,i] = map_fill(mapS.map[:,:,i],mapS.xx,mapS.yy;k=k)
         end
     end
+    return (nothing)
 end # function map_fill!
 
 """
-    map_fill(map_map::Matrix, map_xx::Vector, map_yy::Vector; k::Int=3)
+    map_fill(map_map::Matrix, map_xx::Vector, map_yy::Vector; k::Int = 3)
 
 Fill areas that are missing map data.
 
@@ -880,14 +883,14 @@ Fill areas that are missing map data.
 **Returns:**
 - `map_map`: `ny` x `nx` 2D gridded map data, filled
 """
-function map_fill(map_map::Matrix, map_xx::Vector, map_yy::Vector; k::Int=3)
+function map_fill(map_map::Matrix, map_xx::Vector, map_yy::Vector; k::Int = 3)
     map_map = deepcopy(map_map)
     map_fill!(map_map,map_xx,map_yy;k=k)
     return (map_map)
 end # function map_fill
 
 """
-    map_fill(mapS::Union{MapS,MapSd,MapS3D}; k::Int=3)
+    map_fill(mapS::Union{MapS,MapSd,MapS3D}; k::Int = 3)
 
 Fill areas that are missing map data.
 
@@ -898,7 +901,7 @@ Fill areas that are missing map data.
 **Returns:**
 - `mapS`: `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct, filled
 """
-function map_fill(mapS::Union{MapS,MapSd,MapS3D}; k::Int=3)
+function map_fill(mapS::Union{MapS,MapSd,MapS3D}; k::Int = 3)
     mapS = deepcopy(mapS)
     map_fill!(mapS;k=k)
     return (mapS)
@@ -943,9 +946,9 @@ function map_chessboard!(map_map::Matrix, map_alt::Matrix, map_xx::Vector,
     (ind0 ,ind1 ,nx ,ny ) = map_params(map_map,map_xx,map_yy)
     (ind0_,ind1_,nx_,ny_) = map_params(map_alt,map_xx,map_yy)
 
-    @assert (nx,ny) == (nx_,ny_) "map dimensions are inconsistent"
-    @assert sum(ind0 )/sum(ind0 +ind1 ) < 0.01 "target   map must be filled to use chessboard method"
-    @assert sum(ind0_)/sum(ind0_+ind1_) < 0.01 "altitude map must be filled to use chessboard method"
+    @assert (nx,ny) == (nx_,ny_) "map dimensions are inconsistent for chessboard method"
+    @assert sum(ind0 )/sum(ind0 +ind1 ) < 0.01 "target   map must be filled for chessboard method"
+    @assert sum(ind0_)/sum(ind0_+ind1_) < 0.01 "altitude map must be filled for chessboard method"
 
     # map step sizes (spacings)
     dx = get_step(map_xx)
@@ -953,8 +956,12 @@ function map_chessboard!(map_map::Matrix, map_alt::Matrix, map_xx::Vector,
 
     alt_min = floor(minimum(map_alt[ind1]))
     alt_max = ceil( maximum(map_alt[ind1]))
+
+    up_max = 500
+    alt_max - alt > down_max && @info("limiting downward continuation to alt_max = $alt_max m - $down_max m for chessboard method")
+    alt - alt_min > up_max   && @info("limiting upward continuation to alt_min = $alt_min m + $up_max m for chessboard method")
     alt_dif_down = clamp(alt_max - alt, 0, down_max)
-    alt_dif_up   = clamp(alt - alt_min, 0, 500)
+    alt_dif_up   = clamp(alt - alt_min, 0, up_max)
     alt_lev_down = 0:dz:alt_dif_down+dz # downward continuation levels
     alt_lev_up   = 0:dz:alt_dif_up+dz   # upward   continuation levels
 
@@ -994,6 +1001,7 @@ function map_chessboard!(map_map::Matrix, map_alt::Matrix, map_xx::Vector,
         end
     end
 
+    return (nothing)
 end # function map_chessboard!
 
 """
@@ -1121,6 +1129,7 @@ function map_utm2lla!(map_map::Matrix, map_xx::Vector, map_yy::Vector,
                         map_info=map_info,map_mask=map_mask,
                         map_units=:rad,file_units=:deg)
 
+    return (nothing)
 end # function map_utm2lla!
 
 """
@@ -1173,6 +1182,7 @@ function map_utm2lla!(mapS::Union{MapS,MapSd,MapS3D};
         end
         save_h5 && save_map(mapS,map_h5;map_units=:rad,file_units=:deg)
     end
+    return (nothing)
 end # function map_utm2lla!
 
 """
@@ -1291,7 +1301,7 @@ struct is returned, which has an included altitude map.
 **Arguments:**
 - `map_gxf`:       path/name of target (e.g., magnetic) map GXF file (`.gxf` extension optional)
 - `alt_gxf`:       path/name of altitude map GXF file (`.gxf` extension optional)
-- `alt`:           final map altitude after upward continuation [m], -1 for drape map
+- `alt`:           final map altitude after upward continuation [m], not used for drape map
 - `map_info`:      (optional) map information
 - `pad`:           (optional) minimum padding (grid cells) along map edges
 - `sub_igrf_date`: (optional) date of IGRF core field to subtract [yr], -1 to ignore
@@ -1480,29 +1490,29 @@ function map_gxf2h5(map_gxf::String, alt::Real;
 end # function map_gxf2h5
 
 """
-    plot_map!(p1, map_map::Matrix,
-              map_xx::Vector     = [],
-              map_yy::Vector     = [];
-              clims::Tuple       = (-500,500),
-              dpi::Int           = 200,
-              margin::Int        = 2,
-              Nmax::Int          = 6*dpi,
-              legend::Bool       = true,
-              axis::Bool         = true,
-              map_color::Symbol  = :usgs,
-              bg_color::Symbol   = :white,
-              map_units::Symbol  = :rad,
-              plot_units::Symbol = :deg,
-              b_e                = gr())
+    plot_map!(p1::Plot, map_map::Matrix,
+              map_xx::Vector       = [],
+              map_yy::Vector       = [];
+              clims::Tuple         = (),
+              dpi::Int             = 200,
+              margin::Int          = 2,
+              Nmax::Int            = 6*dpi,
+              legend::Bool         = true,
+              axis::Bool           = true,
+              map_color::Symbol    = :usgs,
+              bg_color::Symbol     = :white,
+              map_units::Symbol    = :rad,
+              plot_units::Symbol   = :deg,
+              b_e::AbstractBackend = gr())
 
 Plot map on an existing plot.
 
 **Arguments:**
-- `p1`:         existing plot
+- `p1`:         plot
 - `map_map`:    `ny` x `nx` 2D gridded map data
 - `map_xx`:     `nx` map x-direction (longitude) coordinates [rad] or [deg]
 - `map_yy`:     `ny` map y-direction (latitude)  coordinates [rad] or [deg]
-- `clims`:      (optional) color scale limits
+- `clims`:      (optional) length-`2` colorbar limits `(cmin,cmax)`
 - `dpi`:        (optional) dots per inch (image resolution)
 - `margin`:     (optional) margin around plot [mm]
 - `Nmax`:       (optional) maximum number of data points plotted (per axis)
@@ -1517,26 +1527,26 @@ Plot map on an existing plot.
 **Returns:**
 - `nothing`: map is plotted on `p1`
 """
-function plot_map!(p1, map_map::Matrix,
-                   map_xx::Vector     = [],
-                   map_yy::Vector     = [];
-                   clims::Tuple       = (-500,500),
-                   dpi::Int           = 200,
-                   margin::Int        = 2,
-                   Nmax::Int          = 6*dpi,
-                   legend::Bool       = true,
-                   axis::Bool         = true,
-                   map_color::Symbol  = :usgs,
-                   bg_color::Symbol   = :white,
-                   map_units::Symbol  = :rad,
-                   plot_units::Symbol = :deg,
-                   b_e                = gr())
+function plot_map!(p1::Plot, map_map::Matrix,
+                   map_xx::Vector       = [],
+                   map_yy::Vector       = [];
+                   clims::Tuple         = (),
+                   dpi::Int             = 200,
+                   margin::Int          = 2,
+                   Nmax::Int            = 6*dpi,
+                   legend::Bool         = true,
+                   axis::Bool           = true,
+                   map_color::Symbol    = :usgs,
+                   bg_color::Symbol     = :white,
+                   map_units::Symbol    = :rad,
+                   plot_units::Symbol   = :deg,
+                   b_e::AbstractBackend = gr())
 
     (ny,nx) = size(map_map)
     xx_mid  = ceil(Int,nx/2)
     yy_mid  = ceil(Int,ny/2)
 
-    # avoid changing map struct data
+    # avoid modifying original data (possibly in map struct)
     map_map = float.(map_map)
     map_xx  = length(map_xx) < nx ? float.([1:nx;]) : float.(map_xx)
     map_yy  = length(map_yy) < ny ? float.([1:ny;]) : float.(map_yy)
@@ -1581,50 +1591,51 @@ function plot_map!(p1, map_map::Matrix,
     # map indices with zeros (ind0)
     (ind0,_,nx,ny) = map_params(map_map,map_xx,map_yy)
 
-    # select color scale
+    # get color scale
     c = map_cs(map_color)
 
-    # adjust color scale and set contour limits based on map data
-    clims == (0,0) && ((c,clims) = map_clims(c,map_map))
+    # adjust color scale & set colorbar limits based on map data
+    isempty(clims) && ((c,clims) = map_clims(c,map_map))
 
-    # values outside contour limits set to contour limits (plotly workaround)
+    # clamp map data points to colorbar limits (plotly workaround)
     map_map .= clamp.(map_map,clims[1],clims[2])
 
-    # set data points without actual data to NaN (not plotted)
+    # set map data points without actual data to NaN (not plotted)
     map_map[ind0] .= NaN
 
     ind_xx = downsample(1:nx,Nmax)
     ind_yy = downsample(1:ny,Nmax)
 
     b_e # backend
-    contourf!(p1,map_xx[ind_xx],map_yy[ind_yy],map_map[ind_yy,ind_xx],dpi=dpi,lw=0,
-              c=c,bg=bg_color,clims=clims,margin=margin*mm,legend=legend,
+    contourf!(p1,map_xx[ind_xx],map_yy[ind_yy],map_map[ind_yy,ind_xx],dpi=dpi,
+              lw=0,c=c,bg=bg_color,clims=clims,margin=margin*mm,legend=legend,
               axis=axis,xticks=axis,yticks=axis,xlab=xlab,ylab=ylab,lab=false);
 
+    return (nothing)
 end # function plot_map!
 
 """
-    plot_map!(p1, mapS::Union{MapS,MapSd,MapS3D};
-              use_mask::Bool     = true,
-              clims::Tuple       = (-500,500),
-              dpi::Int           = 200,
-              margin::Int        = 2,
-              Nmax::Int          = 6*dpi,
-              legend::Bool       = true,
-              axis::Bool         = true,
-              map_color::Symbol  = :usgs,
-              bg_color::Symbol   = :white,
-              map_units::Symbol  = :rad,
-              plot_units::Symbol = :deg
-              b_e                = gr())
+    plot_map!(p1::Plot, mapS::Union{MapS,MapSd,MapS3D};
+              use_mask::Bool       = true,
+              clims::Tuple         = (),
+              dpi::Int             = 200,
+              margin::Int          = 2,
+              Nmax::Int            = 6*dpi,
+              legend::Bool         = true,
+              axis::Bool           = true,
+              map_color::Symbol    = :usgs,
+              bg_color::Symbol     = :white,
+              map_units::Symbol    = :rad,
+              plot_units::Symbol   = :deg
+              b_e::AbstractBackend = gr())
 
 Plot map on an existing plot.
 
 **Arguments:**
-- `p1`:         existing plot
+- `p1`:         plot
 - `mapS`:       `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct
 - `use_mask`:   (optional) if true, apply `mapS` mask to map
-- `clims`:      (optional) color scale limits
+- `clims`:      (optional) length-`2` colorbar limits `(cmin,cmax)`
 - `dpi`:        (optional) dots per inch (image resolution)
 - `margin`:     (optional) margin around plot [mm]
 - `Nmax`:       (optional) maximum number of data points plotted (per axis)
@@ -1639,19 +1650,19 @@ Plot map on an existing plot.
 **Returns:**
 - `nothing`: map is plotted on `p1`
 """
-function plot_map!(p1, mapS::Union{MapS,MapSd,MapS3D};
-                   use_mask::Bool     = true,
-                   clims::Tuple       = (-500,500),
-                   dpi::Int           = 200,
-                   margin::Int        = 2,
-                   Nmax::Int          = 6*dpi,
-                   legend::Bool       = true,
-                   axis::Bool         = true,
-                   map_color::Symbol  = :usgs,
-                   bg_color::Symbol   = :white,
-                   map_units::Symbol  = :rad,
-                   plot_units::Symbol = :deg,
-                   b_e                = gr())
+function plot_map!(p1::Plot, mapS::Union{MapS,MapSd,MapS3D};
+                   use_mask::Bool       = true,
+                   clims::Tuple         = (),
+                   dpi::Int             = 200,
+                   margin::Int          = 2,
+                   Nmax::Int            = 6*dpi,
+                   legend::Bool         = true,
+                   axis::Bool           = true,
+                   map_color::Symbol    = :usgs,
+                   bg_color::Symbol     = :white,
+                   map_units::Symbol    = :rad,
+                   plot_units::Symbol   = :deg,
+                   b_e::AbstractBackend = gr())
     mapS isa MapS3D && @info("3D map provided, using map at lowest altitude")
     map_mask = use_mask ? mapS.mask[:,:,1] : trues(size(mapS.map[:,:,1]))
     plot_map!(p1,mapS.map[:,:,1].*map_mask,mapS.xx,mapS.yy;
@@ -1666,32 +1677,33 @@ function plot_map!(p1, mapS::Union{MapS,MapSd,MapS3D};
               map_units  = map_units,
               plot_units = plot_units,
               b_e        = b_e)
+    return (nothing)
 end # function plot_map!
 
 """
-    plot_map!(p1, p2, p3, mapV::MapV;
-              use_mask::Bool     = true,
-              clims::Tuple       = (-500,500),
-              dpi::Int           = 200,
-              margin::Int        = 2,
-              Nmax::Int          = 6*dpi,
-              legend::Bool       = true,
-              axis::Bool         = true,
-              map_color::Symbol  = :usgs,
-              bg_color::Symbol   = :white,
-              map_units::Symbol  = :rad,
-              plot_units::Symbol = :deg
-              b_e                = gr())
+    plot_map!(p1::Plot, p2::Plot, p3::Plot, mapV::MapV;
+              use_mask::Bool       = true,
+              clims::Tuple         = (),
+              dpi::Int             = 200,
+              margin::Int          = 2,
+              Nmax::Int            = 6*dpi,
+              legend::Bool         = true,
+              axis::Bool           = true,
+              map_color::Symbol    = :usgs,
+              bg_color::Symbol     = :white,
+              map_units::Symbol    = :rad,
+              plot_units::Symbol   = :deg
+              b_e::AbstractBackend = gr())
 
 Plot map on an existing plot.
 
 **Arguments:**
-- `p1`:         existing plot
-- `p2`:         existing plot
-- `p3`:         existing plot
+- `p1`:         plot
+- `p2`:         plot
+- `p3`:         plot
 - `mapV`:       `MapV` vector magnetic anomaly map struct
 - `use_mask`:   (optional) if true, apply `mapV` mask to map
-- `clims`:      (optional) color scale limits
+- `clims`:      (optional) length-`2` colorbar limits `(cmin,cmax)`
 - `dpi`:        (optional) dots per inch (image resolution)
 - `margin`:     (optional) margin around plot [mm]
 - `Nmax`:       (optional) maximum number of data points plotted (per axis)
@@ -1708,19 +1720,19 @@ Plot map on an existing plot.
 - `nothing`: `mapY` is plotted on `p2`
 - `nothing`: `mapZ` is plotted on `p3`
 """
-function plot_map!(p1, p2, p3, mapV::MapV;
-                   use_mask::Bool     = true,
-                   clims::Tuple       = (-500,500),
-                   dpi::Int           = 200,
-                   margin::Int        = 2,
-                   Nmax::Int          = 6*dpi,
-                   legend::Bool       = true,
-                   axis::Bool         = true,
-                   map_color::Symbol  = :usgs,
-                   bg_color::Symbol   = :white,
-                   map_units::Symbol  = :rad,
-                   plot_units::Symbol = :deg,
-                   b_e                = gr())
+function plot_map!(p1::Plot, p2::Plot, p3::Plot, mapV::MapV;
+                   use_mask::Bool       = true,
+                   clims::Tuple         = (),
+                   dpi::Int             = 200,
+                   margin::Int          = 2,
+                   Nmax::Int            = 6*dpi,
+                   legend::Bool         = true,
+                   axis::Bool           = true,
+                   map_color::Symbol    = :usgs,
+                   bg_color::Symbol     = :white,
+                   map_units::Symbol    = :rad,
+                   plot_units::Symbol   = :deg,
+                   b_e::AbstractBackend = gr())
     map_mask = use_mask ? mapV.mask : trues(size(mapV.map))
     for (p_,map_) in zip([p1,p2,p3],[mapV.mapX,mapV.mapY,mapV.mapZ])
         plot_map!(p_,map_.*map_mask,mapV.xx,mapV.yy;
@@ -1736,23 +1748,24 @@ function plot_map!(p1, p2, p3, mapV::MapV;
                   plot_units = plot_units,
                   b_e        = b_e)
     end
+    return (nothing)
 end # function plot_map!
 
 """
     plot_map(map_map::Matrix,
-             map_xx::Vector     = [],
-             map_yy::Vector     = [];
-             clims::Tuple       = (0,0),
-             dpi::Int           = 200,
-             margin::Int        = 2,
-             Nmax::Int          = 6*dpi,
-             legend::Bool       = true,
-             axis::Bool         = true,
-             map_color::Symbol  = :usgs,
-             bg_color::Symbol   = :white,
-             map_units::Symbol  = :rad,
-             plot_units::Symbol = :deg,
-             b_e                = gr())
+             map_xx::Vector       = [],
+             map_yy::Vector       = [];
+             clims::Tuple         = (),
+             dpi::Int             = 200,
+             margin::Int          = 2,
+             Nmax::Int            = 6*dpi,
+             legend::Bool         = true,
+             axis::Bool           = true,
+             map_color::Symbol    = :usgs,
+             bg_color::Symbol     = :white,
+             map_units::Symbol    = :rad,
+             plot_units::Symbol   = :deg,
+             b_e::AbstractBackend = gr())
 
 Plot map.
 
@@ -1760,7 +1773,7 @@ Plot map.
 - `map_map`:    `ny` x `nx` 2D gridded map data
 - `map_xx`:     `nx` map x-direction (longitude) coordinates [rad] or [deg]
 - `map_yy`:     `ny` map y-direction (latitude)  coordinates [rad] or [deg]
-- `clims`:      (optional) color scale limits
+- `clims`:      (optional) length-`2` colorbar limits `(cmin,cmax)`
 - `dpi`:        (optional) dots per inch (image resolution)
 - `margin`:     (optional) margin around plot [mm]
 - `Nmax`:       (optional) maximum number of data points plotted (per axis)
@@ -1776,19 +1789,19 @@ Plot map.
 - `p1`: plot of map
 """
 function plot_map(map_map::Matrix,
-                  map_xx::Vector     = [],
-                  map_yy::Vector     = [];
-                  clims::Tuple       = (0,0),
-                  dpi::Int           = 200,
-                  margin::Int        = 2,
-                  Nmax::Int          = 6*dpi,
-                  legend::Bool       = true,
-                  axis::Bool         = true,
-                  map_color::Symbol  = :usgs,
-                  bg_color::Symbol   = :white,
-                  map_units::Symbol  = :rad,
-                  plot_units::Symbol = :deg,
-                  b_e                = gr())
+                  map_xx::Vector       = [],
+                  map_yy::Vector       = [];
+                  clims::Tuple         = (),
+                  dpi::Int             = 200,
+                  margin::Int          = 2,
+                  Nmax::Int            = 6*dpi,
+                  legend::Bool         = true,
+                  axis::Bool           = true,
+                  map_color::Symbol    = :usgs,
+                  bg_color::Symbol     = :white,
+                  map_units::Symbol    = :rad,
+                  plot_units::Symbol   = :deg,
+                  b_e::AbstractBackend = gr())
     b_e # backend
     p1 = plot(legend=legend,lab=false)
     plot_map!(p1,map_map,map_xx,map_yy;
@@ -1803,29 +1816,30 @@ function plot_map(map_map::Matrix,
               map_units  = map_units,
               plot_units = plot_units,
               b_e        = b_e)
+    return (p1)
 end # function plot_map
 
 """
     plot_map(map_map::Map;
-             use_mask::Bool     = true,
-             clims::Tuple       = (0,0),
-             dpi::Int           = 200,
-             margin::Int        = 2,
-             Nmax::Int          = 6*dpi,
-             legend::Bool       = true,
-             axis::Bool         = true,
-             map_color::Symbol  = :usgs,
-             bg_color::Symbol   = :white,
-             map_units::Symbol  = :rad,
-             plot_units::Symbol = :deg,
-             b_e                = gr())
+             use_mask::Bool       = true,
+             clims::Tuple         = (),
+             dpi::Int             = 200,
+             margin::Int          = 2,
+             Nmax::Int            = 6*dpi,
+             legend::Bool         = true,
+             axis::Bool           = true,
+             map_color::Symbol    = :usgs,
+             bg_color::Symbol     = :white,
+             map_units::Symbol    = :rad,
+             plot_units::Symbol   = :deg,
+             b_e::AbstractBackend = gr())
 
 Plot map.
 
 **Arguments:**
 - `map_map`:    `Map` magnetic anomaly map struct
 - `use_mask`:   (optional) if true, apply `map_map` mask to map
-- `clims`:      (optional) color scale limits
+- `clims`:      (optional) length-`2` colorbar limits `(cmin,cmax)`
 - `dpi`:        (optional) dots per inch (image resolution)
 - `margin`:     (optional) margin around plot [mm]
 - `Nmax`:       (optional) maximum number of data points plotted (per axis)
@@ -1843,18 +1857,18 @@ Plot map.
 - `p3`: if `map_map isa MapV`, `mapZ`
 """
 function plot_map(map_map::Map;
-                  use_mask::Bool     = true,
-                  clims::Tuple       = (0,0),
-                  dpi::Int           = 200,
-                  margin::Int        = 2,
-                  Nmax::Int          = 6*dpi,
-                  legend::Bool       = true,
-                  axis::Bool         = true,
-                  map_color::Symbol  = :usgs,
-                  bg_color::Symbol   = :white,
-                  map_units::Symbol  = :rad,
-                  plot_units::Symbol = :deg,
-                  b_e                = gr())
+                  use_mask::Bool       = true,
+                  clims::Tuple         = (),
+                  dpi::Int             = 200,
+                  margin::Int          = 2,
+                  Nmax::Int            = 6*dpi,
+                  legend::Bool         = true,
+                  axis::Bool           = true,
+                  map_color::Symbol    = :usgs,
+                  bg_color::Symbol     = :white,
+                  map_units::Symbol    = :rad,
+                  plot_units::Symbol   = :deg,
+                  b_e::AbstractBackend = gr())
     b_e # backend
     if map_map isa Union{MapS,MapSd,MapS3D}
         p1 = plot(legend=legend,lab=false)
@@ -1894,9 +1908,9 @@ function plot_map(map_map::Map;
 end # function plot_map
 
 """
-    map_cs(map_color::Symbol=:usgs)
+    map_cs(map_color::Symbol = :usgs)
 
-Internal helper function to select map color scale. Default is from the USGS:
+Internal helper function to get map color scale. Default is from the USGS:
 https://mrdata.usgs.gov/magnetic/namag.png
 
 **Arguments:**
@@ -1905,7 +1919,7 @@ https://mrdata.usgs.gov/magnetic/namag.png
 **Returns:**
 - `c`: color scale
 """
-function map_cs(map_color::Symbol=:usgs)
+function map_cs(map_color::Symbol = :usgs)
 
     if map_color == :usgs # standard for geological maps
         f = readdlm(usgs,',')
@@ -1926,16 +1940,16 @@ end # function map_cs
 """
     map_clims(c, map_map::Matrix)
 
-Internal helper function to adjust color scale for histogram equalization
-(maximum contrast) and set contour limits based on map data.
+Internal helper function to adjust map color scale for histogram equalization
+(maximum contrast) and set colorbar limits based on map data.
 
 **Arguments:**
-- `c`:       original color scale
+- `c`:       color scale
 - `map_map`: `ny` x `nx` 2D gridded map data
 
 **Returns:**
-- `c`:     new color scale
-- `clims`: contour limits
+- `c`:     color scale, adjusted
+- `clims`: length-`2` colorbar limits `(cmin,cmax)`
 """
 function map_clims(c, map_map::Matrix)
 
@@ -1948,7 +1962,7 @@ function map_clims(c, map_map::Matrix)
         bwid  = fdm(bcen) # bin widths
         nc    = round.(Int,bwid/minimum(bwid)) # times to repeat each color
         c     = cgrad([c[i] for i = 1:lc for j = 1:nc[i]]) # new color scale
-        clims = (bcen[1] - bwid[1]/2, bcen[end] + bwid[end]/2) # contour limits
+        clims = (bcen[1] - bwid[1]/2, bcen[end] + bwid[end]/2) # colorbar limits
     else
         clims = extrema(map_map)
     end
@@ -1957,8 +1971,8 @@ function map_clims(c, map_map::Matrix)
 end # function map_clims
 
 """
-    plot_path!(p1, lat, lon;
-               lab = "",
+    plot_path!(p1::Plot, lat, lon;
+               lab::String        = "",
                Nmax::Int          = 5000,
                show_plot::Bool    = true,
                zoom_plot::Bool    = false,
@@ -1967,7 +1981,7 @@ end # function map_clims
 Plot flight path on an existing plot.
 
 **Arguments:**
-- `p1`:         existing plot (e.g., map)
+- `p1`:         plot (i.e., map)
 - `lat`:        latitude  [rad]
 - `lon`:        longitude [rad]
 - `lab`:        (optional) data (legend) label
@@ -1979,8 +1993,8 @@ Plot flight path on an existing plot.
 **Returns:**
 - `nothing`: flight path is plotted on `p1`
 """
-function plot_path!(p1, lat, lon;
-                    lab = "",
+function plot_path!(p1::Plot, lat, lon;
+                    lab::String        = "",
                     Nmax::Int          = 5000,
                     show_plot::Bool    = true,
                     zoom_plot::Bool    = false,
@@ -2003,12 +2017,12 @@ function plot_path!(p1, lat, lon;
 
     show_plot && display(p1)
 
-    return (p1)
+    return (nothing)
 end # function plot_path!
 
 """
-    plot_path!(p1, path::Path, ind=trues(path.N);
-               lab = "",
+    plot_path!(p1::Plot, path::Path, ind = trues(path.N);
+               lab::String        = "",
                Nmax::Int          = 5000,
                show_plot::Bool    = true,
                zoom_plot::Bool    = false,
@@ -2017,7 +2031,7 @@ end # function plot_path!
 Plot flight path on an existing plot.
 
 **Arguments:**
-- `p1`:         existing plot (e.g., map)
+- `p1`:         plot (i.e., map)
 - `path`:       `Path` struct, i.e., `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
 - `ind`:        (optional) selected data indices
 - `lab`:        (optional) data (legend) label
@@ -2029,8 +2043,8 @@ Plot flight path on an existing plot.
 **Returns:**
 - `nothing`: flight path is plotted on `p1`
 """
-function plot_path!(p1, path::Path, ind=trues(path.N);
-                    lab = "",
+function plot_path!(p1::Plot, path::Path, ind = trues(path.N);
+                    lab::String        = "",
                     Nmax::Int          = 5000,
                     show_plot::Bool    = true,
                     zoom_plot::Bool    = false,
@@ -2041,11 +2055,90 @@ function plot_path!(p1, path::Path, ind=trues(path.N);
                show_plot  = show_plot,
                zoom_plot  = zoom_plot,
                path_color = path_color)
+    return (nothing)
 end # function plot_path!
 
 """
+    plot_path(p1::Plot, lat, lon;
+              lab::String        = "",
+              Nmax::Int          = 5000,
+              show_plot::Bool    = true,
+              zoom_plot::Bool    = false,
+              path_color::Symbol = :ignore)
+
+Plot flight path on an existing plot.
+
+**Arguments:**
+- `p1`:         plot (i.e., map)
+- `lat`:        latitude  [rad]
+- `lon`:        longitude [rad]
+- `lab`:        (optional) data (legend) label
+- `Nmax`:       (optional) maximum number of data points plotted
+- `show_plot`:  (optional) if true, show plot
+- `zoom_plot`:  (optional) if true, zoom plot onto flight path
+- `path_color`: (optional) path color {`:ignore`,`:black`,`:gray`,`:red`,`:orange`,`:yellow`,`:green`,`:cyan`,`:blue`,`:purple`}
+
+**Returns:**
+- `p2`: `p1` with flight path
+"""
+function plot_path(p1::Plot, lat, lon;
+                   lab::String        = "",
+                   Nmax::Int          = 5000,
+                   show_plot::Bool    = true,
+                   zoom_plot::Bool    = false,
+                   path_color::Symbol = :ignore)
+    p2 = deepcopy(p1)
+    plot_path!(p2,lat,lon;
+               lab        = lab,
+               Nmax       = Nmax,
+               show_plot  = show_plot,
+               zoom_plot  = zoom_plot,
+               path_color = path_color)
+    return (p2)
+end # function plot_path
+
+"""
+    plot_path(p1::Plot, path::Path, ind = trues(path.N);
+              lab::String        = "",
+              Nmax::Int          = 5000,
+              show_plot::Bool    = true,
+              zoom_plot::Bool    = false,
+              path_color::Symbol = :ignore)
+
+Plot flight path on an existing plot.
+
+**Arguments:**
+- `p1`:         plot (i.e., map)
+- `path`:       `Path` struct, i.e., `Traj` trajectory struct, `INS` inertial navigation system struct, or `FILTout` filter extracted output struct
+- `ind`:        (optional) selected data indices
+- `lab`:        (optional) data (legend) label
+- `Nmax`:       (optional) maximum number of data points plotted
+- `show_plot`:  (optional) if true, show plot
+- `zoom_plot`:  (optional) if true, zoom plot onto flight path
+- `path_color`: (optional) path color {`:ignore`,`:black`,`:gray`,`:red`,`:orange`,`:yellow`,`:green`,`:cyan`,`:blue`,`:purple`}
+
+**Returns:**
+- `p2`: `p1` with flight path
+"""
+function plot_path(p1::Plot, path::Path, ind = trues(path.N);
+                   lab::String        = "",
+                   Nmax::Int          = 5000,
+                   show_plot::Bool    = true,
+                   zoom_plot::Bool    = false,
+                   path_color::Symbol = :ignore)
+    p2 = deepcopy(p1)
+    plot_path!(p2,path.lat[ind],path.lon[ind];
+               lab        = lab,
+               Nmax       = Nmax,
+               show_plot  = show_plot,
+               zoom_plot  = zoom_plot,
+               path_color = path_color)
+    return (p2)
+end # function plot_path
+
+"""
     plot_path(lat, lon;
-              lab = "",
+              lab::String        = "",
               dpi::Int           = 200,
               margin::Int        = 2,
               Nmax::Int          = 5000,
@@ -2070,7 +2163,7 @@ Plot flight path.
 - `p1`: plot of flight path
 """
 function plot_path(lat, lon;
-                   lab = "",
+                   lab::String        = "",
                    dpi::Int           = 200,
                    margin::Int        = 2,
                    Nmax::Int          = 5000,
@@ -2085,11 +2178,12 @@ function plot_path(lat, lon;
                show_plot  = show_plot,
                zoom_plot  = zoom_plot,
                path_color = path_color)
+    return (p1)
 end # function plot_path
 
 """
-    plot_path(path::Path, ind=trues(path.N);
-              lab = "",
+    plot_path(path::Path, ind = trues(path.N);
+              lab::String        = "",
               dpi::Int           = 200,
               margin::Int        = 2,
               Nmax::Int          = 5000,
@@ -2113,87 +2207,135 @@ Plot flight path.
 **Returns:**
 - `p1`: plot of flight path
 """
-function plot_path(path::Path, ind=trues(path.N);
-                   lab = "",
+function plot_path(path::Path, ind = trues(path.N);
+                   lab::String        = "",
                    dpi::Int           = 200,
                    margin::Int        = 2,
                    Nmax::Int          = 5000,
                    show_plot::Bool    = true,
                    zoom_plot::Bool    = true,
                    path_color::Symbol = :ignore)
-    plot_path(path.lat[ind],path.lon[ind];
-              lab        = lab,
-              dpi        = dpi,
-              margin     = margin,
-              Nmax       = Nmax,
-              show_plot  = show_plot,
-              zoom_plot  = zoom_plot,
-              path_color = path_color)
+    p1 = plot_path(path.lat[ind],path.lon[ind];
+                   lab        = lab,
+                   dpi        = dpi,
+                   margin     = margin,
+                   Nmax       = Nmax,
+                   show_plot  = show_plot,
+                   zoom_plot  = zoom_plot,
+                   path_color = path_color)
+    return (p1)
 end # function plot_path
 
 """
-    plot_events!(p1, t, lab=nothing; legend::Symbol = :outertopright)
+    plot_events!(p1::Plot, t::Real, lab::String = "";
+                 legend::Symbol = :outertopright)
 
-Plot in-flight event on existing plot.
+Plot in-flight event on an existing plot.
 
 **Arguments:**
-- `p1`:      existing plot (e.g., time series of magnetometer measurements)
-- `t`:       time of in-flight event
-- `lab`:     (optional) in-flight event (legend) label
-- `legend`:  (optional) legend position (e.g., `:topleft`,`:outertopright`)
+- `p1`:     plot (i.e., time series of data)
+- `t`:      time of in-flight event
+- `lab`:    (optional) in-flight event (legend) label
+- `legend`: (optional) legend position (e.g., `:topleft`,`:outertopright`)
 
 **Returns:**
-- `p1`: in-flight events are plotted on `p1`
+- `nothing`: in-flight event is plotted on `p1`
 """
-function plot_events!(p1, t, lab=nothing; legend::Symbol = :outertopright)
-    t = [t;] # ensure vector
-    plot!(p1,t,lab=lab,c=:red,ls=:dash,lt=:vline,legend=legend)
-    return (p1)
+function plot_events!(p1::Plot, t::Real, lab::String = "";
+                      legend::Symbol = :outertopright)
+    plot!(p1,[t],lab=lab,legend=legend,lc=:red,ls=:dash,lt=:vline,lw=1)
+    return (nothing)
 end # function plot_events!
 
 """
-    plot_events!(p1, df_event::DataFrame, flight::Symbol, keyword::String = "";
+    plot_events!(p1::Plot, flight::Symbol,  df_event::DataFrame;
+                 keyword::String = "",
                  show_lab::Bool  = true,
-                 t0              = 0,
-                 t_units::Symbol = :min,
+                 t0::Real        = 0,
+                 t_units::Symbol = :sec,
                  legend::Symbol  = :outertopright)
 
-Plot in-flight event(s) on existing plot.
+Plot in-flight event(s) on an existing plot.
 
 **Arguments:**
-- `p1`:       existing plot (e.g., time series of magnetometer measurements)
+- `p1`:       plot (i.e., time series of data)
+- `flight`:   flight name (e.g., `:Flt1001`)
 - `df_event`: lookup table (DataFrame) of in-flight events
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `flight`|`Symbol`| flight name (e.g., `:Flt1001`)
 `tt`    |`Real`  | time of `event` [s]
 `event` |`String`| event description
-- `flight`:   flight name (e.g., `:Flt1001`)
 - `keyword`:  (optional) keyword to search within events, case insensitive
 - `show_lab`: (optional) if true, show in-flight event (legend) label(s)
 - `t0`:       (optional) time offset [`t_units`]
-- `t_units`:  (optional) time units used for plotting {`:sec`,`:min`}
+- `t_units`:  (optional) time units {`:sec`,`:min`}
 - `legend`:   (optional) legend position (e.g., `:topleft`,`:outertopright`)
 
 **Returns:**
-- `p1`: in-flight events are plotted on `p1`
+- `nothing`: in-flight events are plotted on `p1`
 """
-function plot_events!(p1, df_event::DataFrame, flight::Symbol, keyword::String = "";
+function plot_events!(p1::Plot, flight::Symbol,  df_event::DataFrame;
+                      keyword::String = "",
                       show_lab::Bool  = true,
-                      t0              = 0,
-                      t_units::Symbol = :min,
+                      t0::Real        = 0,
+                      t_units::Symbol = :sec,
                       legend::Symbol  = :outertopright)
     tt_lim = xlims(p1) .+ t0
     t_units == :min && (tt_lim = 60 .* tt_lim)
-    df = filter_events(df_event,flight,keyword;tt_lim=tt_lim)
+    df = filter_events(flight,df_event;keyword=keyword,tt_lim=tt_lim)
     for i in axes(df,1)
-        lab = show_lab ? string(df[i,:event]) : nothing
+        lab = show_lab ? string(df[i,:event]) : ""
         t   = df[i,:tt]
         t_units == :min && (t = t/60)
         plot_events!(p1,t-t0,lab;legend=legend)
     end
-    return (p1)
+    return (nothing)
 end # function plot_events!
+
+"""
+    plot_events(p1::Plot, flight::Symbol,  df_event::DataFrame;
+                keyword::String = "",
+                show_lab::Bool  = true,
+                t0::Real        = 0,
+                t_units::Symbol = :sec,
+                legend::Symbol  = :outertopright)
+
+Plot in-flight event(s) on an existing plot.
+
+**Arguments:**
+- `p1`:       plot (i.e., time series of data)
+- `flight`:   flight name (e.g., `:Flt1001`)
+- `df_event`: lookup table (DataFrame) of in-flight events
+|**Field**|**Type**|**Description**
+|:--|:--|:--
+`flight`|`Symbol`| flight name (e.g., `:Flt1001`)
+`tt`    |`Real`  | time of `event` [s]
+`event` |`String`| event description
+- `keyword`:  (optional) keyword to search within events, case insensitive
+- `show_lab`: (optional) if true, show in-flight event (legend) label(s)
+- `t0`:       (optional) time offset [`t_units`]
+- `t_units`:  (optional) time units {`:sec`,`:min`}
+- `legend`:   (optional) legend position (e.g., `:topleft`,`:outertopright`)
+
+**Returns:**
+- `p2`: `p1` with in-flight events
+"""
+function plot_events(p1::Plot, flight::Symbol,  df_event::DataFrame;
+                     keyword::String = "",
+                     show_lab::Bool  = true,
+                     t0::Real        = 0,
+                     t_units::Symbol = :sec,
+                     legend::Symbol  = :outertopright)
+    p2 = deepcopy(p1)
+    plot_events!(p2,flight,df_event;
+                 keyword  = keyword,
+                 show_lab = show_lab,
+                 t0       = t0,
+                 t_units  = t_units,
+                 legend   = legend)
+    return (p2)
+end # function plot_events
 
 """
     map_check(map_map::Map, lat, lon, alt = fill(median(map_map.alt),size(lat)))
@@ -2235,7 +2377,7 @@ function map_check(map_map::Map, lat, lon, alt = fill(median(map_map.alt),size(l
 end # function map_check
 
 """
-    map_check(map_map::Map, path::Path, ind=trues(path.N))
+    map_check(map_map::Map, path::Path, ind = trues(path.N))
 
 Check if latitude and longitude points are on given map.
 
@@ -2247,12 +2389,12 @@ Check if latitude and longitude points are on given map.
 **Returns:**
 - `bool`: if true, all `path`[`ind`] points are on `map_map`
 """
-function map_check(map_map::Map, path::Path, ind=trues(path.N))
+function map_check(map_map::Map, path::Path, ind = trues(path.N))
     map_check(map_map,path.lat[ind],path.lon[ind],path.alt[ind])
 end # function map_check
 
 """
-    map_check(map_map_vec::Vector, path::Path, ind=trues(path.N))
+    map_check(map_map_vec::Vector, path::Path, ind = trues(path.N))
 
 Check if latitude and longitude points are on given maps.
 
@@ -2264,12 +2406,12 @@ Check if latitude and longitude points are on given maps.
 **Returns:**
 - `bools`: if true, all `path`[`ind`] points are on `map_map_vec`[i]
 """
-function map_check(map_map_vec::Vector, path::Path, ind=trues(path.N))
+function map_check(map_map_vec::Vector, path::Path, ind = trues(path.N))
     [map_check(map_map_vec[i],path,ind) for i in eachindex(map_map_vec)]
 end # function map_check
 
 """
-    get_map_val(map_map::Map, lat, lon, alt; α=200, return_itp::Bool=false)
+    get_map_val(map_map::Map, lat, lon, alt; α = 200, return_itp::Bool = false)
 
 Get scalar magnetic anomaly map values along a flight path. `map_map` is upward
 and/or downward continued to `alt` as necessary (except if drape map).
@@ -2286,7 +2428,7 @@ and/or downward continued to `alt` as necessary (except if drape map).
 - `map_val`: scalar magnetic anomaly map values
 - `itp_map`: if `return_itp = true`, map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
 """
-function get_map_val(map_map::Map, lat, lon, alt; α=200, return_itp::Bool=false)
+function get_map_val(map_map::Map, lat, lon, alt; α = 200, return_itp::Bool = false)
     if map_map isa MapS
         all(map_map.alt .> 0) && (map_map = upward_fft(map_map,median(alt);α=α))
         itp_map = map_itp(map_map)
@@ -2326,8 +2468,8 @@ function get_map_val(map_map::Map, lat, lon, alt; α=200, return_itp::Bool=false
 end # function get_map_val
 
 """
-    get_map_val(map_map::Map, path::Path, ind=trues(path.N);
-                α=200, return_itp::Bool=false)
+    get_map_val(map_map::Map, path::Path, ind = trues(path.N);
+                α=200, return_itp::Bool = false)
 
 Get scalar magnetic anomaly map values along a flight path. `map_map` is upward
 and/or downward continued to `alt` as necessary.
@@ -2343,13 +2485,13 @@ and/or downward continued to `alt` as necessary.
 - `map_val`: scalar magnetic anomaly map values
 - `map_itp`: if `return_itp = true`, map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
 """
-function get_map_val(map_map::Map, path::Path, ind=trues(path.N);
-                     α=200, return_itp::Bool=false)
+function get_map_val(map_map::Map, path::Path, ind = trues(path.N);
+                     α=200, return_itp::Bool = false)
     get_map_val(map_map,path.lat[ind],path.lon[ind],path.alt[ind];α=α,return_itp=return_itp)
 end # function get_map_val
 
 """
-    get_map_val(map_map_vec::Vector, path::Path, ind=trues(path.N); α=200)
+    get_map_val(map_map_vec::Vector, path::Path, ind = trues(path.N); α = 200)
 
 Get scalar magnetic anomaly map values from multiple maps along a flight path.
 Each map in `map_map_vec` is upward and/or downward continued to `alt` as necessary.
@@ -2363,7 +2505,7 @@ Each map in `map_map_vec` is upward and/or downward continued to `alt` as necess
 **Returns:**
 - `map_vals`: vector of scalar magnetic anomaly map values
 """
-function get_map_val(map_map_vec::Vector, path::Path, ind=trues(path.N); α=200)
+function get_map_val(map_map_vec::Vector, path::Path, ind = trues(path.N); α = 200)
     [get_map_val(map_map_vec[i],path,ind;
                  α=α,return_itp=false) for i in eachindex(map_map_vec)]
 end # function get_map_val
@@ -2434,7 +2576,8 @@ function get_cached_map(map_cache::Map_Cache, lat::Real, lon::Real, alt::Real;
 end # function get_cached_map
 
 """
-    (map_cache::Map_Cache)(lat::Real, lon::Real, alt::Real; silent::Bool=true)
+    (map_cache::Map_Cache)(lat::Real, lon::Real, alt::Real;
+                          silent::Bool = true)
 
 Get cached map value at specific location.
 
@@ -2448,7 +2591,8 @@ Get cached map value at specific location.
 **Returns:**
 - `map_val`: scalar magnetic anomaly map value
 """
-function (map_cache::Map_Cache)(lat::Real, lon::Real, alt::Real; silent::Bool=true)
+function (map_cache::Map_Cache)(lat::Real, lon::Real, alt::Real;
+                                silent::Bool = true)
     get_cached_map(map_cache,lat,lon,alt;silent=silent)(lat,lon)
 end # function Map_Cache
 
@@ -2694,6 +2838,7 @@ function map_border_clean!(ind::BitMatrix)
         ind_doubles = map_border_doubles(ind)
         ind .= ind .& .!ind_singles .& .!ind_doubles
     end
+    return (nothing)
 end # map_border_clean!
 
 """
@@ -2810,8 +2955,8 @@ Combine two maps at same altitude.
 - `mapS`:          `MapS` scalar magnetic anomaly map struct
 - `mapS_fallback`: (optional) fallback `MapS` scalar magnetic anomaly map struct
 - `map_info`:      (optional) map information
-- `xx_lim`:        (optional) x-direction map limits `(xx_min,xx_max)`
-- `yy_lim`:        (optional) y-direction map limits `(yy_min,yy_max)`
+- `xx_lim`:        (optional) length-`2` x-direction map limits `(xx_min,xx_max)`
+- `yy_lim`:        (optional) length-`2` y-direction map limits `(yy_min,yy_max)`
 - `α`:             (optional) regularization parameter for downward continuation
 
 **Returns:**
@@ -2873,10 +3018,10 @@ Combine maps at different altitudes. Lowest and highest maps are directly used
 - `mapS_fallback`: (optional) fallback `MapS` scalar magnetic anomaly map struct
 - `map_info`:      (optional) map information
 - `n_levels`:      (optional) number of map altitude levels
-- `dx`:            (optional) x-direction map step size (desired)
-- `dy`:            (optional) y-direction map step size (desired)
-- `xx_lim`:        (optional) x-direction map limits `(xx_min,xx_max)`
-- `yy_lim`:        (optional) y-direction map limits `(yy_min,yy_max)`
+- `dx`:            (optional) desired x-direction map step size
+- `dy`:            (optional) desired y-direction map step size
+- `xx_lim`:        (optional) length-`2 `x-direction map limits `(xx_min,xx_max)`
+- `yy_lim`:        (optional) length-`2` y-direction map limits `(yy_min,yy_max)`
 - `α`:             (optional) regularization parameter for downward continuation
 - `use_fallback`:  (optional) if true, use `mapS_fallback` for missing map data
 

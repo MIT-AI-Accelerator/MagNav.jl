@@ -9,17 +9,17 @@
 Convert SGL flight data file from .xyz to HDF5.
 - Valid for SGL flights:
     - `:Flt1001`
-    - `:Flt1001_160Hz`
     - `:Flt1002`
-    - `:Flt1002_160Hz`
     - `:Flt1003`
-    - `:Flt1004`
     - `:Flt1004_1005`
+    - `:Flt1004`
     - `:Flt1005`
     - `:Flt1006`
     - `:Flt1007`
     - `:Flt1008`
     - `:Flt1009`
+    - `:Flt1001_160Hz`
+    - `:Flt1002_160Hz`
     - `:Flt2001_2017`
 
 May take 1+ hr for 1+ GB files. For reference, a 1.23 GB file took 46.8 min to
@@ -227,6 +227,7 @@ function delete_field(data_h5::String, field)
     file  = h5open(data_h5,"r+") # read-write, preserve existing contents
     delete_object(file,field)
     close(file)
+    return (nothing)
 end # function delete_field
 
 """
@@ -248,6 +249,7 @@ function write_field(data_h5::String, field, data)
     h5open(data_h5,"cw") do file # read-write, create file if not existing, preserve existing contents
         write(file,field,data)
     end
+    return (nothing)
 end # function write_field
 
 """
@@ -268,6 +270,7 @@ function overwrite_field(data_h5::String, field, data)
     field = string(field)
     delete_field(data_h5,field)
     write_field(data_h5,field,data)
+    return (nothing)
 end # function overwrite_field
 
 """
@@ -310,6 +313,7 @@ function rename_field(data_h5::String, field_old, field_new)
     data = read_field(data_h5,field_old)
     delete_field(data_h5,field_old)
     write_field(data_h5,field_new,data)
+    return (nothing)
 end # function rename_field
 
 """
@@ -329,6 +333,7 @@ function clear_fields(data_h5::String)
     close(file)
     file = h5open(data_h5,"w") # read-write, destroy existing contents
     close(file)
+    return (nothing)
 end # function clear_fields
 
 """
@@ -353,10 +358,11 @@ function print_fields(s)
             println("$field  ",t)
         end
     end
+    return (nothing)
 end # function print_fields
 
 """
-    compare_fields(s1, s2; silent::Bool=false)
+    compare_fields(s1, s2; silent::Bool = false)
 
 Compare data for each data field in 2 structs of the same type.
 
@@ -368,7 +374,7 @@ Compare data for each data field in 2 structs of the same type.
 **Returns:**
 - `N_dif`: if `silent = false`, number of different fields
 """
-function compare_fields(s1, s2; silent::Bool=false)
+function compare_fields(s1, s2; silent::Bool = false)
     t1 = typeof(s1)
     t2 = typeof(s2)
     @assert t1 == t2 "$t1 & $t2 types do no match"
@@ -501,17 +507,17 @@ end # function field_extrema
 Internal helper function to get field names for given SGL flight.
 - Valid for SGL flights:
     - `:Flt1001`
-    - `:Flt1001_160Hz`
     - `:Flt1002`
-    - `:Flt1002_160Hz`
     - `:Flt1003`
-    - `:Flt1004`
     - `:Flt1004_1005`
+    - `:Flt1004`
     - `:Flt1005`
     - `:Flt1006`
     - `:Flt1007`
     - `:Flt1008`
     - `:Flt1009`
+    - `:Flt1001_160Hz`
+    - `:Flt1002_160Hz`
     - `:Flt2001_2017`
     - `:Flt2001`
     - `:Flt2002`
@@ -554,7 +560,7 @@ function xyz_fields(flight::Symbol)
 
         return (d[:fields20][ind])
 
-    elseif flight in [:Flt1003,:Flt1004,:Flt1005,:Flt1004_1005,
+    elseif flight in [:Flt1003,:Flt1004_1005,:Flt1004,:Flt1005,
                       :Flt1006,:Flt1007]
 
         # no mag_6_uc for these flights

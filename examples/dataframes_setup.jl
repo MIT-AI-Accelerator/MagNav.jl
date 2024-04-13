@@ -3,9 +3,9 @@
 ## SGL calibration flight lines
 df_cal = DataFrame(CSV.File("dataframes/df_cal.csv"))
 df_cal[!,:flight]   = Symbol.(df_cal[!,:flight])
-df_cal[!,:map_name] = Symbol.(df_cal[!,:map_name]) # not ideal, but ok
+df_cal[!,:map_name] = Symbol.(df_cal[!,:map_name])
 
-## SGL flight data HDF5 files
+## SGL flight data files
 df_flight = DataFrame(CSV.File("dataframes/df_flight.csv"))
 df_flight[!,:flight]   = Symbol.(df_flight[!,:flight])
 df_flight[!,:xyz_type] = Symbol.(df_flight[!,:xyz_type])
@@ -18,7 +18,7 @@ for (i,flight) in enumerate(df_flight.flight)
     end
 end
 
-## map data HDF5 files (associated with SGL flights)
+## map data files (associated with SGL flights)
 df_map = DataFrame(CSV.File("dataframes/df_map.csv"))
 df_map[!,:map_name] = Symbol.(df_map[!,:map_name])
 df_map[!,:map_type] = Symbol.(df_map[!,:map_type])
