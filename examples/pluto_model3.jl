@@ -47,7 +47,7 @@ Dataframe  | Description
 # ╔═╡ 3a55962c-bd1b-410c-b98a-3130fc11ee11
 md"## Train a (linear) Tolles-Lawson model
 
-Select Flight 1006 (see [readme](https://github.com/MIT-AI-Accelerator/MagNav.jl/blob/master/readmes/Flt1006_readme.txt)), load the flight data, & get the Boolean indices for a specific calibration flight line that will be used to fit the Tolles-Lawson coefficients. The full list of SGL flights is in `df_flight`, & the full list of calibration flight line options is in `df_cal`.
+Select Flight 1006 (see [readme](https://github.com/MIT-AI-Accelerator/MagNav.jl/blob/master/readmes/Flt1006_readme.txt)), load the flight data, & get the Boolean indices for a specific calibration flight line that is used to fit the Tolles-Lawson coefficients. The full list of SGL flights is in `df_flight`, & the full list of calibration flight line options is in `df_cal`.
 "
 
 # ╔═╡ bf9f72f0-c351-48d3-a811-418ee965073c
@@ -199,7 +199,7 @@ comp_params_init = NNCompParams(features_setup = features,
 			   ind_test = ind_test);
 
 # ╔═╡ 0c839441-909d-4095-a4eb-4dfc92eb2121
-md"Evaluate test line performance & return additional terms that will be useful in visualizing the compensation performance
+md"Evaluate test line performance & return additional terms that are useful for visualizing the compensation performance
 "
 
 # ╔═╡ 0a1b7102-59e0-4e2a-a45c-5c21d0039b88
@@ -210,7 +210,7 @@ md"Evaluate test line performance & return additional terms that will be useful 
 # ╔═╡ 5f88bca1-ecc9-45b2-8164-0f6965b81088
 md"## Navigation performance
 
-Ultimately, the compensated magnetometer values will be used with a navigation algorithm, an extended Kalman filter (EKF) here. To prepare the flight data & map for the navigation filter, a few more objects are needed:
+Ultimately, the compensated magnetometer values are used with a navigation algorithm, an extended Kalman filter (EKF) here. To prepare the flight data & map for the navigation filter, a few more objects are needed:
 * `traj`: trajectory (GPS) data structure
 * `ins`: INS data structure
 * `itp_mapS`: interpolated map to pass to the filter to use for measurement evaluations
@@ -283,7 +283,7 @@ md"
 
 Make an animation of the navigation performance, keeping track of each component of the compensation terms emitted by model 3, projected into a 2D plane (north/east, removing the vertical components) to make visualization simpler. Ideally, you should see that the knowledge-integrated architecture in model 3 is mostly accounting for variations in the compensation field arising from the map/plane maneuvers in the Tolles-Lawson (TL) component, whereas the neural network (NN) correction is addressing any deviations due to current/voltage fluctuations.
 
-Increase (or decrease) the `skip_every` argument to exclude (or include) more frames, which will speed up (or slow down) the rendering time & decrease (or increase) the file size.
+Increase (or decrease) the `skip_every` argument to exclude (or include) more frames, which speeds up (or slows down) the rendering time & decrease (or increase) the file size.
 "
 
 # ╔═╡ c469bc3c-434d-452a-8dca-1a96823a8153

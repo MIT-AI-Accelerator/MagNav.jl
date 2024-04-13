@@ -128,7 +128,7 @@ Most of the map data was collected at altitudes between 215 & 395 m.
 "
 
 # ╔═╡ c5b6b439-e962-4c9d-9b02-339657fb266b
-begin # the Eastern drape map contains an additional drape (altitude) map
+begin # this map contains an additional drape (altitude) map
 	e_mapS_drp = get_map(:Eastern_drape,df_map) # load map data
 	e_alts  = e_mapS_drp.alt[e_mask]
 	alt_avg = round(Int,mean(e_alts))
@@ -171,7 +171,7 @@ begin
 end
 
 # ╔═╡ ee8bbf97-97b0-420d-a29d-7a0a9fb87a41
-md"The second way to create a 3D map is to combine multiple 2D maps using the `map_combine` function. In this case, the Eastern map (395 m) & Perth map (800 m) are stacked into a 3D map.
+md"The second way to create a 3D map is to combine multiple 2D maps using the `map_combine` function. In this case, the Eastern Ontario map (395 m) & Perth map (800 m) are stacked into a 3D map.
 "
 
 # ╔═╡ eaa6b007-97cf-4178-bb9a-2656632df7c1
