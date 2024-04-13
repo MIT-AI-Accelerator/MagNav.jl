@@ -36,7 +36,7 @@ jobs:
       # Install the cosign tool
       # https://github.com/sigstore/cosign-installer
       - name: Install Cosign
-        uses: sigstore/cosign-installer@main
+        uses: sigstore/cosign-installer@v3
 
       # Set up Docker Buildx
       # https://github.com/docker/setup-buildx-action
