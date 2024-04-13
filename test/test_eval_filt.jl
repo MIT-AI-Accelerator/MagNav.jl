@@ -100,9 +100,10 @@ show_plot = false
 p1 = plot()
 
 @testset "plot_filt tests" begin
-    @test plot_filt!(p1,traj,ins,filt_out;vel_plot=true,show_plot) isa NTuple{5,Plots.Plot}
-    @test plot_filt(traj,ins,filt_out;vel_plot=true,show_plot) isa NTuple{5,Plots.Plot}
-    @test plot_filt_err(traj,filt_out,crlb_out;vel_plot=true,show_plot) isa NTuple{4,Plots.Plot}
+    @test plot_filt!(p1,traj,ins,filt_out;show_plot) isa Nothing
+    @test plot_filt( p1,traj,ins,filt_out;plot_vel=true ,show_plot) isa NTuple{5,Plots.Plot}
+    @test plot_filt(    traj,ins,filt_out;plot_vel=false,show_plot) isa NTuple{3,Plots.Plot}
+    @test plot_filt_err(traj,filt_out,crlb_out;plot_vel=true,show_plot) isa NTuple{4,Plots.Plot}
 end
 
 @testset "plot_mag_map tests" begin

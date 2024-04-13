@@ -98,10 +98,10 @@ df_line = DataFrame(flight   = [flight,flight],
 df_flight = DataFrame(flight   = flight,
                       xyz_type = xyz_type,
                       xyz_set  = 1,
-                      xyz_h5   = xyz_h5)
+                      xyz_file = xyz_h5)
 
 df_map = DataFrame(map_name = map_name,
-                   map_h5   = map_h5)
+                   map_file = map_h5)
 
 @testset "get_x tests" begin
     @test get_x(xyz,ind) isa Tuple{Matrix,Vector,Vector}
@@ -138,12 +138,12 @@ end
 end
 
 @testset "get_nn_m tests" begin
-    @test get_nn_m(1,1;hidden=[]) isa Chain
-    @test get_nn_m(1,1;hidden=[1]) isa Chain
-    @test get_nn_m(1,1;hidden=[1,1]) isa Chain
+    @test get_nn_m(1,1;hidden=[     ]) isa Chain
+    @test get_nn_m(1,1;hidden=[1    ]) isa Chain
+    @test get_nn_m(1,1;hidden=[1,1  ]) isa Chain
     @test get_nn_m(1,1;hidden=[1,1,1]) isa Chain
     @test get_nn_m(1,1;hidden=[1],final_bias=false) isa Chain
-    @test get_nn_m(1,1;hidden=[1],skip_con=true) isa Chain
+    @test get_nn_m(1,1;hidden=[1],skip_con  =true ) isa Chain
     @test get_nn_m(1,1;hidden=[1]  ,model_type=:m3w,dropout_prob=0  ) isa Chain
     @test get_nn_m(1,1;hidden=[1]  ,model_type=:m3w,dropout_prob=0.5) isa Chain
     @test get_nn_m(1,1;hidden=[1,1],model_type=:m3w,dropout_prob=0  ) isa Chain
@@ -154,12 +154,12 @@ end
     @test get_nn_m(1,1;hidden=[1,1],model_type=:m3tf,tf_layer_type=:postlayer,tf_norm_type=:none ,N_tf_head=1) isa Chain
     @test_throws ErrorException get_nn_m(1,1;hidden=[1,1,1,1])
     @test_throws ErrorException get_nn_m(1,1;hidden=[1,1],skip_con=true)
-    @test_throws ErrorException get_nn_m(1,1;hidden=[],model_type=:m3w)
+    @test_throws ErrorException get_nn_m(1,1;hidden=[     ],model_type=:m3w)
     @test_throws ErrorException get_nn_m(1,1;hidden=[1,1,1],model_type=:m3w)
-    @test_throws AssertionError get_nn_m(1,1;hidden=[],model_type=:m3tf,N_tf_head=1)
+    @test_throws AssertionError get_nn_m(1,1;hidden=[     ],model_type=:m3tf,N_tf_head=1)
     @test_throws ErrorException get_nn_m(1,1;hidden=[1,1,1],model_type=:m3tf,N_tf_head=1)
     @test_throws ErrorException get_nn_m(1,1;hidden=[1],model_type=:m3tf,tf_layer_type=:test,N_tf_head=1)
-    @test_throws ErrorException get_nn_m(1,1;hidden=[1],model_type=:m3tf,tf_norm_type=:test,N_tf_head=1)
+    @test_throws ErrorException get_nn_m(1,1;hidden=[1],model_type=:m3tf,tf_norm_type =:test,N_tf_head=1)
 end
 
 m = get_nn_m(3,1;hidden=[1])
@@ -257,8 +257,11 @@ m_rnn = Chain(GRU(3,1),Dense(1,1))
     @test predict_rnn_windowed(m_rnn,x,3) isa Vector
 end
 
+(model,data_norms,_,_) = krr_fit(x,y)
+
 @testset "krr tests" begin
-    @test krr(x,y,x) isa NTuple{2,Vector}
+    @test krr_fit(x,y) isa Tuple{Tuple,Tuple,Vector,Vector}
+    @test krr_test(x,y,data_norms,model) isa NTuple{2,Vector}
 end
 
 features = [:f1,:f2,:f3]

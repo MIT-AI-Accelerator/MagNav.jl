@@ -33,10 +33,10 @@ df_line = DataFrame(flight   = [flight],
 df_flight = DataFrame(flight   = flight,
                       xyz_type = xyz_type,
                       xyz_set  = 1,
-                      xyz_h5   = xyz_h5)
+                      xyz_file = xyz_h5)
 
 df_map = DataFrame(map_name = map_name,
-                   map_h5   = map_h5)
+                   map_file = map_h5)
 
 terms_p     = [:p]
 terms_pi    = [:p,:i]
@@ -323,8 +323,12 @@ comp_params_3vc = NNCompParams(comp_params_3vc,
 
 x = [1:5;][:,:]
 y = [1:5;]
+data_norms = ([0.0],[1.0],[0.0],[1.0])
 
 @testset "comp_train tests" begin
+    @test MagNav.plsr_fit(      [x;x],[y;y];data_norms) isa Tuple{Tuple,Tuple,Vector,Vector}
+    @test MagNav.elasticnet_fit([x;x],[y;y];data_norms) isa Tuple{Tuple,Tuple,Vector,Vector}
+    @test MagNav.linear_fit(    [x;x],[y;y];data_norms) isa Tuple{Tuple,Tuple,Vector,Vector}
     @test std(MagNav.elasticnet_fit(x,y;λ=0.01,silent)[end]) < 1
     @test isone(MagNav.plsr_fit(x,y,size(x,2)+1;return_set=true,silent)[:,:,1])
     @test std(comp_train(comp_params_1  ,xyz,ind;

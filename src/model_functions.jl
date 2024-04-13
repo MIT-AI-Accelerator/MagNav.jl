@@ -611,7 +611,7 @@ function get_h(itp_mapS, der_mapS, x::Array, lat, lon, alt, map_alt;
 end # function get_h
 
 """
-    map_grad(itp_mapS, lat, lon, alt; δ=1.0f-8)
+    map_grad(itp_mapS, lat, lon, alt; δ = 1.0f-8)
 
 Internal helper function to get local map gradient.
 
@@ -625,7 +625,7 @@ Internal helper function to get local map gradient.
 **Returns:**
 - `mapS_grad`: local scalar map gradient: δmap/δlat [nT/rad], δmap/δlon [nT/rad], δmap/δalt [nT/m]
 """
-function map_grad(itp_mapS, lat, lon, alt; δ=1.0f-8)
+function map_grad(itp_mapS, lat, lon, alt; δ = 1.0f-8)
     dlat = dlon = δ
     dalt = dlat2dn(δ,lat)
     return ([(itp_mapS(lat+dlat,lon,alt) - itp_mapS(lat-dlat,lon,alt)) /2/dlat,
@@ -634,7 +634,7 @@ function map_grad(itp_mapS, lat, lon, alt; δ=1.0f-8)
 end # function map_grad
 
 """
-    igrf_grad(lat, lon, alt; date=get_years(2020,185), δ=1.0f-8)
+    igrf_grad(lat, lon, alt; date = get_years(2020,185), δ = 1.0f-8)
 
 Internal helper function to get core magnetic field gradient using IGRF model.
 
@@ -648,7 +648,7 @@ Internal helper function to get core magnetic field gradient using IGRF model.
 **Returns:**
 - `core_grad`: local core magnetic field gradient: δmap/δlat [nT/rad], δmap/δlon [nT/rad], δmap/δalt [nT/m]
 """
-function igrf_grad(lat, lon, alt; date=get_years(2020,185), δ=1.0f-8)
+function igrf_grad(lat, lon, alt; date = get_years(2020,185), δ = 1.0f-8)
     dlat = dlon = δ
     dalt = dlat2dn(δ,lat)
     return ([(norm(igrf(date,alt,lat+dlat,lon,Val(:geodetic))) -

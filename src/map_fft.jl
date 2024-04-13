@@ -1,5 +1,5 @@
 """
-    upward_fft(map_map::Matrix, dx, dy, dz; expand::Bool=true, α=0)
+    upward_fft(map_map::Matrix, dx, dy, dz; expand::Bool = true, α = 0)
 
 Upward continuation of a potential field (i.e., magnetic anomaly field) map.
 Uses the Fast Fourier Transform (FFT) to convert the map to the frequency
@@ -14,7 +14,7 @@ Reference: Blakely, Potential Theory in Gravity and Magnetic Applications,
 
 **Arguments:**
 - `map_map`: `ny` x `nx` 2D gridded map data
-- `dx:`:     x-direction map step size [m]
+- `dx`:      x-direction map step size [m]
 - `dy`:      y-direction map step size [m]
 - `dz`:      z-direction upward/downward continuation distance(s) [m]
 - `expand`:  (optional) if true, expand map temporarily to reduce edge effects
@@ -23,7 +23,7 @@ Reference: Blakely, Potential Theory in Gravity and Magnetic Applications,
 **Returns:**
 - `map_map`: `ny` x `nx` 2D gridded map data, upward/downward continued
 """
-function upward_fft(map_map::Matrix, dx, dy, dz; expand::Bool=true, α=0)
+function upward_fft(map_map::Matrix, dx, dy, dz; expand::Bool = true, α = 0)
 
     (ny,nx) = size(map_map)
 
@@ -51,7 +51,7 @@ function upward_fft(map_map::Matrix, dx, dy, dz; expand::Bool=true, α=0)
 end # function upward_fft
 
 """
-    upward_fft(map_map::Map, alt; expand::Bool=true, α=0)
+    upward_fft(map_map::Map, alt; expand::Bool = true, α = 0)
 
 Upward continuation of a potential field (i.e., magnetic anomaly field) map.
 Uses the Fast Fourier Transform (FFT) to convert the map to the frequency
@@ -73,7 +73,7 @@ Reference: Blakely, Potential Theory in Gravity and Magnetic Applications,
 **Returns:**
 - `map_map`: `Map` magnetic anomaly map struct, upward/downward continued (`MapS` with `alt` vector => `MapS3D`)
 """
-function upward_fft(map_map::Map, alt; expand::Bool=true, α=0)
+function upward_fft(map_map::Map, alt; expand::Bool = true, α = 0)
 
     N_alt = length(alt)
 
@@ -214,7 +214,7 @@ function create_k(dx, dy, nx::Int, ny::Int)
 end # function create_k
 
 """
-    map_expand(map_map::Matrix, pad::Int=1)
+    map_expand(map_map::Matrix, pad::Int = 1)
 
 Internal helper function to expand a map with padding on each edge to eliminate
 discontinuities in the discrete Fourier transform. The map is “wrapped around”
@@ -231,7 +231,7 @@ continuation.
 - `padx`:    x-direction padding (grid cells) applied on first edge
 - `pady`:    y-direction padding (grid cells) applied on first edge
 """
-function map_expand(map_map::Matrix, pad::Int=1)
+function map_expand(map_map::Matrix, pad::Int = 1)
 
     map_ = deepcopy(map_map)
 
@@ -296,7 +296,7 @@ maximum of curvature may or may not be the optimal regularization parameter.
 
 **Arguments:**
 - `map_map`:   `ny` x `nx` 2D gridded map data
-- `dx:`:       x-direction map step size [m]
+- `dx`:        x-direction map step size [m]
 - `dy`:        y-direction map step size [m]
 - `dz`:        z-direction upward/downward continuation distance [m]
 - `α`:        (geometric) sequence of regularization parameters

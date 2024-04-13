@@ -38,7 +38,7 @@ Extended Kalman filter (EKF) with online learning of Tolles-Lawson coefficients.
 - `date`:         (optional) measurement date for IGRF [yr]
 - `core`:         (optional) if true, include core magnetic field in measurement
 - `terms`:        (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
-- `Bt_scale`:     (optional) scaling factor for induced and eddy current terms [nT]
+- `Bt_scale`:     (optional) scaling factor for induced & eddy current terms [nT]
 
 **Returns:**
 - `filt_res`: `FILTres` filter results struct
@@ -133,16 +133,16 @@ function ekf_online(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
         # Kalman gain
         K = (P*H') / S          # K_t [nx x ny]
 
-        # state and covariance update
+        # state & covariance update
         x = x + K*resid         # x_t [nx]
         P = (I - K*H) * P   # P_t [nx x nx]
 
-        # state, covariance, and residual store
+        # state, covariance, & residual store
         x_out[:,t]   = x
         P_out[:,:,t] = P
         r_out[:,t]   = resid
 
-        # state and covariance propagate (predict)
+        # state & covariance propagate (predict)
         x = Phi*x               # x_t|t-1 [nx]
         P = Phi*P*Phi' + Qd     # P_t|t-1 [nx x nx]
     end
@@ -179,7 +179,7 @@ Extended Kalman filter (EKF) with online learning of Tolles-Lawson coefficients.
 - `date`:     (optional) measurement date for IGRF [yr]
 - `core`:     (optional) if true, include core magnetic field in measurement
 - `terms`:    (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
-- `Bt_scale`: (optional) scaling factor for induced and eddy current terms [nT]
+- `Bt_scale`: (optional) scaling factor for induced & eddy current terms [nT]
 
 **Returns:**
 - `filt_res`: `FILTres` filter results struct
@@ -206,7 +206,7 @@ function ekf_online(ins::INS, meas, flux::MagV, itp_mapS, x0_TL, P0, Qd, R;
 end # function ekf_online
 
 """
-    ekf_online_setup(flux::MagV, meas, ind=trues(length(meas));
+    ekf_online_setup(flux::MagV, meas, ind = trues(length(meas));
                      Bt           = sqrt.(flux.x.^2+flux.y.^2+flux.z.^2)[ind],
                      λ            = 0.025,
                      terms        = [:permanent,:induced,:eddy,:bias],
@@ -233,14 +233,14 @@ Setup for extended Kalman filter (EKF) with online learning of Tolles-Lawson coe
 - `pole`:     (optional) number of poles for Butterworth filter
 - `trim`:     (optional) number of elements to trim after filtering
 - `N_sigma`:  (optional) number of Tolles-Lawson coefficient sets to use to create `TL_sigma`
-- `Bt_scale`: (optional) scaling factor for induced and eddy current terms [nT]
+- `Bt_scale`: (optional) scaling factor for induced & eddy current terms [nT]
 
 **Returns:**
 - `x0_TL`:    initial Tolles-Lawson coefficient states
 - `P0_TL`:    initial Tolles-Lawson covariance matrix
 - `TL_sigma`: Tolles-Lawson coefficients estimate std dev
 """
-function ekf_online_setup(flux::MagV, meas, ind=trues(length(meas));
+function ekf_online_setup(flux::MagV, meas, ind = trues(length(meas));
                           Bt           = sqrt.(flux.x.^2+flux.y.^2+flux.z.^2),
                           λ            = 0.025,
                           terms        = [:permanent,:induced,:eddy,:bias],
@@ -282,7 +282,7 @@ function ekf_online_setup(flux::MagV, meas, ind=trues(length(meas));
     return (x0_TL, P0_TL, TL_sigma)
 end # function ekf_online_setup
 
-# function rls(x, y, TL_coef::Vector, n::Int=100)
+# function rls(x, y, TL_coef::Vector, n::Int = 100)
 #     TL_coef = deepcopy(TL_coef) # don't modify original TL_coef
 #     P = I(length(TL_coef)) # initialize covariance matrix
 #     for i = 1:n

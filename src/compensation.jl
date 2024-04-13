@@ -80,7 +80,7 @@ function nn_comp_1_train(x, y, no_norm = falses(size(x,2));
     # normalize test data if it was provided
     isempty(x_test) || (x_test_norm = (((x_test .- x_bias) ./ x_scale) * v_scale)')
 
-    # separate into training and validation
+    # separate into training & validation
     if frac_train < 1
         N = size(x_norm,2)
         (p_train,p_val) = get_split(N,frac_train,:none)
@@ -390,7 +390,7 @@ function nn_comp_2_train(A, x, y, no_norm = falses(size(x,2));
     isempty(A_test) || (A_test_norm = ( (A_test .- A_bias) ./ A_scale           )')
     isempty(x_test) || (x_test_norm = (((x_test .- x_bias) ./ x_scale) * v_scale)')
 
-    # separate into training and validation
+    # separate into training & validation
     if frac_train < 1
         N = size(x_norm,2)
         (p_train,p_val) = get_split(N,frac_train,:none)
@@ -507,7 +507,7 @@ function nn_comp_2_train(A, x, y, no_norm = falses(size(x,2));
     TL_coef_norm = TL_coef_store
 
     if epoch_lbfgs > 0 # LBFGS, may overfit depending on iterations
-        model_type == :m2c && !silent && @info("LBFGS will only update NN model weights (not TL coef)")
+        model_type == :m2c && !silent && @info("LBFGS only updates NN model weights (not TL coef)")
         data = DataLoader((A_norm,x_norm,y_norm),shuffle=true,batchsize=batchsize)
 
         function lbfgs_train!(m_l,data_l,iter,t_l,TL_coef_l,silent)
@@ -673,7 +673,7 @@ function nn_comp_2_test(A::Matrix, x::Matrix, y, data_norms::Tuple, model::Chain
 end # function nn_comp_2_test
 
 """
-    get_curriculum_ind(TL_diff::Vector, N_sigma::Real=1)
+    get_curriculum_ind(TL_diff::Vector, N_sigma::Real = 1)
 
 Internal helper function to get indices for curriculum learning (to train
 the Tolles-Lawson part of the loss) and indices to train the neural network.
@@ -688,7 +688,7 @@ mean and neural network indices are those outside of it (i.e., outliers).
 - `ind_cur`: indices for curriculum learning (within `N_sigma`)
 - `ind_nn`:  indices for training the neural network (outside `N_sigma`)
 """
-function get_curriculum_ind(TL_diff::Vector, N_sigma::Real=1)
+function get_curriculum_ind(TL_diff::Vector, N_sigma::Real = 1)
     TL_diff = detrend(TL_diff;mean_only=true)
     cutoff  = N_sigma*std(TL_diff)
     ind_cur = -cutoff .<= TL_diff .<= cutoff
@@ -697,7 +697,7 @@ function get_curriculum_ind(TL_diff::Vector, N_sigma::Real=1)
 end # function get_curriculum_ind
 
 """
-    TL_vec2mat(TL_coef::Vector, terms; Bt_scale=50000f0)
+    TL_vec2mat(TL_coef::Vector, terms; Bt_scale = 50000f0)
 
 Internal helper function to extract the matrix form of Tolles-Lawson
 coefficients from the vector form.
@@ -705,17 +705,17 @@ coefficients from the vector form.
 **Arguments:**
 - `TL_coef`:  Tolles-Lawson coefficients (must include `:permanent` & `:induced`)
 - `terms`:    Tolles-Lawson terms used {`:permanent`,`:induced`,`:eddy`}
-- `Bt_scale`: (optional) scaling factor for induced and eddy current terms [nT]
+- `Bt_scale`: (optional) scaling factor for induced & eddy current terms [nT]
 
 **Returns:**
 - `TL_coef_p`: length-`3` vector of permanent field coefficients
 - `TL_coef_i`: `3` x `3`  symmetric matrix of induced field coefficients, denormalized
 - `TL_coef_e`: `3` x `3`  matrix of eddy current coefficients, denormalized
 """
-function TL_vec2mat(TL_coef::Vector, terms; Bt_scale=50000f0)
+function TL_vec2mat(TL_coef::Vector, terms; Bt_scale = 50000f0)
     @assert any([:permanent,:p,:permanent3,:p3] .∈ (terms,)) "permanent terms are required"
     @assert any([:induced,:i,:induced6,:i6,:induced5,:i5,:induced3,:i3] .∈ (terms,)) "induced terms are required"
-    @assert !any([:fdm,:f,:fdm3,:f3,:bias,:b] .∈ (terms,)) "derivative and bias terms may not be used"
+    @assert !any([:fdm,:f,:fdm3,:f3,:bias,:b] .∈ (terms,)) "derivative & bias terms may not be used"
 
     N = length(TL_coef)
     A_test = create_TL_A([1.0],[1.0],[1.0];terms=terms)
@@ -757,7 +757,7 @@ function TL_vec2mat(TL_coef::Vector, terms; Bt_scale=50000f0)
 end # function TL_vec2mat
 
 """
-    TL_mat2vec(TL_coef_p, TL_coef_i, TL_coef_e, terms; Bt_scale=50000f0)
+    TL_mat2vec(TL_coef_p, TL_coef_i, TL_coef_e, terms; Bt_scale = 50000f0)
 
 Internal helper function to extract the vector form of Tolles-Lawson
 coefficients from the matrix form.
@@ -767,12 +767,12 @@ coefficients from the matrix form.
 - `TL_coef_i`: `3` x `3`  symmetric matrix of induced field coefficients, denormalized
 - `TL_coef_e`: `3` x `3`  matrix of eddy current coefficients, denormalized
 - `terms`:     Tolles-Lawson terms used {`:permanent`,`:induced`,`:eddy`}
-- `Bt_scale`:  (optional) scaling factor for induced and eddy current terms [nT]
+- `Bt_scale`:  (optional) scaling factor for induced & eddy current terms [nT]
 
 **Returns:**
 - `TL_coef`: Tolles-Lawson coefficients
 """
-function TL_mat2vec(TL_coef_p, TL_coef_i, TL_coef_e, terms; Bt_scale=50000f0)
+function TL_mat2vec(TL_coef_p, TL_coef_i, TL_coef_e, terms; Bt_scale = 50000f0)
 
     if any([:induced,:i,:induced6,:i6] .∈ (terms,))
         TL_coef_i = [TL_coef_i[1,1:3]; TL_coef_i[2,2:3]; TL_coef_i[3,3]] * Bt_scale
@@ -801,7 +801,7 @@ end # function TL_mat2vec
 
 """
     get_TL_aircraft_vec(B_vec, B_vec_dot, TL_coef_p, TL_coef_i, TL_coef_e;
-                        return_parts::Bool=false)
+                        return_parts::Bool = false)
 
 **Arguments:**
 - `B_vec`:        `3` x `N`  matrix of vector magnetometer measurements
@@ -818,7 +818,7 @@ end # function TL_mat2vec
 - `TL_eddy`:     if `return_parts = true`, `3` x `N` matrix of TL eddy current vector field
 """
 function get_TL_aircraft_vec(B_vec, B_vec_dot, TL_coef_p, TL_coef_i, TL_coef_e;
-                             return_parts::Bool=false)
+                             return_parts::Bool = false)
 
     TL_perm    = TL_coef_p .* one.(B_vec)
     TL_induced = TL_coef_i * B_vec
@@ -870,7 +870,10 @@ Internal helper function to get training & validation data indices.
 **Arguments:**
 - `N`:           number of samples (instances)
 - `frac_train`:  fraction of training data used for training (remainder for validation)
-- `window_type`: (optional) type of windowing, `:none` for none, :sliding` for overlapping, or `:contiguous` for non-overlapping
+- `window_type`: (optional) type of windowing:
+    - `:none`:       none
+    - `:sliding`:    overlapping
+    - `:contiguous`: non-overlapping
 - `l_window`:    (optional) temporal window length
 
 **Returns:**
@@ -880,7 +883,7 @@ Internal helper function to get training & validation data indices.
 function get_split(N::Int, frac_train::Real, window_type::Symbol = :none;
                    l_window::Int = 0)
 
-    @assert 0 <= frac_train <= 1 "frac_train must be between 0 and 1"
+    @assert 0 <= frac_train <= 1 "frac_train of $frac_train is not between 0 and 1"
     @assert l_window < N "window length of $l_window is too large for $N samples"
 
     if window_type == :none # no windows
@@ -919,7 +922,7 @@ function get_split(N::Int, frac_train::Real, window_type::Symbol = :none;
             p_val   = ind[p_]
         end
     else
-        error("$window_type window_type is invalid, choose :none, :sliding, or :contiguous")
+        error("$window_type window_type is invalid, select {:none,:sliding,:contiguous}")
     end
 
     return (p_train, p_val)
@@ -968,9 +971,9 @@ possible to remove the Taylor expansion approximation used for predicting
 the Earth field in the loss function, as well as creating vector-based neural
 network corrections.
 
-Note that this model is subject to change, and not all options are supported
-(e.g., sparse group Lasso, and generally the IGRF and diurnal fields should not
-be subtracted out from the `y` target vector)
+`NOTE`: This model is subject to change, and not all options are supported
+(e.g., sparse group Lasso). Generally the IGRF & diurnal fields should not be
+subtracted out from the `y` target vector.
 
 Currently, it is recommended to use a low-pass (not a bandpass) filter to
 initialize the Tolles-Lawson coefficients, as a bandpass filter removes the
@@ -979,7 +982,7 @@ Earth field and leaves a large bias in the aircraft field prediction, e.g.,
                           terms=terms, pass1=0.0, pass2=0.9)`
 
 - `model_type`:
-    - `:m3tl` = no NN, TL coefficients fine-tuned via SGD, without Taylor expansion for `y_type` :b and :c (for testing)
+    - `:m3tl` = no NN, TL coefficients fine-tuned via SGD, without Taylor expansion for `y_type = :b, :c` (for testing)
     - `:m3s`  = NN determines scalar correction to TL, using expanded TL vector terms for explainability
     - `:m3v`  = NN determines vector correction to TL, using expanded TL vector terms for explainability
     - `:m3sc` = `:m3s` with curriculum learning based on TL error
@@ -1085,7 +1088,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm = falses(size(x,2));
         isempty(x_test) || (x_test_norm = get_temporal_data(x_test_norm,l_window))
     end
 
-    # separate into training and validation
+    # separate into training & validation
     if frac_train < 1
         if model_type in [:m3w,:m3tf]
             N = size(x_norm,3)
@@ -1297,7 +1300,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm = falses(size(x,2));
     end
 
     if epoch_lbfgs > 0 # LBFGS, may overfit depending on iterations
-        silent || @info("LBFGS will only update NN model weights (not TL coef)")
+        silent || @info("LBFGS only updates NN model weights (not TL coef)")
         data = DataLoader((B_unit,B_vec,B_vec_dot,x_norm,y_norm),shuffle=true,batchsize=batchsize)
 
         function lbfgs_train!(m_l,data_l,iter,t_l,p_l,i_l,e_l,silent)
@@ -1361,7 +1364,7 @@ end # function nn_comp_3_train
                   denorm::Bool       = true,
                   testmode::Bool     = true)
 
-Evaluate performance of neural network-based aeromagnetic compensation, model 3.
+Forward pass of neural network-based aeromagnetic compensation, model 3.
 Computes the scalar aircraft field correction or Earth field target. Computes
 the Tolles-Lawson vector, optionally adds a vector neural network correction
 for model `:m3v` or `:m3vc`, gets the scalar magnitude of the result, and
@@ -1438,7 +1441,7 @@ end # function nn_comp_3_fwd
                   terms_A            = [:permanent,:induced,:eddy],
                   l_window::Int      = 5)
 
-Evaluate performance of neural network-based aeromagnetic compensation, model 3.
+Forward pass of neural network-based aeromagnetic compensation, model 3.
 """
 function nn_comp_3_fwd(A, Bt, B_dot, x, data_norms::Tuple, model::Chain;
                        model_type::Symbol = :m3s,
@@ -1587,7 +1590,7 @@ regularization.
 - `silent`:     (optional) if true, no print outs
 
 **Returns:**
-- `model`:      length-`2` tuple of PLSR-based model, (length-`Nf` `coefficients`, `bias=0`)
+- `model`:      length-`2` tuple of PLSR-based model, (length-`Nf` coefficients, bias=`0`)
 - `data_norms`: length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
 - `y_hat`:      length-`N` prediction vector
 - `err`:        length-`N` mean-corrected (per line) error
@@ -1679,7 +1682,7 @@ function plsr_fit(x, y, k::Int = size(x,2), no_norm = falses(size(x,2));
     (y_hat,err) = linear_test(x_norm,y,y_bias,y_scale,model;
                               l_segs = l_segs,
                               silent = true)
-    silent || @info("fit  error: $(round(std(err),digits=2)) nT")
+    silent || @info("fit   error: $(round(std(err),digits=2)) nT")
 
     # pack data normalizations
     data_norms = (x_bias,x_scale,y_bias,y_scale)
@@ -1709,13 +1712,13 @@ Fit an elastic net (ridge regression and/or Lasso) model to data.
 - `y`:          length-`N` target vector
 - `α`:          (optional) ridge regression (`α=0`) vs Lasso (`α=1`) balancing parameter {0:1}
 - `no_norm`:    (optional) length-`Nf` Boolean indices of features to not be normalized
-- `λ`:          (optional) elastic net parameter (otherwise determined with cross-validation), `-1` to ignore
+- `λ`:          (optional) elastic net parameter, `-1` to ignore & determine with cross-validation
 - `data_norms`: (optional) length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
 - `l_segs`:     (optional) length-`N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
 - `silent`:     (optional) if true, no print outs
 
 **Returns:**
-- `model`:      length-`2` tuple of elastic net-based model, (length-`Nf` `coefficients`, `bias`)
+- `model`:      length-`2` tuple of elastic net-based model, (length-`Nf` coefficients, bias)
 - `data_norms`: length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
 - `y_hat`:      length-`N` prediction vector
 - `err`:        length-`N` mean-corrected (per line) error
@@ -1749,7 +1752,7 @@ function elasticnet_fit(x, y, α::Real = 0.99, no_norm = falses(size(x,2));
         λl      =    α *λ
     end
 
-    # MLJLinearModels to get coefficients (and bias)
+    # MLJLinearModels to get coefficients (& bias)
     glr_mlj = ElasticNetRegression(λr,λl;scale_penalty_with_samples=false)
     fit_mlj = fit(glr_mlj,x_norm,y_norm)
     coef    = fit_mlj[1:end-1]
@@ -1761,7 +1764,7 @@ function elasticnet_fit(x, y, α::Real = 0.99, no_norm = falses(size(x,2));
     (y_hat,err) = linear_test(x_norm,y,y_bias,y_scale,model;
                               l_segs = l_segs,
                               silent = true)
-    silent || @info("fit  error: $(round(std(err),digits=2)) nT")
+    silent || @info("fit   error: $(round(std(err),digits=2)) nT")
 
     # pack data normalizations
     data_norms = (x_bias,x_scale,y_bias,y_scale)
@@ -1794,7 +1797,7 @@ Fit a linear regression model to data.
 - `silent`:      (optional) if true, no print outs
 
 **Returns:**
-- `model`:      length-`2` tuple of linear regression model, (length-`Nf` `coefficients`, `bias=0`)
+- `model`:      length-`2` tuple of linear regression model, (length-`Nf` coefficients, bias=`0`)
 - `data_norms`: length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
 - `y_hat`:      length-`N` prediction vector
 - `err`:        length-`N` mean-corrected (per line) error
@@ -1835,8 +1838,8 @@ function linear_fit(x, y, no_norm = falses(size(x,2));
     (y_hat,err) = linear_test(x_norm,y,y_bias,y_scale,model;
                               l_segs = l_segs,
                               silent = true)
-    silent || @info("fit  error: $(round(std(err),digits=2)) nT")
-    silent || @info("note that fit error may be misleading if using bpf")
+    silent || @info("fit   error: $(round(std(err),digits=2)) nT")
+    silent || @info("fit error may be misleading if using bandpass filter")
 
     # pack data normalizations
     data_norms = (x_bias,x_scale,y_bias,y_scale)
@@ -1845,20 +1848,20 @@ function linear_fit(x, y, no_norm = falses(size(x,2));
 end # function linear_fit
 
 """
-    linear_fwd(x_norm, y_bias, y_scale, model)
+    linear_fwd(x_norm, y_bias, y_scale, model::Tuple)
 
-Evaluate performance of linear model.
+Forward pass of a linear model.
 
 **Arguments:**
 - `x_norm`:  `N` x `Nf` normalized data matrix (`Nf` is number of features)
 - `y_bias`:  `y` target vector bias (mean, min, or zero)
 - `y_scale`: `y` target vector scaling factor (std dev, max-min, or one)
-- `model`:   length-`2` tuple of model, (length-`Nf` `coefficients`, `bias`)
+- `model`:   length-`2` tuple of model, (length-`Nf` coefficients, bias)
 
 **Returns:**
 - `y_hat`: length-`N` prediction vector
 """
-function linear_fwd(x_norm, y_bias, y_scale, model)
+function linear_fwd(x_norm, y_bias, y_scale, model::Tuple)
 
     # unpack linear model weights
     (coef,bias) = model
@@ -1871,19 +1874,19 @@ function linear_fwd(x_norm, y_bias, y_scale, model)
 end # function linear_fwd
 
 """
-    linear_fwd(x, data_norms::Tuple, model)
+    linear_fwd(x, data_norms::Tuple, model::Tuple)
 
-Evaluate performance of linear model.
+Forward pass of a linear model.
 
 **Arguments:**
 - `x`:          `N` x `Nf` data matrix (`Nf` is number of features)
 - `data_norms`: length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
-- `model`:      length-`2` tuple of model, (length-`Nf` `coefficients`, `bias`)
+- `model`:      length-`2` tuple of model, (length-`Nf` coefficients, bias)
 
 **Returns:**
 - `y_hat`: length-`N` prediction vector
 """
-function linear_fwd(x, data_norms::Tuple, model)
+function linear_fwd(x, data_norms::Tuple, model::Tuple)
 
     # unpack data normalizations
     (x_bias,x_scale,y_bias,y_scale) = data_norms
@@ -1896,18 +1899,18 @@ function linear_fwd(x, data_norms::Tuple, model)
 end # function linear_fwd
 
 """
-    linear_test(x_norm, y, y_bias, y_scale, model;
+    linear_test(x_norm, y, y_bias, y_scale, model::Tuple;
                 l_segs::Vector = [length(y)],
                 silent::Bool   = false)
 
-Evaluate performance of linear model.
+Evaluate performance of a linear model.
 
 **Arguments:**
 - `x_norm`:  `N` x `Nf` normalized data matrix (`Nf` is number of features)
 - `y`:       length-`N` target vector
 - `y_bias`:  `y` target vector bias bias (mean, min, or zero)
 - `y_scale`: `y` target vector bias scaling factor (std dev, max-min, or one)
-- `model`:   length-`2` tuple of model, (length-`Nf` `coefficients`, `bias`)
+- `model`:   length-`2` tuple of model, (length-`Nf` coefficients, bias)
 - `l_segs`:  (optional) length-`N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
 - `silent`:  (optional) if true, no print outs
 
@@ -1915,7 +1918,7 @@ Evaluate performance of linear model.
 - `y_hat`: length-`N` prediction vector
 - `err`:   length-`N` mean-corrected (per line) error
 """
-function linear_test(x_norm, y, y_bias, y_scale, model;
+function linear_test(x_norm, y, y_bias, y_scale, model::Tuple;
                      l_segs::Vector = [length(y)],
                      silent::Bool   = false)
 
@@ -1928,17 +1931,17 @@ function linear_test(x_norm, y, y_bias, y_scale, model;
 end # function linear_test
 
 """
-    linear_test(x, y, data_norms::Tuple, model;
+    linear_test(x, y, data_norms::Tuple, model::Tuple;
                 l_segs::Vector = [length(y)],
                 silent::Bool   = false)
 
-Evaluate performance of linear model.
+Evaluate performance of a linear model.
 
 **Arguments:**
 - `x`:          `N` x `Nf` data matrix (`Nf` is number of features)
 - `y`:          length-`N` target vector
 - `data_norms`: length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
-- `model`:      length-`2` tuple of model, (length-`Nf` `coefficients`, `bias`)
+- `model`:      length-`2` tuple of model, (length-`Nf` coefficients, bias)
 - `l_segs`:     (optional) length-`N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
 - `silent`:     (optional) if true, no print outs
 
@@ -1946,7 +1949,7 @@ Evaluate performance of linear model.
 - `y_hat`: length-`N` prediction vector
 - `err`:   length-`N` mean-corrected (per line) error
 """
-function linear_test(x, y, data_norms::Tuple, model;
+function linear_test(x, y, data_norms::Tuple, model::Tuple;
                      l_segs::Vector = [length(y)],
                      silent::Bool   = false)
 
@@ -1961,17 +1964,10 @@ end # function linear_test
 """
     comp_train(comp_params::CompParams, xyz::XYZ, ind,
                mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
-               xyz_test::XYZ         = xyz,
-               ind_test              = BitVector(),
-               σ_curriculum          = 1.0,
-               l_window::Int         = 5,
-               window_type::Symbol   = :sliding,
-               tf_layer_type::Symbol = :postlayer,
-               tf_norm_type::Symbol  = :batch,
-               dropout_prob          = 0.2,
-               N_tf_head::Int        = 8,
-               tf_gain               = 1.0,
-               silent::Bool          = false)
+               temp_params::TempParams        = TempParams(),
+               xyz_test::XYZ                  = xyz,
+               ind_test                       = BitVector(),
+               silent::Bool                   = false)
 
 Train an aeromagnetic compensation model.
 
@@ -1979,20 +1975,13 @@ Train an aeromagnetic compensation model.
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct, either:
     - `NNCompParams`:  neural network-based aeromagnetic compensation parameters struct
     - `LinCompParams`: linear aeromagnetic compensation parameters struct
-- `xyz`:           `XYZ` flight data struct
-- `ind`:           selected data indices
-- `mapS`:          (optional) `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct, only used for `y_type = :b, :c`
-- `xyz_test`:      (optional) `XYZ` held-out test data struct
-- `ind_test`:      (optional) indices for test data struct
-- `σ_curriculum`:  (optional) standard deviation threshold, only used for `model_type = :m3sc, :m3vc`
-- `l_window`:      (optional) temporal window length, only used for `model_type = :m3w, :m3tf`
-- `window_type`:   (optional) type of windowing, `:sliding` for overlapping or `:contiguous` for non-overlapping, only used for `model_type = :m3w, :m3tf`
-- `tf_layer_type`: (optional) transformer normalization layer before or after skip connection {`:prelayer`,`:postlayer`}, only used for `model_type = :m3tf`
-- `tf_norm_type`:  (optional) normalization for transformer encoder {`:batch`,`:layer`,`:none`}, only used for `model_type = :m3tf`
-- `dropout_prob`:  (optional) dropout rate, only used for `model_type = :m3w, :m3tf`
-- `N_tf_head`:     (optional) number of attention heads, only used for `model_type = :m3tf`
-- `tf_gain`:       (optional) weight initialization parameter, only used for `model_type = :m3tf`
-- `silent`:        (optional) if true, no print outs
+- `xyz`:         `XYZ` flight data struct
+- `ind`:         selected data indices
+- `mapS`:        (optional) `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct, only used for `y_type = :b, :c`
+- `temp_params`: (optional) `TempParams` temporary (WIP) parameters struct
+- `xyz_test`:    (optional) `XYZ` held-out test data struct
+- `ind_test`:    (optional) indices for test data struct
+- `silent`:      (optional) if true, no print outs
 
 **Returns:**
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct
@@ -2003,17 +1992,10 @@ Train an aeromagnetic compensation model.
 """
 function comp_train(comp_params::CompParams, xyz::XYZ, ind,
                     mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
-                    xyz_test::XYZ         = xyz,
-                    ind_test              = BitVector(),
-                    σ_curriculum          = 1.0,
-                    l_window::Int         = 5,
-                    window_type::Symbol   = :sliding,
-                    tf_layer_type::Symbol = :postlayer,
-                    tf_norm_type::Symbol  = :batch,
-                    dropout_prob          = 0.2,
-                    N_tf_head::Int        = 8,
-                    tf_gain               = 1.0,
-                    silent::Bool          = false)
+                    temp_params::TempParams        = TempParams(),
+                    xyz_test::XYZ                  = xyz,
+                    ind_test                       = BitVector(),
+                    silent::Bool                   = false)
 
     seed!(2) # for reproducibility
     t0 = time()
@@ -2034,6 +2016,9 @@ function comp_train(comp_params::CompParams, xyz::XYZ, ind,
         drop_fi = false
         perm_fi = false
     end
+
+    @unpack σ_curriculum, l_window, window_type, tf_layer_type, tf_norm_type,
+    dropout_prob, N_tf_head, tf_gain = temp_params
 
     if (model_type in [:TL,:mod_TL]) & (y_type != :e)
         silent || @info("forcing y_type $y_type => :e (BPF'd total field)")
@@ -2372,17 +2357,10 @@ end # function comp_train
 """
     comp_train(comp_params::CompParams, xyz_vec::Vector, ind_vec::Vector,
                mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
-               xyz_test::XYZ         = xyz_vec[1],
-               ind_test              = BitVector(),
-               σ_curriculum          = 1.0,
-               l_window::Int         = 5,
-               window_type::Symbol   = :sliding,
-               tf_layer_type::Symbol = :postlayer,
-               tf_norm_type::Symbol  = :batch,
-               dropout_prob          = 0.2,
-               N_tf_head::Int        = 8,
-               tf_gain               = 1.0,
-               silent::Bool          = false)
+               temp_params::TempParams        = TempParams(),
+               xyz_test::XYZ                  = xyz_vec[1],
+               ind_test                       = BitVector(),
+               silent::Bool                   = false)
 
 Train an aeromagnetic compensation model.
 
@@ -2390,20 +2368,13 @@ Train an aeromagnetic compensation model.
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct, either:
     - `NNCompParams`:  neural network-based aeromagnetic compensation parameters struct
     - `LinCompParams`: linear aeromagnetic compensation parameters struct
-- `xyz_vec`:       vector of `XYZ` flight data structs
-- `ind_vec`:       vector of selected data indices
-- `mapS`:          (optional) `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct, only used for `y_type = :b, :c`
-- `xyz_test`:      (optional) `XYZ` held-out test data struct
-- `ind_test`:      (optional) indices for test data struct
-- `σ_curriculum`:  (optional) standard deviation threshold, only used for `model_type = :m3sc, :m3vc`
-- `l_window`:      (optional) temporal window length, only used for `model_type = :m3w, :m3tf`
-- `window_type`:   (optional) type of windowing, `:sliding` for overlapping or `:contiguous` for non-overlapping, only used for `model_type = :m3w, :m3tf`
-- `tf_layer_type`: (optional) transformer normalization layer before or after skip connection {`:prelayer`,`:postlayer`}, only used for `model_type = :m3tf`
-- `tf_norm_type`:  (optional) normalization for transformer encoder {`:batch`,`:layer`,`:none`}, only used for `model_type = :m3tf`
-- `dropout_prob`:  (optional) dropout rate, only used for `model_type = :m3w, :m3tf`
-- `N_tf_head`:     (optional) number of attention heads, only used for `model_type = :m3tf`
-- `tf_gain`:       (optional) weight initialization parameter, only used for `model_type = :m3tf`
-- `silent`:        (optional) if true, no print outs
+- `xyz_vec`:     vector of `XYZ` flight data structs
+- `ind_vec`:     vector of selected data indices
+- `mapS`:        (optional) `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct, only used for `y_type = :b, :c`
+- `temp_params`: (optional) `TempParams` temporary (WIP) parameters struct
+- `xyz_test`:    (optional) `XYZ` held-out test data struct
+- `ind_test`:    (optional) indices for test data struct
+- `silent`:      (optional) if true, no print outs
 
 **Returns:**
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct
@@ -2414,17 +2385,10 @@ Train an aeromagnetic compensation model.
 """
 function comp_train(comp_params::CompParams, xyz_vec::Vector, ind_vec::Vector,
                     mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
-                    xyz_test::XYZ         = xyz_vec[1],
-                    ind_test              = BitVector(),
-                    σ_curriculum          = 1.0,
-                    l_window::Int         = 5,
-                    window_type::Symbol   = :sliding,
-                    tf_layer_type::Symbol = :postlayer,
-                    tf_norm_type::Symbol  = :batch,
-                    dropout_prob          = 0.2,
-                    N_tf_head::Int        = 8,
-                    tf_gain               = 1.0,
-                    silent::Bool          = false)
+                    temp_params::TempParams        = TempParams(),
+                    xyz_test::XYZ                  = xyz_vec[1],
+                    ind_test                       = BitVector(),
+                    silent::Bool                   = false)
 
     seed!(2) # for reproducibility
     t0 = time()
@@ -2445,6 +2409,9 @@ function comp_train(comp_params::CompParams, xyz_vec::Vector, ind_vec::Vector,
         drop_fi = false
         perm_fi = false
     end
+
+    @unpack σ_curriculum, l_window, window_type, tf_layer_type, tf_norm_type,
+    dropout_prob, N_tf_head, tf_gain = temp_params
 
     if (model_type in [:TL,:mod_TL]) & (y_type != :e)
         silent || @info("forcing y_type $y_type => :e (BPF'd total field)")
@@ -2479,7 +2446,7 @@ function comp_train(comp_params::CompParams, xyz_vec::Vector, ind_vec::Vector,
         end
     end
 
-    # initialize loop over XYZ structs and indices
+    # initialize loop over XYZ structs & indices
     xyz = xyz_vec[1]
     ind = ind_vec[1]
 
@@ -2831,15 +2798,8 @@ end # function comp_train
 """
     comp_train(comp_params::CompParams, lines,
                df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame;
-               σ_curriculum          = 1.0,
-               l_window::Int         = 5,
-               window_type::Symbol   = :sliding,
-               tf_layer_type::Symbol = :postlayer,
-               tf_norm_type::Symbol  = :batch,
-               dropout_prob          = 0.2,
-               N_tf_head::Int        = 8,
-               tf_gain               = 1.0,
-               silent::Bool          = false)
+               temp_params::TempParams = TempParams(),
+               silent::Bool            = false)
 
 Train an aeromagnetic compensation model.
 
@@ -2855,33 +2815,21 @@ Train an aeromagnetic compensation model.
 `line`     |`Real`  | line number, i.e., segments within `flight`
 `t_start`  |`Real`  | start time of `line` to use [s]
 `t_end`    |`Real`  | end   time of `line` to use [s]
-`full_line`|`Bool`  | (optional) if true, `t_start` to `t_end` is full line
 `map_name` |`Symbol`| (optional) name of magnetic anomaly map relevant to `line`
-`map_type` |`Symbol`| (optional) type of magnetic anomaly map for `map_name` {`drape`,`HAE`}
-`line_alt` |`Real`  | (optional) nominal altitude of `line` [m]
-- `df_flight`: lookup table (DataFrame) of flight data HDF5 files
+- `df_flight`: lookup table (DataFrame) of flight data files
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
 `xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
 `xyz_set` |`Real`  | flight dataset number (used to prevent improper mixing of datasets, such as different magnetometer locations)
-`xyz_h5`  |`String`| path/name of flight data HDF5 file (`.h5` extension optional)
-- `df_map`: lookup table (DataFrame) of map data HDF5 files
+`xyz_file`|`String`| path/name of flight data CSV, HDF5, or MAT file (`.csv`, `.h5`, or `.mat` extension required)
+- `df_map`: lookup table (DataFrame) of map data files
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `map_name`|`Symbol`| name of magnetic anomaly map
-`map_h5`  |`String`| path/name of map data HDF5 file (`.h5` extension optional)
-`map_type`|`Symbol`| (optional) type of magnetic anomaly map {`drape`,`HAE`}
-`map_alt` |`Real`  | (optional) map altitude, -1 for drape map [m]
-- `σ_curriculum`:  (optional) standard deviation threshold, only used for `model_type = :m3sc, :m3vc`
-- `l_window`:      (optional) temporal window length, only used for `model_type = :m3w, :m3tf`
-- `window_type`:   (optional) type of windowing, `:sliding` for overlapping or `:contiguous` for non-overlapping, only used for `model_type = :m3w, :m3tf`
-- `tf_layer_type`: (optional) transformer normalization layer before or after skip connection {`:prelayer`,`:postlayer`}, only used for `model_type = :m3tf`
-- `tf_norm_type`:  (optional) normalization for transformer encoder {`:batch`,`:layer`,`:none`}, only used for `model_type = :m3tf`
-- `dropout_prob`:  (optional) dropout rate, only used for `model_type = :m3w, :m3tf`
-- `N_tf_head`:     (optional) number of attention heads, only used for `model_type = :m3tf`
-- `tf_gain`:       (optional) weight initialization parameter, only used for `model_type = :m3tf`
-- `silent`:        (optional) if true, no print outs
+`map_file`|`String`| path/name of map data HDF5 or MAT file (`.h5` or `.mat` extension required)
+- `temp_params`: (optional) `TempParams` temporary (WIP) parameters struct
+- `silent`:      (optional) if true, no print outs
 
 **Returns:**
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct
@@ -2892,15 +2840,8 @@ Train an aeromagnetic compensation model.
 """
 function comp_train(comp_params::CompParams, lines,
                     df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame;
-                    σ_curriculum          = 1.0,
-                    l_window::Int         = 5,
-                    window_type::Symbol   = :sliding,
-                    tf_layer_type::Symbol = :postlayer,
-                    tf_norm_type::Symbol  = :batch,
-                    dropout_prob          = 0.2,
-                    N_tf_head::Int        = 8,
-                    tf_gain               = 1.0,
-                    silent::Bool          = false)
+                    temp_params::TempParams = TempParams(),
+                    silent::Bool            = false)
 
     seed!(2) # for reproducibility
     t0 = time()
@@ -2921,6 +2862,9 @@ function comp_train(comp_params::CompParams, lines,
         drop_fi = false
         perm_fi = false
     end
+
+    @unpack σ_curriculum, l_window, window_type, tf_layer_type, tf_norm_type,
+    dropout_prob, N_tf_head, tf_gain = temp_params
 
     if (model_type in [:TL,:mod_TL]) & (y_type != :e)
         silent || @info("forcing y_type $y_type => :e (BPF'd total field)")
@@ -3240,8 +3184,8 @@ end # function comp_train
 """
     comp_test(comp_params::CompParams, xyz::XYZ, ind,
               mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
-              l_window::Int = 5,
-              silent::Bool  = false)
+              temp_params::TempParams        = TempParams(),
+              silent::Bool                   = false)
 
 Evaluate performance of an aeromagnetic compensation model.
 
@@ -3249,11 +3193,11 @@ Evaluate performance of an aeromagnetic compensation model.
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct, either:
     - `NNCompParams`:  neural network-based aeromagnetic compensation parameters struct
     - `LinCompParams`: linear aeromagnetic compensation parameters struct
-- `xyz`:      `XYZ` flight data struct
-- `ind`:      selected data indices
-- `mapS`:     (optional) `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct, only used for `y_type = :b, :c`
-- `l_window`: (optional) temporal window length, only used for `model_type = :m3w, :m3tf`
-- `silent`:   (optional) if true, no print outs
+- `xyz`:         `XYZ` flight data struct
+- `ind`:         selected data indices
+- `mapS`:        (optional) `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct, only used for `y_type = :b, :c`
+- `temp_params`: (optional) `TempParams` temporary (WIP) parameters struct
+- `silent`:      (optional) if true, no print outs
 
 **Returns:**
 - `y`:        length-`N` target vector
@@ -3263,8 +3207,8 @@ Evaluate performance of an aeromagnetic compensation model.
 """
 function comp_test(comp_params::CompParams, xyz::XYZ, ind,
                    mapS::Union{MapS,MapSd,MapS3D} = mapS_null;
-                   l_window::Int = 5,
-                   silent::Bool  = false)
+                   temp_params::TempParams        = TempParams(),
+                   silent::Bool                   = false)
 
     seed!(2) # for reproducibility
     t0 = time()
@@ -3285,6 +3229,9 @@ function comp_test(comp_params::CompParams, xyz::XYZ, ind,
         drop_fi = false
         perm_fi = false
     end
+
+    @unpack σ_curriculum, l_window, window_type, tf_layer_type, tf_norm_type,
+    dropout_prob, N_tf_head, tf_gain = temp_params
 
     if ((model_type in [:TL,:mod_TL]) & (y_type != :d)) | (y_type == :e)
         silent || @info("forcing y_type $y_type => :d (Δmag)")
@@ -3437,8 +3384,8 @@ end # function comp_test
 """
     comp_test(comp_params::CompParams, lines,
               df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame;
-              l_window::Int = 5,
-              silent::Bool  = false)
+              temp_params::TempParams = TempParams(),
+              silent::Bool            = false)
 
 Evaluate performance of an aeromagnetic compensation model.
 
@@ -3454,26 +3401,21 @@ Evaluate performance of an aeromagnetic compensation model.
 `line`     |`Real`  | line number, i.e., segments within `flight`
 `t_start`  |`Real`  | start time of `line` to use [s]
 `t_end`    |`Real`  | end   time of `line` to use [s]
-`full_line`|`Bool`  | (optional) if true, `t_start` to `t_end` is full line
 `map_name` |`Symbol`| (optional) name of magnetic anomaly map relevant to `line`
-`map_type` |`Symbol`| (optional) type of magnetic anomaly map for `map_name` {`drape`,`HAE`}
-`line_alt` |`Real`  | (optional) nominal altitude of `line` [m]
-- `df_flight`: lookup table (DataFrame) of flight data HDF5 files
+- `df_flight`: lookup table (DataFrame) of flight data files
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
 `xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
 `xyz_set` |`Real`  | flight dataset number (used to prevent improper mixing of datasets, such as different magnetometer locations)
-`xyz_h5`  |`String`| path/name of flight data HDF5 file (`.h5` extension optional)
-- `df_map`: lookup table (DataFrame) of map data HDF5 files
+`xyz_file`|`String`| path/name of flight data CSV, HDF5, or MAT file (`.csv`, `.h5`, or `.mat` extension required)
+- `df_map`: lookup table (DataFrame) of map data files
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `map_name`|`Symbol`| name of magnetic anomaly map
-`map_h5`  |`String`| path/name of map data HDF5 file (`.h5` extension optional)
-`map_type`|`Symbol`| (optional) type of magnetic anomaly map {`drape`,`HAE`}
-`map_alt` |`Real`  | (optional) map altitude, -1 for drape map [m]
-- `l_window`: (optional) temporal window length, only used for `model_type = :m3w, :m3tf`
-- `silent`:   (optional) if true, no print outs
+`map_file`|`String`| path/name of map data HDF5 or MAT file (`.h5` or `.mat` extension required)
+- `temp_params`: (optional) `TempParams` temporary (WIP) parameters struct
+- `silent`:      (optional) if true, no print outs
 
 **Returns:**
 - `y`:        length-`N` target vector
@@ -3483,8 +3425,8 @@ Evaluate performance of an aeromagnetic compensation model.
 """
 function comp_test(comp_params::CompParams, lines,
                    df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame;
-                   l_window::Int = 5,
-                   silent::Bool  = false)
+                   temp_params::TempParams = TempParams(),
+                   silent::Bool            = false)
 
     seed!(2) # for reproducibility
     t0 = time()
@@ -3505,6 +3447,9 @@ function comp_test(comp_params::CompParams, lines,
         drop_fi = false
         perm_fi = false
     end
+
+    @unpack σ_curriculum, l_window, window_type, tf_layer_type, tf_norm_type,
+    dropout_prob, N_tf_head, tf_gain = temp_params
 
     if ((model_type in [:TL,:mod_TL]) & (y_type != :d)) | (y_type == :e)
         silent || @info("forcing y_type $y_type => :d (Δmag)")
@@ -3688,24 +3633,19 @@ model 2b or 2c with additional outputs for explainability.
 `line`     |`Real`  | line number, i.e., segments within `flight`
 `t_start`  |`Real`  | start time of `line` to use [s]
 `t_end`    |`Real`  | end   time of `line` to use [s]
-`full_line`|`Bool`  | (optional) if true, `t_start` to `t_end` is full line
 `map_name` |`Symbol`| (optional) name of magnetic anomaly map relevant to `line`
-`map_type` |`Symbol`| (optional) type of magnetic anomaly map for `map_name` {`drape`,`HAE`}
-`line_alt` |`Real`  | (optional) nominal altitude of `line` [m]
-- `df_flight`: lookup table (DataFrame) of flight data HDF5 files
+- `df_flight`: lookup table (DataFrame) of flight data files
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
 `xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
 `xyz_set` |`Real`  | flight dataset number (used to prevent improper mixing of datasets, such as different magnetometer locations)
-`xyz_h5`  |`String`| path/name of flight data HDF5 file (`.h5` extension optional)
-- `df_map`: lookup table (DataFrame) of map data HDF5 files
+`xyz_file`|`String`| path/name of flight data CSV, HDF5, or MAT file (`.csv`, `.h5`, or `.mat` extension required)
+- `df_map`: lookup table (DataFrame) of map data files
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `map_name`|`Symbol`| name of magnetic anomaly map
-`map_h5`  |`String`| path/name of map data HDF5 file (`.h5` extension optional)
-`map_type`|`Symbol`| (optional) type of magnetic anomaly map {`drape`,`HAE`}
-`map_alt` |`Real`  | (optional) map altitude, -1 for drape map [m]
+`map_file`|`String`| path/name of map data HDF5 or MAT file (`.h5` or `.mat` extension required)
 - `silent`: (optional) if true, no print outs
 
 **Returns:**
@@ -3785,8 +3725,8 @@ end # function comp_m2bc_test
 """
     comp_m3_test(comp_params::NNCompParams, lines,
                  df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame;
-                 l_window::Int = 5,
-                 silent::Bool  = false)
+                 temp_params::TempParams = TempParams(),
+                 silent::Bool            = false)
 
 Evaluate performance of neural network-based aeromagnetic compensation, model 3
 with additional outputs for explainability.
@@ -3801,26 +3741,21 @@ with additional outputs for explainability.
 `line`     |`Real`  | line number, i.e., segments within `flight`
 `t_start`  |`Real`  | start time of `line` to use [s]
 `t_end`    |`Real`  | end   time of `line` to use [s]
-`full_line`|`Bool`  | (optional) if true, `t_start` to `t_end` is full line
 `map_name` |`Symbol`| (optional) name of magnetic anomaly map relevant to `line`
-`map_type` |`Symbol`| (optional) type of magnetic anomaly map for `map_name` {`drape`,`HAE`}
-`line_alt` |`Real`  | (optional) nominal altitude of `line` [m]
-- `df_flight`: lookup table (DataFrame) of flight data HDF5 files
+- `df_flight`: lookup table (DataFrame) of flight data files
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
 `xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
 `xyz_set` |`Real`  | flight dataset number (used to prevent improper mixing of datasets, such as different magnetometer locations)
-`xyz_h5`  |`String`| path/name of flight data HDF5 file (`.h5` extension optional)
-- `df_map`: lookup table (DataFrame) of map data HDF5 files
+`xyz_file`|`String`| path/name of flight data CSV, HDF5, or MAT file (`.csv`, `.h5`, or `.mat` extension required)
+- `df_map`: lookup table (DataFrame) of map data files
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `map_name`|`Symbol`| name of magnetic anomaly map
-`map_h5`  |`String`| path/name of map data HDF5 file (`.h5` extension optional)
-`map_type`|`Symbol`| (optional) type of magnetic anomaly map {`drape`,`HAE`}
-`map_alt` |`Real`  | (optional) map altitude, -1 for drape map [m]
-- `l_window`: (optional) temporal window length, only used for `model_type = :m3w, :m3tf`
-- `silent`:   (optional) if true, no print outs
+`map_file`|`String`| path/name of map data HDF5 or MAT file (`.h5` or `.mat` extension required)
+- `temp_params`: (optional) `TempParams` temporary (WIP) parameters struct
+- `silent`:      (optional) if true, no print outs
 
 **Returns:**
 - `TL_perm`:      `3` x `N` matrix of TL permanent vector field
@@ -3838,8 +3773,8 @@ with additional outputs for explainability.
 """
 function comp_m3_test(comp_params::NNCompParams, lines,
                       df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame;
-                      l_window::Int = 5,
-                      silent::Bool  = false)
+                      temp_params::TempParams = TempParams(),
+                      silent::Bool            = false)
 
     seed!(2) # for reproducibility
     t0 = time()
@@ -3851,6 +3786,9 @@ function comp_m3_test(comp_params::NNCompParams, lines,
     TL_coef, η_adam, epoch_adam, epoch_lbfgs, hidden, activation, loss,
     batchsize, frac_train, α_sgl, λ_sgl, k_pca,
     drop_fi, drop_fi_bson, drop_fi_csv, perm_fi, perm_fi_csv = comp_params
+
+    @unpack σ_curriculum, l_window, window_type, tf_layer_type, tf_norm_type,
+    dropout_prob, N_tf_head, tf_gain = temp_params
 
     @assert y_type in [:a,:b,:c,:d] "unsupported y_type = $y_type for nn_comp_3"
     @assert model_type in [:m3s,:m3v,:m3sc,:m3vc,:m3w,:m3tf] "unsupported model_type = $model_type for model 3 explainability"
@@ -3940,37 +3878,23 @@ end # function comp_m3_test
                     xyz_train::XYZ, xyz_test::XYZ, ind_train, ind_test,
                     mapS_train::Union{MapS,MapSd,MapS3D} = mapS_null,
                     mapS_test::Union{MapS,MapSd,MapS3D}  = mapS_null;
-                    σ_curriculum          = 1.0,
-                    l_window::Int         = 5,
-                    window_type::Symbol   = :sliding,
-                    tf_layer_type::Symbol = :postlayer,
-                    tf_norm_type::Symbol  = :batch,
-                    dropout_prob          = 0.2,
-                    N_tf_head::Int        = 8,
-                    tf_gain               = 1.0,
-                    silent::Bool          = false)
+                    temp_params::TempParams = TempParams(),
+                    silent::Bool            = false)
 
-Train and evaluate performance of an aeromagnetic compensation model.
+Train & evaluate performance of an aeromagnetic compensation model.
 
 **Arguments:**
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct, either:
     - `NNCompParams`:  neural network-based aeromagnetic compensation parameters struct
     - `LinCompParams`: linear aeromagnetic compensation parameters struct
-- `xyz_train`:     `XYZ` flight data struct for training
-- `xyz_test`:      `XYZ` flight data struct for testing
-- `ind_train`:     selected data indices for training
-- `ind_test`:      selected data indices for testing
-- `mapS_train`:    (optional) `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct for training, only used for `y_type = :b, :c`
-- `mapS_test`:     (optional) `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct for testing,  only used for `y_type = :b, :c`
-- `σ_curriculum`:  (optional) standard deviation threshold, only used for `model_type = :m3sc, :m3vc`
-- `l_window`:      (optional) temporal window length, only used for `model_type = :m3w, :m3tf`
-- `window_type`:   (optional) type of windowing, `:sliding` for overlapping or `:contiguous` for non-overlapping, only used for `model_type = :m3w, :m3tf`
-- `tf_layer_type`: (optional) transformer normalization layer before or after skip connection {`:prelayer`,`:postlayer`}, only used for `model_type = :m3tf`
-- `tf_norm_type`:  (optional) normalization for transformer encoder {`:batch`,`:layer`,`:none`}, only used for `model_type = :m3tf`
-- `dropout_prob`:  (optional) dropout rate, only used for `model_type = :m3w, :m3tf`
-- `N_tf_head`:     (optional) number of attention heads, only used for `model_type = :m3tf`
-- `tf_gain`:       (optional) weight initialization parameter, only used for `model_type = :m3tf`
-- `silent`:        (optional) if true, no print outs
+- `xyz_train`:   `XYZ` flight data struct for training
+- `xyz_test`:    `XYZ` flight data struct for testing
+- `ind_train`:   selected data indices for training
+- `ind_test`:    selected data indices for testing
+- `mapS_train`:  (optional) `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct for training, only used for `y_type = :b, :c`
+- `mapS_test`:   (optional) `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct for testing,  only used for `y_type = :b, :c`
+- `temp_params`: (optional) `TempParams` temporary (WIP) parameters struct
+- `silent`:      (optional) if true, no print outs
 
 **Returns:**
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct
@@ -3986,34 +3910,20 @@ function comp_train_test(comp_params::CompParams,
                          xyz_train::XYZ, xyz_test::XYZ, ind_train, ind_test,
                          mapS_train::Union{MapS,MapSd,MapS3D} = mapS_null,
                          mapS_test::Union{MapS,MapSd,MapS3D}  = mapS_null;
-                         σ_curriculum          = 1.0,
-                         l_window::Int         = 5,
-                         window_type::Symbol   = :sliding,
-                         tf_layer_type::Symbol = :postlayer,
-                         tf_norm_type::Symbol  = :batch,
-                         dropout_prob          = 0.2,
-                         N_tf_head::Int        = 8,
-                         tf_gain               = 1.0,
-                         silent::Bool          = false)
+                         temp_params::TempParams = TempParams(),
+                         silent::Bool            = false)
 
     @assert typeof(xyz_train) == typeof(xyz_test) "xyz types do no match"
 
     (comp_params,y_train,y_train_hat,err_train,features) =
         comp_train(comp_params,xyz_train,ind_train,mapS_train;
-                   σ_curriculum  = σ_curriculum,
-                   l_window      = l_window,
-                   window_type   = window_type,
-                   tf_layer_type = tf_layer_type,
-                   tf_norm_type  = tf_norm_type,
-                   dropout_prob  = dropout_prob,
-                   N_tf_head     = N_tf_head,
-                   tf_gain       = tf_gain,
-                   silent        = silent)
+                   temp_params = temp_params,
+                   silent      = silent)
 
     (y_test,y_test_hat,err_test,_) =
         comp_test(comp_params,xyz_test,ind_test,mapS_test;
-                  l_window = l_window,
-                  silent   = silent)
+                  temp_params = temp_params,
+                  silent      = silent)
 
     return (comp_params, y_train, y_train_hat, err_train,
                          y_test , y_test_hat , err_test , features)
@@ -4022,17 +3932,10 @@ end # function comp_train_test
 """
     comp_train_test(comp_params::CompParams, lines_train, lines_test,
                     df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame;
-                    σ_curriculum          = 1.0,
-                    l_window::Int         = 5,
-                    window_type::Symbol   = :sliding,
-                    tf_layer_type::Symbol = :postlayer,
-                    tf_norm_type::Symbol  = :batch,
-                    dropout_prob          = 0.2,
-                    N_tf_head::Int        = 8,
-                    tf_gain               = 1.0,
-                    silent::Bool          = false)
+                    temp_params::TempParams = TempParams(),
+                    silent::Bool            = false)
 
-Train and evaluate performance of an aeromagnetic compensation model.
+Train & evaluate performance of an aeromagnetic compensation model.
 
 **Arguments:**
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct, either:
@@ -4047,33 +3950,21 @@ Train and evaluate performance of an aeromagnetic compensation model.
 `line`     |`Real`  | line number, i.e., segments within `flight`
 `t_start`  |`Real`  | start time of `line` to use [s]
 `t_end`    |`Real`  | end   time of `line` to use [s]
-`full_line`|`Bool`  | (optional) if true, `t_start` to `t_end` is full line
 `map_name` |`Symbol`| (optional) name of magnetic anomaly map relevant to `line`
-`map_type` |`Symbol`| (optional) type of magnetic anomaly map for `map_name` {`drape`,`HAE`}
-`line_alt` |`Real`  | (optional) nominal altitude of `line` [m]
-- `df_flight`: lookup table (DataFrame) of flight data HDF5 files
+- `df_flight`: lookup table (DataFrame) of flight data files
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
 `xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
 `xyz_set` |`Real`  | flight dataset number (used to prevent improper mixing of datasets, such as different magnetometer locations)
-`xyz_h5`  |`String`| path/name of flight data HDF5 file (`.h5` extension optional)
-- `df_map`: lookup table (DataFrame) of map data HDF5 files
+`xyz_file`|`String`| path/name of flight data CSV, HDF5, or MAT file (`.csv`, `.h5`, or `.mat` extension required)
+- `df_map`: lookup table (DataFrame) of map data files
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `map_name`|`Symbol`| name of magnetic anomaly map
-`map_h5`  |`String`| path/name of map data HDF5 file (`.h5` extension optional)
-`map_type`|`Symbol`| (optional) type of magnetic anomaly map {`drape`,`HAE`}
-`map_alt` |`Real`  | (optional) map altitude, -1 for drape map [m]
-- `σ_curriculum`:  (optional) standard deviation threshold, only used for `model_type = :m3sc, :m3vc`
-- `l_window`:      (optional) temporal window length, only used for `model_type = :m3w, :m3tf`
-- `window_type`:   (optional) type of windowing, `:sliding` for overlapping or `:contiguous` for non-overlapping, only used for `model_type = :m3w, :m3tf`
-- `tf_layer_type`: (optional) transformer normalization layer before or after skip connection {`:prelayer`,`:postlayer`}, only used for `model_type = :m3tf`
-- `tf_norm_type`:  (optional) normalization for transformer encoder {`:batch`,`:layer`,`:none`}, only used for `model_type = :m3tf`
-- `dropout_prob`:  (optional) dropout rate, only used for `model_type = :m3w, :m3tf`
-- `N_tf_head`:     (optional) number of attention heads, only used for `model_type = :m3tf`
-- `tf_gain`:       (optional) weight initialization parameter, only used for `model_type = :m3tf`
-- `silent`:        (optional) if true, no print outs
+`map_file`|`String`| path/name of map data HDF5 or MAT file (`.h5` or `.mat` extension required)
+- `temp_params`: (optional) `TempParams` temporary (WIP) parameters struct
+- `silent`:      (optional) if true, no print outs
 
 **Returns:**
 - `comp_params`: `CompParams` aeromagnetic compensation parameters struct
@@ -4087,43 +3978,29 @@ Train and evaluate performance of an aeromagnetic compensation model.
 """
 function comp_train_test(comp_params::CompParams, lines_train, lines_test,
                          df_line::DataFrame, df_flight::DataFrame, df_map::DataFrame;
-                         σ_curriculum          = 1.0,
-                         l_window::Int         = 5,
-                         window_type::Symbol   = :sliding,
-                         tf_layer_type::Symbol = :postlayer,
-                         tf_norm_type::Symbol  = :batch,
-                         dropout_prob          = 0.2,
-                         N_tf_head::Int        = 8,
-                         tf_gain               = 1.0,
-                         silent::Bool          = false)
+                         temp_params::TempParams = TempParams(),
+                         silent::Bool            = false)
 
     (comp_params,y_train,y_train_hat,err_train,features) =
         comp_train(comp_params,lines_train,df_line,df_flight,df_map;
-                   σ_curriculum  = σ_curriculum,
-                   l_window      = l_window,
-                   window_type   = window_type,
-                   tf_layer_type = tf_layer_type,
-                   tf_norm_type  = tf_norm_type,
-                   dropout_prob  = dropout_prob,
-                   N_tf_head     = N_tf_head,
-                   tf_gain       = tf_gain,
-                   silent        = silent)
+                   temp_params = temp_params,
+                   silent      = silent)
 
     (y_test,y_test_hat,err_test,_) =
         comp_test(comp_params,lines_test,df_line,df_flight,df_map;
-                  l_window = l_window,
-                  silent   = silent)
+                  temp_params = temp_params,
+                  silent      = silent)
 
     return (comp_params, y_train, y_train_hat, err_train,
                          y_test , y_test_hat , err_test , features)
 end # function comp_train_test
 
 """
-    function print_time(t, digits::Int=1)
+    function print_time(t::Real, digits::Int = 1)
 
 Internal helper function to print time `t` in `sec` if <1 min, otherwise `min`.
 """
-function print_time(t, digits::Int=1)
+function print_time(t::Real, digits::Int = 1)
     if t < 60
         @info("time: $(round(t   ,digits=digits)) sec")
     else

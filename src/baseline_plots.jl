@@ -16,8 +16,8 @@ Plot data vs time.
 - `lab`:       (optional) data (legend) label
 - `xlab`:      (optional) x-axis label
 - `ylab`:      (optional) y-axis label
-- `show_plot`: (optional) if true, `p1` will be shown
-- `save_plot`: (optional) if true, `p1` will be saved as `plot_png`
+- `show_plot`: (optional) if true, show `p1`
+- `save_plot`: (optional) if true, save `p1` as `plot_png`
 - `plot_png`:  (optional) plot file name to save (`.png` extension optional)
 
 **Returns:**
@@ -55,8 +55,8 @@ Plot activation function(s) or their derivative(s).
     - `swish` = self-gated
     - `tanh`  = hyperbolic tan
 - `plot_deriv`: (optional) if true, plot activation function(s) derivative(s)
-- `show_plot`:  (optional) if true, `p1` will be shown
-- `save_plot`:  (optional) if true, `p1` will be saved as `plot_png`
+- `show_plot`:  (optional) if true, show `p1`
+- `save_plot`:  (optional) if true, save `p1` as `plot_png`
 - `plot_png`:   (optional) plot file name to save (`.png` extension optional)
 
 **Returns:**
@@ -121,15 +121,15 @@ Plot scalar or vector (fluxgate) magnetometer data from a given flight test.
 **Arguments:**
 - `xyz`:          `XYZ` flight data struct
 - `ind`:          (optional) selected data indices
-- `detrend_data`: (optional) if true, plot data will be detrended
+- `detrend_data`: (optional) if true, detrend plot data
 - `use_mags`:     (optional) scalar or vector (fluxgate) magnetometers to plot {`:all_mags`, `:comp_mags` or `:mag_1_c`, `:mag_1_uc`, `:flux_a`, etc.}
     - `:all_mags`  = all provided scalar magnetometer fields (e.g., `:mag_1_c`, `:mag_1_uc`, etc.)
     - `:comp_mags` = provided compensation(s) between `:mag_1_uc` & `:mag_1_c`, etc.
 - `vec_terms`:    (optional) vector magnetometer (fluxgate) terms to plot {`:all` or `:x`,`:y`,`:z`,`:t`}
-- `ylim`:         (optional) 2-element y limits for plotting
+- `ylim`:         (optional) length-`2` plot `y` limits (`ymin`,`ymax`) [nT]
 - `dpi`:          (optional) dots per inch (image resolution)
-- `show_plot`:    (optional) if true, `p1` will be shown
-- `save_plot`:    (optional) if true, `p1` will be saved as `plot_png`
+- `show_plot`:    (optional) if true, show `p1`
+- `save_plot`:    (optional) if true, save `p1` as `plot_png`
 - `plot_png`:     (optional) plot file name to save (`.png` extension optional)
 
 **Returns:**
@@ -275,7 +275,7 @@ Plot compensated magnetometer(s) data from a given flight test. Assumes Mag 1
 - `xyz_comp`:      `XYZ` flight data struct to use for compensation
 - `ind`:           (optional) selected data indices
 - `ind_comp`:      (optional) selected data indices to use for compensation
-- `detrend_data`:  (optional) if true, plot data will be detrended
+- `detrend_data`:  (optional) if true, detrend plot data
 - `λ`:             (optional) ridge parameter
 - `terms`:         (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
 - `pass1`:         (optional) filter first passband frequency [Hz]
@@ -287,10 +287,10 @@ Plot compensated magnetometer(s) data from a given flight test. Assumes Mag 1
 - `plot_diff`:     (optional) if true, plot difference between `provided` compensated data & compensated mags `as performed here`
 - `plot_mag_1_uc`: (optional) if true, plot mag_1_uc (uncompensated mag_1)
 - `plot_mag_1_c`:  (optional) if true, plot mag_1_c (compensated mag_1)
-- `ylim`:          (optional) 2-element y limits for plotting
+- `ylim`:          (optional) length-`2` plot `y` limits (`ymin`,`ymax`) [nT]
 - `dpi`:           (optional) dots per inch (image resolution)
-- `show_plot`:     (optional) if true, `p1` will be shown
-- `save_plot`:     (optional) if true, `p1` will be saved as `plot_png`
+- `show_plot`:     (optional) if true, show `p1`
+- `save_plot`:     (optional) if true, save `p1` as `plot_png`
 - `plot_png`:      (optional) plot file name to save (`.png` extension optional)
 
 **Returns:**
@@ -333,7 +333,7 @@ function plot_mag_c(xyz::XYZ,xyz_comp::XYZ;
     end
 
     if plot_mag_1_uc .& ~plot_diff
-        plot!(p1,tt,mag_1_uc,lab="mag_1_uc",color=:cyan)
+        plot!(p1,tt,mag_1_uc,lab="mag_1_uc",lc=:cyan)
     end
 
     fields  = fieldnames(typeof(xyz))
@@ -346,16 +346,16 @@ function plot_mag_c(xyz::XYZ,xyz_comp::XYZ;
 
         if use_mag in mags_uc
             mag_uc  = getfield(xyz,use_mag)[ind]
-            color   = :yellow
-            use_mag == :mag_1_uc && (color = :red   )
-            use_mag == :mag_2_uc && (color = :purple)
-            use_mag == :mag_3_uc && (color = :green )
-            use_mag == :mag_4_uc && (color = :black )
-            use_mag == :mag_5_uc && (color = :orange)
-            use_mag == :mag_6_uc && (color = :gray  )
-            use_mag == :mag_7_uc && (color = :violet)
-            use_mag == :mag_8_uc && (color = :brown )
-            use_mag == :mag_9_uc && (color = :pink  )
+            lc      = :yellow
+            use_mag == :mag_1_uc && (lc = :red   )
+            use_mag == :mag_2_uc && (lc = :purple)
+            use_mag == :mag_3_uc && (lc = :green )
+            use_mag == :mag_4_uc && (lc = :black )
+            use_mag == :mag_5_uc && (lc = :orange)
+            use_mag == :mag_6_uc && (lc = :gray  )
+            use_mag == :mag_7_uc && (lc = :violet)
+            use_mag == :mag_8_uc && (lc = :brown )
+            use_mag == :mag_9_uc && (lc = :pink  )
         else
             error("$use_mag scalar magnetometer is invalid")
         end
@@ -373,7 +373,7 @@ function plot_mag_c(xyz::XYZ,xyz_comp::XYZ;
         lab = "$use_mag"[1:end-3]*"_c"
         lab = plot_diff ? "Δ $lab"        : lab
         val = plot_diff ? mag_c - mag_1_c : mag_c
-        plot!(p1,tt[1:end-1],val[1:end-1],lab=lab,color=color)
+        plot!(p1,tt[1:end-1],val[1:end-1],lab=lab,lc=lc)
 
         if plot_diff
             @info("=== $lab ===")
@@ -385,7 +385,7 @@ function plot_mag_c(xyz::XYZ,xyz_comp::XYZ;
 
     if plot_mag_1_c .& ~plot_diff
         plot!(p1,tt[1:end-1],mag_1_c[1:end-1],
-              lab="provided mag_1_c",ls= :dash,color=:blue)
+              lab="provided mag_1_c",lc=:blue,ls=:dash)
     end
 
     show_plot && display(p1)
@@ -409,8 +409,8 @@ Plot the Welch power spectral density (PSD) for signal `x`.
 - `fs`:        (optional) sampling frequency [Hz]
 - `window`:    (optional) type of window used
 - `dpi`:       (optional) dots per inch (image resolution)
-- `show_plot`: (optional) if true, `p1` will be shown
-- `save_plot`: (optional) if true, `p1` will be saved as `plot_png`
+- `show_plot`: (optional) if true, show `p1`
+- `save_plot`: (optional) if true, save `p1` as `plot_png`
 - `plot_png`:  (optional) plot file name to save (`.png` extension optional)
 
 **Returns:**
@@ -449,8 +449,8 @@ Create a spectrogram for signal `x`.
 - `fs`:        (optional) sampling frequency [Hz]
 - `window`:    (optional) type of window used
 - `dpi`:       (optional) dots per inch (image resolution)
-- `show_plot`: (optional) if true, `p1` will be shown
-- `save_plot`: (optional) if true, `p1` will be saved as `plot_png`
+- `show_plot`: (optional) if true, show `p1`
+- `save_plot`: (optional) if true, save `p1` as `plot_png`
 - `plot_png`:  (optional) plot file name to save (`.png` extension optional)
 
 **Returns:**
@@ -493,11 +493,11 @@ Plot frequency data, either Welch power spectral density (PSD) or spectrogram.
 - `ind`:          (optional) selected data indices
 - `field`:        (optional) data field in `xyz` to plot
 - `freq_type`:    (optional) frequency plot type {`:PSD`,`:psd`,`:spectrogram`,`:spec`}
-- `detrend_data`: (optional) if true, plot data will be detrended
+- `detrend_data`: (optional) if true, detrend plot data
 - `window`:       (optional) type of window used
 - `dpi`:          (optional) dots per inch (image resolution)
-- `show_plot`:    (optional) if true, `p1` will be shown
-- `save_plot`:    (optional) if true, `p1` will be saved as `plot_png`
+- `show_plot`:    (optional) if true, show `p1`
+- `save_plot`:    (optional) if true, save `p1` as `plot_png`
 - `plot_png`:     (optional) plot file name to save (`.png` extension optional)
 
 **Returns:**
@@ -536,7 +536,7 @@ end # function plot_frequency
     plot_correlation(x::Vector, y::Vector,
                      xfeature::Symbol = :feature_1,
                      yfeature::Symbol = :feature_2;
-                     lim              = 0,
+                     lim::Real        = 0,
                      dpi::Int         = 200,
                      show_plot::Bool  = true,
                      save_plot::Bool  = false,
@@ -550,20 +550,20 @@ Plot the correlation between 2 features.
 - `y`:         y-axis data
 - `xfeature`:  x-axis feature name
 - `yfeature`:  y-axis feature name
-- `lim`:       (optional) lower limit on the Pearson correlation coefficient (do not plot otherwise)
+- `lim`:       (optional) only plot if Pearson correlation coefficient > `lim`
 - `dpi`:       (optional) dots per inch (image resolution)
-- `show_plot`: (optional) if true, `p1` will be shown
-- `save_plot`: (optional) if true, `p1` will be saved as `plot_png`
+- `show_plot`: (optional) if true, show `p1`
+- `save_plot`: (optional) if true, save `p1` as `plot_png`
 - `plot_png`:  (optional) plot file name to save (`.png` extension optional)
 - `silent`:    (optional) if true, no print outs
 
 **Returns:**
-- `p1`: plot of correlation between `xfeature` & `yfeature`
+- `p1`: plot of `yfeature` vs `xfeature` correlation
 """
 function plot_correlation(x::Vector, y::Vector,
                           xfeature::Symbol = :feature_1,
                           yfeature::Symbol = :feature_2;
-                          lim              = 0,
+                          lim::Real        = 0,
                           dpi::Int         = 200,
                           show_plot::Bool  = true,
                           save_plot::Bool  = false,
@@ -573,16 +573,17 @@ function plot_correlation(x::Vector, y::Vector,
     xyc = cor(x,y)
     xys = linreg(y,x)
 
-    if (abs(xyc) > lim) # & (abs(xys-1) < 1-lim)
+    if abs(xyc) > lim
         xlab  = "$xfeature"
         ylab  = "$yfeature"
-        title = xlab*" & "*ylab
-        p1 = scatter(x,y,lab=false,dpi=dpi,xlab=xlab,ylab=ylab,title=title,ms=2)
+        title = "$yfeature vs $xfeature"
+        p1 = scatter(x,y,lab=false,dpi=dpi,xlab=xlab,ylab=ylab,title=title,mc=:black,ms=2)
         show_plot && display(p1)
         save_plot && png(p1,plot_png)
-        silent || println(xfeature," & ",yfeature)
-        silent || println("correlation & slope: $(round.([xyc,xys],digits=5))")
+        silent || println("$title, correlation & slope: $(round.([xyc,xys],digits=5))")
         return (p1)
+    else
+        return (nothing)
     end
 
 end # function plot_correlation
@@ -592,7 +593,7 @@ end # function plot_correlation
                      xfeature::Symbol = :mag_1_c,
                      yfeature::Symbol = :mag_1_uc,
                      ind              = trues(xyz.traj.N);
-                     lim              = 0,
+                     lim::Real        = 0,
                      dpi::Int         = 200,
                      show_plot::Bool  = true,
                      save_plot::Bool  = false,
@@ -606,21 +607,21 @@ Plot the correlation between 2 features.
 - `xfeature`:  x-axis feature name
 - `yfeature`:  y-axis feature name
 - `ind`:       (optional) selected data indices
-- `lim`:       (optional) lower limit on the Pearson correlation coefficient (do not plot otherwise)
+- `lim`:       (optional) only plot if Pearson correlation coefficient > `lim`
 - `dpi`:       (optional) dots per inch (image resolution)
-- `show_plot`: (optional) if true, `p1` will be shown
-- `save_plot`: (optional) if true, `p1` will be saved as `plot_png`
+- `show_plot`: (optional) if true, show `p1`
+- `save_plot`: (optional) if true, save `p1` as `plot_png`
 - `plot_png`:  (optional) plot file name to save (`.png` extension optional)
 - `silent`:    (optional) if true, no print outs
 
 **Returns:**
-- `p1`: plot of correlation between `xfeature` & `yfeature`
+- `p1`: plot of `yfeature` vs `xfeature` correlation
 """
 function plot_correlation(xyz::XYZ,
                           xfeature::Symbol = :mag_1_c,
                           yfeature::Symbol = :mag_1_uc,
                           ind              = trues(xyz.traj.N);
-                          lim              = 0,
+                          lim::Real        = 0,
                           dpi::Int         = 200,
                           show_plot::Bool  = true,
                           save_plot::Bool  = false,
@@ -640,21 +641,20 @@ end # function plot_correlation
 """
     plot_correlation_matrix(x::AbstractMatrix, features::Vector{Symbol};
                             dpi::Int         = 200,
+                            Nmax::Int        = 1000,
                             show_plot::Bool  = true,
                             save_plot::Bool  = false,
                             plot_png::String = "correlation_matrix.png")
 
-Plot the correlation matrix for 2-5 features.
-
-Note that this could be modified to use `StatsPlots.corrplot()`:
-https://github.com/JuliaPlots/StatsPlots.jl
+Plot the correlation matrix for `2-5` features.
 
 **Arguments:**
 - `x`:         `N` x `Nf` data matrix (`Nf` is number of features)
 - `features`:  length-`Nf` feature vector (including components of TL `A`, etc.)
 - `dpi`:       (optional) dots per inch (image resolution)
-- `show_plot`: (optional) if true, `p1` will be shown
-- `save_plot`: (optional) if true, `p1` will be saved as `plot_png`
+- `Nmax`:      (optional) maximum number of data points plotted
+- `show_plot`: (optional) if true, show `p1`
+- `save_plot`: (optional) if true, save `p1` as `plot_png`
 - `plot_png`:  (optional) plot file name to save (`.png` extension optional)
 
 **Returns:**
@@ -662,17 +662,20 @@ https://github.com/JuliaPlots/StatsPlots.jl
 """
 function plot_correlation_matrix(x::AbstractMatrix, features::Vector{Symbol};
                                  dpi::Int         = 200,
+                                 Nmax::Int        = 1000,
                                  show_plot::Bool  = true,
                                  save_plot::Bool  = false,
                                  plot_png::String = "correlation_matrix.png")
 
+    # #* note: this could be modified to use StatsPlots.corrplot():
+    # https://github.com/JuliaPlots/StatsPlots.jl
+
     Nf = length(features)
-    Nf_min = 2
-    Nf_max = 5
+    (Nf_min,Nf_max) = (2,5)
     @assert Nf >= Nf_min "number of features = $Nf < $Nf_min"
     @assert Nf <= Nf_max "number of features = $Nf > $Nf_max"
-    p_ = []
 
+    p_ = []
     for j = 2:Nf, i = 1:Nf-1
         if j > i
             xlab   = j == Nf ? features[i] : ""
@@ -681,19 +684,21 @@ function plot_correlation_matrix(x::AbstractMatrix, features::Vector{Symbol};
             y_     = x[:,j]
             xticks = j == Nf ? round.(mean(x_) .+ [-1,1]*std(x_),sigdigits=3) : []
             yticks = i == 1  ? round.(mean(y_) .+ [-1,1]*std(y_),sigdigits=3) : []
-            push!(p_,scatter(x_,y_,lab=false,dpi=dpi,ms=2,
-                  xlab=xlab,ylab=ylab,xticks=xticks,yticks=yticks))
+            push!(p_,scatter(downsample(x_,Nmax),downsample(y_,Nmax),
+                  lab=false,dpi=dpi,mc=:black,ms=1,
+                  xlab=xlab,ylab=ylab,xticks=xticks,yticks=yticks,
+                  xguidefontsize=8,yguidefontsize=8))
         end
     end
 
     if Nf == 2
-        l  = @layout [p;]
+        l = @layout [p;]
     elseif Nf == 3
-        l  = @layout [p _; p p]
+        l = @layout [p _; p p]
     elseif Nf == 4
-        l  = @layout [p _ _; p p _; p p p]
+        l = @layout [p _ _; p p _; p p p]
     elseif Nf == 5
-        l  = @layout [p _ _ _; p p _ _; p p p _; p p p p]
+        l = @layout [p _ _ _; p p _ _; p p p _; p p p p]
     end
 
     p1 = plot(p_...,layout=l,margin=2*mm)
@@ -712,11 +717,12 @@ end # function plot_correlation_matrix
                             sub_igrf::Bool    = false,
                             bpf_mag::Bool     = false,
                             dpi::Int          = 200,
+                            Nmax::Int         = 1000,
                             show_plot::Bool   = true,
                             save_plot::Bool   = false,
                             plot_png::String  = "correlation_matrix.png")
 
-Plot the correlation matrix for 2-5 features.
+Plot the correlation matrix for `2-5` features.
 
 **Arguments:**
 - `xyz`:            `XYZ` flight data struct
@@ -727,12 +733,13 @@ Plot the correlation matrix for 2-5 features.
 - `sub_igrf`:       (optional) if true, subtract IGRF from scalar magnetometer measurements
 - `bpf_mag`:        (optional) if true, bpf scalar magnetometer measurements
 - `dpi`:            (optional) dots per inch (image resolution)
-- `show_plot`:      (optional) if true, `p1` will be shown
-- `save_plot`:      (optional) if true, `p1` will be saved as `plot_png`
+- `Nmax`:           (optional) maximum number of data points plotted
+- `show_plot`:      (optional) if true, show `p1`
+- `save_plot`:      (optional) if true, save `p1` as `plot_png`
 - `plot_png`:       (optional) plot file name to save (`.png` extension optional)
 
 **Returns:**
-- `p1`: plot of correlation matrix between `features`
+- `p1`: plot of correlation matrix between `features` (created from `features_setup`)
 """
 function plot_correlation_matrix(xyz::XYZ, ind = trues(xyz.traj.N),
                                  features_setup::Vector{Symbol} = [:mag_1_uc,:TL_A_flux_a];
@@ -741,6 +748,7 @@ function plot_correlation_matrix(xyz::XYZ, ind = trues(xyz.traj.N),
                                  sub_igrf::Bool    = false,
                                  bpf_mag::Bool     = false,
                                  dpi::Int          = 200,
+                                 Nmax::Int         = 1000,
                                  show_plot::Bool   = true,
                                  save_plot::Bool   = false,
                                  plot_png::String  = "correlation_matrix.png")
@@ -753,6 +761,7 @@ function plot_correlation_matrix(xyz::XYZ, ind = trues(xyz.traj.N),
 
     p1 = plot_correlation_matrix(x,features;
                                  dpi       = dpi,
+                                 Nmax      = Nmax,
                                  show_plot = show_plot,
                                  save_plot = save_plot,
                                  plot_png  = plot_png)

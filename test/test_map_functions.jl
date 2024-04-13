@@ -132,7 +132,7 @@ rm(map_h5)
 p1 = plot()
 
 @testset "plot_map tests" begin
-    @test plot_map!(p1,mapS) isa Plots.Plot
+    @test plot_map!(p1,mapS) isa Nothing
     @test plot_map(mapS;plot_units=:deg) isa Plots.Plot
     @test plot_map(mapS;plot_units=:rad) isa Plots.Plot
     @test plot_map(mapS;plot_units=:m  ) isa Plots.Plot
@@ -157,16 +157,17 @@ show_plot = false
 p1 = plot_path(traj;show_plot)
 
 @testset "plot_path tests" begin
-    @test plot_path!(p1,traj;show_plot,path_color=:black) isa Plots.Plot
+    @test plot_path!(p1,traj;show_plot,path_color=:black) isa Nothing
     @test plot_path(traj;Nmax=50,show_plot) isa Plots.Plot
 end
 
 p1 = plot_basic(traj.tt,traj.lat;show_plot)
-df_event = DataFrame(flight=:test,tt=49.5*60,event="test")
+df_event = DataFrame(flight=:test,tt=49.5,event="test")
 
 @testset "plot_events! tests" begin
-    @test plot_events!(p1,df_event.tt[1]/60,df_event.event[1]) isa Plots.Plot
-    @test plot_events!(p1,df_event,df_event.flight[1]) isa Plots.Plot
+    @test plot_events!(p1,df_event.tt[1]/60,df_event.event[1]) isa Nothing
+    @test plot_events!(p1,df_event.flight[1],df_event;t_units=:min) isa Nothing
+    @test plot_events( p1,df_event.flight[1],df_event;t_units=:min) isa Plots.Plot
 end
 
 @testset "map_check tests" begin

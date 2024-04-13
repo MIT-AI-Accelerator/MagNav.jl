@@ -266,14 +266,14 @@ function sys_resample(q)
     return (i)
 end # function sys_resample
 
-function part_cov(q, x, x_mean, P=0)
+function part_cov(q, x, x_mean, P = 0)
     (nx,np) = size(x)
     P_temp  = x - repeat(x_mean,1,np)
     P_out   = repeat(q',nx,1).*P_temp*P_temp' .+ P
     return (P_out)
 end # function part_cov
 
-function filter_exit(Pl_out, Pn_out, t, converge::Bool=true)
+function filter_exit(Pl_out, Pn_out, t::Int, converge::Bool = true)
     nxl   = size(Pl_out,1)
     nxn   = size(Pn_out,1)
     nx    = nxl+nxn

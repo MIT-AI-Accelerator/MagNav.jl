@@ -102,7 +102,7 @@ function linreg(y; λ=0)
 end # function linreg
 
 """
-    detrend(y, x=[eachindex(y);]; λ=0, mean_only::Bool=false)
+    detrend(y, x = [eachindex(y);]; λ = 0, mean_only::Bool = false)
 
 Detrend signal (remove mean and optionally slope).
 
@@ -115,7 +115,7 @@ Detrend signal (remove mean and optionally slope).
 **Returns:**
 - `y`: length-`N` observed data vector, detrended
 """
-function detrend(y, x=[eachindex(y);]; λ=0, mean_only::Bool=false)
+function detrend(y, x = [eachindex(y);]; λ = 0, mean_only::Bool = false)
     if mean_only
         y = y .- mean(y)
     else
@@ -127,7 +127,7 @@ function detrend(y, x=[eachindex(y);]; λ=0, mean_only::Bool=false)
 end # function detrend
 
 """
-    get_bpf(; pass1=0.1, pass2=0.9, fs=10.0, pole::Int=4)
+    get_bpf(; pass1 = 0.1, pass2 = 0.9, fs = 10.0, pole::Int = 4)
 
 Create a Butterworth bandpass (or low-pass or high-pass) filter object. Set
 `pass1 = -1` for low-pass filter or `pass2 = -1` for high-pass filter.
@@ -141,7 +141,7 @@ Create a Butterworth bandpass (or low-pass or high-pass) filter object. Set
 **Returns:**
 - `bpf`: filter object
 """
-function get_bpf(; pass1=0.1, pass2=0.9, fs=10.0, pole::Int=4)
+function get_bpf(; pass1 = 0.1, pass2 = 0.9, fs = 10.0, pole::Int = 4)
     if     ((pass1 >  0) & (pass1 <  fs/2)) & ((pass2 >  0) & (pass2 <  fs/2))
         p = Bandpass(pass1,pass2;fs=fs) # bandpass
     elseif ((pass1 <= 0) | (pass1 >= fs/2)) & ((pass2 >  0) & (pass2 <  fs/2))
@@ -155,7 +155,7 @@ function get_bpf(; pass1=0.1, pass2=0.9, fs=10.0, pole::Int=4)
 end # function get_bpf
 
 """
-    bpf_data(x::Matrix; bpf=get_bpf())
+    bpf_data(x::AbstractMatrix; bpf=get_bpf())
 
 Bandpass (or low-pass or high-pass) filter columns of matrix.
 
@@ -164,9 +164,9 @@ Bandpass (or low-pass or high-pass) filter columns of matrix.
 - `bpf`: (optional) filter object
 
 **Returns:**
-- `x_f`: matrix of filtered data
+- `x_f`: data matrix, filtered
 """
-function bpf_data(x::Matrix; bpf=get_bpf())
+function bpf_data(x::AbstractMatrix; bpf=get_bpf())
     x_f = deepcopy(x)
     for i in axes(x,2)
         (std(x[:,i]) <= eps(eltype(x))) || (x_f[:,i] = filtfilt(bpf,x[:,i]))
@@ -175,7 +175,7 @@ function bpf_data(x::Matrix; bpf=get_bpf())
 end # function bpf_data
 
 """
-    bpf_data(x::Vector; bpf=get_bpf())
+    bpf_data(x::AbstractVector; bpf=get_bpf())
 
 Bandpass (or low-pass or high-pass) filter vector.
 
@@ -186,12 +186,12 @@ Bandpass (or low-pass or high-pass) filter vector.
 **Returns:**
 - `x_f`: data vector, filtered
 """
-function bpf_data(x::Vector; bpf=get_bpf())
+function bpf_data(x::AbstractVector; bpf=get_bpf())
     filtfilt(bpf,x)
 end # function bpf_data
 
 """
-    bpf_data!(x; bpf=get_bpf())
+    bpf_data!(x::AbstractVecOrMat; bpf=get_bpf())
 
 Bandpass (or low-pass or high-pass) filter vector or columns of matrix.
 
@@ -202,13 +202,13 @@ Bandpass (or low-pass or high-pass) filter vector or columns of matrix.
 **Returns:**
 - `nothing`: `x` is mutated with filtered data
 """
-function bpf_data!(x; bpf=get_bpf())
+function bpf_data!(x::AbstractVecOrMat; bpf=get_bpf())
     x .= bpf_data(x;bpf=bpf)
     return (nothing)
 end # function bpf_data!
 
 """
-    downsample(x, Nmax::Int=1000)
+    downsample(x::AbstractVecOrMat, Nmax::Int = 1000)
 
 Downsample data `x` to `Nmax` (or fewer) data points.
 
@@ -217,12 +217,19 @@ Downsample data `x` to `Nmax` (or fewer) data points.
 - `Nmax`: (optional) maximum number of data points
 
 **Returns:**
-- `x`: vector or matrix of downsampled data
+- `x`: data vector or matrix, downsampled
 """
-function downsample(x, Nmax::Int=1000)
+function downsample(x::AbstractVecOrMat, Nmax::Int = 1000)
     N = size(x,1)
-    N > Nmax && (x = x[1:ceil(Int,N/Nmax):N,:])
-    size(x,2) == 1 && (x = vec(x))
+    if N <= Nmax
+        x = deepcopy(x)
+    else
+        if x isa AbstractVector
+            x = x[1:ceil(Int,N/Nmax):N]
+        elseif x isa AbstractMatrix
+            x = x[1:ceil(Int,N/Nmax):N,:]
+        end
+    end
     return (x)
 end # function downsample
 
@@ -333,8 +340,8 @@ function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
     end
 
     (roll,pitch,yaw) = dcm2euler(xyz.ins.Cnb[:,:,ind],:body2nav) # correct definition
-    push!(d,:dcm=>[reshape(euler2dcm(roll,pitch,yaw,:nav2body),(9,N))';]) # ordered this way initially, leaving for now consistency
-    push!(d,:dcm_1=>euler2dcm(roll,pitch,yaw,:nav2body)[1,1,:])           # note :nav2body contains same terms as :body2nav, just transposed
+    push!(d,:dcm=>[reshape(euler2dcm(roll,pitch,yaw,:nav2body),(9,N))';]) # ordered this way initially, leaving for consistency
+    push!(d,:dcm_1=>euler2dcm(roll,pitch,yaw,:nav2body)[1,1,:])           # :nav2body contains same terms as :body2nav, but transposed
     push!(d,:dcm_2=>euler2dcm(roll,pitch,yaw,:nav2body)[2,1,:])
     push!(d,:dcm_3=>euler2dcm(roll,pitch,yaw,:nav2body)[3,1,:])
     push!(d,:dcm_4=>euler2dcm(roll,pitch,yaw,:nav2body)[1,2,:])
@@ -490,17 +497,14 @@ Get `x` data matrix from multiple flight lines, possibly multiple flights.
 `line`     |`Real`  | line number, i.e., segments within `flight`
 `t_start`  |`Real`  | start time of `line` to use [s]
 `t_end`    |`Real`  | end   time of `line` to use [s]
-`full_line`|`Bool`  | (optional) if true, `t_start` to `t_end` is full line
 `map_name` |`Symbol`| (optional) name of magnetic anomaly map relevant to `line`
-`map_type` |`Symbol`| (optional) type of magnetic anomaly map for `map_name` {`drape`,`HAE`}
-`line_alt` |`Real`  | (optional) nominal altitude of `line` [m]
-- `df_flight`:        lookup table (DataFrame) of flight data HDF5 files
+- `df_flight`:        lookup table (DataFrame) of flight data files
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
 `xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
 `xyz_set` |`Real`  | flight dataset number (used to prevent improper mixing of datasets, such as different magnetometer locations)
-`xyz_h5`  |`String`| path/name of flight data HDF5 file (`.h5` extension optional)
+`xyz_file`|`String`| path/name of flight data CSV, HDF5, or MAT file (`.csv`, `.h5`, or `.mat` extension required)
 - `features_setup`:   vector of features to include
 - `features_no_norm`: (optional) vector of features to not normalize
 - `terms`:            (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
@@ -676,24 +680,19 @@ Get `y` target vector from multiple flight lines, possibly multiple flights.
 `line`     |`Real`  | line number, i.e., segments within `flight`
 `t_start`  |`Real`  | start time of `line` to use [s]
 `t_end`    |`Real`  | end   time of `line` to use [s]
-`full_line`|`Bool`  | (optional) if true, `t_start` to `t_end` is full line
 `map_name` |`Symbol`| (optional) name of magnetic anomaly map relevant to `line`, only used for `y_type = :b, :c`
-`map_type` |`Symbol`| (optional) type of magnetic anomaly map for `map_name` {`drape`,`HAE`}
-`line_alt` |`Real`  | (optional) nominal altitude of `line` [m]
-- `df_flight`: lookup table (DataFrame) of flight data HDF5 files
+- `df_flight`: lookup table (DataFrame) of flight data files
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
 `xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
 `xyz_set` |`Real`  | flight dataset number (used to prevent improper mixing of datasets, such as different magnetometer locations)
-`xyz_h5`  |`String`| path/name of flight data HDF5 file (`.h5` extension optional)
-- `df_map`:    lookup table (DataFrame) of map data HDF5 files
+`xyz_file`|`String`| path/name of flight data CSV, HDF5, or MAT file (`.csv`, `.h5`, or `.mat` extension required)
+- `df_map`:    lookup table (DataFrame) of map data files
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `map_name`|`Symbol`| name of magnetic anomaly map
-`map_h5`  |`String`| path/name of map data HDF5 file (`.h5` extension optional)
-`map_type`|`Symbol`| (optional) type of magnetic anomaly map {`drape`,`HAE`}
-`map_alt` |`Real`  | (optional) map altitude, -1 for drape map [m]
+`map_file`|`String`| path/name of map data HDF5 or MAT file (`.h5` or `.mat` extension required)
 - `y_type`:    (optional) `y` target type
     - `:a` = anomaly field  #1, compensated tail stinger total field scalar magnetometer measurements
     - `:b` = anomaly field  #2, interpolated `magnetic anomaly map` values
@@ -794,9 +793,9 @@ end # function get_y
             return_B::Bool     = false,
             silent::Bool       = true)
 
-Get "external" Tolles-Lawson `A` matrix, `x` data matrix, and `y` target vector
+Get "external" Tolles-Lawson `A` matrix, `x` data matrix, & `y` target vector
 from multiple flight lines, possibly multiple flights. Optionally return `Bt`
-and `B_dot` used to create the "external" Tolles-Lawson `A` matrix.
+& `B_dot` used to create the "external" Tolles-Lawson `A` matrix.
 
 **Arguments:**
 - `lines`:     selected line number(s)
@@ -807,24 +806,19 @@ and `B_dot` used to create the "external" Tolles-Lawson `A` matrix.
 `line`     |`Real`  | line number, i.e., segments within `flight`
 `t_start`  |`Real`  | start time of `line` to use [s]
 `t_end`    |`Real`  | end   time of `line` to use [s]
-`full_line`|`Bool`  | (optional) if true, `t_start` to `t_end` is full line
 `map_name` |`Symbol`| (optional) name of magnetic anomaly map relevant to `line`, only used for `y_type = :b, :c`
-`map_type` |`Symbol`| (optional) type of magnetic anomaly map for `map_name` {`drape`,`HAE`}
-`line_alt` |`Real`  | (optional) nominal altitude of `line` [m]
-- `df_flight`: lookup table (DataFrame) of flight data HDF5 files
+- `df_flight`: lookup table (DataFrame) of flight data files
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
 `xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
 `xyz_set` |`Real`  | flight dataset number (used to prevent improper mixing of datasets, such as different magnetometer locations)
-`xyz_h5`  |`String`| path/name of flight data HDF5 file (`.h5` extension optional)
-- `df_map`:    lookup table (DataFrame) of map data HDF5 files
+`xyz_file`|`String`| path/name of flight data CSV, HDF5, or MAT file (`.csv`, `.h5`, or `.mat` extension required)
+- `df_map`:    lookup table (DataFrame) of map data files
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `map_name`|`Symbol`| name of magnetic anomaly map
-`map_h5`  |`String`| path/name of map data HDF5 file (`.h5` extension optional)
-`map_type`|`Symbol`| (optional) type of magnetic anomaly map {`drape`,`HAE`}
-`map_alt` |`Real`  | (optional) map altitude, -1 for drape map [m]
+`map_file`|`String`| path/name of map data HDF5 or MAT file (`.h5` or `.mat` extension required)
 - `features_setup`:   vector of features to include
 - `features_no_norm`: (optional) vector of features to not normalize
 - `y_type`:           (optional) `y` target type
@@ -1009,7 +1003,7 @@ end # struct LPE
 @functor LPE
 
 """
-    LPE(N_head::Int, l_window::Int, dropout_prob)
+    LPE(N_head::Int, l_window::Int, dropout_prob::Real)
 
 Internal helper function to create learnable positional encoding struct.
 
@@ -1021,7 +1015,7 @@ Internal helper function to create learnable positional encoding struct.
 **Returns:**
 - `lpe`: `LPE` learnable positional encoding struct
 """
-function LPE(N_head::Int, l_window::Int, dropout_prob)
+function LPE(N_head::Int, l_window::Int, dropout_prob::Real)
     embeddings = Float32.(rand(Uniform(-0.02, 0.02), N_head, l_window))
     return LPE(embeddings, Dropout(dropout_prob))
 end # function LPE
@@ -1062,7 +1056,7 @@ function batchnorm(x::AbstractArray)
 end # function batchnorm
 
 """
-    get_nn_m(Nf::Int, Ny::Int=1;
+    get_nn_m(Nf::Int, Ny::Int = 1;
              hidden                = [8],
              activation::Function  = swish,
              final_bias::Bool      = true,
@@ -1071,9 +1065,9 @@ end # function batchnorm
              l_window::Int         = 5,
              tf_layer_type::Symbol = :postlayer,
              tf_norm_type::Symbol  = :batch,
-             dropout_prob          = 0.2,
+             dropout_prob::Real    = 0.2,
              N_tf_head::Int        = 8,
-             tf_gain               = 1.0)
+             tf_gain::Real         = 1.0)
 
 Get neural network model. Valid for 0-3 hidden layers, except for
 `model_type = :m3w, :m3tf`, which are only valid for 1 or 2 hidden layers.
@@ -1101,7 +1095,7 @@ Get neural network model. Valid for 0-3 hidden layers, except for
 **Returns:**
 - `m`: neural network model
 """
-function get_nn_m(Nf::Int, Ny::Int=1;
+function get_nn_m(Nf::Int, Ny::Int = 1;
                   hidden                = [8],
                   activation::Function  = swish,
                   final_bias::Bool      = true,
@@ -1110,9 +1104,9 @@ function get_nn_m(Nf::Int, Ny::Int=1;
                   l_window::Int         = 5,
                   tf_layer_type::Symbol = :postlayer,
                   tf_norm_type::Symbol  = :batch,
-                  dropout_prob          = 0.2,
+                  dropout_prob::Real    = 0.2,
                   N_tf_head::Int        = 8,
-                  tf_gain               = 1.0)
+                  tf_gain::Real         = 1.0)
 
     l = length(hidden)
 
@@ -1137,7 +1131,7 @@ function get_nn_m(Nf::Int, Ny::Int=1;
             norm_layer1 = identity
             norm_layer2 = identity
         else
-            error("tf_norm_type $tf_norm_type is invalid, choose {:layer,:batch,:none}")
+            error("tf_norm_type $tf_norm_type is invalid, select {:batch,:layer,:none}")
         end
 
         multi_head_attention = MultiHeadAttention(N_head => N_head => N_head;
@@ -1167,7 +1161,7 @@ function get_nn_m(Nf::Int, Ny::Int=1;
             sublayer2 = SkipConnection(ffnn, +)
             encoder_layer = Chain(sublayer1, norm_layer1, sublayer2, norm_layer2)
         else
-            error("tf_layer_type $tf_layer_type is invalid, choose {:prelayer,:postlayer}")
+            error("tf_layer_type $tf_layer_type is invalid, select {:prelayer,:postlayer}")
         end
 
         # initial_layer = Dense(Nf, N_head, init=init)
@@ -1282,7 +1276,7 @@ function sparse_group_lasso(m, α=1)
 end # function sparse_group_lasso
 
 """
-    err_segs(y_hat, y, l_segs; silent::Bool=true)
+    err_segs(y_hat, y, l_segs; silent::Bool = true)
 
 Remove mean error from multiple individual flight lines within larger dataset.
 
@@ -1295,7 +1289,7 @@ Remove mean error from multiple individual flight lines within larger dataset.
 **Returns:**
 - `err`: length-`N` mean-corrected (per line) error
 """
-function err_segs(y_hat, y, l_segs; silent::Bool=true)
+function err_segs(y_hat, y, l_segs; silent::Bool = true)
     err = y_hat - y
     for i in eachindex(l_segs)
         (i1,i2) = cumsum(l_segs)[i] .- (l_segs[i]-1,0)
@@ -1366,7 +1360,7 @@ end # function norm_sets
               norm_type::Symbol = :standardize,
               no_norm           = falses(size(train,2)))
 
-Normalize (or standardize) features (columns) of training and testing data.
+Normalize (or standardize) features (columns) of training & testing data.
 
 **Arguments:**
 - `train`:     `N_train` x `Nf` training data
@@ -1406,7 +1400,7 @@ end # function norm_sets
               norm_type::Symbol = :standardize,
               no_norm           = falses(size(train,2)))
 
-Normalize (or standardize) features (columns) of training, validation, and
+Normalize (or standardize) features (columns) of training, validation, &
 testing data.
 
 **Arguments:**
@@ -1466,7 +1460,7 @@ end # function denorm_sets
 """
     denorm_sets(train_bias, train_scale, train, test)
 
-Denormalize (or destandardize) features (columns) of training and testing data.
+Denormalize (or destandardize) features (columns) of training & testing data.
 
 **Arguments:**
 - `train_bias`:  `1` x `Nf` training data biases (means, mins, or zeros)
@@ -1488,7 +1482,7 @@ end # function denorm_sets
     denorm_sets(train_bias, train_scale, train, val, test)
 
 Denormalize (or destandardize) features (columns) of training, validation,
-and testing data.
+& testing data.
 
 **Arguments:**
 - `train_bias`:  `1` x `Nf` training data biases (means, mins, or zeros)
@@ -1510,7 +1504,7 @@ function denorm_sets(train_bias, train_scale, train, val, test)
 end # function denorm_sets
 
 """
-    unpack_data_norms(data_norms)
+    unpack_data_norms(data_norms::Tuple)
 
 Internal helper function to unpack data normalizations, some of which may
 not be present due to earlier package versions being used.
@@ -1554,14 +1548,15 @@ end # function unpack_data_norms
             splits = (1))
 
 Get BitVector of indices for further analysis from specified indices (subset),
-line number(s), and/or time range. Any or all of these may be used.
+lines, and/or time range. Any or all of these may be used. Defaults to use all
+indices, lines, and times.
 
 **Arguments:**
 - `tt`:     time [s]
 - `line`:   line number(s)
-- `ind`:    (optional) selected data indices. Defaults to use all data indices
-- `lines`:  (optional) selected line number(s). Defaults to use all lines
-- `tt_lim`: (optional) 2-element (inclusive) start & end time limits. Defaults to use full time range [s]
+- `ind`:    (optional) selected data indices
+- `lines`:  (optional) selected line number(s)
+- `tt_lim`: (optional) end time limit or length-`2` start & end time limits (inclusive) [s]
 - `splits`: (optional) data splits, must sum to 1
 
 **Returns:**
@@ -1578,9 +1573,9 @@ function get_ind(tt::Vector, line::Vector;
     @assert length(splits) <= 3 "number of splits = $(length(splits)) > 3"
 
     if ind isa AbstractVector{Bool}
-        indices = deepcopy(ind)
+        ind_ = deepcopy(ind)
     else
-        indices = eachindex(tt) .∈ (ind,)
+        ind_ = eachindex(tt) .∈ (ind,)
     end
 
     N = length(tt)
@@ -1600,7 +1595,7 @@ function get_ind(tt::Vector, line::Vector;
         ind = ind .& (tt .>= minimum(tt_lim[1])) .& (tt .<= maximum(tt_lim[2]))
     end
 
-    ind = ind .& indices
+    ind = ind .& ind_
 
     sum(ind) == 0 && @info("ind contains all falses")
 
@@ -1623,17 +1618,18 @@ end # function get_ind
     get_ind(xyz::XYZ;
             ind    = trues(xyz.traj.N),
             lines  = (),
-            tt_lim = extrema(xyz.traj.tt),
+            tt_lim = (),
             splits = (1))
 
 Get BitVector of indices for further analysis from specified indices (subset),
-line number(s), and/or time range. Any or all of these may be used.
+lines, and/or time range. Any or all of these may be used. Defaults to use all
+indices, lines, and times.
 
 **Arguments:**
 - `xyz`:    `XYZ` flight data struct
-- `ind`:    (optional) selected data indices. Defaults to use all data indices
-- `lines`:  (optional) selected line number(s). Defaults to use all lines
-- `tt_lim`: (optional) 2-element (inclusive) start & end time limits. Defaults to use full time range [s]
+- `ind`:    (optional) selected data indices
+- `lines`:  (optional) selected line number(s)
+- `tt_lim`: (optional) end time limit or length-`2` start & end time limits (inclusive) [s]
 - `splits`: (optional) data splits, must sum to 1
 
 **Returns:**
@@ -1642,7 +1638,7 @@ line number(s), and/or time range. Any or all of these may be used.
 function get_ind(xyz::XYZ;
                  ind    = trues(xyz.traj.N),
                  lines  = (),
-                 tt_lim = extrema(xyz.traj.tt),
+                 tt_lim = (),
                  splits = (1))
     fields = fieldnames(typeof(xyz))
     line_  = :line in fields ? xyz.line : one.(xyz.traj.tt[ind])
@@ -1670,10 +1666,7 @@ Get BitVector of indices for further analysis via DataFrame lookup.
 `line`     |`Real`  | line number, i.e., segments within `flight`
 `t_start`  |`Real`  | start time of `line` to use [s]
 `t_end`    |`Real`  | end   time of `line` to use [s]
-`full_line`|`Bool`  | (optional) if true, `t_start` to `t_end` is full line
 `map_name` |`Symbol`| (optional) name of magnetic anomaly map relevant to `line`
-`map_type` |`Symbol`| (optional) type of magnetic anomaly map for `map_name` {`drape`,`HAE`}
-`line_alt` |`Real`  | (optional) nominal altitude of `line` [m]
 - `splits`:   (optional) data splits, must sum to 1
 - `l_window`: (optional) trim data by `N % l_window`, `-1` to ignore
 
@@ -1729,10 +1722,7 @@ Get BitVector of selected data indices for further analysis via DataFrame lookup
 `line`     |`Real`  | line number, i.e., segments within `flight`
 `t_start`  |`Real`  | start time of `line` to use [s]
 `t_end`    |`Real`  | end   time of `line` to use [s]
-`full_line`|`Bool`  | (optional) if true, `t_start` to `t_end` is full line
 `map_name` |`Symbol`| (optional) name of magnetic anomaly map relevant to `line`
-`map_type` |`Symbol`| (optional) type of magnetic anomaly map for `map_name` {`drape`,`HAE`}
-`line_alt` |`Real`  | (optional) nominal altitude of `line` [m]
 - `splits`:     (optional) data splits, must sum to 1
 - `l_window`:   (optional) trim data by `N % l_window`, `-1` to ignore
 
@@ -1864,36 +1854,113 @@ function predict_rnn_windowed(m, x, l_window::Int)
 end # function predict_rnn_windowed
 
 """
-    krr(x_train, y_train, x_test;
-        k=PolynomialKernel(;degree=1), λ=0.5)
+    krr_fit(x, y, no_norm = falses(size(x,2));
+            k::Kernel           = PolynomialKernel(;degree=1),
+            λ::Real             = 0.5,
+            norm_type_x::Symbol = :standardize,
+            norm_type_y::Symbol = :standardize,
+            data_norms::Tuple   = (zeros(1,1),zeros(1,1),[0.0],[0.0]),
+            l_segs::Vector      = [length(y)],
+            silent::Bool        = false)
 
-Kernel ridge regression (KRR).
+Fit a kernel ridge regression (KRR) model to data.
 
 **Arguments:**
-- `x_train`: `N_train` x `Nf` training data matrix (`Nf` is number of features)
-- `y_train`: length-`N_train` training target vector
-- `x_test`:  `N_test` x `Nf`  testing  data matrix (`Nf` is number of features)
-- `k`:       (optional) kernel
-- `λ`:       (optional) ridge parameter
+- `x`:           `N` x `Nf` data matrix (`Nf` is number of features)
+- `y`:           length-`N` target vector
+- `no_norm`:     (optional) length-`Nf` Boolean indices of features to not be normalized
+- `k`:           (optional) kernel
+- `λ`:           (optional) ridge parameter
+- `norm_type_x`: (optional) normalization for `x` data matrix
+- `norm_type_y`: (optional) normalization for `y` target vector
+- `data_norms`:  (optional) length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
+- `l_segs`:      (optional) length-`N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
+- `silent`:      (optional) if true, no print outs
 
 **Returns:**
-- `y_train_hat`: length-`N_train` training prediction vector
-- `y_test_hat`:  length-`N_train` testing  prediction vector
+- `model`:      length-`3` tuple of KRR-based model, (`k`, length-`N` coefficients, `N` x `Nf` data matrix, normalized)
+- `data_norms`: length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
+- `y_hat`:      length-`N` prediction vector
+- `err`:        length-`N` mean-corrected (per line) error
 """
-function krr(x_train, y_train, x_test;
-             k=PolynomialKernel(;degree=1), λ=0.5)
+function krr_fit(x, y, no_norm = falses(size(x,2));
+                 k::Kernel           = PolynomialKernel(;degree=1),
+                 λ::Real             = 0.5,
+                 norm_type_x::Symbol = :standardize,
+                 norm_type_y::Symbol = :standardize,
+                 data_norms::Tuple   = (zeros(1,1),zeros(1,1),[0.0],[0.0]),
+                 l_segs::Vector      = [length(y)],
+                 silent::Bool        = false)
 
-    K  = kernelmatrix(k,x_train;obsdim=1)
-    K★ = kernelmatrix(k,x_test,x_train;obsdim=1)
-    kt = (K + λ*I) \ y_train
+    # normalize data
+    if sum(data_norms[end]) == 0 # normalize data
+        (x_bias,x_scale,x_norm) = norm_sets(x;norm_type=norm_type_x,no_norm=no_norm)
+        (y_bias,y_scale,y_norm) = norm_sets(y;norm_type=norm_type_y)
+    else # unpack data normalizations
+        (x_bias,x_scale,y_bias,y_scale) = data_norms
+        x_norm = (x .- x_bias) ./ x_scale
+        y_norm = (y .- y_bias) ./ y_scale
+    end
 
-    y_train_hat = K  * kt
-    y_test_hat  = K★ * kt
+    # KRR to get coefficients
+    K  = kernelmatrix(k,x_norm;obsdim=1)
+    kt = (K + λ*I) \ y_norm
 
-    # w = x_train' * ((K + λ*I) \ y_train)
-    # return (w)
-    return (y_train_hat, y_test_hat)
-end # function krr
+    # unpack KRR model weights
+    x_norm_ = x_norm
+    model   = (k,kt,x_norm_)
+
+    # get results
+    y_hat_norm = K*kt
+    y_hat      = denorm_sets(y_bias,y_scale,y_hat_norm)
+    err        = err_segs(y_hat,y,l_segs;silent=silent_debug)
+    silent || @info("fit   error: $(round(std(err),digits=2)) nT")
+
+    # pack data normalizations
+    data_norms = (x_bias,x_scale,y_bias,y_scale)
+
+    return (model, data_norms, y_hat, err)
+end # function krr_fit
+
+"""
+    krr_test(x, y, data_norms::Tuple, model::Tuple;
+             l_segs::Vector = [length(y)],
+             silent::Bool   = false)
+
+Evaluate performance of a kernel ridge regression (KRR) model.
+
+**Arguments:**
+- `x`:          `N` x `Nf` data matrix (`Nf` is number of features)
+- `y`:          length-`N` target vector
+- `data_norms`: length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
+- `model`:      length-`3` tuple of KRR-based model, (`k`, length-`N_train` coefficients, `N_train` x `Nf` training data matrix, normalized)
+- `l_segs`:     (optional) length-`N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
+- `silent`:     (optional) if true, no print outs
+
+**Returns:**
+- `y_hat`: length-`N` prediction vector
+- `err`:   length-`N` mean-corrected (per line) error
+"""
+function krr_test(x, y, data_norms::Tuple, model::Tuple;
+                  l_segs::Vector = [length(y)],
+                  silent::Bool   = false)
+
+    # unpack data normalizations
+    (x_bias,x_scale,y_bias,y_scale) = data_norms
+    x_norm = (x .- x_bias) ./ x_scale
+
+    # unpack KRR model weights
+    (k,kt,x_norm_) = model
+    K = kernelmatrix(k,x_norm,x_norm_;obsdim=1)
+
+    # get results
+    y_hat_norm = K*kt
+    y_hat      = denorm_sets(y_bias,y_scale,y_hat_norm)
+    err        = err_segs(y_hat,y,l_segs;silent=silent_debug)
+    silent || @info("test  error: $(round(std(err),digits=2)) nT")
+
+    return (y_hat, err)
+end # function krr_test
 
 """
     predict_shapley(m, df::DataFrame)
@@ -2005,7 +2072,7 @@ function plot_shapley(df_shap, baseline_shap,
 end # function plot_shapley
 
 """
-    eval_gsa(m, x, n::Int=min(10000,size(x,1)))
+    eval_gsa(m, x, n::Int = min(10000,size(x,1)))
 
 Global sensitivity analysis (GSA) with the Morris Method.
 
@@ -2021,20 +2088,20 @@ Reference: https://docs.sciml.ai/GlobalSensitivity/stable/methods/morris/
 **Returns:**
 - `means`: means of elementary effects
 """
-function eval_gsa(m, x, n::Int=min(10000,size(x,1)))
+function eval_gsa(m, x, n::Int = min(10000,size(x,1)))
 
     seed!(2) # for reproducibility
 
     method      = Morris(relative_scale=true,num_trajectory=n)
     param_range = vec(extrema(x,dims=1))
     means       = vec(gsa(m,method,param_range;samples=n).means)
-    #* note: produces Float32 warning even if param_range is Float32
+    # #* note: produces Float32 warning even if param_range is Float32
 
     return (means)
 end # function eval_gsa
 
 """
-    get_igrf(xyz::XYZ, ind=trues(xyz.traj.N);
+    get_igrf(xyz::XYZ, ind = trues(xyz.traj.N);
              frame::Symbol   = :body,
              norm_igrf::Bool = false,
              check_xyz::Bool = true)
@@ -2053,7 +2120,7 @@ date in IGRF time (years since 0 CE), and reference frame.
 **Returns:**
 - `igrf_vec`: length-`N` stacked vector of `3` IGRF coordinates in `frame`
 """
-function get_igrf(xyz::XYZ, ind=trues(xyz.traj.N);
+function get_igrf(xyz::XYZ, ind = trues(xyz.traj.N);
                   frame::Symbol   = :body,
                   norm_igrf::Bool = false,
                   check_xyz::Bool = true)
@@ -2061,7 +2128,7 @@ function get_igrf(xyz::XYZ, ind=trues(xyz.traj.N);
     date_start = get_years.(xyz.year[ind],xyz.doy[ind].-1)
     seconds_in_year = 60 * 60 * 24 * get_days_in_year.(date_start)
 
-    @assert frame in [:body,:nav] "must choose `:body` or `:nav` reference frame"
+    @assert frame in [:body,:nav] "$frame reference frame is invalid, select {:body,:nav}"
     @assert all(1900 .<= date_start .<= 2030)  "start date must be in valid IGRF date range"
 
     N   = length(xyz.traj.lat[ind])
@@ -2083,7 +2150,7 @@ function get_igrf(xyz::XYZ, ind=trues(xyz.traj.N);
 
     # normalize (or not) and rotate (or not)
     norm_igrf && (igrf_vec = normalize.(igrf_vec))
-    if (frame == :nav)
+    if frame == :nav
         return (igrf_vec)
     else # convert to body frame
         Cnb = iszero(xyz.traj.Cnb[:,:,ind]) ? xyz.ins.Cnb[:,:,ind] : xyz.traj.Cnb[:,:,ind] # body to navigation
@@ -2230,7 +2297,7 @@ Internal helper function to get expanded limits (extrema) of data.
 - `frac`: fraction of `x` limits (extrema) to expand
 
 **Returns:**
-- `lim`: limits (extrema) of `x` expanded by `frac` on each end
+- `lim`: length-`2` limits (extrema) of `x` expanded by `frac` on each end
 """
 function get_lim(x, frac=0)
     extrema(x) .+ (-frac,frac) .* (extrema(x)[2] - extrema(x)[1])
@@ -2244,7 +2311,7 @@ Internal helper function to expand range of data that has constant step size.
 
 **Arguments:**
 - `x`:          data
-- `xlim`:       (optional) limits `(xmin,xmax)` to which `x` is expanded
+- `xlim`:       (optional) length-`2` limits `(xmin,xmax)` to which `x` is expanded
 - `extra_step`: (optional) if true, expand range by extra step on each end
 
 **Returns:**
@@ -2272,57 +2339,62 @@ function expand_range(x::Vector, xlim::Tuple = get_lim(x),
 end # function expand_range
 
 """
-    filter_events!(df_event::DataFrame, flight::Symbol, keyword::String = "";
-                   tt_lim::Tuple = extrema(df_event.tt[df_event.flight .== flight]))
+    filter_events!(flight::Symbol, df_event::DataFrame;
+                   keyword::String = "",
+                   tt_lim::Tuple   = extrema(df_event.tt[df_event.flight .== flight]))
 
 Filter a DataFrame of in-flight events to only contain relevant events.
 
 **Arguments:**
+- `flight`:   flight name (e.g., `:Flt1001`)
 - `df_event`: lookup table (DataFrame) of in-flight events
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `flight`|`Symbol`| flight name (e.g., `:Flt1001`)
 `tt`    |`Real`  | time of `event` [s]
 `event` |`String`| event description
-- `flight`:   flight name (e.g., `:Flt1001`)
 - `keyword`:  (optional) keyword to search within events, case insensitive
-- `tt_lim`:   (optional) 2-element (inclusive) start & end time limits. Defaults to use full time range [s]
+- `tt_lim`:   (optional) end time limit or length-`2` start & end time limits (inclusive) [s]
 
 **Returns:**
 - `nothing`: `df_event` is filtered
 """
-function filter_events!(df_event::DataFrame, flight::Symbol, keyword::String = "";
-                        tt_lim::Tuple = extrema(df_event.tt[df_event.flight .== flight]))
+function filter_events!(flight::Symbol, df_event::DataFrame;
+                        keyword::String = "",
+                        tt_lim::Tuple   = extrema(df_event.tt[df_event.flight .== flight]))
     (t_start,t_end) = tt_lim
     filter!(:flight => f -> (f == flight), df_event)
     filter!(:tt     => t -> (t_start <= t <= t_end), df_event)
     filter!(:event  => e -> occursin(keyword,lowercase(e)), df_event)
+    return (nothing)
 end # function filter_events!
 
 """
-    filter_events(df_event::DataFrame, flight::Symbol, keyword::String = "";
-                  tt_lim::Tuple = extrema(df_event.tt[df_event.flight .== flight]))
+    filter_events(flight::Symbol, df_event::DataFrame;
+                  keyword::String = "",
+                  tt_lim::Tuple   = extrema(df_event.tt[df_event.flight .== flight]))
 
 Filter a DataFrame of in-flight events to only contain relevant events.
 
 **Arguments:**
+- `flight`:   flight name (e.g., `:Flt1001`)
 - `df_event`: lookup table (DataFrame) of in-flight events
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `flight`|`Symbol`| flight name (e.g., `:Flt1001`)
 `tt`    |`Real`  | time of `event` [s]
 `event` |`String`| event description
-- `flight`:   flight name (e.g., `:Flt1001`)
 - `keyword`:  (optional) keyword to search within events, case insensitive
-- `tt_lim`:   (optional) 2-element (inclusive) start & end time limits. Defaults to use full time range [s]
+- `tt_lim`:   (optional) end time limit or length-`2` start & end time limits (inclusive) [s]
 
 **Returns:**
 - `df_event`: lookup table (DataFrame) of in-flight events, filtered
 """
-function filter_events(df_event::DataFrame, flight::Symbol, keyword::String = "";
-                       tt_lim::Tuple = extrema(df_event.tt[df_event.flight .== flight]))
+function filter_events(flight::Symbol, df_event::DataFrame;
+                       keyword::String = "",
+                       tt_lim::Tuple   = extrema(df_event.tt[df_event.flight .== flight]))
     df_event = deepcopy(df_event)
-    filter_events!(df_event,flight,keyword;tt_lim=tt_lim)
+    filter_events!(flight,df_event;keyword=keyword,tt_lim=tt_lim)
     return (df_event)
 end # function filter_events
 
@@ -2355,9 +2427,9 @@ predicted scalar magnetic field.
 - `filt_lat`:    (optional) length-`N` filter output latitude  [rad]
 - `filt_lon`:    (optional) length-`N` filter output longitude [rad]
 - `ind`:         (optional) selected data indices
-- `tt_lim`:      (optional) 2-element (inclusive) start & end time limits. Defaults to use full time range [min]
+- `tt_lim`:      (optional) length-`2` start & end time limits (inclusive) [min]
 - `skip_every`:  (optional) number of time steps to skip between frames
-- `save_plot`:   (optional) if true, `g1` will be saved as `mag_gif`
+- `save_plot`:   (optional) if true, save `g1` as `mag_gif`
 - `mag_gif`:     (optional) path/name of magnetic field GIF file to save (`.gif` extension optional)
 
 **Returns**
@@ -2388,7 +2460,7 @@ function gif_animation_m3(TL_perm::AbstractMatrix, TL_induced::AbstractMatrix, T
     show_ins  = false
     show_filt = length(filt_lat) == length(filt_lon) == xyz.traj(ind).N
 
-    # get lat & lon for plotting
+    # extract lat & lon
     traj     = xyz.traj(ind)
     ins      = xyz.ins(ind)
     filt_lat = rad2deg.(filt_lat)
@@ -2409,13 +2481,13 @@ function gif_animation_m3(TL_perm::AbstractMatrix, TL_induced::AbstractMatrix, T
                         check_xyz = true)
 
     # compute dot product component of each field
-    NN_component = vec(sum(y_nn        .* B_unit, dims=1))
-    TL_component = vec(sum(TL_aircraft .* B_unit, dims=1))
+    NN_comp = vec(sum(y_nn        .* B_unit, dims=1))
+    TL_comp = vec(sum(TL_aircraft .* B_unit, dims=1))
 
-    # note that we can project onto the 3D IGRF vector to get the full picture,
-    # although most of the 3D vector may be in the "down" direction, which makes
+    # #* note: body field can be projected onto 3D IGRF vector for full picture
+    # most of the 3D vector may be in the "down" direction, which makes
     # the 2D plane tilt down towards the north pole. A remedy is to drop the
-    # z-dimension and treat it like a compass, which is shown here
+    # z-dimension and treat it like a compass, which is shown here.
     igrf_nav_2D = reduce(hcat, igrf_nav)
     igrf_nav_2D[3,:] .= 0.0
     normalize!.(eachcol(igrf_nav_2D))
@@ -2439,25 +2511,26 @@ function gif_animation_m3(TL_perm::AbstractMatrix, TL_induced::AbstractMatrix, T
 
     # create gif
     l  = @layout [ a{0.6w} [b;c] ]
-    p1 = plot(layout=l, size=(800,500), margin=5*mm)
+    p1 = plot(layout=l, size=(800,500), margin=4*mm)
     a1 = Animation()
 
     for i in i_start:skip_every:i_end
-        p1 = plot(layout=l, size=(800,500), margin=5*mm)
+        p1 = plot(layout=l, size=(800,500), margin=4*mm)
 
         # move a vertical line across the magnetic field data
-        plot!(p1[1],xlab="time [min]",ylab=" magnetic field [nT]",xlim=tt_lim, legend=:bottomleft)
-        plot!(p1[1],tt,y           ,lab="true compensation"   ,color=:gray, style=:dash)
-        plot!(p1[1],tt,y_hat       ,lab="model 3 compensation",color=:black)
-        plot!(p1[1],tt,TL_component,lab="TL component"        ,color=:blue)
-        plot!(p1[1],tt,NN_component,lab="NN component"        ,color=:red)
-        plot!(p1[1], [tt[i]], linetype=:vline, lab="", color=:black)
+        plot!(p1[1],xlab="time [min]",ylab=" magnetic field [nT]",
+              xlim=tt_lim,legend=:bottomleft)
+        plot!(p1[1],tt,y      ,lab="true compensation"   ,lc=:gray, ls=:dash)
+        plot!(p1[1],tt,y_hat  ,lab="model 3 compensation",lc=:black)
+        plot!(p1[1],tt,TL_comp,lab="TL component"        ,lc=:blue)
+        plot!(p1[1],tt,NN_comp,lab="NN component"        ,lc=:red)
+        plot!(p1[1],[tt[i]]   ,lab=""                    ,lc=:black, lt=:vline)
 
         # draw compass plot for each field
         plot!(p1[2],xlab="east [nT]",ylab=" north [nT]",
               xlim=(-2500,2500),ylim=(-2500,2500),legend=:topright)
-        plot!(p1[2],[0.0,aircraft_2D_TL[2,i]],[0.0,aircraft_2D_TL[1,i]],arrow=true,lab="TL",color=:blue)
-        plot!(p1[2],[0.0,aircraft_2D_NN[2,i]],[0.0,aircraft_2D_NN[1,i]],arrow=true,lab="NN",color=:red)
+        plot!(p1[2],[0.0,aircraft_2D_TL[2,i]],[0.0,aircraft_2D_TL[1,i]],arrow=true,lab="TL",lc=:blue)
+        plot!(p1[2],[0.0,aircraft_2D_NN[2,i]],[0.0,aircraft_2D_NN[1,i]],arrow=true,lab="NN",lc=:red)
         plot!(p1[2],[0.0,perm_field_2D[ 2,i]],[0.0,perm_field_2D[ 1,i]],arrow=true,lab="perm.")
         plot!(p1[2],[0.0,ind_field_2D[  2,i]],[0.0,ind_field_2D[  1,i]],arrow=true,lab="ind.")
         plot!(p1[2],[0.0,eddy_field_2D[ 2,i]],[0.0,eddy_field_2D[ 1,i]],arrow=true,lab="eddy")
@@ -2466,7 +2539,7 @@ function gif_animation_m3(TL_perm::AbstractMatrix, TL_induced::AbstractMatrix, T
         plot!(p1[3],xlab="longitude [deg]",ylab="latitude [deg]")
         plot!(p1[3],gps_lon[1:i] ,gps_lat[1:i] ,xlim=xlim,ylim=ylim,lab="GPS")
         show_ins  && (plot!(p1[3],ins_lon[1:i] ,ins_lat[1:i] ,xlim=xlim,ylim=ylim,lab="INS"))
-        show_filt && (plot!(p1[3],filt_lon[1:i],filt_lat[1:i],xlim=xlim,ylim=ylim,lab="EKF",xrotation=18))
+        show_filt && (plot!(p1[3],filt_lon[1:i],filt_lat[1:i],xlim=xlim,ylim=ylim,lab="MagNav",xrotation=18))
         annotate!(gps_lon[i], gps_lat[i], Plots.text("✈", 20, rotation=dir[i]), subplot=3)
 
         frame(a1,p1)

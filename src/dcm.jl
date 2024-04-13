@@ -1,5 +1,5 @@
 """
-    euler2dcm(roll, pitch, yaw, order::Symbol=:body2nav)
+    euler2dcm(roll, pitch, yaw, order::Symbol = :body2nav)
 
 Converts a (Euler) roll-pitch-yaw (`X`-`Y`-`Z`) right-handed body to navigation
 frame rotation (or the opposite rotation), to a DCM (direction cosine matrix).
@@ -29,7 +29,7 @@ Section 3.6 (pg. 36-41 & 537).
 **Returns:**
 - `dcm`: `3` x `3` x `N` direction cosine matrix [-]
 """
-function euler2dcm(roll, pitch, yaw, order::Symbol=:body2nav)
+function euler2dcm(roll, pitch, yaw, order::Symbol = :body2nav)
 
     @assert length(roll) == length(pitch) == length(yaw) "roll, pitch, and yaw must be the same length"
 
@@ -79,7 +79,7 @@ function euler2dcm(roll, pitch, yaw, order::Symbol=:body2nav)
 end # function euler2dcm
 
 """
-    dcm2euler(dcm, order::Symbol=:body2nav)
+    dcm2euler(dcm, order::Symbol = :body2nav)
 
 Converts a DCM (direction cosine matrix) to yaw, pitch, and roll Euler angles.
 Yaw is synonymous with azimuth and heading here. There are 2 use cases:
@@ -108,7 +108,7 @@ Section 3.6 (pg. 36-41 & 537).
 - `pitch`: length-`N` pitch angle [rad], right-handed rotation about y-axis
 - `yaw`:   length-`N` yaw   angle [rad], right-handed rotation about z-axis
 """
-function dcm2euler(dcm, order::Symbol=:body2nav)
+function dcm2euler(dcm, order::Symbol = :body2nav)
 
     if order == :body2nav # Cnb, shown in Titterton & Weston (pg. 41)
         roll  =  atan.(dcm[3,2,:],dcm[3,3,:])
