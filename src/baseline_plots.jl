@@ -570,17 +570,18 @@ function plot_correlation(x::Vector, y::Vector,
                           plot_png::String = "$xfeature-$yfeature.png",
                           silent::Bool     = true)
 
-    xyc = cor(x,y)
-    xys = linreg(y,x)
+    xyc   = cor(x,y)
+    xys   = linreg(y,x)
+    xlab  = "$xfeature"
+    ylab  = "$yfeature"
+    title = "$yfeature vs $xfeature"
+    silent || println("$title, correlation & slope: $(round.([xyc,xys],digits=5))")
 
     if abs(xyc) > lim
-        xlab  = "$xfeature"
-        ylab  = "$yfeature"
-        title = "$yfeature vs $xfeature"
-        p1 = scatter(x,y,lab=false,dpi=dpi,xlab=xlab,ylab=ylab,title=title,mc=:black,ms=2)
+        p1 = scatter(x,y,lab=false,dpi=dpi,title=title,
+                     xlab=xlab,ylab=ylab,mc=:black,ms=2)
         show_plot && display(p1)
         save_plot && png(p1,plot_png)
-        silent || println("$title, correlation & slope: $(round.([xyc,xys],digits=5))")
         return (p1)
     else
         return (nothing)
