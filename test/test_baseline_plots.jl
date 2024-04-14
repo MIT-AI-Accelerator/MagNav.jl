@@ -185,6 +185,7 @@ end
                            show_plot = false,
                            save_plot = false,
                            silent    = true) isa Plot
+    @test plot_correlation(xyz;lim=Inf,show_plot) isa Nothing
 end
 
 feat_set  = [:mag_1_c,:mag_1_uc,:TL_A_flux_a,:flight]

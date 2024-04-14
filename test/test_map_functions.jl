@@ -157,8 +157,12 @@ show_plot = false
 p1 = plot_path(traj;show_plot)
 
 @testset "plot_path tests" begin
-    @test plot_path!(p1,traj;show_plot,path_color=:black) isa Nothing
-    @test plot_path(traj;Nmax=50,show_plot) isa Plots.Plot
+    @test plot_path!(p1,traj.lat,traj.lon     ;show_plot) isa Nothing
+    @test plot_path!(p1,traj;path_color=:black,show_plot) isa Nothing
+    @test plot_path( p1,traj.lat,traj.lon     ;show_plot) isa Plots.Plot
+    @test plot_path( p1,traj;Nmax=50          ,show_plot) isa Plots.Plot
+    @test plot_path(    traj.lat,traj.lon     ;show_plot) isa Plots.Plot
+    @test plot_path(    traj;Nmax=50          ,show_plot) isa Plots.Plot
 end
 
 p1 = plot_basic(traj.tt,traj.lat;show_plot)
