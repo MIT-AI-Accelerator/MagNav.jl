@@ -2989,7 +2989,7 @@ function map_combine(mapS::MapS, mapS_fallback::MapS = get_map(namad);
 
     map_map  = zeros(eltype(mapS.map ),length.((map_yy,map_xx)))
     map_mask = falses(size(map_map))
-    map_map[ ind_yy,ind_xx] = mapS.map
+    map_map[ ind_yy,ind_xx] = mapS.map .* mapS.mask
     map_mask[ind_yy,ind_xx] = mapS.mask
     (ind0,_,nx,ny) = map_params(map_map)
     for i = 1:nx, j = 1:ny
