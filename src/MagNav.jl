@@ -1,6 +1,3 @@
-"""
-`MagNav`: airborne `Mag`netic anomaly `Nav`igation
-"""
 module MagNav
     using ArchGDAL, CSV, Flux, ForwardDiff, HDF5, LazyArtifacts
     using LinearAlgebra, Plots, TOML, ZipFile, Zygote

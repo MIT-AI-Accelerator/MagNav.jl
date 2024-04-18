@@ -223,8 +223,8 @@ Delete a data field from an HDF5 file.
 """
 function delete_field(data_h5::String, field)
     data_h5 = add_extension(data_h5,".h5")
-    field = string(field)
-    file  = h5open(data_h5,"r+") # read-write, preserve existing contents
+    field   = String(field)
+    file    = h5open(data_h5,"r+") # read-write, preserve existing contents
     delete_object(file,field)
     close(file)
     return (nothing)
@@ -245,7 +245,7 @@ Write (add) a new data field and data in an HDF5 file.
 """
 function write_field(data_h5::String, field, data)
     data_h5 = add_extension(data_h5,".h5")
-    field = string(field)
+    field   = String(field)
     h5open(data_h5,"cw") do file # read-write, create file if not existing, preserve existing contents
         write(file,field,data)
     end
@@ -267,7 +267,7 @@ Overwrite a data field and data in an HDF5 file.
 """
 function overwrite_field(data_h5::String, field, data)
     data_h5 = add_extension(data_h5,".h5")
-    field = string(field)
+    field   = String(field)
     delete_field(data_h5,field)
     write_field(data_h5,field,data)
     return (nothing)
@@ -287,7 +287,7 @@ Read data for a data field in an HDF5 file.
 """
 function read_field(data_h5::String, field)
     data_h5 = add_extension(data_h5,".h5")
-    field = string(field)
+    field   = String(field)
     h5open(data_h5,"r") do file # read-only
         read(file,field)
     end
@@ -307,10 +307,10 @@ Rename data field in an HDF5 file.
 - `nothing`: `field_old` is renamed `field_new` in `data_h5`
 """
 function rename_field(data_h5::String, field_old, field_new)
-    data_h5 = add_extension(data_h5,".h5")
-    field_old = string(field_old)
-    field_new = string(field_new)
-    data = read_field(data_h5,field_old)
+    data_h5   = add_extension(data_h5,".h5")
+    field_old = String(field_old)
+    field_new = String(field_new)
+    data      = read_field(data_h5,field_old)
     delete_field(data_h5,field_old)
     write_field(data_h5,field_new,data)
     return (nothing)
@@ -329,9 +329,9 @@ Clear all data fields and data in an HDF5 file.
 """
 function clear_fields(data_h5::String)
     data_h5 = add_extension(data_h5,".h5")
-    file = h5open(data_h5,"cw") # read-write, create file if not existing, preserve existing contents
+    file    = h5open(data_h5,"cw") # read-write, create file if not existing, preserve existing contents
     close(file)
-    file = h5open(data_h5,"w") # read-write, destroy existing contents
+    file    = h5open(data_h5,"w") # read-write, destroy existing contents
     close(file)
     return (nothing)
 end # function clear_fields

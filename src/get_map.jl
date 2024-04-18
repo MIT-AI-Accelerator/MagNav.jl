@@ -132,8 +132,8 @@ Get map data from saved HDF5 or MAT file via DataFrame lookup. Maps are
 typically saved in `:deg` units, while `:rad` is used internally.
 
 **Arguments:**
-- `map_name`:   name of magnetic anomaly map
-- `df_map`:     lookup table (DataFrame) of map data HDF5 and/or MAT files
+- `map_name`: name of magnetic anomaly map
+- `df_map`:   lookup table (DataFrame) of map data HDF5 and/or MAT files
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `map_name`|`Symbol`| name of magnetic anomaly map
@@ -149,7 +149,8 @@ function get_map(map_name::Symbol, df_map::DataFrame;
                  map_info::String   = "$map_name",
                  map_units::Symbol  = :rad,
                  file_units::Symbol = :deg)
-    get_map(df_map.map_file[df_map.map_name .== map_name][1];
+    ind = findfirst(Symbol.(df_map.map_name) .== map_name)
+    get_map(String(df_map.map_file[ind]);
             map_info   = map_info,
             map_units  = map_units,
             file_units = file_units)

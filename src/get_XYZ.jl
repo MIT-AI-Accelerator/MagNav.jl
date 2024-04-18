@@ -1436,8 +1436,8 @@ end # function get_XYZ21
 Get `XYZ` flight data from saved HDF5 file via DataFrame lookup.
 
 **Arguments:**
-- `flight`:       flight name (e.g., `:Flt1001`)
-- `df_flight`:    lookup table (DataFrame) of flight data files
+- `flight`:    flight name (e.g., `:Flt1001`)
+- `df_flight`: lookup table (DataFrame) of flight data files
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
@@ -1456,9 +1456,9 @@ function get_XYZ(flight::Symbol, df_flight::DataFrame;
                  reorient_vec::Bool = false,
                  silent::Bool       = false)
 
-    ind      = findfirst(df_flight.flight .== flight)
-    xyz_type = df_flight.xyz_type[ind]
-    xyz_file = df_flight.xyz_file[ind]
+    ind      = findfirst(Symbol.(df_flight.flight) .== flight)
+    xyz_file = String(df_flight.xyz_file[ind])
+    xyz_type = Symbol(df_flight.xyz_type[ind])
 
     if xyz_type == nameof(XYZ0)
         xyz = get_XYZ0( xyz_file;tt_sort=tt_sort,silent=silent)
@@ -1495,7 +1495,7 @@ in opened HDF5 file. Prints out warning for any field that contains NaNs.
 - `val`: data returned for `field`
 """
 function read_check(xyz::HDF5.File, field::Symbol, N::Int = 1, silent::Bool = false)
-    field = string(field)
+    field = String(field)
     if field in keys(xyz)
         val = read(xyz,field)
     else
@@ -1520,7 +1520,7 @@ in opened HDF5 file.
 - `val`: string returned for `field`
 """
 function read_check(xyz::HDF5.File, field::Symbol, default::String)
-    field = string(field)
+    field = String(field)
     val   = field in keys(xyz) ? read(xyz,field) : default
     return (val)
 end # function read_check
