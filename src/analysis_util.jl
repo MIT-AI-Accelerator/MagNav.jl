@@ -489,8 +489,8 @@ end # function get_x
 Get `x` data matrix from multiple flight lines, possibly multiple flights.
 
 **Arguments:**
-- `lines`:            selected line number(s)
-- `df_line`:          lookup table (DataFrame) of `lines`
+- `lines`:   selected line number(s)
+- `df_line`: lookup table (DataFrame) of `lines`
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `flight`   |`Symbol`| flight name (e.g., `:Flt1001`)
@@ -498,7 +498,7 @@ Get `x` data matrix from multiple flight lines, possibly multiple flights.
 `t_start`  |`Real`  | start time of `line` to use [s]
 `t_end`    |`Real`  | end   time of `line` to use [s]
 `map_name` |`Symbol`| (optional) name of magnetic anomaly map relevant to `line`
-- `df_flight`:        lookup table (DataFrame) of flight data files
+- `df_flight`: lookup table (DataFrame) of flight data files
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `flight`  |`Symbol`| flight name (e.g., `:Flt1001`)
@@ -532,6 +532,8 @@ function get_x(lines, df_line::DataFrame, df_flight::DataFrame,
                l_window::Int      = -1,
                silent::Bool       = true)
 
+    lines = [lines;] # ensure vector
+
     # check if lines are in df_line, remove if not
     for l in lines
         if !(l in df_line.line)
@@ -540,13 +542,14 @@ function get_x(lines, df_line::DataFrame, df_flight::DataFrame,
         end
     end
 
-    # check if lines are duplicated in df_line, throw error if so
-    @assert length(lines) == length(unique(lines)) "df_line contains duplicated lines"
+    # check if lines contains any duplicates, throw error if so
+    @assert length(lines) == length(unique(lines)) "duplicate lines in $lines"
 
-    # check if flight data matches up
-    flights  = [df_line.flight[df_line.line .== l][1] for l in lines]
-    xyz_sets = [df_flight.xyz_set[df_flight.flight .== f][1] for f in flights]
-    @assert all(xyz_sets.==xyz_sets[1]) "incompatible xyz_sets in df_flight"
+    # check if flight data matches up, throw error if not
+    flights  = Symbol.(df_flight.flight)
+    flights_ = Symbol.([df_line.flight[df_line.line .== l][1] for l in lines])
+    xyz_sets = [df_flight.xyz_set[flights .== f][1] for f in flights_]
+    @assert all(xyz_sets .== xyz_sets[1]) "incompatible xyz_sets in df_flight"
 
     # initial values
     flt_old  = :FltInitial
@@ -557,7 +560,7 @@ function get_x(lines, df_line::DataFrame, df_flight::DataFrame,
     l_segs   = zeros(Int,length(lines))
 
     for line in lines
-        flt = df_line.flight[df_line.line .== line][1]
+        flt = Symbol(df_line.flight[df_line.line .== line][1])
         if flt != flt_old
             xyz = get_XYZ(flt,df_flight;reorient_vec=reorient_vec,silent=silent)
         end
@@ -672,8 +675,8 @@ end # function get_y
 Get `y` target vector from multiple flight lines, possibly multiple flights.
 
 **Arguments:**
-- `lines`:     selected line number(s)
-- `df_line`:   lookup table (DataFrame) of `lines`
+- `lines`:   selected line number(s)
+- `df_line`: lookup table (DataFrame) of `lines`
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `flight`   |`Symbol`| flight name (e.g., `:Flt1001`)
@@ -688,12 +691,12 @@ Get `y` target vector from multiple flight lines, possibly multiple flights.
 `xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
 `xyz_set` |`Real`  | flight dataset number (used to prevent improper mixing of datasets, such as different magnetometer locations)
 `xyz_file`|`String`| path/name of flight data CSV, HDF5, or MAT file (`.csv`, `.h5`, or `.mat` extension required)
-- `df_map`:    lookup table (DataFrame) of map data files
+- `df_map`: lookup table (DataFrame) of map data files
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `map_name`|`Symbol`| name of magnetic anomaly map
 `map_file`|`String`| path/name of map data HDF5 or MAT file (`.h5` or `.mat` extension required)
-- `y_type`:    (optional) `y` target type
+- `y_type`: (optional) `y` target type
     - `:a` = anomaly field  #1, compensated tail stinger total field scalar magnetometer measurements
     - `:b` = anomaly field  #2, interpolated `magnetic anomaly map` values
     - `:c` = aircraft field #1, difference between uncompensated cabin total field scalar magnetometer measurements and interpolated `magnetic anomaly map` values
@@ -727,8 +730,8 @@ function get_y(lines, df_line::DataFrame, df_flight::DataFrame,
         end
     end
 
-    # check if lines are duplicated in df_line, throw error if so
-    @assert length(lines) == length(unique(lines)) "df_line contains duplicated lines"
+    # check if lines contains any duplicates, throw error if so
+    @assert length(lines) == length(unique(lines)) "duplicate lines in $lines"
 
     # initial values
     flt_old = :FltInitial
@@ -736,7 +739,7 @@ function get_y(lines, df_line::DataFrame, df_flight::DataFrame,
     xyz     = nothing
 
     for line in lines
-        flt = df_line.flight[df_line.line .== line][1]
+        flt = Symbol(df_line.flight[df_line.line .== line][1])
         if flt != flt_old
             xyz = get_XYZ(flt,df_flight;silent=silent)
         end
@@ -746,7 +749,7 @@ function get_y(lines, df_line::DataFrame, df_flight::DataFrame,
 
         # map values along trajectory (if needed)
         if y_type in [:b,:c]
-            map_name = df_line.map_name[df_line.line .== line][1]
+            map_name = Symbol(df_line.map_name[df_line.line .== line][1])
             map_val  = get_map_val(get_map(map_name,df_map),xyz.traj,ind;α=200)
         else
             map_val  = -1
@@ -798,8 +801,8 @@ from multiple flight lines, possibly multiple flights. Optionally return `Bt`
 & `B_dot` used to create the "external" Tolles-Lawson `A` matrix.
 
 **Arguments:**
-- `lines`:     selected line number(s)
-- `df_line`:   lookup table (DataFrame) of `lines`
+- `lines`:   selected line number(s)
+- `df_line`: lookup table (DataFrame) of `lines`
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `flight`   |`Symbol`| flight name (e.g., `:Flt1001`)
@@ -814,14 +817,14 @@ from multiple flight lines, possibly multiple flights. Optionally return `Bt`
 `xyz_type`|`Symbol`| subtype of `XYZ` to use for flight data {`:XYZ0`,`:XYZ1`,`:XYZ20`,`:XYZ21`}
 `xyz_set` |`Real`  | flight dataset number (used to prevent improper mixing of datasets, such as different magnetometer locations)
 `xyz_file`|`String`| path/name of flight data CSV, HDF5, or MAT file (`.csv`, `.h5`, or `.mat` extension required)
-- `df_map`:    lookup table (DataFrame) of map data files
+- `df_map`: lookup table (DataFrame) of map data files
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `map_name`|`Symbol`| name of magnetic anomaly map
 `map_file`|`String`| path/name of map data HDF5 or MAT file (`.h5` or `.mat` extension required)
 - `features_setup`:   vector of features to include
 - `features_no_norm`: (optional) vector of features to not normalize
-- `y_type`:           (optional) `y` target type
+- `y_type`: (optional) `y` target type
     - `:a` = anomaly field  #1, compensated tail stinger total field scalar magnetometer measurements
     - `:b` = anomaly field  #2, interpolated `magnetic anomaly map` values
     - `:c` = aircraft field #1, difference between uncompensated cabin total field scalar magnetometer measurements and interpolated `magnetic anomaly map` values
@@ -872,6 +875,8 @@ function get_Axy(lines, df_line::DataFrame,
                  return_B::Bool     = false,
                  silent::Bool       = true)
 
+    lines = [lines;] # ensure vector
+
     # check if lines are in df_line, remove if not
     for l in lines
         if !(l in df_line.line)
@@ -880,13 +885,14 @@ function get_Axy(lines, df_line::DataFrame,
         end
     end
 
-    # check if lines are duplicated in df_line, throw error if so
-    @assert length(lines) == length(unique(lines)) "df_line contains duplicated lines"
+    # check if lines contains any duplicates, throw error if so
+    @assert length(lines) == length(unique(lines)) "duplicate lines in $lines"
 
     # check if flight data matches up, throw error if not
-    flights  = [df_line.flight[df_line.line .== l][1] for l in lines]
-    xyz_sets = [df_flight.xyz_set[df_flight.flight .== f][1] for f in flights]
-    @assert all(xyz_sets.==xyz_sets[1]) "incompatible xyz_sets in df_flight"
+    flights  = Symbol.(df_flight.flight)
+    flights_ = Symbol.([df_line.flight[df_line.line .== l][1] for l in lines])
+    xyz_sets = [df_flight.xyz_set[flights .== f][1] for f in flights_]
+    @assert all(xyz_sets .== xyz_sets[1]) "incompatible xyz_sets in df_flight"
 
     # initial values
     flt_old  = :FltInitial
@@ -902,7 +908,7 @@ function get_Axy(lines, df_line::DataFrame,
     l_segs   = zeros(Int,length(lines))
 
     for line in lines
-        flt = df_line.flight[df_line.line .== line][1]
+        flt = Symbol(df_line.flight[df_line.line .== line][1])
         if flt != flt_old
             xyz = get_XYZ(flt,df_flight;reorient_vec=reorient_vec,silent=silent)
         end
@@ -930,7 +936,7 @@ function get_Axy(lines, df_line::DataFrame,
 
         # map values along trajectory (if needed)
         if y_type in [:b,:c]
-            map_name = df_line.map_name[df_line.line .== line][1]
+            map_name = Symbol(df_line.map_name[df_line.line .== line][1])
             map_val  = get_map_val(get_map(map_name,df_map),xyz.traj,ind;α=200)
         else
             map_val  = -1
@@ -1657,9 +1663,9 @@ end # function get_ind
 Get BitVector of indices for further analysis via DataFrame lookup.
 
 **Arguments:**
-- `xyz`:      `XYZ` flight data struct
-- `line`:     line number
-- `df_line`:  lookup table (DataFrame) of `lines`
+- `xyz`:     `XYZ` flight data struct
+- `line`:    line number
+- `df_line`: lookup table (DataFrame) of `lines`
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `flight`   |`Symbol`| flight name (e.g., `:Flt1001`)
@@ -1713,9 +1719,9 @@ end # function get_ind
 Get BitVector of selected data indices for further analysis via DataFrame lookup.
 
 **Arguments:**
-- `xyz`:        `XYZ` flight data struct
-- `lines`:      selected line number(s)
-- `df_line`:    lookup table (DataFrame) of `lines`
+- `xyz`:     `XYZ` flight data struct
+- `lines`:   selected line number(s)
+- `df_line`: lookup table (DataFrame) of `lines`
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `flight`   |`Symbol`| flight name (e.g., `:Flt1001`)
@@ -1723,8 +1729,8 @@ Get BitVector of selected data indices for further analysis via DataFrame lookup
 `t_start`  |`Real`  | start time of `line` to use [s]
 `t_end`    |`Real`  | end   time of `line` to use [s]
 `map_name` |`Symbol`| (optional) name of magnetic anomaly map relevant to `line`
-- `splits`:     (optional) data splits, must sum to 1
-- `l_window`:   (optional) trim data by `N % l_window`, `-1` to ignore
+- `splits`:   (optional) data splits, must sum to 1
+- `l_window`: (optional) trim data by `N % l_window`, `-1` to ignore
 
 **Returns:**
 - `ind`: BitVector (or tuple of BitVector) of selected data indices
@@ -2341,7 +2347,7 @@ end # function expand_range
 """
     filter_events!(flight::Symbol, df_event::DataFrame;
                    keyword::String = "",
-                   tt_lim::Tuple   = extrema(df_event.tt[df_event.flight .== flight]))
+                   tt_lim::Tuple   = ())
 
 Filter a DataFrame of in-flight events to only contain relevant events.
 
@@ -2354,25 +2360,26 @@ Filter a DataFrame of in-flight events to only contain relevant events.
 `tt`    |`Real`  | time of `event` [s]
 `event` |`String`| event description
 - `keyword`:  (optional) keyword to search within events, case insensitive
-- `tt_lim`:   (optional) end time limit or length-`2` start & end time limits (inclusive) [s]
+- `tt_lim`:   (optional) length-`2` start & end time limits (inclusive) [s]
 
 **Returns:**
 - `nothing`: `df_event` is filtered
 """
 function filter_events!(flight::Symbol, df_event::DataFrame;
                         keyword::String = "",
-                        tt_lim::Tuple   = extrema(df_event.tt[df_event.flight .== flight]))
-    (t_start,t_end) = tt_lim
-    filter!(:flight => f -> (f == flight), df_event)
+                        tt_lim::Tuple   = ())
+    ind = Symbol.(df_event.flight) .== flight
+    (t_start,t_end) = tt_lim == () ? extrema(df_event.tt[ind]) : tt_lim
+    filter!(:flight => f -> (Symbol(f) == flight), df_event)
     filter!(:tt     => t -> (t_start <= t <= t_end), df_event)
-    filter!(:event  => e -> occursin(keyword,lowercase(e)), df_event)
+    filter!(:event  => e -> occursin(String(keyword),lowercase(e)), df_event)
     return (nothing)
 end # function filter_events!
 
 """
     filter_events(flight::Symbol, df_event::DataFrame;
                   keyword::String = "",
-                  tt_lim::Tuple   = extrema(df_event.tt[df_event.flight .== flight]))
+                  tt_lim::Tuple   = ())
 
 Filter a DataFrame of in-flight events to only contain relevant events.
 
@@ -2385,14 +2392,14 @@ Filter a DataFrame of in-flight events to only contain relevant events.
 `tt`    |`Real`  | time of `event` [s]
 `event` |`String`| event description
 - `keyword`:  (optional) keyword to search within events, case insensitive
-- `tt_lim`:   (optional) end time limit or length-`2` start & end time limits (inclusive) [s]
+- `tt_lim`:   (optional) length-`2` start & end time limits (inclusive) [s]
 
 **Returns:**
 - `df_event`: lookup table (DataFrame) of in-flight events, filtered
 """
 function filter_events(flight::Symbol, df_event::DataFrame;
                        keyword::String = "",
-                       tt_lim::Tuple   = extrema(df_event.tt[df_event.flight .== flight]))
+                       tt_lim::Tuple   = ())
     df_event = deepcopy(df_event)
     filter_events!(flight,df_event;keyword=keyword,tt_lim=tt_lim)
     return (df_event)

@@ -46,6 +46,14 @@ lazy = true
     sha256 = "9197872972a6f61dc755911e20324d0596e31e36eddd74cb02fdc6c883dc9e7b"
     url = "https://www.dropbox.com/scl/fi/1jiwgfjqz5xfz4ucdlwci/sgl_2020_train_v3.tar.gz?rlkey=q6xs74oizb15lam8ycqt89lky"
 
+[sgl_2021_train]
+git-tree-sha1 = "67c350d14287d4a3b2cdb75840fb466b36da9ad0"
+lazy = true
+
+    [[sgl_2021_train.download]]
+    sha256 = "284dce3ab2a75937c6c2b34b8232ed57ebfe25b803c7665f3114957f3a9ca5dc"
+    url = "https://www.dropbox.com/scl/fi/ogmgf1xys41c2tpsf2ue3/sgl_2021_train_v1.tar.gz?rlkey=ugqt05sda862gfz5szk5b7u7x"
+
 [sgl_fields]
 git-tree-sha1 = "1d46dc48ad1026df78a42a24d743de6796aa52d8"
 lazy = false

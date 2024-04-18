@@ -265,7 +265,7 @@ end
 (model,data_norms,_,_) = krr_fit(x,y)
 
 @testset "krr tests" begin
-    @test krr_fit(x,y)[2:4] == krr_fit( x,y,data_norms      )[2:4]
+    @test krr_fit(x,y)[2:4] == krr_fit( x,y;data_norms      )[2:4]
     @test krr_fit(x,y)[3:4] == krr_test(x,y,data_norms,model)[1:2]
 end
 

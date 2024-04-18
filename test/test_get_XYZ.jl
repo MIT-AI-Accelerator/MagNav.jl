@@ -163,9 +163,26 @@ df_flight = DataFrame(flight   = flights,
     end
 end
 
-df_flight[:,:xyz_type] .= :XYZ21
+xyz_dir   = MagNav.sgl_2021_train()
+flights   = [:Flt2001,:Flt2002,:Flt2004,:Flt2005,:Flt2006,
+             :Flt2007,:Flt2008,:Flt2015,:Flt2016,:Flt2017]
+xyz_types = repeat([:XYZ21],length(flights))
+xyz_sets  = repeat([1],length(flights))
+xyz_files = [xyz_dir*"/$(f)_train.h5" for f in flights]
+df_flight = DataFrame(flight   = flights,
+                      xyz_type = xyz_types,
+                      xyz_set  = xyz_sets,
+                      xyz_file = xyz_files)
 
 @testset "get_XYZ21 tests" begin
-    @test_nowarn get_XYZ21(xyz_files[1];tt_sort=true,silent=true)
-    @test_nowarn get_XYZ(flights[1],df_flight;tt_sort=true,silent=true)
+    for xyz_file in xyz_files
+        xyz = get_XYZ21(xyz_file;tt_sort=true,silent=true)
+        @test xyz isa MagNav.XYZ21
+        @test xyz.traj.N ≈ length(xyz.traj.lat) ≈ length(xyz.traj.lon)
+    end
+    for flight in flights
+        xyz = get_XYZ(flight,df_flight;tt_sort=true,reorient_vec=true,silent=true)
+        @test xyz isa MagNav.XYZ21
+        @test xyz.traj.N ≈ length(xyz.traj.lat) ≈ length(xyz.traj.lon)
+    end
 end

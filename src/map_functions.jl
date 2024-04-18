@@ -2285,7 +2285,7 @@ function plot_events!(p1::Plot, flight::Symbol,  df_event::DataFrame;
     t_units == :min && (tt_lim = 60 .* tt_lim)
     df = filter_events(flight,df_event;keyword=keyword,tt_lim=tt_lim)
     for i in axes(df,1)
-        lab = show_lab ? string(df[i,:event]) : ""
+        lab = show_lab ? String(df[i,:event]) : ""
         t   = df[i,:tt]
         t_units == :min && (t = t/60)
         plot_events!(p1,t-t0,lab;legend=legend)
@@ -2989,7 +2989,7 @@ function map_combine(mapS::MapS, mapS_fallback::MapS = get_map(namad);
 
     map_map  = zeros(eltype(mapS.map ),length.((map_yy,map_xx)))
     map_mask = falses(size(map_map))
-    map_map[ ind_yy,ind_xx] = mapS.map
+    map_map[ ind_yy,ind_xx] = mapS.map .* mapS.mask
     map_mask[ind_yy,ind_xx] = mapS.mask
     (ind0,_,nx,ny) = map_params(map_map)
     for i = 1:nx, j = 1:ny
