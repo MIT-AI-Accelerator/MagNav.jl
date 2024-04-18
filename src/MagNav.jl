@@ -132,6 +132,24 @@ module MagNav
     sgl_2020_train() = joinpath(artifact"sgl_2020_train","sgl_2020_train")
 
     """
+        sgl_2021_train()
+
+    Flight data from the 2021 SGL flight data collection - training portion,
+    contains:
+    - `Flt2001_train.h5`
+    - `Flt2002_train.h5`
+    - `Flt2004_train.h5`
+    - `Flt2005_train.h5`
+    - `Flt2006_train.h5`
+    - `Flt2007_train.h5`
+    - `Flt2008_train.h5`
+    - `Flt2015_train.h5`
+    - `Flt2016_train.h5`
+    - `Flt2017_train.h5`
+    """
+    sgl_2021_train() = joinpath(artifact"sgl_2021_train","sgl_2021_train")
+
+    """
         const emag2
 
     Earth Magnetic Anomaly Grid with 2 arcminute resolution (EMAG2). Compiled
