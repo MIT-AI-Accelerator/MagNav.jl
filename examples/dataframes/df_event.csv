@@ -1,348 +1,844 @@
 ﻿flight,tt,event
-Flt1002,46390.87,BOX 1 START
-Flt1002,46964.47,BOX 1 END
-Flt1002,47027.11,BOX 2 START
-Flt1002,47546.27,BOX 2 END
-Flt1002,49472.03,FUEL PUMP ON
-Flt1002,49665.84,POWER LINES
-Flt1002,50247.47,POWER LINES
-Flt1002,51066.73,POWER LINES
-Flt1002,51285.39,POWER LINES
-Flt1002,51733.58,POWER LINES
-Flt1002,51764.03,FUEL PUMP OFF
-Flt1002,51923.43,POWER LINES
-Flt1002,52682.29,POWER LINES
-Flt1002,52860.64,FUEL PUMP ON
-Flt1002,52939.57,POWER LINES
-Flt1002,53618.55,TRAIN TRACKS
-Flt1002,53755.97,SOLAR FARM
-Flt1002,53778.77,FUEL PUMP OFF
-Flt1002,53819.79,POWER LINES
-Flt1002,53932.94,POWER LINES
-Flt1002,54529.54,POWER LINES
-Flt1002,54646.57,POWER LINES
-Flt1002,54835.12,TRAIN TRACKS
-Flt1002,55405.78,POWER LINES
-Flt1002,55529.26,POWER LINES
-Flt1002,56059.26,POWER LINES
-Flt1002,56094.55,TRAIN TRACKS
-Flt1002,56350.25,FUEL PUMP ON
-Flt1002,56764.86,POWER LINES
-Flt1002,57068.39,FUEL PUMP OFF
-Flt1002,57285.15,TRAIN TRACKS
-Flt1002,57335.14,POWER LINES
-Flt1002,57459.34,TRAIN TRACKS
-Flt1002,57568.42,POWER LINES
-Flt1002,57996.02,RADIO TALK START
-Flt1002,58011.97,RADIO TALK END
-Flt1002,58048.73,LIGHTS ON
-Flt1002,58186.87,LIGHTS OFF
-Flt1002,58229.47,MOVE FERROUS PIPE
-Flt1002,58437.77,STOW FERROUS PIPE
-Flt1002,58557.09,MOVE FLAPS START
-Flt1002,58679.99,MOVE FLAPS END
-Flt1002,58964.22,ELECTRIC FAN ON
-Flt1002,59066.64,TRAIN TRACKS
-Flt1002,59225.42,ELECTRIC FAN OFF
-Flt1002,59244.63,AC FANS HIGH
-Flt1002,59543.09,VARY SPEED START
-Flt1002,59791.94,VARY SPEED END
-Flt1002,59801.28,POWER LINES
-Flt1002,59852.06,AIRCRAFT ELECTRICS VARY
-Flt1002,59959.14,AIRCRAFT ELECTRICS SURVEY CONFIG
-Flt1002,60461.75,POWER LINES
-Flt1002,60524.55,POWER LINES
-Flt1002,60766.05,SOLAR FARM
-Flt1002,61226.51,POWER LINES
-Flt1002,61413.19,POWER LINES
-Flt1002,61634.68,POWER LINES
-Flt1002,61940.05,POWER LINES
-Flt1002,61954.49,RADIO MIC START
-Flt1002,61999.92,RADIO MIC END
-Flt1002,62035.57,LIGHTS ON
-Flt1002,62171.23,LIGHTS OFF
-Flt1002,62184.84,MOVE FERROUS PIPE
-Flt1002,62269.8,POWER LINES
-Flt1002,62370.84,STOW FERROUS PIPE
-Flt1002,62395.09,MOVE FLAPS START
-Flt1002,62548.82,MOVE FLAPS END
-Flt1002,62566.68,ELECTRIC FAN ON
-Flt1002,62737.01,ELECTRIC FAN OFF
-Flt1002,62759.29,VARY SPEED START
-Flt1002,62978.37,VARY SPEED END
-Flt1002,63474.54,POWER LINES
-Flt1002,64309.45,RADIO MIC START
-Flt1002,64357.46,RADIO MIC END
-Flt1002,64430.01,LIGHTS ON
-Flt1002,64580.2,LIGHTS OFF
-Flt1002,64637.38,MOVE FERROUS PIPE
-Flt1002,64819.54,STOW FERROUS PIPE
-Flt1002,64890.42,MOVE FLAPS START
-Flt1002,65017.7,MOVE FLAPS END
-Flt1002,65058.05,ELECTRIC FAN ON
-Flt1002,65277.54,ELECTRIC FAN OFF
-Flt1002,65303.63,VARY SPEED START
-Flt1002,65471.15,VARY SPEED END
-Flt1002,65540.91,WX RADAR ON
-Flt1002,65611.46,POWER LINES
-Flt1002,65696.36,WX RADAR OFF
-Flt1002,65823.72,POWER LINES
-Flt1002,66571.73,BOX 1 START
-Flt1002,67131.8,BOX 1 END
-Flt1002,67276.84,BOX 2 START
-Flt1002,67839.15,BOX 2 END
-Flt1003,50255.97,WX RADAR ON & OFF
-Flt1003,50771.63,IN BOX AREA
-Flt1003,50806.38,POWER LINE
-Flt1003,50943.57,POWER LINE
-Flt1003,51478.22,RADIO 4 MIN AGO. CALL ON COM 1 & 2
-Flt1003,51599.18,POWER LINE
-Flt1003,51680.22,POWER LINE
-Flt1003,51751.22,TRAIN TRACK
-Flt1003,52313.19,LIGHTS BLINKING START
-Flt1003,52473.55,LIGHTS BLINKING END
-Flt1003,52502.45,FUEL PUMPS ON
-Flt1003,52710.15,FLAPS 10 SET
-Flt1003,52789,FLAPS UP
-Flt1003,52801.9,FLAPS 10 SET
-Flt1003,52845.3,FLAPS UP
-Flt1003,52855.62,SLOW SPEED
-Flt1003,52886.29,FLAPS 10 SET
-Flt1003,52972.02,CRUISE SPEED SET FLAPS UP
-Flt1003,53019.76,POWER LINES
-Flt1003,53094.43,POWER LINES
-Flt1003,53162.23,AC OFF
-Flt1003,53183.72,AC VENTILATE
-Flt1003,53221.88,AC ON
-Flt1003,53247.12,AC OFF
-Flt1003,53276.13,AC VENTILATE
-Flt1003,53314.81,AC COOL
-Flt1003,53327.47,VENT FANS LOW
-Flt1003,53415.09,VENT FANS HIGH
-Flt1003,53546.43,RAIL BED?
-Flt1003,53571.45,SLOW FLYING FLAPS 10 SET
-Flt1003,53617.75,POWER LINES - 20 SEC
-Flt1003,53694.19,FAST CRUISE SET FLAPS UP
-Flt1003,53724.85,POWER LINES
-Flt1003,53740.61,RADAR ON
-Flt1003,53833.48,RADAR OFF
-Flt1003,53859.12,FUEL PUMPS OFF
-Flt1003,53904.28,FUEL PUMPS BOTH ON
-Flt1003,53964.02,FUEL PUMP OFF
-Flt1003,53983.3,RADAR ON
-Flt1003,54029.08,FUEL PUMPS ON
-Flt1003,54059.43,RADAR OFF
-Flt1003,54134.8,CABIN FUEL PUMP 2 OFF 1 ON
-Flt1003,54156.64,RADIO CALL
-Flt1003,54191.02,SATPHONE CALL START
-Flt1003,54316.52,SATPHONE CALL END
-Flt1003,54346.34,POWER LINES
-Flt1003,54421.53,POWER LINES
-Flt1003,54537.99,CLIMB TO 800M
-Flt1003,54644.55,ESTABLISHED AT 800M
-Flt1003,54720.53,VISUAL BELOW CLOUD BELOW DRAPE
-Flt1003,54917.49,POWER LINES
-Flt1003,54940.59,BLINKING LIGHTS
-Flt1003,55087.75,SURVEY CONFIG
-Flt1003,55097.88,RADAR ON
-Flt1003,55194.06,RADAR OFF
-Flt1003,55345.18,AC OFF VENT FANS LOW
-Flt1003,55414.64,AC VENTILATE FANS LOW
-Flt1003,55554.88,AC COOL VENTS HIGH
-Flt1003,55638.67,POWER LINES
-Flt1003,55694.71,POWER LINES
-Flt1003,55853.15,FLAPS 10
-Flt1003,55868.44,FLAPS UP
-Flt1003,56171.95,WX RADAR ON
-Flt1003,56193.34,SLOW SPEED
-Flt1003,56206.55,LAP 10
-Flt1003,56263.06,FLAPS UP
-Flt1003,56267.19,FASTER
-Flt1003,56315.76,WX RADAR STBY
-Flt1003,56324.3,POWER LINE
-Flt1003,56400.99,CLOUDS
-Flt1003,56491.02,RADIO
-Flt1003,56520.08,ADF OFF
-Flt1003,56712.12,ADF NO
-Flt1003,56718.28,CABIN PUMP OFF
-Flt1003,56761.12,RADIO COM 1
-Flt1003,56775.56,RADIO COM 2
-Flt1003,56935.91,POWER LINES
-Flt1003,57408.48,RADIO COM 1
-Flt1003,57516.18,FLAP 10
-Flt1003,57549.92,FLAP UP
-Flt1003,57646.79,POWER LINES
-Flt1003,58155.52,IPAD REBOOT
-Flt1003,58223.49,PUMP 1 ON
-Flt1003,58297.45,POWER LINES
-Flt1003,58524.69,RADIO COM 2
-Flt1003,59023.14,POWER LINE
-Flt1003,59276.62,AUTOPILOT ON AND OFF
-Flt1003,59320.68,WX RADAR STBY
-Flt1003,60161.14,POWER LINE (3 SETS)
-Flt1003,60284.52,CABIN PUMP OFF AUX TANK EMPTY
-Flt1003,60383.46,POWER LINE
-Flt1003,60416.6,POWER LINE
-Flt1003,60442.36,RACE TRACK
-Flt1003,60618.92,POWER LINE
-Flt1003,60697.28,FLAP 10
-Flt1003,60722.92,FLAP UP
-Flt1003,60875.25,RADIO COM 1
-Flt1003,61088.71,WX RADAR ON
-Flt1003,61179.27,POWER LINE
-Flt1003,61346.67,CABIN FAN ON
-Flt1003,61409.82,CABIN FAN OFF
-Flt1003,61486.28,POWER LINES
-Flt1003,61753.18,AC OFF VENT FANS LOW
-Flt1003,61796,AC VENTILATE VENT FANS LOW
-Flt1003,61835.42,POWER LINES
-Flt1003,61855.22,AC ON VENT FANS LOW
-Flt1003,61889.22,SLOW FLYING FLAPS 10
-Flt1003,62023.35,NORMAL CRUISE FLAPS UP
-Flt1003,62046.87,AC COOL VENT FANS HIGH
-Flt1003,62127.58,POWER LINES
-Flt1003,62279.05,LIGHTS ON (STROBE NAV BEACON)
-Flt1003,62444.25,LIGHTS OFF (STROBE NAV BEACON) PULSE ON
-Flt1003,62555.24,RADAR ON
-Flt1003,62608.79,POWER LINES
-Flt1003,62618.49,RADAR STANDBY
-Flt1003,62970.28,POWER LINE
-Flt1003,63058.44,RADIO CALL
-Flt1003,63255.67,POWER LINES
-Flt1003,63293.34,POWER LINES
-Flt1003,63512.03,RADIO CALL
-Flt1003,63557.85,POWER LINES
-Flt1003,64045.96,POWER LINES
-Flt1003,64085.56,SLOW FLYING FLAPS 10 SET
-Flt1003,64174.04,NORMAL CRUISE FLAPS UP
-Flt1003,64365.57,POWER LINES
-Flt1003,64434.92,POWER LINES
-Flt1003,64742.83,POWER LINES
-Flt1003,64854.07,AC OFF VENT FANS HIGH
-Flt1003,64945.69,AC VENTILATE VENT FANS HIGH
-Flt1003,64966.69,POWER LINES
-Flt1003,65024.72,AC COOL VENT FANS HIGH
-Flt1003,65334.5,WX RADAR ON
-Flt1003,65386.44,WX RADAR STBY
-Flt1003,65749.72,POWER LINE
-Flt1003,65945.85,RADIO COM 1
-Flt1003,66034.53,WX RADAR ON
-Flt1003,66057.69,WX RADAR STBY
-Flt1003,66075.45,POWER LINES
-Flt1003,66152.61,POWER LINES
-Flt1003,66319,CABIN FAN ONO
-Flt1003,66446.45,POWER LINE
-Flt1003,66473.86,CABIN FAN OFF
-Flt1003,66899.37,WX RADAR ON
-Flt1003,67401.28,WX RADAR ON
-Flt1003,67455.51,WX RADAR STBY
-Flt1003,67909.38,FLAPS 10
-Flt1003,67915.84,SLOWING TO 100KTS
-Flt1003,67992.56,FLAPS UP
-Flt1003,68000.05,SPEEDING UP BACK TO NORMAL CRUISE
-Flt1003,68320.24,WX RADAR ON
-Flt1003,68335.98,WX RADAR STBY
-Flt1004,45346.1984,Power line
-Flt1004,45555.4856,Cabin fuel pump on
-Flt1004,48693.3937,Cabin fuel pump off
-Flt1004,49207.2425,Pilot went to back
-Flt1004,50141.8761,Cabin fuel pump on
-Flt1004,51632.9739,Cabin fuel pumps off
-Flt1004,53624.2481,Cabin tank pump on
-Flt1004,54224.0937,Cabin tank pump off
-Flt1004,56066.4593,Autopilot on
-Flt1004,56346.8474,Autopilot off
-Flt1005,48102.5663,Flaps
-Flt1005,49147.6675,Power lines
-Flt1005,49252.2758,Power lines
-Flt1005,49873.3142,Power lines
-Flt1005,49959.2614,Power lines
-Flt1005,50424.529,Flap up
-Flt1005,51154.7356,Flaps
-Flt1005,51479.9641,Power lines
-Flt1005,51554.2389,Power lines
-Flt1005,51953.033,Flaps up
-Flt1005,52288.0585,Power lines
-Flt1005,52362.2337,Power lines
-Flt1005,52713.406,Flaps down
-Flt1005,53427.4995,Flaps up
-Flt1005,54202.9712,Flaps 10
-Flt1005,54967.1475,Flaps up
-Flt1006,49165.26,Box 1 start
-Flt1006,49188.92,Clean configuration
-Flt1006,49798.47,Box 1 end
-Flt1006,49940.07,Box 2 start
-Flt1006,50318.52,Box 2 end
-Flt1006,50340.66,Box 3 start – change config on south heading
-Flt1006,50411.37,Start config – change on west heading
-Flt1006,50804.16,End of config
-Flt1006,50829.66,Start of config change
-Flt1006,51301.69,End of config
-Flt1006,51377.53,Start of box – 1 change per oscillation
-Flt1006,52013.82,Start of box
-Flt1006,52371.96,End of box
-Flt1006,52408.42,Start of box
-Flt1006,52843.06,End of box
-Flt1006,52861.78,Start of box
+Flt1002,46390.87,box 1 start
+Flt1002,46964.47,box 1 end
+Flt1002,47027.11,box 2 start
+Flt1002,47546.27,box 2 end
+Flt1002,49472.03,fuel pump on
+Flt1002,49665.84,power lines
+Flt1002,50247.47,power lines
+Flt1002,51066.73,power lines
+Flt1002,51285.39,power lines
+Flt1002,51733.58,power lines
+Flt1002,51764.03,fuel pump off
+Flt1002,51923.43,power lines
+Flt1002,52682.29,power lines
+Flt1002,52860.64,fuel pump on
+Flt1002,52939.57,power lines
+Flt1002,53618.55,train tracks
+Flt1002,53755.97,solar farm
+Flt1002,53778.77,fuel pump off
+Flt1002,53819.79,power lines
+Flt1002,53932.94,power lines
+Flt1002,54529.54,power lines
+Flt1002,54646.57,power lines
+Flt1002,54835.12,train tracks
+Flt1002,55405.78,power lines
+Flt1002,55529.26,power lines
+Flt1002,56059.26,power lines
+Flt1002,57335.14,power lines
+Flt1002,57459.34,train tracks
+Flt1002,57568.42,power lines
+Flt1002,57996.02,radio talk start
+Flt1002,58011.97,radio talk end
+Flt1002,58048.73,lights on
+Flt1002,58186.87,lights off
+Flt1002,58229.47,ferrous pipe move
+Flt1002,58437.77,ferrous pipe stow
+Flt1002,58557.09,flaps move start
+Flt1002,58679.99,flaps move end
+Flt1002,58964.22,electric fan on
+Flt1002,59066.64,train tracks
+Flt1002,59225.42,electric fan off
+Flt1002,59244.63,ac fans high
+Flt1002,59543.09,vary speed start
+Flt1002,59791.94,vary speed end
+Flt1002,59801.28,power lines
+Flt1002,59852.06,aircraft electrics vary
+Flt1002,61226.51,power lines
+Flt1002,61413.19,power lines
+Flt1002,61634.68,power lines
+Flt1002,61940.05,power lines
+Flt1002,61954.49,radio call start
+Flt1002,61999.92,radio call end
+Flt1002,62035.57,lights on
+Flt1002,62171.23,lights off
+Flt1002,62184.84,ferrous pipe move
+Flt1002,62269.80,power lines
+Flt1002,62370.84,ferrous pipe stow
+Flt1002,62395.09,flaps move start
+Flt1002,62548.82,flaps move end
+Flt1002,62566.68,electric fan on
+Flt1002,62737.01,electric fan off
+Flt1002,62759.29,vary speed start
+Flt1002,62978.37,vary speed end
+Flt1002,64309.45,radio call start
+Flt1002,64357.46,radio call end
+Flt1002,64430.01,lights on
+Flt1002,64580.20,lights off
+Flt1002,64637.38,ferrous pipe move
+Flt1002,64819.54,ferrous pipe stow
+Flt1002,64890.42,flaps move start
+Flt1002,65017.70,flaps move end
+Flt1002,65058.05,electric fan on
+Flt1002,65277.54,electric fan off
+Flt1002,65303.63,vary speed start
+Flt1002,65471.15,vary speed end
+Flt1002,65540.91,wx radar on
+Flt1002,65611.46,power lines
+Flt1002,65696.36,wx radar off
+Flt1002,65823.72,power lines
+Flt1002,66571.73,box 1 start
+Flt1002,67131.80,box 1 end
+Flt1002,67276.84,box 2 start
+Flt1002,67839.15,box 2 end
+Flt1003,50255.97,wx radar on/off
+Flt1003,50771.63,in box area
+Flt1003,50806.38,power line
+Flt1003,50943.57,power line
+Flt1003,51238.22,radio com 1 & 2
+Flt1003,51599.18,power line
+Flt1003,51680.22,power line
+Flt1003,51751.22,train track
+Flt1003,52313.19,lights blinking start
+Flt1003,52473.55,lights blinking end
+Flt1003,52502.45,fuel pumps on
+Flt1003,52710.15,flaps 10
+Flt1003,52789.00,flaps up
+Flt1003,52801.90,flaps 10
+Flt1003,52845.30,flaps up
+Flt1003,52855.62,slow speed
+Flt1003,52886.29,flaps 10
+Flt1003,52972.02,normal cruise flaps up
+Flt1003,53019.76,power lines
+Flt1003,53094.43,power lines
+Flt1003,53162.23,ac off
+Flt1003,53183.72,ac ventilate
+Flt1003,53221.88,ac on
+Flt1003,53247.12,ac off
+Flt1003,53276.13,ac ventilate
+Flt1003,53314.81,ac cool
+Flt1003,53327.47,vent fans low
+Flt1003,53415.09,vent fans high
+Flt1003,53546.43,rail track?
+Flt1003,53571.45,slow speed flaps 10
+Flt1003,53617.75,power lines (20 sec)
+Flt1003,53694.19,fast speed flaps up
+Flt1003,53724.85,power lines
+Flt1003,53740.61,wx radar on
+Flt1003,53833.48,wx radar off
+Flt1003,53859.12,fuel pumps off
+Flt1003,53904.28,fuel pumps both on
+Flt1003,53964.02,fuel pump off
+Flt1003,53983.30,wx radar on
+Flt1003,54029.08,fuel pumps on
+Flt1003,54059.43,wx radar off
+Flt1003,54134.80,cabin fuel pump 2 off 1 on
+Flt1003,54156.64,radio call
+Flt1003,54191.02,satphone call start
+Flt1003,54316.52,satphone call end
+Flt1003,54346.34,power lines
+Flt1003,54421.53,power lines
+Flt1003,54537.99,climb to 800m
+Flt1003,54644.55,established at 800m
+Flt1003,54720.53,visual below cloud below drape
+Flt1003,54917.49,power lines
+Flt1003,54940.59,lights blinking
+Flt1003,55087.75,survey config
+Flt1003,55097.88,wx radar on
+Flt1003,55194.06,wx radar off
+Flt1003,55345.18,ac off vent fans low
+Flt1003,55414.64,ac ventilate vent fans low
+Flt1003,55554.88,ac cool vent fans high
+Flt1003,55638.67,power lines
+Flt1003,55694.71,power lines
+Flt1003,55853.15,flaps 10
+Flt1003,55868.44,flaps up
+Flt1003,56171.95,wx radar on
+Flt1003,56193.34,slow speed
+Flt1003,56206.55,lap 10
+Flt1003,56263.06,flaps up
+Flt1003,56267.19,fast speed
+Flt1003,56315.76,wx radar standby
+Flt1003,56324.30,power line
+Flt1003,56400.99,clouds
+Flt1003,56491.02,radio
+Flt1003,56520.08,adf off
+Flt1003,56712.12,adf no
+Flt1003,56718.28,cabin pump off
+Flt1003,56761.12,radio com 1
+Flt1003,56775.56,radio com 2
+Flt1003,56935.91,power lines
+Flt1003,57408.48,radio com 1
+Flt1003,57516.18,flap 10
+Flt1003,57549.92,flap up
+Flt1003,57646.79,power lines
+Flt1003,58155.52,ipad reboot
+Flt1003,58223.49,pump 1 on
+Flt1003,58297.45,power lines
+Flt1003,58524.69,radio com 2
+Flt1003,59023.14,power line
+Flt1003,59276.62,autopilot on/off
+Flt1003,59320.68,wx radar standby
+Flt1003,60161.14,power lines (3 sets)
+Flt1003,60284.52,cabin pump off
+Flt1003,60383.46,power line
+Flt1003,60416.60,power line
+Flt1003,60442.36,race track
+Flt1003,60618.92,power line
+Flt1003,60697.28,flap 10
+Flt1003,60722.92,flap up
+Flt1003,60875.25,radio com 1
+Flt1003,61088.71,wx radar on
+Flt1003,61179.27,power line
+Flt1003,61346.67,cabin fan on
+Flt1003,61409.82,cabin fan off
+Flt1003,61486.28,power lines
+Flt1003,61753.18,ac off vent fans low
+Flt1003,61796.00,ac ventilate vent fans low
+Flt1003,61835.42,power lines
+Flt1003,61855.22,ac on vent fans low
+Flt1003,61889.22,slow speed flaps 10
+Flt1003,62023.35,normal cruise flaps up
+Flt1003,62046.87,ac cool vent fans high
+Flt1003,62127.58,power lines
+Flt1003,62279.05,all lights on
+Flt1003,62444.25,all lights off
+Flt1003,62555.24,wx radar on
+Flt1003,62608.79,power lines
+Flt1003,62618.49,wx radar standby
+Flt1003,62970.28,power line
+Flt1003,63058.44,radio call
+Flt1003,63255.67,power lines
+Flt1003,63293.34,power lines
+Flt1003,63512.03,radio call
+Flt1003,63557.85,power lines
+Flt1003,64045.96,power lines
+Flt1003,64085.56,slow speed flaps 10
+Flt1003,64174.04,normal cruise flaps up
+Flt1003,64365.57,power lines
+Flt1003,64434.92,power lines
+Flt1003,64742.83,power lines
+Flt1004,45346.20,power line
+Flt1004,45555.49,cabin fuel pump on
+Flt1004,56066.46,autopilot on
+Flt1004,56346.85,autopilot off
+Flt1005,48102.57,flaps
+Flt1005,49147.67,power lines
+Flt1005,49252.28,power lines
+Flt1005,49873.31,power lines
+Flt1005,49959.26,power lines
+Flt1005,51479.96,power lines
+Flt1005,51554.24,power lines
+Flt1006,49165.26,box 1 start
+Flt1006,49188.92,clean config
+Flt1006,49798.47,box 1 end
+Flt1006,49940.07,box 2 start
+Flt1006,50318.52,box 2 end
+Flt1006,50340.66,box 3 start
+Flt1006,50340.66,config change start – south heading
+Flt1006,50411.37,config change start – west heading
+Flt1006,50804.16,config change end
+Flt1006,50829.66,config change start
+Flt1006,51301.69,config change end
+Flt1006,51377.53,box start – 1 change per oscillation
+Flt1006,52013.82,box start
+Flt1006,52371.96,box end
+Flt1006,52408.42,box start
+Flt1006,52843.06,box end
+Flt1006,52861.78,box start
 Flt1006,55774.45,400m comp with config changes
-Flt1006,55894.04,Power line
-Flt1006,56053.36,Tower
-Flt1007,48729.2447,Wiggles
-Flt1007,48944.3082,Pump 1 on
-Flt1007,49137.9085,ac off
-Flt1007,49162.3938,Wiggles
-Flt1007,49208.0554,ac on
-Flt1007,50066.925,Wiggles
-Flt1007,50277.0903,Flaps 1
-Flt1007,50329.8143,Flaps up
-Flt1007,50717.973,Wiggles
-Flt1007,51084.8161,Flaps 1
-Flt1007,51141.5637,Flap up
-Flt1007,51734.9333,ac off
-Flt1007,51745.333,ac on
-Flt1007,51786.5351,Back fan on
-Flt1007,51811.168,Back fan off
-Flt1007,51852.537,End of fig 8
-Flt1007,52012.8991,pump off
-Flt1007,52541.0668,Wiggles
-Flt1007,53067.8992,Wiggles
-Flt1007,53278.2428,pump on
-Flt1007,53718.5888,Wiggles
-Flt1007,53786.4674,Lights on
-Flt1007,53873.2746,Lights off
-Flt1007,54119.3684,ac off
-Flt1007,54143.4356,ac on
-Flt1007,54311.7558,Fan on
-Flt1007,54350.697,Fan off
-Flt1007,54726.0431,Flaps
-Flt1007,55110.6698,Wiggles
-Flt1007,55275.8527,Back fan on
-Flt1007,55668.3188,Fan off
-Flt1007,55685.2624,Wiggles
-Flt1007,55985.0588,Lights on
-Flt1007,56120.0468,Lights off
-Flt1007,56233.9304,Pump off
-Flt1007,56708.1394,Back fan off
-Flt1007,56958.7239,All lights on
-Flt1007,57176.6061,All lights off
-Flt1007,57898.2987,Electric fan on
-Flt1007,58017.3793,Electric fan off
-Flt1007,58097.5996,Wiggles
-Flt1007,58518.7104,Flaps
-Flt1007,59014.5497,Wiggles
-Flt1007,59160.4632,Back fan on
-Flt1007,59632.0264,Fan off
-Flt1007,59958.0953,Back fan on
-Flt1007,60063.2178,Back fan off
-Flt1007,60170.7761,Power dam
-Flt1007,60624.7043,Wiggles
-Flt1007,61062.1983,Flaps
-Flt1007,61224.097,Wiggles
-Flt1007,61393.0438,Flaps
-Flt1007,62254.7581,Flaps
-Flt1007,62394.7353,Flaps
-Flt1007,62458.76,Lights on
-Flt1007,62635.3777,Lights off
-Flt1007,62647.8206,Wx radar on
-Flt1007,62733.3828,Wx radar off
-Flt1007,62839.2604,Flaps
+Flt1006,55894.04,power line
+Flt1006,56053.36,tower
+Flt1007,48729.24,wiggles
+Flt1007,48944.31,pump 1 on
+Flt1007,49137.91,ac off
+Flt1007,49162.39,wiggles
+Flt1007,49208.06,ac on
+Flt1007,50066.93,wiggles
+Flt1007,50277.09,flaps 1
+Flt1007,50329.81,flaps up
+Flt1007,50717.97,wiggles
+Flt1007,51084.82,flaps 1
+Flt1007,51141.56,flap up
+Flt1007,51734.93,ac off
+Flt1007,51745.33,ac on
+Flt1007,51786.54,back fan on
+Flt1007,51811.17,back fan off
+Flt1007,51852.54,figure 8 end
+Flt1007,52012.90,pump off
+Flt1007,57898.30,electric fan on
+Flt1007,58017.38,electric fan off
+Flt1007,58097.60,wiggles
+Flt1007,58518.71,flaps
+Flt1007,59014.55,wiggles
+Flt1007,59160.46,back fan on
+Flt1007,59632.03,fan off
+Flt1007,59958.10,back fan on
+Flt1007,60063.22,back fan off
+Flt1007,60170.78,power dam
+Flt1007,60624.70,wiggles
+Flt1007,61062.20,flaps
+Flt1007,61224.10,wiggles
+Flt1007,61393.04,flaps
+Flt1007,62254.76,flaps
+Flt1007,62394.74,flaps
+Flt1007,62458.76,lights on
+Flt1007,62635.38,lights off
+Flt1007,62647.82,wx radar on
+Flt1007,62733.38,wx radar off
+Flt1007,62839.26,flaps
+Flt2001,73153.17,115kts
+Flt2001,73232.96,125kts
+Flt2001,73307.13,135kts
+Flt2001,73401.90,flaps 10 start
+Flt2001,73430.94,flaps 10 end
+Flt2001,73446.44,flaps 20 start
+Flt2001,73463.20,flaps 20 end
+Flt2001,73484.89,flaps 30 start
+Flt2001,73501.44,flaps 30 end
+Flt2001,73555.24,radio start
+Flt2001,73577.90,radio end
+Flt2001,73623.14,radio start
+Flt2001,73637.74,radio end
+Flt2001,73678.14,vent fans on
+Flt2001,73706.29,vent fans on
+Flt2001,73714.14,vent fans off
+Flt2001,73729.78,ac on
+Flt2001,73741.92,vent fans on
+Flt2001,73748.26,vent fans off
+Flt2001,73755.56,ac off
+Flt2001,73771.30,bleed air on
+Flt2001,73782.44,bleed air off
+Flt2001,73790.62,bleed air on
+Flt2001,73856.66,ignition on
+Flt2001,73877.29,ignition off
+Flt2001,73894.55,pitot static heat on
+Flt2001,73910.85,pitot static heat off
+Flt2001,73925.85,stall warning on
+Flt2001,73957.32,stall warning off
+Flt2001,73971.44,prop heat auto
+Flt2001,73987.39,prop heat manual
+Flt2001,73996.32,prop heat off
+Flt2001,74003.19,boots on
+Flt2001,74026.27,boots off
+Flt2001,74041.10,pulse lights on
+Flt2001,74047.83,pulse lights off
+Flt2001,74059.36,pulse lights on
+Flt2001,74068.89,left landing on
+Flt2001,74077.49,left landing off
+Flt2001,74084.28,right landing on
+Flt2001,74094.25,right landing off
+Flt2001,74102.77,taxi lights on
+Flt2001,74112.70,taxi lights off
+Flt2001,74125.59,strobe lights on
+Flt2001,74139.36,strobe lights off
+Flt2001,74146.79,nav lights on
+Flt2001,74159.20,nav lights off
+Flt2001,74171.44,beacon on
+Flt2001,74181.65,beacon off
+Flt2001,74241.94,boost pump on
+Flt2001,74254.94,boost pump off
+Flt2001,75846.91,box 2 start
+Flt2002,61840.00,unknown start (ARG noted)
+Flt2002,62090.00,unknown end (ARG noted)
+Flt2002,65865.55,fuel pumps off
+Flt2002,66917.72,flaps up
+Flt2004,61958.94,box 1 start 2000m
+Flt2004,62565.14,box 1 end 2000m
+Flt2004,62665.13,box 2 start 2000m
+Flt2004,63260.00,box 2 end 2000m
+Flt2004,63456.27,box 1 start 800m
+Flt2004,64174.08,box 1 end 800m
+Flt2004,64209.81,box 2 start 800m
+Flt2004,64823.53,box 2 end 800m
+Flt2004,65137.12,135kts
+Flt2004,65169.36,125kts
+Flt2004,65188.64,115kts
+Flt2004,65208.92,105kts
+Flt2004,65227.22,115kts
+Flt2004,65267.33,125kts
+Flt2004,65290.33,135kts
+Flt2004,65338.11,flaps 10
+Flt2004,65361.80,flaps 20
+Flt2004,65370.23,flaps 30
+Flt2004,65394.02,flaps 20
+Flt2004,65408.29,flaps 10
+Flt2004,65427.87,flaps up
+Flt2004,65481.22,radio 118.0Mhz
+Flt2004,65504.13,radio 126.7Mhz
+Flt2004,65530.60,radio 135.1Mhz
+Flt2004,65618.09,satphone
+Flt2004,65630.63,vent fan right on
+Flt2004,65642.17,vent fan right off
+Flt2004,65652.07,vent fan right on
+Flt2004,65668.06,vent fan right high
+Flt2004,65674.76,vent fan right low
+Flt2004,65679.38,vent fan right off
+Flt2004,65685.40,vent fan left low
+Flt2004,65691.98,vent fan left high
+Flt2004,65699.10,vent fan left low
+Flt2004,65709.72,vent fan left off
+Flt2004,65754.33,bleed air on
+Flt2004,65773.65,ignition on
+Flt2004,65780.61,ignition off
+Flt2004,65792.66,pitot static heat on
+Flt2004,65801.52,pitot static heat off
+Flt2004,65812.83,stall heat on
+Flt2004,65819.55,stall heat off
+Flt2004,65828.83,prop heat manual
+Flt2004,65840.70,prop heat auto
+Flt2004,65875.02,boots off
+Flt2004,65880.15,boots auto
+Flt2004,65885.35,boots off
+Flt2004,65917.98,boots manual
+Flt2004,66079.71,pulse lights on
+Flt2004,66091.09,pulse lights off
+Flt2004,66127.02,pulse lights on
+Flt2004,66142.41,left landing light on
+Flt2004,66154.94,left landing light off
+Flt2004,66167.51,right landing light on
+Flt2004,66176.08,right landing light off
+Flt2004,66190.73,taxi lights on
+Flt2004,66199.94,taxi lights off
+Flt2004,66210.06,strobe lights on
+Flt2004,66217.11,strobe lights off
+Flt2004,66230.92,nav lights on
+Flt2004,66241.38,nav lights off
+Flt2004,66249.96,beacon on
+Flt2004,66256.08,beacon off
+Flt2004,66269.25,fuel pump 1 on
+Flt2004,66277.42,fuel pump off
+Flt2004,66285.86,fuel pump 2 on
+Flt2004,66294.23,fuel pump 2 off
+Flt2004,66302.33,fuel pumps on
+Flt2004,67171.09,105kts
+Flt2004,67236.33,115kts
+Flt2004,67312.29,125kts
+Flt2004,67320.99,power lines
+Flt2004,67362.12,135kts
+Flt2004,67430.15,flaps 10
+Flt2004,67446.21,flaps 20
+Flt2004,67472.63,flaps 30
+Flt2004,67500.76,flaps 20
+Flt2004,67542.23,flaps 10
+Flt2004,67566.68,flaps up
+Flt2004,67592.74,radio 118.0Mhz
+Flt2004,67628.77,radio 135.1Mhz
+Flt2004,67815.86,satphone
+Flt2004,67921.21,vent fans on
+Flt2004,67939.14,vent fan right high
+Flt2004,67957.92,vent fan right low
+Flt2004,67968.20,vent fan left high
+Flt2004,67983.99,vent fan left low
+Flt2004,67997.53,ac high
+Flt2004,68010.97,ac low
+Flt2004,68024.43,vent fans high
+Flt2004,68044.22,vent fan right low
+Flt2004,68054.86,vent fan left low
+Flt2004,68069.41,vent fan aft high
+Flt2004,68082.37,vent fans low
+Flt2004,68086.75,ac ventilate
+Flt2004,68110.49,ac off
+Flt2004,68150.96,ignition on
+Flt2004,68171.34,ignition off
+Flt2004,68189.63,pitot static heat on
+Flt2004,68227.04,pitot static heat off
+Flt2004,68248.18,stall heat on
+Flt2004,68261.43,stall heat off
+Flt2004,68280.43,prop heat auto
+Flt2004,68308.99,prop heat manual on/off
+Flt2004,68334.16,windshield heat on
+Flt2004,68362.46,windshield heat off
+Flt2004,68419.92,boots auto
+Flt2004,68434.75,boots auto
+Flt2004,68461.85,boots manual on/off
+Flt2004,68498.66,pulse lights off
+Flt2004,68512.67,pulse lights on
+Flt2004,68538.70,left landing light on
+Flt2004,68551.82,left landing light off
+Flt2004,68574.95,left/right landing on
+Flt2004,68589.47,right landing light off
+Flt2004,68611.29,taxi lights on
+Flt2004,68621.30,taxi lights off
+Flt2004,68638.11,strobe lights on
+Flt2004,68651.14,strobe lights off
+Flt2004,68666.00,nav lights on
+Flt2004,68674.27,nav lights off
+Flt2004,68689.56,beacon on
+Flt2004,68697.02,beacon off
+Flt2004,68726.45,fuel pumps on/off
+Flt2004,70656.37,box 2 start 10,000ft
+Flt2004,71410.48,box 2 end 10,000ft
+Flt2004,71650.00,box 1 start 2000m
+Flt2004,72715.34,box 1 end 2000m
+Flt2004,74752.55,105kts
+Flt2004,74763.21,115kts
+Flt2004,74780.60,125kts
+Flt2004,74803.26,135kts
+Flt2004,74836.28,135kts
+Flt2004,74864.74,flaps 10
+Flt2004,74883.49,flaps 20
+Flt2004,74899.78,flaps 30
+Flt2004,74913.57,flaps 20
+Flt2004,74926.35,flaps 10
+Flt2004,74941.78,flaps up
+Flt2004,75127.68,satphone
+Flt2004,75140.22,vent fans off
+Flt2004,75146.72,vent fans low
+Flt2004,75157.02,vent fan left high
+Flt2004,75163.63,vent fan right high
+Flt2004,75170.86,vent fan aft high
+Flt2004,75177.59,vent fan left low
+Flt2004,75183.21,vent fan right low
+Flt2004,75187.13,vent fan aft low
+Flt2004,75194.64,ac on
+Flt2004,75198.82,ac off
+Flt2004,75219.85,bleed air off
+Flt2004,75229.09,bleed air on
+Flt2004,75237.16,flaps 10
+Flt2004,75250.55,ignition on
+Flt2004,75255.24,ignition off
+Flt2004,75263.69,pitot static heat on
+Flt2004,75270.78,pitot static heat off
+Flt2004,75278.44,stall heat on
+Flt2004,75281.84,stall heat off
+Flt2004,75286.74,windshield heat on
+Flt2004,75301.99,windshield heat off
+Flt2004,75308.61,prop heat auto
+Flt2004,75314.09,prop heat off
+Flt2004,75317.12,prop heat manual
+Flt2004,75322.89,prop heat off
+Flt2004,75331.72,boots auto
+Flt2004,75356.96,boots manual
+Flt2004,75369.00,boots off
+Flt2004,75374.95,pulse lights on
+Flt2004,75380.71,pulse lights off
+Flt2004,75386.04,pulse lights on
+Flt2004,75391.92,left landing light on
+Flt2004,75397.32,left landing light off
+Flt2004,75406.45,right landing light on
+Flt2004,75412.52,right landing light off
+Flt2004,75420.09,taxi lights on
+Flt2004,75426.40,taxi lights off
+Flt2004,75434.57,strobe lights on
+Flt2004,75441.11,strobe lights off
+Flt2004,75452.52,nav lights on
+Flt2004,75457.74,nav lights off
+Flt2004,75466.81,beacon on
+Flt2004,75471.05,beacon off
+Flt2004,75487.22,fuel pump 1 on
+Flt2004,75492.76,fuel pump 1 off
+Flt2004,75497.09,fuel pump 2 on
+Flt2004,75501.35,fuel pump 2 off
+Flt2004,75505.27,fuel pumps on
+Flt2004,75511.40,fuel pumps off
+Flt2006,55252.57,1W
+Flt2006,55441.42,1N
+Flt2006,55584.44,1E
+Flt2006,55713.94,1S
+Flt2006,56119.07,2W
+Flt2006,56310.25,2N
+Flt2006,56464.98,2E
+Flt2006,56601.82,2S
+Flt2006,56760.54,3W
+Flt2006,56978.03,3N
+Flt2006,57127.81,3E
+Flt2006,57243.39,3S
+Flt2006,57370.88,4W
+Flt2006,57499.34,4N
+Flt2006,57631.21,4E
+Flt2006,57778.90,4S
+Flt2006,57904.53,5W
+Flt2006,58146.43,5N
+Flt2006,58311.33,5E
+Flt2006,58465.63,5S
+Flt2006,58588.75,6W
+Flt2006,58786.21,6N
+Flt2006,58931.53,6E
+Flt2006,59065.08,6S
+Flt2006,59234.02,7W redo
+Flt2006,59413.26,7N
+Flt2006,59573.79,7E
+Flt2006,59688.34,7S
+Flt2006,59790.82,8W
+Flt2006,59971.62,8N
+Flt2006,60085.27,8E
+Flt2006,60192.16,8S
+Flt2006,60309.30,9W
+Flt2006,60470.62,9N
+Flt2006,60579.58,9E
+Flt2006,60697.98,9S
+Flt2006,60802.94,10W
+Flt2006,60965.70,10N
+Flt2006,61092.62,10E
+Flt2006,61218.22,10S
+Flt2006,61345.55,11E
+Flt2006,61820.77,11S
+Flt2006,61921.09,boost pump on
+Flt2006,61936.02,12W
+Flt2006,62127.83,12N
+Flt2006,62274.54,12E
+Flt2006,62388.84,12S
+Flt2006,62521.53,fuel pumps on
+Flt2006,62540.18,13W
+Flt2006,62692.15,13N
+Flt2006,62814.78,13E
+Flt2006,62929.32,13S
+Flt2006,63054.43,14W
+Flt2006,63237.46,14N
+Flt2006,63389.73,14E
+Flt2006,63523.44,14S
+Flt2006,63656.86,15W
+Flt2006,63852.90,15N
+Flt2006,63990.53,15E
+Flt2006,64077.09,fuel pumps off
+Flt2006,64136.03,15S
+Flt2006,64274.53,16W
+Flt2006,64465.70,16N
+Flt2006,64632.27,16E
+Flt2006,64787.90,16S
+Flt2006,64941.07,17W
+Flt2006,65161.36,17N
+Flt2006,65349.66,17E
+Flt2006,65581.24,17S
+Flt2006,65723.92,boost pump on
+Flt2006,65745.44,18W
+Flt2006,65836.94,18W redo
+Flt2006,66055.54,18N
+Flt2006,66264.87,18E
+Flt2006,66448.50,18S
+Flt2006,67690.62,power 700
+Flt2006,67703.49,power 1100
+Flt2006,67739.05,power 1500
+Flt2006,67765.08,power 1865
+Flt2006,67789.53,power 1100
+Flt2006,67812.44,prop 1750
+Flt2006,67846.53,prop 1600
+Flt2006,67890.63,prop 1900
+Flt2006,67932.99,flaps 10
+Flt2006,67976.58,flaps 20
+Flt2006,68009.24,radio 123.0Mhz
+Flt2006,68044.34,flaps 30
+Flt2006,68064.10,radio 126.7Mhz
+Flt2006,68119.12,flaps 20
+Flt2006,68149.32,flaps 10
+Flt2006,68177.67,electric trim
+Flt2006,68221.80,vent fans low
+Flt2006,68242.77,vent fan left high
+Flt2006,68254.75,vent fan left low
+Flt2006,68261.96,vent fan aft high/low
+Flt2006,68287.13,vent fan right high/low
+Flt2006,68356.46,vent fans high/low
+Flt2006,68379.48,vent fans low
+Flt2006,68395.29,vent fans off
+Flt2006,68440.52,ac on
+Flt2006,68495.97,ac off
+Flt2006,68533.62,bleed air off/on
+Flt2006,68840.60,pitot heat on/off
+Flt2006,68899.24,stall heat on/off
+Flt2006,68950.32,windshield heat on/off
+Flt2006,68997.70,prop heat on/off
+Flt2006,69037.94,boots auto
+Flt2006,69070.96,boots manual
+Flt2006,69097.33,ignition on/off
+Flt2006,69255.84,left landing light on/off
+Flt2006,69279.69,right landing light on/off
+Flt2006,69293.97,taxi lights on/off
+Flt2006,69321.82,strobe lights on/off
+Flt2006,69352.66,nav lights on/off
+Flt2006,69382.57,beacon on/off
+Flt2006,69413.37,pulse lights off/on
+Flt2006,69434.15,radio 122.7Mhz
+Flt2006,69482.09,boost pump on/off
+Flt2006,69499.66,pump 1 on/off
+Flt2006,69516.82,pump 2 on/off
+Flt2006,69536.88,fuel pumps on/off
+Flt2006,69849.69,flaps up
+Flt2006,69883.09,power 700
+Flt2006,70007.58,power 1200
+Flt2006,70050.88,power 1865
+Flt2006,70087.33,prop
+Flt2006,70150.04,power 1100
+Flt2006,70224.74,prop 1750
+Flt2006,70266.03,prop 1600
+Flt2006,70392.28,prop 1900
+Flt2006,70432.69,flaps 10
+Flt2006,70455.05,flaps 20
+Flt2006,70506.95,flaps 30
+Flt2006,70530.46,flaps 20
+Flt2006,70550.85,flaps 10
+Flt2006,70648.60,radio 126.7Mhz
+Flt2006,70695.97,vent fans low
+Flt2006,70725.48,vent fan left high/low
+Flt2006,70750.57,vent fan aft high/low
+Flt2006,70781.05,vent fan right high/low
+Flt2006,70812.59,vent fans high/low
+Flt2006,70848.75,vent fans off
+Flt2006,70908.13,ac on/off
+Flt2006,71014.04,pitot static heat on/off
+Flt2006,71061.62,stall heat on/off
+Flt2006,71129.55,windshield heat off/on
+Flt2006,71197.49,prop heat on/off
+Flt2006,71241.70,ignition on/off
+Flt2006,71640.79,flaps up
+Flt2006,71670.29,flaps 10
+Flt2006,71701.44,flaps 20
+Flt2006,71767.60,flaps 30
+Flt2006,71795.52,flaps 20
+Flt2006,71816.49,flaps 10
+Flt2006,71852.74,power 1865
+Flt2006,71897.30,power 1500
+Flt2006,71944.82,power 1100
+Flt2006,71979.62,power 700
+Flt2006,72031.64,power 1100
+Flt2006,72122.76,radio 122.7Mhz
+Flt2006,72323.56,prop 1750
+Flt2006,72371.19,prop 1600
+Flt2006,72457.71,prop 1900
+Flt2006,72574.68,vent fans low
+Flt2006,72635.58,vent fan left high
+Flt2006,72645.51,vent fan left off
+Flt2006,72650.05,vent fan aft high/low
+Flt2006,72674.54,vent fan right high/low
+Flt2006,72698.21,vent fans high/low
+Flt2006,72726.38,vent fans off
+Flt2006,72747.71,ac on
+Flt2006,72774.93,ac off
+Flt2006,72781.43,bleed air off/on
+Flt2006,72819.08,ignition on/off
+Flt2006,72845.74,pitot static heat on/off
+Flt2006,73076.68,winshield heat on
+Flt2006,73103.21,windshield heat off
+Flt2006,73118.69,prop heat on/off
+Flt2006,73186.01,boots auto
+Flt2006,73288.64,left landing light on/off
+Flt2006,73313.84,right landing light on/off
+Flt2006,73332.33,taxi lights on/off
+Flt2006,73437.82,strobe lights on/off
+Flt2006,73471.52,nav lights on/off
+Flt2006,73518.44,beacon on/off
+Flt2006,73581.46,pulse lights off/on
+Flt2006,73687.90,boost pump on/off
+Flt2006,73784.76,power 700
+Flt2006,73847.25,power 1200
+Flt2006,73895.54,power 1500
+Flt2006,73916.78,radio 123.2Mhz
+Flt2006,73980.60,power 1865
+Flt2006,74012.78,power 1100
+Flt2006,74090.74,flaps 20
+Flt2006,74136.82,flaps 30
+Flt2006,74197.81,flaps 20
+Flt2006,74226.06,flaps 10
+Flt2006,74256.24,prop 1750
+Flt2006,74295.11,prop 1600
+Flt2006,74328.15,prop 1750
+Flt2006,74369.46,radio
+Flt2006,74401.09,prop 1900
+Flt2006,74511.02,vent fans low
+Flt2006,74554.46,vent fan left high/off
+Flt2006,74588.15,vent fan aft high/low
+Flt2006,74641.89,vent fan right high/low
+Flt2006,74691.44,vent fans high
+Flt2006,74705.45,vent fans low
+Flt2006,74723.02,vent fans off
+Flt2006,74786.08,ac on/off
+Flt2006,74833.15,bleed air off/on
+Flt2006,74886.27,ignition on/off
+Flt2006,74939.09,pitot static heat on/off
+Flt2006,74989.91,stall heat on/off
+Flt2006,75060.47,windshield heat on/off
+Flt2006,75096.14,prop heat on/off
+Flt2006,75122.84,all lights on/off
+Flt2006,75147.57,pulse lights on
+Flt2007,71610.00,all lights on (ARG noted)
+Flt2007,71820.00,all lights off (ARG noted)
+Flt2007,72320.00,all lights on (ARG noted)
+Flt2007,72550.00,all lights off (ARG noted)
+Flt2008,56612.50,box 1 start
+Flt2008,57092.65,box 1 end
+Flt2008,57363.05,box 1 redo
+Flt2008,57373.15,box 1 start
+Flt2008,57903.20,box 1 end
+Flt2008,57931.21,box 2 start
+Flt2008,58445.00,box 2 end
+Flt2008,58458.89,Flt2001 end
+Flt2008,58844.82,fuel pumps on
+Flt2008,59894.29,Flt2005 item 1 start
+Flt2008,60019.97,wx radar alt 850 gps 725 laser 1400
+Flt2008,60127.42,drape faulty would have taken us into ground
+Flt2008,60359.83,Flt2005 line 1 start 2100
+Flt2015,54676.32,calibration boxes start
+Flt2015,54676.32,1N
+Flt2015,54795.94,1E
+Flt2015,54909.69,1S
+Flt2015,55025.38,1W
+Flt2015,55391.24,2N
+Flt2015,55523.98,2E
+Flt2015,55632.75,2S
+Flt2015,55746.56,2W
+Flt2015,55954.72,3N
+Flt2015,56077.76,3E
+Flt2015,56190.64,3S
+Flt2015,56299.15,3W
+Flt2015,56518.23,4N
+Flt2015,56631.46,4E
+Flt2015,56758.13,4S
+Flt2015,56886.04,4W
+Flt2015,57083.56,5N
+Flt2015,57203.49,5E
+Flt2015,57316.62,5S
+Flt2015,57442.89,5W
+Flt2015,57654.74,6N
+Flt2015,57784.44,6E
+Flt2015,57912.48,6S
+Flt2015,58032.71,6W
+Flt2015,58263.91,7N
+Flt2015,58385.72,7E
+Flt2015,58494.94,7S
+Flt2015,58598.88,7W
+Flt2015,58781.12,8N
+Flt2015,58899.48,8E
+Flt2015,59026.94,8S
+Flt2015,59166.66,8W
+Flt2015,59366.37,9N
+Flt2015,59500.22,9E
+Flt2015,59616.87,9S
+Flt2015,59739.74,9W
+Flt2015,59962.55,10N
+Flt2015,60101.22,10E
+Flt2015,60229.72,10S
+Flt2015,60390.94,10W
+Flt2015,60592.79,11N
+Flt2015,60736.75,11E
+Flt2015,60892.38,11S
+Flt2015,61034.43,11W
+Flt2015,61299.14,12N
+Flt2015,61444.29,12E
+Flt2015,61591.22,12S
+Flt2015,61724.43,12W
+Flt2015,61971.04,13N
+Flt2015,62112.94,13E
+Flt2015,62230.54,13S
+Flt2015,62352.02,13W
+Flt2015,62564.94,14N
+Flt2015,62712.61,14E
+Flt2015,62847.41,14S
+Flt2015,62979.61,14W
+Flt2015,63220.09,15N
+Flt2015,63371.64,15E
+Flt2015,63504.24,15S
+Flt2015,63639.18,15W
+Flt2015,63915.51,16N
+Flt2015,64083.78,16E
+Flt2015,64237.36,16S
+Flt2015,64391.29,16W
+Flt2015,64672.31,17N
+Flt2015,64846.84,17E
+Flt2015,65007.28,17S
+Flt2015,65192.47,17W
+Flt2015,65500.08,18N
+Flt2015,65696.16,18E
+Flt2015,65886.23,18S
+Flt2015,66072.03,18W
+Flt2015,66250.29,calibration boxes end
+Flt2015,66696.31,fuel pumps on
+Flt2015,67678.79,flaps up
+Flt2015,67851.83,fuel pumps off
+Flt2015,69732.70,fuel pumps on
+Flt2015,70720.50,1007.02 x3 figure 8s 2000m start
+Flt2015,75197.00,1007.02 x3 figure 8s 2000m end
+Flt2016,60097.02,1007.02 x3 figure 8s 800m start
+Flt2016,64687.26,1007.02 x3 figure 8s 800m end
+Flt2016,64920.74,1007.02 x3 figure 8s drape start
+Flt2016,68263.52,fuel pumps on
+Flt2016,69596.60,1007.02 x3 figure 8s drape end

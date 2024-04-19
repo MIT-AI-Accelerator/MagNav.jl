@@ -16,6 +16,9 @@ for (i,flight) in enumerate(df_flight.flight)
     if df_flight.xyz_type[i] == :XYZ20
         df_flight.xyz_file[i] = MagNav.sgl_2020_train()*"/$(flight)_train.h5"
     end
+    if df_flight.xyz_type[i] == :XYZ21
+        df_flight.xyz_file[i] = MagNav.sgl_2021_train()*"/$(flight)_train.h5"
+    end
 end
 
 ## map data files (associated with SGL flights)
