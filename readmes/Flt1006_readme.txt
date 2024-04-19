@@ -8,7 +8,7 @@ Flight 1006
 - Limited pilot comments written during flight due to challenging maneuvers
 
 Start Time  End Time  Line Number    Description
-  46100.00  47222.00      1006.01    Takeoff - Calibration area
+  46100.00  47222.00      1006.01    Takeoff - Transit to calibration area
   47222.00  48213.00      1006.02    HOLD-OUT TESTING DATA
   48213.00  49000.00      1006.03    Climb to 17,000ft
   49000.00  53286.00      1006.04    Calibration maneuvers at 17,000ft

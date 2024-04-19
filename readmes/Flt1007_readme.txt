@@ -5,7 +5,7 @@ Flight 1007
 - Free-fly in Eastern Ontario & Renfrew at 400m
 
 Start Time  End Time  Line Number    Description
-  47070.00  48024.00      1007.01    Transit to Perth Mini-Survey Area
+  47070.00  48024.00      1007.01    Takeoff - Transit to Perth Mini-Survey Area
   48024.00  51880.00      1007.02    Free-Fly at 800m within Perth Mini-Survey Area
   51880.00  52050.00      1007.03    Descent/Transit to 400m Eastern Ontario Free-Fly
   52050.00  57330.00      1007.04    HOLD-OUT TESTING DATA

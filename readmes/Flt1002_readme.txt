@@ -10,7 +10,7 @@ Flight 1002
   - Affected lines: 1002.02, 1369.00, 1002.20
 
 Start Time  End Time  Line Number    Description
-  45100.00  46370.00      1002.01    Transit to Calibration 1
+  45100.00  46370.00      1002.01    Takeoff - Transit to Calibration 1
   46370.00  47600.00      1002.02    Calibration 1
   47600.00  49310.00      1002.03    Transit to Renfrew repeat lines
   49310.00  49838.10       158.00    Renfrew repeat line
