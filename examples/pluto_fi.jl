@@ -32,7 +32,7 @@ This is a reactive notebook, so feel free to change any parameters of interest, 
 # ╔═╡ b1d3b1b3-db8d-4bb0-a884-d57f217fef24
 md"## Import packages and DataFrames
 
-The DataFrames listed below provide useful information about the flight data (collected by Sander Geophysics Ltd. (SGL) in 2020) & magnetic anomaly maps.
+The DataFrames listed below provide useful information about the flight data collected by Sander Geophysics Ltd. (SGL) & magnetic anomaly maps.
 
 Dataframe  | Description
 :--------- | :----------

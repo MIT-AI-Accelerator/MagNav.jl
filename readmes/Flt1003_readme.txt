@@ -11,7 +11,7 @@ Start Time  End Time  Line Number    Description
   54497.00  54639.00      1003.03    Climb to 800m
   54639.00  59475.00      1003.04    Eastern Ontario Free-Fly 800m
   59475.00  59926.00      1003.05    Transit at 800m
-  59926.00  60105.00      1003.06    Descend to 400m
+  59926.00  60105.00      1003.06    Descent/Transit to 400m
   60105.00  60243.00      1003.07    Transit to Renfrew Free-Fly
   60243.00  64586.00      1003.08    Renfrew Free-Fly 400m
   64586.00  64763.00      1003.09    Climb to 800m

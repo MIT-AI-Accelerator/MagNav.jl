@@ -2,7 +2,7 @@ Flight 2005
 21-Dec-2021 (doy = 355/365)
 
 Start Time  End Time  Line Number
-  54616.00  55252.00      2004.00    Takeoff & Transit
+  54616.00  55252.00      2004.00    Takeoff - Transit
   55252.00  60613.00      2004.01    HOLD-OUT TESTING DATA
   60613.00  63359.00      2004.02    HOLD-OUT TESTING DATA
   63359.00  67236.00      2004.03    HOLD-OUT TESTING DATA
