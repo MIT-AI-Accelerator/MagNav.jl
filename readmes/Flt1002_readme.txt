@@ -10,9 +10,9 @@ Flight 1002
   - Affected lines: 1002.02, 1369.00, 1002.20
 
 Start Time  End Time  Line Number    Description
-  45100.00  46370.00      1002.01    Takeoff - Transit to Calibration 1
-  46370.00  47600.00      1002.02    Calibration 1
-  47600.00  49310.00      1002.03    Transit to Renfrew repeat lines
+  45100.00  46370.00      1002.01    Takeoff - Transit to Shawville
+  46370.00  47600.00      1002.02    Shawville calibration 1
+  47600.00  49310.00      1002.03    Transit to Renfrew
   49310.00  49838.10       158.00    Renfrew repeat line
   49838.10  50051.90      1002.04    Renfrew turn
   50051.90  50560.50       160.00    Renfrew repeat line
@@ -22,7 +22,7 @@ Start Time  End Time  Line Number    Description
   51773.50  52294.90      1368.00    Renfrew repeat line
   52294.90  52515.20      1002.07    Renfrew turn
   52515.20  53079.20      1369.00    Renfrew repeat line
-  53079.20  53550.80      1002.08    Transit to Eastern Ontario repeat lines
+  53079.20  53550.80      1002.08    Transit to Eastern Ontario
   53550.80  54099.40      3084.00    Eastern Ontario repeat line
   54099.40  54376.80      1002.09    Eastern Ontario turn
   54376.80  54910.60      3085.00    Eastern Ontario repeat line
@@ -32,14 +32,14 @@ Start Time  End Time  Line Number    Description
   56064.40  56597.50       320.00    HOLD-OUT TESTING DATA
   56597.50  56808.40      1002.12    HOLD-OUT TESTING DATA
   56808.40  57319.20       322.00    HOLD-OUT TESTING DATA
-  57319.20  57489.00      1002.13    Transit to Eastern Ontario Free-Fly
-  57489.00  59946.00      1002.14    Eastern Ontario Free-Fly on Drape
+  57319.20  57489.00      1002.13    Transit to Eastern Ontario
+  57489.00  59946.00      1002.14    Eastern Ontario free-fly on drape
   59946.00  60846.00      1002.14    HOLD-OUT TESTING DATA
-  60846.00  61360.00      1002.15    Transit to Renfrew Free-Fly
-  61360.00  63035.00      1002.16    Renfrew Free-Fly on Drape
+  60846.00  61360.00      1002.15    Transit to Renfrew
+  61360.00  63035.00      1002.16    Renfrew free-fly on drape
   63035.00  63935.00      1002.16    HOLD-OUT TESTING DATA
-  63935.00  65812.00      1002.17    Renfrew Free-Fly at 555m
-  65812.00  66310.00      1002.18    Climb to high altitude
-  66310.00  66560.00      1002.19    Transit to Calibration 2
-  66560.00  67850.00      1002.20    Calibration 2
+  63935.00  65812.00      1002.17    Renfrew free-fly at 555m
+  65812.00  66310.00      1002.18    Climb to 2400m
+  66310.00  66560.00      1002.19    Transit to Shawville
+  66560.00  67850.00      1002.20    Shawville calibration 2
   67850.00  68910.00      1002.21    Transit to base
