@@ -4,7 +4,9 @@
 [![Codecov](https://codecov.io/gh/MIT-AI-Accelerator/MagNav.jl/graph/badge.svg)](https://app.codecov.io/gh/MIT-AI-Accelerator/MagNav.jl)
 [![docs-stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://mit-ai-accelerator.github.io/MagNav.jl/stable/)
 
-MagNav.jl contains a full suite of tools for airborne **Mag**netic anomaly **Nav**igation (MagNav), including flight path & INS data import or simulation, mapping, aeromagnetic compensation, and navigation. This package was developed as part of the [DAF-MIT Artificial Intelligence Accelerator](https://aia.mit.edu/). More information on this effort, including a list of relevant publications, is provided on the [challenge problem website](https://magnav.mit.edu/). The package has been tested on the long-term support (LTS) and latest stable versions of Julia, which may be downloaded from [here](https://julialang.org/downloads/). The recommended IDE for Julia is [Visual Studio Code](https://code.visualstudio.com/) (with the Julia extension).
+MagNav.jl contains a full suite of tools for airborne **Mag**netic anomaly **Nav**igation (MagNav), including flight path & INS data import or simulation, mapping, aeromagnetic compensation, and navigation. The package has been tested on the long-term support (LTS) and latest stable versions of Julia, which may be downloaded from [here](https://julialang.org/downloads/). The recommended IDE for Julia is [Visual Studio Code](https://code.visualstudio.com/) (with the Julia extension).
+
+**Note:** This package was developed as part of the [DAF-MIT Artificial Intelligence Accelerator](https://aia.mit.edu/), and this specific project has ended. Only minimal changes will be made moving forward for package maintenance. More information on this effort, including a list of relevant publications, is provided on the (concluded) [challenge problem website](https://magnav.mit.edu/).
 
 ## Installation
 
@@ -29,8 +31,8 @@ julia> Pkg.activate(".")
 julia> Pkg.instantiate()
 ```
 
-NOTE: If an artifact produces a hash mismatch error while downloading, navigate to the 
-local `.julia/artifacts` folder and manually set the appropriate artifact folder name. For example, the `ottawa_area_maps` artifact folder name should be `bf360d29207d6468a8cf783269191bda2cf1f679`. If needed, artifacts can also be downloaded directly from their online storage locations, then unzipped, renamed, and placed in the 
+**NOTE:** If an artifact produces a hash mismatch error while downloading, navigate to the 
+local `.julia/artifacts` folder and manually set the appropriate artifact folder name. For example, the `ottawa_area_maps` artifact folder name should be `eb8d8339b55fb4b9b070eda7f3aede970ab53629`. If needed, artifacts can also be downloaded directly from their online storage locations, then unzipped, renamed, and placed in the 
 local `.julia/artifacts` folder. Online storage locations (`url`) and folder names (`git-tree-sha1`) can be found in the [Artifacts.toml](Artifacts.toml) file.
 
 ## Usage
