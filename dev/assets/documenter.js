@@ -35,7 +35,8 @@ window.MathJax = {
     "packages": [
       "base",
       "ams",
-      "autoload"
+      "autoload",
+      "mhchem"
     ],
     "inlineMath": [
       [
@@ -58,7 +59,7 @@ window.MathJax = {
 
 (function () {
     var script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js';
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js';
     script.async = true;
     document.head.appendChild(script);
 })();
@@ -77,30 +78,35 @@ require(['jquery'], function($) {
 let timer = 0;
 var isExpanded = true;
 
-$(document).on("click", ".docstring header", function () {
-  let articleToggleTitle = "Expand docstring";
+$(document).on(
+  "click",
+  ".docstring .docstring-article-toggle-button",
+  function () {
+    let articleToggleTitle = "Expand docstring";
+    const parent = $(this).parent();
 
-  debounce(() => {
-    if ($(this).siblings("section").is(":visible")) {
-      $(this)
-        .find(".docstring-article-toggle-button")
-        .removeClass("fa-chevron-down")
-        .addClass("fa-chevron-right");
-    } else {
-      $(this)
-        .find(".docstring-article-toggle-button")
-        .removeClass("fa-chevron-right")
-        .addClass("fa-chevron-down");
+    debounce(() => {
+      if (parent.siblings("section").is(":visible")) {
+        parent
+          .find("a.docstring-article-toggle-button")
+          .removeClass("fa-chevron-down")
+          .addClass("fa-chevron-right");
+      } else {
+        parent
+          .find("a.docstring-article-toggle-button")
+          .removeClass("fa-chevron-right")
+          .addClass("fa-chevron-down");
 
-      articleToggleTitle = "Collapse docstring";
-    }
+        articleToggleTitle = "Collapse docstring";
+      }
 
-    $(this)
-      .find(".docstring-article-toggle-button")
-      .prop("title", articleToggleTitle);
-    $(this).siblings("section").slideToggle();
-  });
-});
+      parent
+        .children(".docstring-article-toggle-button")
+        .prop("title", articleToggleTitle);
+      parent.siblings("section").slideToggle();
+    });
+  }
+);
 
 $(document).on("click", ".docs-article-toggle-button", function (event) {
   let articleToggleTitle = "Expand docstring";
@@ -110,7 +116,7 @@ $(document).on("click", ".docs-article-toggle-button", function (event) {
   debounce(() => {
     if (isExpanded) {
       $(this).removeClass("fa-chevron-up").addClass("fa-chevron-down");
-      $(".docstring-article-toggle-button")
+      $("a.docstring-article-toggle-button")
         .removeClass("fa-chevron-down")
         .addClass("fa-chevron-right");
 
@@ -119,7 +125,7 @@ $(document).on("click", ".docs-article-toggle-button", function (event) {
       $(".docstring section").slideUp(animationSpeed);
     } else {
       $(this).removeClass("fa-chevron-down").addClass("fa-chevron-up");
-      $(".docstring-article-toggle-button")
+      $("a.docstring-article-toggle-button")
         .removeClass("fa-chevron-right")
         .addClass("fa-chevron-down");
 
@@ -485,6 +491,14 @@ function worker_function(documenterSearchIndex, documenterBaseURL, filters) {
   }
 
   /**
+   * RegX escape function from MDN
+   * Refer: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#escaping
+   */
+  function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
+  }
+
+  /**
    * Make the result component given a minisearch result data object and the value
    * of the search input as queryString. To view the result object structure, refer:
    * https://lucaong.github.io/minisearch/modules/_minisearch_.html#searchresult
@@ -502,8 +516,8 @@ function worker_function(documenterSearchIndex, documenterBaseURL, filters) {
     if (result.page !== "") {
       display_link += ` (${result.page})`;
     }
-
-    let textindex = new RegExp(`${querystring}`, "i").exec(result.text);
+    searchstring = escapeRegExp(querystring);
+    let textindex = new RegExp(`${searchstring}`, "i").exec(result.text);
     let text =
       textindex !== null
         ? result.text.slice(
@@ -520,7 +534,7 @@ function worker_function(documenterSearchIndex, documenterBaseURL, filters) {
     let display_result = text.length
       ? "..." +
         text.replace(
-          new RegExp(`${escape(querystring)}`, "i"), // For first occurrence
+          new RegExp(`${escape(searchstring)}`, "i"), // For first occurrence
           '<span class="search-result-highlight py-1">$&</span>'
         ) +
         "..."
@@ -566,6 +580,7 @@ function worker_function(documenterSearchIndex, documenterBaseURL, filters) {
         // Only return relevant results
         return result.score >= 1;
       },
+      combineWith: "AND",
     });
 
     // Pre-filter to deduplicate and limit to 200 per category to the extent
