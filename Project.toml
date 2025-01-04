@@ -92,7 +92,7 @@ TOML = "1"
 Test = "1"
 TestItemRunner = "1"
 ZipFile = "0.10"
-Zygote = "0.6"
+Zygote = "0.6, 0.7"
 julia = "1.10"
 
 [extras]
