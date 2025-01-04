@@ -139,7 +139,9 @@ comp_params_list = [comp_params_1,
                     comp_params_3s_drop,
                     comp_params_3s_perm]
 
-comp_csv = joinpath(@__DIR__,"test_data/comp_err.csv")
+major    = VERSION.major
+minor    = VERSION.minor
+comp_csv = joinpath(@__DIR__,"test_data/comp_err_$major.$minor.csv")
 
 if generate
     comp_err = zeros(Float32,length(comp_params_list),2)
@@ -148,7 +150,7 @@ else
 end
 
 @testset "comp_train_test tests" begin
-    atol = 5f-7
+    atol = minor == 6 ? 5f-6 : 5f-7
     for (i,comp_params) in enumerate(comp_params_list)
         comp_params_ = deepcopy(comp_params)
         (err_train_1,err_test_1) = comp_train_test(comp_params,xyz,xyz,ind,ind,
