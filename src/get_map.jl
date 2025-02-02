@@ -2,16 +2,18 @@
     get_map(map_file::String   = namad;
             map_info::String   = splitpath(map_file)[end],
             map_units::Symbol  = :rad,
-            file_units::Symbol = :deg)
+            file_units::Symbol = :deg,
+            flip_map::Bool     = false)
 
-Get map data from saved HDF5 or MAT file. Maps are typically saved in `:deg`
-units, while `:rad` is used internally.
+Get map data from saved HDF5 or MAT file or folder containing CSV files.
+Maps are typically saved in `:deg` units, while `:rad` is used internally.
 
 **Arguments:**
-- `map_file`:   path/name of map data HDF5 or MAT file (`.h5` or `.mat` extension required)
+- `map_file`:   path/name of map data HDF5 or MAT file (`.h5` or `.mat` extension required) or folder containing CSV files
 - `map_info`:   (optional) map information, only used if not in `map_file`
 - `map_units`:  (optional) map xx/yy units to use in `map_map` {`:rad`,`:deg`}
 - `file_units`: (optional) map xx/yy units used in `map_file` {`:rad`,`:deg`}
+- `flip_map`:   (optional) if true, vertically flip data from map file (possibly useful for CSV map)
 
 **Returns:**
 - `map_map`: `Map` magnetic anomaly map struct
@@ -19,9 +21,10 @@ units, while `:rad` is used internally.
 function get_map(map_file::String   = namad;
                  map_info::String   = splitpath(map_file)[end],
                  map_units::Symbol  = :rad,
-                 file_units::Symbol = :deg)
+                 file_units::Symbol = :deg,
+                 flip_map::Bool     = false)
 
-    @assert any(occursin.([".h5",".mat"],map_file)) "$map_file map data file must have .h5 or .mat extension"
+    @assert any(occursin.([".h5",".mat"],map_file)) | isdir(map_file) "$map_file map data file must have .h5 or .mat extension or be a folder containing .csv files"
 
     map_vec = false
 
@@ -76,6 +79,37 @@ function get_map(map_file::String   = namad;
         map_info = haskey(map_data,"info") ? d["info"] : map_info
         map_mask = haskey(map_data,"mask") ? d["mask"] : map_mask
 
+    else # get data from CSV files
+
+        mapX_csv = map_file*"/mapX.csv"
+        mapY_csv = map_file*"/mapY.csv"
+        mapZ_csv = map_file*"/mapZ.csv"
+        map_csv  = map_file*"/map.csv"
+        xx_csv   = map_file*"/xx.csv"
+        yy_csv   = map_file*"/yy.csv"
+        alt_csv  = map_file*"/alt.csv"
+        info_csv = map_file*"/info.csv"
+        mask_csv = map_file*"/mask.csv"
+
+        if isfile(mapX_csv) # vector map
+            map_vec  = true
+            map_mapX = readdlm(mapX_csv,',')
+            map_mapY = readdlm(mapY_csv,',')
+            map_mapZ = readdlm(mapZ_csv,',')
+            map_mask = map_params(map_mapX)[2]
+        elseif isfile(map_csv) # scalar map
+            map_map  = readdlm(map_csv,',')
+            map_mask = map_params(map_map)[2]
+        end
+
+        map_xx  = readdlm(xx_csv ,',')
+        map_yy  = readdlm(yy_csv ,',')
+        map_alt = readdlm(alt_csv,',')
+
+        # these fields might not be included
+        map_info = isfile(info_csv) ? readdlm(info_csv,',') : map_info
+        map_mask = isfile(mask_csv) ? readdlm(mask_csv,',') : map_mask
+
     end
 
     map_xx = vec(map_xx)
@@ -96,9 +130,15 @@ function get_map(map_file::String   = namad;
     map_alt = convert.(eltype(map_xx),map_alt)
     (ny,nx) = length.((map_yy,map_xx))
 
+    map_flip(map_map, flip_map::Bool) = flip_map ? map_map[end:-1:1,:] : map_map
+
     if map_vec
         if (ny,nx) == size(map_mapX) == size(map_mapY) == size(map_mapZ) == size(map_mask)
-            length(map_alt) == 1 && (map_alt = map_alt[1])
+            map_alt   = map_alt[1]
+            map_mapX .= map_flip(map_mapX,flip_map)
+            map_mapY .= map_flip(map_mapY,flip_map)
+            map_mapZ .= map_flip(map_mapZ,flip_map)
+            map_mask .= map_flip(map_mask,flip_map)
             return MapV(map_info,map_mapX,map_mapY,map_mapZ,
                         map_xx,map_yy,map_alt,map_mask)
         else
@@ -107,12 +147,19 @@ function get_map(map_file::String   = namad;
     else
         if (ny,nx) == size(map_map[:,:,1]) == size(map_mask[:,:,1])
             if size(map_alt) == size(map_map) # drape map
+                map_alt  .= map_flip(map_alt ,flip_map)
+                map_map  .= map_flip(map_map ,flip_map)
+                map_mask .= map_flip(map_mask,flip_map)
                 return MapSd( map_info,map_map,map_xx,map_yy,map_alt,map_mask)
             elseif length(map_alt) > 1 # 3D map
                 @assert length(map_alt) == size(map_map,3) "number of map altitude levels is inconsistent"
+                map_map  .= map_flip(map_map ,flip_map)
+                map_mask .= map_flip(map_mask,flip_map)
                 return MapS3D(map_info,map_map,map_xx,map_yy,map_alt,map_mask)
             else
-                map_alt = map_alt[1]
+                map_alt   = map_alt[1]
+                map_map  .= map_flip(map_map ,flip_map)
+                map_mask .= map_flip(map_mask,flip_map)
                 return MapS(  map_info,map_map,map_xx,map_yy,map_alt,map_mask)
             end
         else
@@ -126,21 +173,24 @@ end # function get_map
     get_map(map_name::Symbol, df_map::DataFrame;
             map_info::String   = "\$map_name",
             map_units::Symbol  = :rad,
-            file_units::Symbol = :deg)
+            file_units::Symbol = :deg,
+            flip_map::Bool     = false)
 
-Get map data from saved HDF5 or MAT file via DataFrame lookup. Maps are
-typically saved in `:deg` units, while `:rad` is used internally.
+Get map data from saved HDF5 or MAT file or folder containing CSV files via
+DataFrame lookup. Maps are typically saved in `:deg` units, while `:rad` is
+used internally.
 
 **Arguments:**
 - `map_name`: name of magnetic anomaly map
-- `df_map`:   lookup table (DataFrame) of map data HDF5 and/or MAT files
+- `df_map`:   lookup table (DataFrame) of map data HDF5 and/or MAT files and/or folder containing CSV files
 |**Field**|**Type**|**Description**
 |:--|:--|:--
 `map_name`|`Symbol`| name of magnetic anomaly map
-`map_file`|`String`| path/name of map data HDF5 or MAT file (`.h5` or `.mat` extension required)
+`map_file`|`String`| path/name of map data HDF5 or MAT file (`.h5` or `.mat` extension required) or folder containing CSV files
 - `map_info`:   (optional) map information, only used if not in `map_file`
 - `map_units`:  (optional) map xx/yy units to use in `map_map` {`:rad`,`:deg`}
 - `file_units`: (optional) map xx/yy units used in files within `df_map` {`:rad`,`:deg`}
+- `flip_map`:   (optional) if true, vertically flip data from map file (possibly useful for CSV map)
 
 **Returns:**
 - `map_map`: `Map` magnetic anomaly map struct
@@ -148,12 +198,14 @@ typically saved in `:deg` units, while `:rad` is used internally.
 function get_map(map_name::Symbol, df_map::DataFrame;
                  map_info::String   = "$map_name",
                  map_units::Symbol  = :rad,
-                 file_units::Symbol = :deg)
+                 file_units::Symbol = :deg,
+                 flip_map::Bool     = false)
     ind = findfirst(Symbol.(df_map.map_name) .== map_name)
     get_map(String(df_map.map_file[ind]);
             map_info   = map_info,
             map_units  = map_units,
-            file_units = file_units)
+            file_units = file_units,
+            flip_map   = flip_map)
 end # function get_map
 
 """
@@ -258,13 +310,19 @@ function save_map(map_map::Map, map_h5::String = "map_data.h5";
     if map_map isa MapV # vector map
         save_map((map_map.mapX,map_map.mapY,map_map.mapZ),
                  map_map.xx,map_map.yy,map_map.alt,map_h5;
-                 map_mask=map_map.mask,map_border=map_border,
-                 map_units=map_units,file_units=file_units)
+                 map_info   = map_map.info,
+                 map_mask   = map_map.mask,
+                 map_border = map_border,
+                 map_units  = map_units,
+                 file_units = file_units)
     else # scalar map
         save_map(map_map.map,
                  map_map.xx,map_map.yy,map_map.alt,map_h5;
-                 map_mask=map_map.mask,map_border=map_border,
-                 map_units=map_units,file_units=file_units)
+                 map_info   = map_map.info,
+                 map_mask   = map_map.mask,
+                 map_border = map_border,
+                 map_units  = map_units,
+                 file_units = file_units)
     end
     return (nothing)
 end # function save_map
