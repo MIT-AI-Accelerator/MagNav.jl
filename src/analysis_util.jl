@@ -143,15 +143,15 @@ Create a Butterworth bandpass (or low-pass or high-pass) filter object. Set
 """
 function get_bpf(; pass1 = 0.1, pass2 = 0.9, fs = 10.0, pole::Int = 4)
     if     ((pass1 >  0) & (pass1 <  fs/2)) & ((pass2 >  0) & (pass2 <  fs/2))
-        p = Bandpass(pass1,pass2;fs=fs) # bandpass
+        p = Bandpass(pass1,pass2) # bandpass
     elseif ((pass1 <= 0) | (pass1 >= fs/2)) & ((pass2 >  0) & (pass2 <  fs/2))
-        p = Lowpass(pass2;fs=fs)        # low-pass
+        p = Lowpass(pass2)        # low-pass
     elseif ((pass1 >  0) & (pass1 <  fs/2)) & ((pass2 <= 0) | (pass2 >= fs/2))
-        p = Highpass(pass1;fs=fs)       # high-pass
+        p = Highpass(pass1)       # high-pass
     else
         error("$pass1 & $pass2 passband frequencies are invalid")
     end
-    return (digitalfilter(p,Butterworth(pole)))
+    return (digitalfilter(p,Butterworth(pole);fs=fs))
 end # function get_bpf
 
 """
