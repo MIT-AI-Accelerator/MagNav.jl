@@ -1978,7 +1978,7 @@ Train an aeromagnetic compensation model.
 - `xyz`:         `XYZ` flight data struct
 - `ind`:         selected data indices
 - `mapS`:        (optional) `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct, only used for `y_type = :b, :c`
-- `temp_params`: (optional) `TempParams` temporary (WIP) parameters struct
+- `temp_params`: (optional) `TempParams` temporary temporal parameters struct
 - `xyz_test`:    (optional) `XYZ` held-out test data struct
 - `ind_test`:    (optional) indices for test data struct
 - `silent`:      (optional) if true, no print outs
@@ -2371,7 +2371,7 @@ Train an aeromagnetic compensation model.
 - `xyz_vec`:     vector of `XYZ` flight data structs
 - `ind_vec`:     vector of selected data indices
 - `mapS`:        (optional) `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct, only used for `y_type = :b, :c`
-- `temp_params`: (optional) `TempParams` temporary (WIP) parameters struct
+- `temp_params`: (optional) `TempParams` temporary temporal parameters struct
 - `xyz_test`:    (optional) `XYZ` held-out test data struct
 - `ind_test`:    (optional) indices for test data struct
 - `silent`:      (optional) if true, no print outs
@@ -2828,7 +2828,7 @@ Train an aeromagnetic compensation model.
 |:--|:--|:--
 `map_name`|`Symbol`| name of magnetic anomaly map
 `map_file`|`String`| path/name of map data HDF5 or MAT file (`.h5` or `.mat` extension required)
-- `temp_params`: (optional) `TempParams` temporary (WIP) parameters struct
+- `temp_params`: (optional) `TempParams` temporary temporal parameters struct
 - `silent`:      (optional) if true, no print outs
 
 **Returns:**
@@ -3196,7 +3196,7 @@ Evaluate performance of an aeromagnetic compensation model.
 - `xyz`:         `XYZ` flight data struct
 - `ind`:         selected data indices
 - `mapS`:        (optional) `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct, only used for `y_type = :b, :c`
-- `temp_params`: (optional) `TempParams` temporary (WIP) parameters struct
+- `temp_params`: (optional) `TempParams` temporary temporal parameters struct
 - `silent`:      (optional) if true, no print outs
 
 **Returns:**
@@ -3414,7 +3414,7 @@ Evaluate performance of an aeromagnetic compensation model.
 |:--|:--|:--
 `map_name`|`Symbol`| name of magnetic anomaly map
 `map_file`|`String`| path/name of map data HDF5 or MAT file (`.h5` or `.mat` extension required)
-- `temp_params`: (optional) `TempParams` temporary (WIP) parameters struct
+- `temp_params`: (optional) `TempParams` temporary temporal parameters struct
 - `silent`:      (optional) if true, no print outs
 
 **Returns:**
@@ -3754,7 +3754,7 @@ with additional outputs for explainability.
 |:--|:--|:--
 `map_name`|`Symbol`| name of magnetic anomaly map
 `map_file`|`String`| path/name of map data HDF5 or MAT file (`.h5` or `.mat` extension required)
-- `temp_params`: (optional) `TempParams` temporary (WIP) parameters struct
+- `temp_params`: (optional) `TempParams` temporary temporal parameters struct
 - `silent`:      (optional) if true, no print outs
 
 **Returns:**
@@ -3893,7 +3893,7 @@ Train & evaluate performance of an aeromagnetic compensation model.
 - `ind_test`:    selected data indices for testing
 - `mapS_train`:  (optional) `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct for training, only used for `y_type = :b, :c`
 - `mapS_test`:   (optional) `MapS`, `MapSd`, or `MapS3D` scalar magnetic anomaly map struct for testing,  only used for `y_type = :b, :c`
-- `temp_params`: (optional) `TempParams` temporary (WIP) parameters struct
+- `temp_params`: (optional) `TempParams` temporary temporal parameters struct
 - `silent`:      (optional) if true, no print outs
 
 **Returns:**
@@ -3963,7 +3963,7 @@ Train & evaluate performance of an aeromagnetic compensation model.
 |:--|:--|:--
 `map_name`|`Symbol`| name of magnetic anomaly map
 `map_file`|`String`| path/name of map data HDF5 or MAT file (`.h5` or `.mat` extension required)
-- `temp_params`: (optional) `TempParams` temporary (WIP) parameters struct
+- `temp_params`: (optional) `TempParams` temporary temporal parameters struct
 - `silent`:      (optional) if true, no print outs
 
 **Returns:**

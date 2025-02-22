@@ -108,7 +108,7 @@ Internal helper function to create Qd, discrete time process/system noise matrix
 **Arguments:**
 - `dt`:         measurement time step [s]
 - `VRW_sigma`:  (optional) velocity random walk [m/s^2 /sqrt(Hz)]
-- `ARW_sigma`:  (optional) angular random walk [rad/s /sqrt(Hz)]
+- `ARW_sigma`:  (optional) angular  random walk [rad/s /sqrt(Hz)]
 - `baro_sigma`: (optional) barometer bias [m]
 - `acc_sigma`:  (optional) accelerometer bias [m/s^2]
 - `gyro_sigma`: (optional) gyroscope bias [rad/s]
@@ -211,7 +211,7 @@ Create magnetic navigation model for EKF or MPF.
 - `init_att_sigma`: (optional) initial attitude uncertainty [rad]
 - `meas_var`:       (optional) measurement (white) noise variance [nT^2]
 - `VRW_sigma`:      (optional) velocity random walk [m/s^2 /sqrt(Hz)]
-- `ARW_sigma`:      (optional) angular random walk [rad/s /sqrt(Hz)]
+- `ARW_sigma`:      (optional) angular  random walk [rad/s /sqrt(Hz)]
 - `baro_sigma`:     (optional) barometer bias [m]
 - `ha_sigma`:       (optional) barometer aiding altitude bias [m]
 - `a_hat_sigma`:    (optional) barometer aiding vertical accel bias [m/s^2]
@@ -517,7 +517,7 @@ Internal helper function to get expected magnetic measurement Jacobian (gradient
 - `lat`:      latitude  [rad]
 - `lon`:      longitude [rad]
 - `alt`:      altitude  [m]
-- `date`:     (optional) measurement date for IGRF [yr]
+- `date`:     (optional) measurement date (decimal year) for IGRF [yr]
 - `core`:     (optional) if true, include core magnetic field in measurement
 
 **Returns:**
@@ -549,7 +549,7 @@ core magnetic field.
 - `lat`:      latitude  [rad]
 - `lon`:      longitude [rad]
 - `alt`:      altitude  [m]
-- `date`:     (optional) measurement date for IGRF [yr]
+- `date`:     (optional) measurement date (decimal year) for IGRF [yr]
 - `core`:     (optional) if true, include core magnetic field in measurement
 
 **Returns:**
@@ -588,7 +588,7 @@ for ~constant HAE.
 - `lon`:      longitude [rad]
 - `alt`:      altitude  [m]
 - `map_alt`:  map altitude [m]
-- `date`:     (optional) measurement date for IGRF [yr]
+- `date`:     (optional) measurement date (decimal year) for IGRF [yr]
 - `core`:     (optional) if true, include core magnetic field in measurement
 
 **Returns:**
@@ -642,7 +642,7 @@ Internal helper function to get core magnetic field gradient using IGRF model.
 - `lat`:  latitude  [rad]
 - `lon`:  longitude [rad]
 - `alt`:  altitude  [m]
-- `date`: (optional) measurement date for IGRF [yr]
+- `date`: (optional) measurement date (decimal year) for IGRF [yr]
 - `δ`:    (optional) finite difference map step size [rad]
 
 **Returns:**

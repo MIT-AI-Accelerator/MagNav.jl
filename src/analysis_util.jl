@@ -255,7 +255,7 @@ Get `x` data matrix.
 - `bpf_mag`:          (optional) if true, bpf scalar magnetometer measurements
 
 **Returns:**
-- `x`:        ` data matrix (`Nf` is number of features)
+- `x`:        `N` x `Nf` data matrix (`Nf` is number of features)
 - `no_norm`:  length-`Nf` Boolean indices of features to not be normalized
 - `features`: length-`Nf` feature vector (including components of TL `A`, etc.)
 """
@@ -1170,8 +1170,7 @@ function get_nn_m(Nf::Int, Ny::Int = 1;
             error("tf_layer_type $tf_layer_type is invalid, select {:prelayer,:postlayer}")
         end
 
-        # initial_layer = Dense(Nf, N_head, init=init)
-        final_layer   = Chain(flatten, Dense(N_head*l_window, Ny; bias=final_bias, init=init))
+        final_layer = Chain(flatten,Dense(N_head*l_window,Ny;bias=final_bias,init=init))
 
         # encoder layer
         m = Chain(Dense(Nf, N_head, init=init),
@@ -1268,7 +1267,7 @@ function sparse_group_lasso(weights::Params, α=1)
 end # function sparse_group_lasso
 
 """
-    sparse_group_lasso(m, α=1)
+    sparse_group_lasso(m::Chain, α=1)
 
 **Arguments:**
 - `m`: neural network model
@@ -1277,7 +1276,7 @@ end # function sparse_group_lasso
 **Returns:**
 - `w_norm`: sparse group Lasso term
 """
-function sparse_group_lasso(m, α=1)
+function sparse_group_lasso(m::Chain, α=1)
     sparse_group_lasso(Flux.params(m),α)
 end # function sparse_group_lasso
 
@@ -1969,7 +1968,7 @@ function krr_test(x, y, data_norms::Tuple, model::Tuple;
 end # function krr_test
 
 """
-    predict_shapley(m, df::DataFrame)
+    predict_shapley(m::Chain, df::DataFrame)
 
 Internal helper function to wrap a neural network model to create a DataFrame
 of predictions.
@@ -1981,12 +1980,12 @@ of predictions.
 **Returns:**
 - `y_hat`: 1-column DataFrame of predictions from `m` using `df`
 """
-function predict_shapley(m, df::DataFrame)
+function predict_shapley(m::Chain, df::DataFrame)
     DataFrame(y_hat=vec(m(collect(Matrix(df)'))))
 end # function predict_shapley
 
 """
-    eval_shapley(m, x, features::Vector{Symbol},
+    eval_shapley(m::Chain, x, features::Vector{Symbol},
                  N::Int      = min(10000,size(x,1)),
                  num_mc::Int = 10)
 
@@ -2005,7 +2004,7 @@ Reference: https://nredell.github.io/ShapML.jl/dev/#Examples-1
 - `df_shap`:       DataFrame of Shapley effects
 - `baseline_shap`: intercept of Shapley effects
 """
-function eval_shapley(m, x, features::Vector{Symbol},
+function eval_shapley(m::Chain, x, features::Vector{Symbol},
                       N::Int      = min(10000,size(x,1)),
                       num_mc::Int = 10)
 
@@ -2067,7 +2066,6 @@ function plot_shapley(df_shap, baseline_shap,
     y    = df_shap.feature_name[range_shap]
     xlab = "|Shapley effect| (baseline = $baseline_shap)"
     ylab = "feature"
-    # title = "Feature Importance - Mean Absolute Shapley Value"
 
     # plot horizontal bar graph
     p1 = bar(x,yticks=(eachindex(range_shap),y),lab=false,
@@ -2078,7 +2076,7 @@ function plot_shapley(df_shap, baseline_shap,
 end # function plot_shapley
 
 """
-    eval_gsa(m, x, n::Int = min(10000,size(x,1)))
+    eval_gsa(m::Chain, x, n::Int = min(10000,size(x,1)))
 
 Global sensitivity analysis (GSA) with the Morris Method.
 
@@ -2094,7 +2092,7 @@ Reference: https://docs.sciml.ai/GlobalSensitivity/stable/methods/morris/
 **Returns:**
 - `means`: means of elementary effects
 """
-function eval_gsa(m, x, n::Int = min(10000,size(x,1)))
+function eval_gsa(m::Chain, x, n::Int = min(10000,size(x,1)))
 
     seed!(2) # for reproducibility
 
@@ -2280,14 +2278,14 @@ end # function get_days_in_year
 """
     get_years(year, doy=0)
 
-Get years from year and day of year.
+Get decimal (fractional) year from `year` and `doy` (day of year).
 
 **Arguments:**
 - `year`: year
 - `doy`:  day of year
 
 **Returns:**
-- `years`: `year` with fractional `doy`
+- `years`: decimal (fractional) year
 """
 function get_years(year, doy)
     round(Int,year) + doy/get_days_in_year(year)

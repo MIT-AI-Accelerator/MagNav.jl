@@ -35,7 +35,7 @@ Extended Kalman filter (EKF) for airborne magnetic anomaly navigation.
 - `acc_tau`:  (optional) accelerometer time constant [s]
 - `gyro_tau`: (optional) gyroscope time constant [s]
 - `fogm_tau`: (optional) FOGM catch-all time constant [s]
-- `date`:     (optional) measurement date for IGRF [yr]
+- `date`:     (optional) measurement date (decimal year) for IGRF [yr]
 - `core`:     (optional) if true, include core magnetic field in measurement
 - `der_mapS`: (optional) scalar map vertical derivative map interpolation function (`f(lat,lon)` or (`f(lat,lon,alt)`)
 - `map_alt`:  (optional) map altitude [m]
@@ -160,7 +160,7 @@ Extended Kalman filter (EKF) for airborne magnetic anomaly navigation.
 - `acc_tau`:  (optional) accelerometer time constant [s]
 - `gyro_tau`: (optional) gyroscope time constant [s]
 - `fogm_tau`: (optional) FOGM catch-all time constant [s]
-- `date`:     (optional) measurement date for IGRF [yr]
+- `date`:     (optional) measurement date (decimal year) for IGRF [yr]
 - `core`:     (optional) if true, include core magnetic field in measurement
 - `der_mapS`: (optional) scalar map vertical derivative map interpolation function (`f(lat,lon)` or (`f(lat,lon,alt)`)
 - `map_alt`:  (optional) map altitude [m]
@@ -348,7 +348,7 @@ Equations evaluated about true trajectory.
 - `acc_tau`:  (optional) accelerometer time constant [s]
 - `gyro_tau`: (optional) gyroscope time constant [s]
 - `fogm_tau`: (optional) FOGM catch-all time constant [s]
-- `date`:     (optional) measurement date for IGRF [yr]
+- `date`:     (optional) measurement date (decimal year) for IGRF [yr]
 - `core`:     (optional) if true, include core magnetic field in measurement
 
 **Returns:**
@@ -420,7 +420,7 @@ Equations evaluated about true trajectory.
 - `acc_tau`:  (optional) accelerometer time constant [s]
 - `gyro_tau`: (optional) gyroscope time constant [s]
 - `fogm_tau`: (optional) FOGM catch-all time constant [s]
-- `date`:     (optional) measurement date for IGRF [yr]
+- `date`:     (optional) measurement date (decimal year) for IGRF [yr]
 - `core`:     (optional) if true, include core magnetic field in measurement
 
 **Returns:**

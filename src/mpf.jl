@@ -43,7 +43,7 @@ The filter also assumes NON-correlated measurements to speed up computation.
 - `acc_tau`:  (optional) accelerometer time constant [s]
 - `gyro_tau`: (optional) gyroscope time constant [s]
 - `fogm_tau`: (optional) FOGM catch-all time constant [s]
-- `date`:     (optional) measurement date for IGRF [yr]
+- `date`:     (optional) measurement date (decimal year) for IGRF [yr]
 - `core`:     (optional) if true, include core magnetic field in measurement
 
 **Returns:**
@@ -216,7 +216,7 @@ The filter also assumes NON-correlated measurements to speed up computation.
 - `acc_tau`:  (optional) accelerometer time constant [s]
 - `gyro_tau`: (optional) gyroscope time constant [s]
 - `fogm_tau`: (optional) FOGM catch-all time constant [s]
-- `date`:     (optional) measurement date for IGRF [yr]
+- `date`:     (optional) measurement date (decimal year) for IGRF [yr]
 - `core`:     (optional) if true, include core magnetic field in measurement
 
 **Returns:**

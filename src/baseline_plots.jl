@@ -73,12 +73,12 @@ function plot_activation(activation = [:relu,:σ,:swish,:tanh];
     # setup
     x = LinRange(-6,4,1000)
     p_relu  = relu.(x)
-    p_σ     = sigmoid.(x)
+    p_σ     = σ.(x)
     p_swish = swish.(x)
     p_tanh  = tanh.(x)
 
     d_relu  = ForwardDiff.derivative.(relu,x)
-    d_σ     = ForwardDiff.derivative.(sigmoid,x)
+    d_σ     = ForwardDiff.derivative.(σ,x)
     d_swish = ForwardDiff.derivative.(swish,x)
     d_tanh  = ForwardDiff.derivative.(tanh,x)
 
