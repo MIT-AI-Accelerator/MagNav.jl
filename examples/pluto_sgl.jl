@@ -375,7 +375,7 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 [compat]
 CSV = "~0.10.15"
 DataFrames = "~1.7.0"
-MagNav = "~1.2.1"
+MagNav = "~1.2.2"
 Plots = "~1.40.9"
 Random = "~1.11.0"
 Statistics = "~1.11.1"
