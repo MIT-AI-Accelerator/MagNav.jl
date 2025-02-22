@@ -143,15 +143,15 @@ Create a Butterworth bandpass (or low-pass or high-pass) filter object. Set
 """
 function get_bpf(; pass1 = 0.1, pass2 = 0.9, fs = 10.0, pole::Int = 4)
     if     ((pass1 >  0) & (pass1 <  fs/2)) & ((pass2 >  0) & (pass2 <  fs/2))
-        p = Bandpass(pass1,pass2;fs=fs) # bandpass
+        p = Bandpass(pass1,pass2) # bandpass
     elseif ((pass1 <= 0) | (pass1 >= fs/2)) & ((pass2 >  0) & (pass2 <  fs/2))
-        p = Lowpass(pass2;fs=fs)        # low-pass
+        p = Lowpass(pass2)        # low-pass
     elseif ((pass1 >  0) & (pass1 <  fs/2)) & ((pass2 <= 0) | (pass2 >= fs/2))
-        p = Highpass(pass1;fs=fs)       # high-pass
+        p = Highpass(pass1)       # high-pass
     else
         error("$pass1 & $pass2 passband frequencies are invalid")
     end
-    return (digitalfilter(p,Butterworth(pole)))
+    return (digitalfilter(p,Butterworth(pole);fs=fs))
 end # function get_bpf
 
 """
@@ -258,6 +258,7 @@ Get `x` data matrix.
 - `x`:        `N` x `Nf` data matrix (`Nf` is number of features)
 - `no_norm`:  length-`Nf` Boolean indices of features to not be normalized
 - `features`: length-`Nf` feature vector (including components of TL `A`, etc.)
+- `l_segs`:   length-`N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
 """
 function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
                features_setup::Vector{Symbol}   = [:mag_1_uc,:TL_A_flux_a];
@@ -267,9 +268,10 @@ function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
                sub_igrf::Bool    = false,
                bpf_mag::Bool     = false)
 
-    N        = length(xyz.traj.lat[ind])
-    d        = Dict{Symbol,Array{Float64}}()
-    x        = Matrix{eltype(xyz.traj.lat)}(undef,N,0)
+    line     = xyz.line[ind]
+    N        = length(line)
+    d        = Dict{Symbol,Array{eltype(line)}}()
+    x        = Matrix{eltype(line)}(undef,N,0)
     no_norm  = Vector{Bool}(undef,0)
     features = Vector{Symbol}(undef,0)
 
@@ -281,7 +283,7 @@ function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
     end
 
     # subtract diurnal and/or IGRF as specified
-    sub = zeros(eltype(xyz.traj.lat),N)
+    sub = zeros(eltype(line),N)
     sub_diurnal && (sub += xyz.diurnal[ind])
     sub_igrf    && (sub += xyz.igrf[ind])
 
@@ -418,7 +420,9 @@ function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
         end
     end
 
-    return (x, no_norm, features)
+    l_segs = [sum(line .== l) for l in unique(line)]
+
+    return (x, no_norm, features, l_segs)
 end # function get_x
 
 """
@@ -446,6 +450,7 @@ Get `x` data matrix from multiple `XYZ` flight data structs.
 - `x`:        `N` x `Nf` data matrix (`Nf` is number of features)
 - `no_norm`:  length-`Nf` Boolean indices of features to not be normalized
 - `features`: length-`Nf` feature vector (including components of TL `A`, etc.)
+- `l_segs`:   length-`N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
 """
 function get_x(xyz_vec::Vector, ind_vec::Vector,
                features_setup::Vector{Symbol}   = [:mag_1_uc,:TL_A_flux_a];
@@ -455,23 +460,25 @@ function get_x(xyz_vec::Vector, ind_vec::Vector,
                sub_igrf::Bool    = false,
                bpf_mag::Bool     = false)
 
-    (x,no_norm,features) = get_x(xyz_vec[1],ind_vec[1],features_setup;
+    (x,no_norm,features,l_segs) = get_x(xyz_vec[1],ind_vec[1],features_setup;
+                                        features_no_norm = features_no_norm,
+                                        terms            = terms,
+                                        sub_diurnal      = sub_diurnal,
+                                        sub_igrf         = sub_igrf,
+                                        bpf_mag          = bpf_mag)
+
+    for (xyz,ind) in zip(xyz_vec[2:end],ind_vec[2:end])
+        (x_,_,_,l_segs_) = get_x(xyz,ind,features_setup;
                                  features_no_norm = features_no_norm,
                                  terms            = terms,
                                  sub_diurnal      = sub_diurnal,
                                  sub_igrf         = sub_igrf,
                                  bpf_mag          = bpf_mag)
-
-    for (xyz,ind) in zip(xyz_vec[2:end],ind_vec[2:end])
-        x = vcat(x,get_x(xyz,ind,features_setup;
-                         features_no_norm = features_no_norm,
-                         terms            = terms,
-                         sub_diurnal      = sub_diurnal,
-                         sub_igrf         = sub_igrf,
-                         bpf_mag          = bpf_mag)[1])
+        x = vcat(x,x_)
+        l_segs = vcat(l_segs,l_segs_)
     end
 
-    return (x, no_norm, features)
+    return (x, no_norm, features, l_segs)
 end # function get_x
 
 """
@@ -570,12 +577,12 @@ function get_x(lines, df_line::DataFrame, df_flight::DataFrame,
         l_segs[findfirst(l_segs .== 0)] = length(xyz.traj.lat[ind])
 
         if x isa Nothing
-            (x,no_norm,features) = get_x(xyz,ind,features_setup;
-                                         features_no_norm = features_no_norm,
-                                         terms            = terms,
-                                         sub_diurnal      = sub_diurnal,
-                                         sub_igrf         = sub_igrf,
-                                         bpf_mag          = bpf_mag)
+            (x,no_norm,features,_) = get_x(xyz,ind,features_setup;
+                                           features_no_norm = features_no_norm,
+                                           terms            = terms,
+                                           sub_diurnal      = sub_diurnal,
+                                           sub_igrf         = sub_igrf,
+                                           bpf_mag          = bpf_mag)
         else
             x = vcat(x,get_x(xyz,ind,features_setup;
                              features_no_norm = features_no_norm,
@@ -919,12 +926,12 @@ function get_Axy(lines, df_line::DataFrame,
 
         # x matrix
         if x isa Nothing
-            (x,no_norm,features) = get_x(xyz,ind,features_setup;
-                                         features_no_norm = features_no_norm,
-                                         terms            = terms,
-                                         sub_diurnal      = sub_diurnal,
-                                         sub_igrf         = sub_igrf,
-                                         bpf_mag          = bpf_mag)
+            (x,no_norm,features,_) = get_x(xyz,ind,features_setup;
+                                           features_no_norm = features_no_norm,
+                                           terms            = terms,
+                                           sub_diurnal      = sub_diurnal,
+                                           sub_igrf         = sub_igrf,
+                                           bpf_mag          = bpf_mag)
         else
             x = vcat(x,get_x(xyz,ind,features_setup;
                              features_no_norm = features_no_norm,
@@ -1006,7 +1013,7 @@ struct LPE{T2 <: AbstractFloat}
     dropout    :: Dropout
 end # struct LPE
 
-@functor LPE
+@layer :expand LPE trainable = (embeddings,dropout)
 
 """
     LPE(N_head::Int, l_window::Int, dropout_prob::Real)
@@ -1147,12 +1154,12 @@ function get_nn_m(Nf::Int, Ny::Int = 1;
 
         # only add activation to final feedforward NN, change for stacked encoders
         if l == 1
-            ffnn = Chain(Dense(N_head, N_head, activation; init=init),
+            ffnn = Chain(Dense(N_head => N_head, activation; init=init),
                                Dropout(dropout_prob))
         elseif l == 2
-            ffnn = Chain(Dense(N_head, hidden[2], activation; init=init),
+            ffnn = Chain(Dense(N_head => hidden[2], activation; init=init),
                                Dropout(dropout_prob),
-                               Dense(hidden[2], N_head, activation; init=init),
+                               Dense(hidden[2] => N_head, activation; init=init),
                                Dropout(dropout_prob))
         else
             error("$l > 2 hidden layers is invalid with transformer")
@@ -1170,10 +1177,11 @@ function get_nn_m(Nf::Int, Ny::Int = 1;
             error("tf_layer_type $tf_layer_type is invalid, select {:prelayer,:postlayer}")
         end
 
-        final_layer = Chain(flatten,Dense(N_head*l_window,Ny;bias=final_bias,init=init))
+        final_layer = Chain(flatten, Dense(N_head*l_window => Ny;
+                            bias=final_bias, init=init))
 
         # encoder layer
-        m = Chain(Dense(Nf, N_head, init=init),
+        m = Chain(Dense(Nf => N_head, init=init),
                   x -> x .* sqrt(N_head),
                   LPE(N_head, l_window, dropout_prob),
                   encoder_layer,
@@ -1186,26 +1194,26 @@ function get_nn_m(Nf::Int, Ny::Int = 1;
         elseif l == 1
             if 0 < dropout_prob < 1
                 m = Chain(flatten,
-                          Dense(Nf*l_window,hidden[1],activation),
+                          Dense(Nf*l_window => hidden[1], activation),
                           Dropout(dropout_prob),
-                          Dense(hidden[1],Ny;bias=final_bias))
+                          Dense(hidden[1] => Ny; bias=final_bias))
             else
                 m = Chain(flatten,
-                          Dense(Nf*l_window,hidden[1],activation),
-                          Dense(hidden[1],Ny;bias=final_bias))
+                          Dense(Nf*l_window => hidden[1], activation),
+                          Dense(hidden[1] => Ny; bias=final_bias))
             end
         elseif l == 2
             if 0 < dropout_prob < 1
                 m = Chain(flatten,
-                          Dense(Nf*l_window,hidden[1],activation),
+                          Dense(Nf*l_window => hidden[1], activation),
                           Dropout(dropout_prob),
-                          Dense(hidden[1],hidden[2],activation),
-                          Dense(hidden[2],Ny;bias=final_bias))
+                          Dense(hidden[1] => hidden[2], activation),
+                          Dense(hidden[2] => Ny; bias=final_bias))
             else
                 m = Chain(flatten,
-                          Dense(Nf*l_window,hidden[1],activation),
-                          Dense(hidden[1],hidden[2],activation),
-                          Dense(hidden[2],Ny;bias=final_bias))
+                          Dense(Nf*l_window => hidden[1], activation),
+                          Dense(hidden[1] => hidden[2], activation),
+                          Dense(hidden[2] => Ny; bias=final_bias))
             end
         else
             error("$l > 2 hidden layers is invalid with windowing")
@@ -1214,27 +1222,27 @@ function get_nn_m(Nf::Int, Ny::Int = 1;
     else
 
         if l == 0
-            m = Chain(Dense(Nf,Ny;bias=final_bias))
+            m = Chain(Dense(Nf => Ny; bias=final_bias))
         elseif skip_con
             if l == 1
-                m = Chain(SkipConnection(Dense(Nf,hidden[1],activation),
+                m = Chain(SkipConnection(Dense(Nf => hidden[1], activation),
                                          (mx, x) -> cat(mx, x, dims=1)),
-                          Dense(Nf+hidden[1],Ny;bias=final_bias))
+                          Dense(Nf+hidden[1] => Ny; bias=final_bias))
             else
                 error("$l > 1 hidden layers is invalid with skip connections")
             end
         elseif l == 1
-            m = Chain(Dense(Nf,hidden[1],activation),
-                      Dense(hidden[1],Ny;bias=final_bias))
+            m = Chain(Dense(Nf => hidden[1], activation),
+                      Dense(hidden[1] => Ny; bias=final_bias))
         elseif l == 2
-            m = Chain(Dense(Nf,hidden[1],activation),
-                      Dense(hidden[1],hidden[2],activation),
-                      Dense(hidden[2],Ny;bias=final_bias))
+            m = Chain(Dense(Nf => hidden[1], activation),
+                      Dense(hidden[1] => hidden[2], activation),
+                      Dense(hidden[2] => Ny; bias=final_bias))
         elseif l == 3
-            m = Chain(Dense(Nf,hidden[1],activation),
-                      Dense(hidden[1],hidden[2],activation),
-                      Dense(hidden[2],hidden[3],activation),
-                      Dense(hidden[3],Ny;bias=final_bias))
+            m = Chain(Dense(Nf => hidden[1], activation),
+                      Dense(hidden[1] => hidden[2], activation),
+                      Dense(hidden[2] => hidden[3], activation),
+                      Dense(hidden[3] => Ny; bias=final_bias))
         else
             error("$l > 3 hidden layers is invalid")
         end
@@ -1277,7 +1285,7 @@ end # function sparse_group_lasso
 - `w_norm`: sparse group Lasso term
 """
 function sparse_group_lasso(m::Chain, α=1)
-    sparse_group_lasso(Flux.params(m),α)
+    sparse_group_lasso(Params(trainables(m)),α)
 end # function sparse_group_lasso
 
 """
@@ -1766,7 +1774,7 @@ end # function get_ind
 """
     chunk_data(x, y, l_window::Int)
 
-Break data into non-overlapping sequences of length-`l_window`.
+Break data into non-overlapping sequences (vectors).
 
 **Arguments:**
 - `x`:        `N` x `Nf` data matrix (`Nf` is number of features)
@@ -1774,20 +1782,20 @@ Break data into non-overlapping sequences of length-`l_window`.
 - `l_window`: temporal window length
 
 **Returns:**
-- `x_seqs`: vector of vector of vector of values, i.e., each sequence is a vector of feature vectors
-- `y_seqs`: vector of vector of values, i.e., each sequence is a vector of scalar targets
+- `x_seqs`: sequence (vector) of `Nf` x `l_window` data matrices
+- `y_seqs`: sequence (vector) of length-`l_window` target vectors
 """
 function chunk_data(x, y, l_window::Int)
 
-    x = Float32.(x)
-    y = Float32.(y)
     N = size(x,1)
+    x = Float32.(x')
+    y = Float32.(y)
     N_window = floor(Int,N/l_window)
 
     N % l_window == 0 || @info("data was not trimmed for l_window = $l_window, may result in worse performance")
 
-    x_seqs = [[x[(j-1)*l_window+i,:] for i = 1:l_window]  for j = 1:N_window]
-    y_seqs = [ y[(j-1)*l_window       .+    (1:l_window)] for j = 1:N_window]
+    x_seqs = [x[:,(j-1)*l_window .+ (1:l_window)] for j = 1:N_window]
+    y_seqs = [y[  (j-1)*l_window .+ (1:l_window)] for j = 1:N_window]
 
     return (x_seqs, y_seqs)
 end # function chunk_data
@@ -1795,23 +1803,19 @@ end # function chunk_data
 """
     predict_rnn_full(m, x)
 
-Apply model `m` to full sequence of inputs `x`.
+Apply model `m` to data matrix `x`.
 
 **Arguments:**
 - `m`: recurrent neural network model
-- `x`: input sequence (of features)
+- `x`: `N` x `Nf` data matrix (`Nf` is number of features)
 
 **Returns:**
-- `y_hat`: vector of scalar targets for each input in `x`
+- `y_hat`: length-`N` prediction vector
 """
 function predict_rnn_full(m, x)
 
-    # reset hidden state (just once)
-    Flux.reset!(m)
-
-    # apply model to sequence and convert output to vector
-    x     = Float32.(x)
-    y_hat = [yi[1] for yi in m.([x[i,:] for i in axes(x,1)])]
+    # apply model to sequence & convert output to vector
+    y_hat = vec(m(Float32.(x')))
 
     return (y_hat)
 end # function predict_rnn_full
@@ -1819,20 +1823,20 @@ end # function predict_rnn_full
 """
     predict_rnn_windowed(m, x, l_window::Int)
 
-Apply model `m` to inputs by sliding a window of length-`l_window` along `x`.
+Apply model `m` to data matrix `x` with sliding window of length-`l_window`.
 
 **Arguments:**
 - `m`:        recurrent neural network model
-- `x`:        input sequence (of features)
+- `x`:        `N` x `Nf` data matrix (`Nf` is number of features)
 - `l_window`: temporal window length
 
 **Returns:**
-- `y_hat`: vector of scalar targets for each input in `x`
+- `y_hat`: length-`N` prediction vector
 """
 function predict_rnn_windowed(m, x, l_window::Int)
 
-    x     = Float32.(x)
     N     = size(x,1)
+    x     = Float32.(x')
     y_hat = zeros(eltype(x),N)
 
     # assume l_window = 4
@@ -1840,132 +1844,121 @@ function predict_rnn_windowed(m, x, l_window::Int)
     #     i     j
 
     for j = 1:N
-
-        # create window
-        i = j < l_window ? 1 : j - l_window + 1
-
-        x_seq = [x[k,:] for k = i:j]
-
-        # apply model
-        Flux.reset!(m)
-        y_seq = m.(x_seq)
-
-        # store last output value in window
-        y_hat[j] = y_seq[end][1]
-
+        i = j < l_window ? 1 : j - l_window + 1 # create window
+        y_hat[j] = m(x[:,i:j])[end][1] # store last value in sequence window
     end
 
     return (y_hat)
 end # function predict_rnn_windowed
 
-"""
-    krr_fit(x, y, no_norm = falses(size(x,2));
-            k::Kernel           = PolynomialKernel(;degree=1),
-            λ::Real             = 0.5,
-            norm_type_x::Symbol = :standardize,
-            norm_type_y::Symbol = :standardize,
-            data_norms::Tuple   = (zeros(1,1),zeros(1,1),[0.0],[0.0]),
-            l_segs::Vector      = [length(y)],
-            silent::Bool        = false)
+# """
+#     krr_fit(x, y, no_norm = falses(size(x,2));
+#             k::Kernel           = PolynomialKernel(;degree=1),
+#             λ::Real             = 0.5,
+#             norm_type_x::Symbol = :standardize,
+#             norm_type_y::Symbol = :standardize,
+#             data_norms::Tuple   = (zeros(1,1),zeros(1,1),[0.0],[0.0]),
+#             l_segs::Vector      = [length(y)],
+#             silent::Bool        = false)
 
-Fit a kernel ridge regression (KRR) model to data.
+# Fit a kernel ridge regression (KRR) model to data.
 
-**Arguments:**
-- `x`:           `N` x `Nf` data matrix (`Nf` is number of features)
-- `y`:           length-`N` target vector
-- `no_norm`:     (optional) length-`Nf` Boolean indices of features to not be normalized
-- `k`:           (optional) kernel
-- `λ`:           (optional) ridge parameter
-- `norm_type_x`: (optional) normalization for `x` data matrix
-- `norm_type_y`: (optional) normalization for `y` target vector
-- `data_norms`:  (optional) length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
-- `l_segs`:      (optional) length-`N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
-- `silent`:      (optional) if true, no print outs
+# **Arguments:**
+# - `x`:           `N` x `Nf` data matrix (`Nf` is number of features)
+# - `y`:           length-`N` target vector
+# - `no_norm`:     (optional) length-`Nf` Boolean indices of features to not be normalized
+# - `k`:           (optional) kernel
+# - `λ`:           (optional) ridge parameter
+# - `norm_type_x`: (optional) normalization for `x` data matrix
+# - `norm_type_y`: (optional) normalization for `y` target vector
+# - `data_norms`:  (optional) length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
+# - `l_segs`:      (optional) length-`N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
+# - `silent`:      (optional) if true, no print outs
 
-**Returns:**
-- `model`:      length-`3` tuple of KRR-based model, (`k`, length-`N` coefficients, `N` x `Nf` data matrix, normalized)
-- `data_norms`: length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
-- `y_hat`:      length-`N` prediction vector
-- `err`:        length-`N` mean-corrected (per line) error
-"""
-function krr_fit(x, y, no_norm = falses(size(x,2));
-                 k::Kernel           = PolynomialKernel(;degree=1),
-                 λ::Real             = 0.5,
-                 norm_type_x::Symbol = :standardize,
-                 norm_type_y::Symbol = :standardize,
-                 data_norms::Tuple   = (zeros(1,1),zeros(1,1),[0.0],[0.0]),
-                 l_segs::Vector      = [length(y)],
-                 silent::Bool        = false)
+# **Returns:**
+# - `model`:      length-`3` tuple of KRR-based model, (`k`, length-`N` coefficients, `N` x `Nf` data matrix, normalized)
+# - `data_norms`: length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
+# - `y_hat`:      length-`N` prediction vector
+# - `err`:        length-`N` mean-corrected (per line) error
+# """
+# function krr_fit(x, y, no_norm = falses(size(x,2));
+#                  k::Kernel           = PolynomialKernel(;degree=1),
+#                  λ::Real             = 0.5,
+#                  norm_type_x::Symbol = :standardize,
+#                  norm_type_y::Symbol = :standardize,
+#                  data_norms::Tuple   = (zeros(1,1),zeros(1,1),[0.0],[0.0]),
+#                  l_segs::Vector      = [length(y)],
+#                  silent::Bool        = false)
 
-    # normalize data
-    if sum(data_norms[end]) == 0 # normalize data
-        (x_bias,x_scale,x_norm) = norm_sets(x;norm_type=norm_type_x,no_norm=no_norm)
-        (y_bias,y_scale,y_norm) = norm_sets(y;norm_type=norm_type_y)
-    else # unpack data normalizations
-        (x_bias,x_scale,y_bias,y_scale) = data_norms
-        x_norm = (x .- x_bias) ./ x_scale
-        y_norm = (y .- y_bias) ./ y_scale
-    end
+#     # normalize data
+#     if sum(data_norms[end]) == 0 # normalize data
+#         (x_bias,x_scale,x_norm) = norm_sets(x;norm_type=norm_type_x,no_norm=no_norm)
+#         (y_bias,y_scale,y_norm) = norm_sets(y;norm_type=norm_type_y)
+#     else # unpack data normalizations
+#         (x_bias,x_scale,y_bias,y_scale) = data_norms
+#         x_norm = (x .- x_bias) ./ x_scale
+#         y_norm = (y .- y_bias) ./ y_scale
+#     end
 
-    # KRR to get coefficients
-    K  = kernelmatrix(k,x_norm;obsdim=1)
-    kt = (K + λ*I) \ y_norm
+#     # KRR to get coefficients
+#     K  = kernelmatrix(k,x_norm;obsdim=1)
+#     kt = (K + λ*I) \ y_norm
 
-    # unpack KRR model weights
-    x_norm_ = x_norm
-    model   = (k,kt,x_norm_)
+#     # unpack KRR model weights
+#     x_norm_ = x_norm
+#     model   = (k,kt,x_norm_)
 
-    # get results
-    y_hat_norm = K*kt
-    y_hat      = denorm_sets(y_bias,y_scale,y_hat_norm)
-    err        = err_segs(y_hat,y,l_segs;silent=silent_debug)
-    silent || @info("fit   error: $(round(std(err),digits=2)) nT")
+#     # get results
+#     y_hat_norm = K*kt
+#     y_hat      = denorm_sets(y_bias,y_scale,y_hat_norm)
+#     err        = err_segs(y_hat,y,l_segs;silent=silent_debug)
+#     silent || @info("fit   error: $(round(std(err),digits=2)) nT")
 
-    # pack data normalizations
-    data_norms = (x_bias,x_scale,y_bias,y_scale)
+#     # pack data normalizations
+#     data_norms = (x_bias,x_scale,y_bias,y_scale)
 
-    return (model, data_norms, y_hat, err)
-end # function krr_fit
+#     return (model, data_norms, y_hat, err)
+# end # function krr_fit
 
-"""
-    krr_test(x, y, data_norms::Tuple, model::Tuple;
-             l_segs::Vector = [length(y)],
-             silent::Bool   = false)
+# """
+#     krr_test(x, y, data_norms::Tuple, model::Tuple;
+#              l_segs::Vector = [length(y)],
+#              silent::Bool   = false)
 
-Evaluate performance of a kernel ridge regression (KRR) model.
+# Evaluate performance of a kernel ridge regression (KRR) model.
 
-**Arguments:**
-- `x`:          `N` x `Nf` data matrix (`Nf` is number of features)
-- `y`:          length-`N` target vector
-- `data_norms`: length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
-- `model`:      length-`3` tuple of KRR-based model, (`k`, length-`N_train` coefficients, `N_train` x `Nf` training data matrix, normalized)
-- `l_segs`:     (optional) length-`N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
-- `silent`:     (optional) if true, no print outs
+# **Arguments:**
+# - `x`:          `N` x `Nf` data matrix (`Nf` is number of features)
+# - `y`:          length-`N` target vector
+# - `data_norms`: length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
+# - `model`:      length-`3` tuple of KRR-based model, (`k`, length-`N_train` coefficients, `N_train` x `Nf` training data matrix, normalized)
+# - `l_segs`:     (optional) length-`N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
+# - `silent`:     (optional) if true, no print outs
 
-**Returns:**
-- `y_hat`: length-`N` prediction vector
-- `err`:   length-`N` mean-corrected (per line) error
-"""
-function krr_test(x, y, data_norms::Tuple, model::Tuple;
-                  l_segs::Vector = [length(y)],
-                  silent::Bool   = false)
+# **Returns:**
+# - `y_hat`: length-`N` prediction vector
+# - `err`:   length-`N` mean-corrected (per line) error
+# """
+# function krr_test(x, y, data_norms::Tuple, model::Tuple;
+#                   l_segs::Vector = [length(y)],
+#                   silent::Bool   = false)
 
-    # unpack data normalizations
-    (x_bias,x_scale,y_bias,y_scale) = data_norms
-    x_norm = (x .- x_bias) ./ x_scale
+#     # unpack data normalizations
+#     (x_bias,x_scale,y_bias,y_scale) = data_norms
+#     x_norm = (x .- x_bias) ./ x_scale
 
-    # unpack KRR model weights
-    (k,kt,x_norm_) = model
-    K = kernelmatrix(k,x_norm,x_norm_;obsdim=1)
+#     # unpack KRR model weights
+#     (k,kt,x_norm_) = model
+#     K = kernelmatrix(k,x_norm,x_norm_;obsdim=1)
 
-    # get results
-    y_hat_norm = K*kt
-    y_hat      = denorm_sets(y_bias,y_scale,y_hat_norm)
-    err        = err_segs(y_hat,y,l_segs;silent=silent_debug)
-    silent || @info("test  error: $(round(std(err),digits=2)) nT")
+#     # get results
+#     y_hat_norm = K*kt
+#     y_hat      = denorm_sets(y_bias,y_scale,y_hat_norm)
+#     err        = err_segs(y_hat,y,l_segs;silent=silent_debug)
+#     silent || @info("test  error: $(round(std(err),digits=2)) nT")
 
-    return (y_hat, err)
-end # function krr_test
+#     return (y_hat, err)
+# end # function krr_test
 
 """
     predict_shapley(m::Chain, df::DataFrame)

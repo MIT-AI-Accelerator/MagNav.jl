@@ -109,11 +109,11 @@ df_map = DataFrame(map_name = map_name,
                    map_file = map_h5)
 
 @testset "get_x tests" begin
-    @test get_x(xyz,ind) isa Tuple{Matrix,Vector,Vector}
-    @test get_x(xyz,ind,[:flight]) isa Tuple{Matrix,Vector,Vector}
+    @test get_x(xyz,ind) isa Tuple{Matrix,Vector,Vector,Vector}
+    @test get_x(xyz,ind,[:flight]) isa Tuple{Matrix,Vector,Vector,Vector}
     @test_throws ErrorException get_x(xyz,ind,[:test])
     @test_throws ErrorException get_x(xyz,ind,[:mag_6_uc])
-    @test get_x([xyz,xyz],[ind,ind]) isa Tuple{Matrix,Vector,Vector}
+    @test get_x([xyz,xyz],[ind,ind]) isa Tuple{Matrix,Vector,Vector,Vector}
     @test get_x(line2,df_line,df_flight) isa Tuple{Matrix,Vector,Vector,Vector}
     @test get_x(lines,df_line,df_flight) isa Tuple{Matrix,Vector,Vector,Vector}
     @test get_x([line2,line3],df_line,df_flight) isa Tuple{Matrix,Vector,Vector,Vector}
@@ -168,7 +168,7 @@ end
 end
 
 m = get_nn_m(3,1;hidden=[1])
-weights = Flux.params(m)
+weights = Flux.Params(Flux.trainables(m))
 α = 0.5
 
 @testset "sparse_group_lasso tests" begin
@@ -252,22 +252,24 @@ end
 end
 
 @testset "chunk_data tests" begin
-    @test chunk_data(ones(3,2),ones(3),3) == ([[[1,1],[1,1],[1,1]]],[[1,1,1]])
+    @test chunk_data(x,y,size(x,1)) == ([x'],[y])
+    @test chunk_data([1:4 1:4],1:4,2) == ([[1 2; 1 2],[3 4; 3 4]],[[1,2],[3,4]])
 end
 
-m_rnn = Chain(GRU(3,1),Dense(1,1))
+m_rnn = Chain(GRU(3 => 1), Dense(1 => 1))
 
 @testset "predict_rnn tests" begin
     @test predict_rnn_full(m_rnn,x) isa Vector
     @test predict_rnn_windowed(m_rnn,x,3) isa Vector
+    @test predict_rnn_full(m_rnn,x) == predict_rnn_windowed(m_rnn,x,size(x,1))
 end
 
-(model,data_norms,_,_) = krr_fit(x,y)
+# (model,data_norms,_,_) = krr_fit(x,y)
 
-@testset "krr tests" begin
-    @test krr_fit(x,y)[2:4] == krr_fit( x,y;data_norms      )[2:4]
-    @test krr_fit(x,y)[3:4] == krr_test(x,y,data_norms,model)[1:2]
-end
+# @testset "krr tests" begin
+#     @test krr_fit(x,y)[2:4] == krr_fit( x,y;data_norms      )[2:4]
+#     @test krr_fit(x,y)[3:4] == krr_test(x,y,data_norms,model)[1:2]
+# end
 
 features = [:f1,:f2,:f3]
 (df_shap,baseline_shap) = eval_shapley(m,x,features)

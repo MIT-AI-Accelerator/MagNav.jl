@@ -754,11 +754,11 @@ function plot_correlation_matrix(xyz::XYZ, ind = trues(xyz.traj.N),
                                  save_plot::Bool   = false,
                                  plot_png::String  = "correlation_matrix.png")
 
-    (x,_,features) = get_x(xyz,ind,features_setup;
-                           terms       = terms,
-                           sub_diurnal = sub_diurnal,
-                           sub_igrf    = sub_igrf,
-                           bpf_mag     = bpf_mag)
+    (x,_,features,_) = get_x(xyz,ind,features_setup;
+                             terms       = terms,
+                             sub_diurnal = sub_diurnal,
+                             sub_igrf    = sub_igrf,
+                             bpf_mag     = bpf_mag)
 
     p1 = plot_correlation_matrix(x,features;
                                  dpi       = dpi,
