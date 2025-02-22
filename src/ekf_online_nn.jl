@@ -55,7 +55,7 @@ function ekf_online_nn(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
 
     N     = length(lat)
     nx    = size(P0,1)
-    nx_nn = sum(length,Flux.params(m))
+    nx_nn = sum(length,Params(trainables(m)))
     ny    = size(meas,2)
     x_out = zeros(eltype(P0),nx,N)
     P_out = zeros(eltype(P0),nx,nx,N)
@@ -202,8 +202,8 @@ end # function ekf_online_nn
 
 #     m    = deepcopy(m) # don't modify original NN model
 #     w_nn = destructure(m)[1] # weights
-#     opt  = Adam() # optimizer
-#     loss(x,y) = mse(m(x),y) # mean squared error
+#     opt  = Flux.setup(Adam(),m) # setup Adam optimizer
+#     loss(m,x,y) = mse(vec(m(x)),y) # mean squared error
 
 #     N        = length(y)
 #     N_sigma  = min(N,N_sigma)
@@ -212,7 +212,7 @@ end # function ekf_online_nn
 #         ind = ((i-1)*floor(Int,(N-1)/N_sigma)).+(1:1)
 #         # ind = (i-1)*bS+1:i*bS
 #         d = DataLoader((x[ind,:]',y[ind]'),shuffle=true,batchsize=1) # bs
-#         Flux.train!(loss,Flux.params(m),d,opt)
+#         Flux.train!(loss,m,d,opt)
 #         coef_set[:,i] = deepcopy(destructure(m)[1])
 #     end
 

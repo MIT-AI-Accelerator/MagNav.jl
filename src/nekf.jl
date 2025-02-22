@@ -1,7 +1,7 @@
 """
     nekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS,
          x_nn::Matrix = meas[:,:],
-         m            = Dense(1,1);
+         m            = Dense(1 => 1);
          P0           = create_P0(),
          Qd           = create_Qd(),
          R            = 1.0,
@@ -46,7 +46,7 @@ for airborne magnetic anomaly navigation.
 """
 function nekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS,
               x_nn::Matrix = meas[:,:],
-              m            = Dense(1,1);
+              m            = Dense(1 => 1);
               P0           = create_P0(),
               Qd           = create_Qd(),
               R            = 1.0,
@@ -63,7 +63,7 @@ function nekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS,
     x_out  = zeros(eltype(P0),nx,N)
     P_out  = zeros(eltype(P0),nx,nx,N)
     r_out  = zeros(eltype(P0),ny,N)
-    x_seqs = Flux.unstack(Float32.(x_nn);dims=1)
+    R_nn   = m(x_nn') # pre-compute R correction
 
     x = zeros(eltype(P0),nx) # state estimate
     P = P0 # covariance matrix
@@ -88,7 +88,7 @@ function nekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS,
                          date=date,core=core)',ny,1)
 
         # measurement residual covariance
-        S = H*P*H' .+ R .* (1 .+ m(x_seqs[t])[1]) # S_t [ny x ny]
+        S = H*P*H' .+ R .* (1 + R_nn[t]) # S_t [ny x ny]
 
         # Kalman gain
         K = (P*H') / S          # K_t [nx x ny]
@@ -107,8 +107,7 @@ function nekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS,
         P = Phi*P*Phi' + Qd     # P_t|t-1 [nx x nx]
     end
 
-    nn_samp = [m(x_seqs[t])[1] for t = 1:round(Int,N/5):N]
-    println("sample NN output: ",round.(nn_samp,digits=5))
+    println("R_nn at [1, N/2, N]: ",round.(R_nn[[1,round(Int,N/2),N]],digits=5))
 
     return FILTres(x_out, P_out, r_out, true)
 end # function nekf
@@ -116,7 +115,7 @@ end # function nekf
 """
     nekf(ins::INS, meas, itp_mapS,
          x_nn::Matrix = meas[:,:],
-         m            = Dense(1,1);
+         m            = Dense(1 => 1);
          P0           = create_P0(),
          Qd           = create_Qd(),
          R            = 1.0,
@@ -151,7 +150,7 @@ for airborne magnetic anomaly navigation.
 """
 function nekf(ins::INS, meas, itp_mapS,
               x_nn::Matrix = meas[:,:],
-              m            = Dense(1,1);
+              m            = Dense(1 => 1);
               P0           = create_P0(),
               Qd           = create_Qd(),
               R            = 1.0,
@@ -176,11 +175,10 @@ end # function nekf
 
 """
     ekf_single(lat, lon, alt, Phi, meas, itp_mapS,
-               x_nn::Vector = meas,
-               m            = Dense(1,1),
                P            = create_P0(),
                Qd           = create_Qd(),
                R            = 1.0,
+               R_nn         = 0.0,
                x            = zeros(eltype(P),18);
                date         = get_years(2020,185),
                core::Bool   = false)
@@ -194,11 +192,10 @@ time step with a pre-computed `Phi` dynamics matrix.
 - `alt`:      altitude  [m]
 - `meas`:     scalar magnetometer measurement [nT]
 - `itp_mapS`: scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
-- `x_nn`:     `N` x `Nf` data matrix for neural network (`Nf` is number of features)
-- `m`:        neural network model
 - `P`:        non-linear covariance matrix
 - `Qd`:       discrete time process/system noise matrix
 - `R`:        measurement (white) noise variance
+- `R_nn`:     measurement (white) noise variance scaling factor from neural network
 - `x`:        filtered states, i.e., E(x_t | y_1,..,y_t)
 - `date`:     (optional) measurement date (decimal year) for IGRF [yr]
 - `core`:     (optional) if true, include core magnetic field in measurement
@@ -208,11 +205,10 @@ time step with a pre-computed `Phi` dynamics matrix.
 - `x`: filtered states, i.e., E(x_t | y_1,..,y_t)
 """
 function ekf_single(lat, lon, alt, Phi, meas, itp_mapS,
-                    x_nn::Vector = meas,
-                    m            = Dense(1,1),
                     P            = create_P0(),
                     Qd           = create_Qd(),
                     R            = 1.0,
+                    R_nn         = 0.0,
                     x            = zeros(eltype(P),18);
                     date         = get_years(2020,185),
                     core::Bool   = false)
@@ -228,7 +224,7 @@ function ekf_single(lat, lon, alt, Phi, meas, itp_mapS,
     H = repeat(get_H(itp_mapS,x,lat,lon,alt;date=date,core=core)',ny,1)
 
     # measurement residual covariance
-    S = H*P*H' .+ R .* (1 .+ m(x_nn)) # S_t [ny x ny]
+    S = H*P*H' .+ R .* (1 + R_nn) # S_t [ny x ny]
 
     # Kalman gain
     K = (P*H') / S          # K_t [nx x ny]
@@ -321,12 +317,13 @@ function nekf_train(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt,
                     date                 = get_years(2020,185),
                     core::Bool           = false)
 
-    x_seqs = chunk_data(Float32.(x_nn),zero(lat),l_window)[1]
-    y_seqs = chunk_data(y_nn,zero(lat),l_window)[1]
-
-    Nf = size(x_nn,2) # number of features
+    (N,Nf) = size(x_nn) # number of samples (instances) & features
     Ny = 1 # length of output
-    m  = Chain(LSTM(Nf,hidden),Dense(hidden,Ny,activation))
+    m  = Chain(LSTM(Nf => hidden), Dense(hidden => Ny, activation))
+
+    x_seqs = chunk_data(Float32.(x_nn),zero(lat),l_window)[1]
+    y_seqs = chunk_data(Float32.(y_nn),zero(lat),l_window)[1]
+    N_seqs = [[N_nn;;] for N_nn in l_window:l_window:N]
 
     # pre-compute Phi
     N   = length(lat)
@@ -340,30 +337,32 @@ function nekf_train(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt,
     P = P0
 
     # setup loss function
-    function loss(x_nn, y_nn)
-        N = size(y_nn,1)
+    function loss(m, x_nn, y_nn, N_nn)
+        N = size(x_nn,2)
         x = zero(P[:,1])
 
-        l = 0
-        for t = 1:N
-            (P,x) = ekf_single(lat[t],lon[t],alt[t],Phi[:,:,t],meas[t],
-                               itp_mapS,x_nn[t],m,
-                               P,Qd,R,x;date=date,core=core)
+        R_nn = m(x_nn) # pre-compute R correction
 
-            l += dlat2dn(y_nn[t][1] - (lat[t]+x[1]), lat[t]+x[1])^2 +
-                 dlon2de(y_nn[t][2] - (lon[t]+x[2]), lat[t]+x[1])^2
+        l = 0
+        for i = 1:N
+            t = N_nn[1] - N + i
+            (P,x) = ekf_single(lat[t],lon[t],alt[t],Phi[:,:,t],meas[t],
+                               itp_mapS,P,Qd,R,R_nn[i],x;date=date,core=core)
+
+            l += dlat2dn(y_nn[1,i] - (lat[t]+x[1]), lat[t]+x[1])^2 +
+                 dlon2de(y_nn[2,i] - (lon[t]+x[2]), lat[t]+x[1])^2
         end
 
         return sqrt(l/N) # DRMS
     end # function loss
 
-    # train RNN
-    opt = Flux.Adam(η_adam)
+    # setup Adam optimizer
+    opt = Flux.setup(Adam(η_adam),m)
+
+    # train RNN with Adam optimizer
     for _ = 1:epoch_adam
-        for j in eachindex(x_seqs)
-            Flux.train!(loss,Flux.params(m),zip(x_seqs[j:j],y_seqs[j:j]),opt)
-            Flux.reset!(m)
-        end
+        Flux.train!(loss,m,zip(x_seqs,y_seqs,N_seqs),opt)
+        println("loss: ",sum(loss.((m,),x_seqs,y_seqs,N_seqs)))
     end
 
     return (m)
