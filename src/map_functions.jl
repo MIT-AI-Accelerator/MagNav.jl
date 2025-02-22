@@ -227,7 +227,7 @@ function map_get_gxf(map_gxf::String)
         # read geometry transformation properties
         gt = ArchGDAL.getgeotransform(dataset)
 
-        # create x and y coordinate arrays
+        # create x & y coordinate arrays
         # map_yy reversed to match getgrd2 in MATLAB
         # both offset by half step size to match getgrd2 in MATLAB
         map_xx = [LinRange(gt[1],gt[1]+gt[2]*(nx-1),nx);] .+ gt[2]/2
@@ -270,7 +270,7 @@ function map_params(map_map::Array,
     map_map = deepcopy(map_map)
     replace!(map_map, NaN=>0) # just in case
 
-    # map indices with (ind0) and without (ind1) zeros
+    # map indices with (ind0) & without (ind1) zeros
     ind0 = map_map .== 0
     ind1 = map_map .!= 0
 

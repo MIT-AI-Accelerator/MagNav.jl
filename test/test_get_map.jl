@@ -1,5 +1,5 @@
 using MagNav, Test, MAT
-using DataFrames
+using DataFrames, DelimitedFiles
 using BSON: bson, @save
 
 test_data_map = joinpath(@__DIR__,"test_data/test_data_map.mat")
@@ -80,9 +80,18 @@ map_h5 = joinpath(@__DIR__,"test_save_map")
     @test save_map(upward_fft(mapS,[mapS.alt,mapS.alt+5]),map_h5) isa Nothing
 end
 
+map_csv_dir = joinpath(@__DIR__,"test_get_map")
+rm(map_csv_dir;force=true,recursive=true)
+mkdir(map_csv_dir)
+
+for f in ["map","alt","xx","yy"]
+    writedlm("$map_csv_dir/$f.csv",map_data[f],',')
+end
+
 map_h5 = MagNav.add_extension(map_h5,".h5")
 
 @testset "get_map tests" begin
+    @test get_map(map_csv_dir) isa MagNav.MapS
     @test get_map(map_h5) isa MagNav.MapS3D
     for map_file in map_files
         println(map_file)
@@ -99,6 +108,8 @@ map_h5 = MagNav.add_extension(map_h5,".h5")
     @test_throws ErrorException get_map(test_data_map_badS)
     @test_throws ErrorException get_map(test_data_map_badV)
 end
+
+rm(map_csv_dir;force=true,recursive=true)
 
 comp_params_lin_bson = joinpath(@__DIR__,"test_save_comp_params_lin")
 comp_params_nn_bson  = joinpath(@__DIR__,"test_save_comp_params_nn")

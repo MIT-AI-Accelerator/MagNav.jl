@@ -116,7 +116,7 @@ end
     @test ekf(ins,mag_1_c,itp_mapS;der_mapS,map_alt) isa FILTres
 end
 
-# create EKF_RT struct with EKF initializations and parameters
+# create EKF_RT struct with EKF initializations & parameters
 ny = size(mag_1_c,2)
 a  = EKF_RT(P        = P0,
             Qd       = Qd,

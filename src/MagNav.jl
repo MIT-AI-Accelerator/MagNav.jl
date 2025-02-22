@@ -1194,7 +1194,7 @@ module MagNav
     """
         TempParams
 
-    Temporary (WIP) parameters struct.
+    Temporary parameters struct for temporal models.
 
     |**Field**|**Type**|**Description**
     |:--|:--|:--
@@ -1232,7 +1232,7 @@ module MagNav
     |`acc_tau` |Float64          | accelerometer time constant [s]
     |`gyro_tau`|Float64          | gyroscope time constant [s]
     |`fogm_tau`|Float64          | FOGM catch-all time constant [s]
-    |`date`    |Float64          | measurement date for IGRF [yr]
+    |`date`    |Float64          | measurement date (decimal year) for IGRF [yr]
     |`core`    |Bool             | if true, include core magnetic field in measurement
     |`nx`      |Int64            | total state dimension
     |`ny`      |Int64            | measurement dimension
@@ -1289,7 +1289,6 @@ module MagNav
     include("ekf_online_nn.jl")
     include("ekf_online.jl")
     include("eval_filt.jl")
-    # include("ffnn.jl")
     include("get_map.jl")
     include("get_XYZ.jl")
     include("google_earth.jl")
@@ -1337,7 +1336,7 @@ module MagNav
     create_TL_A,create_TL_coef,fdm,
     xyz2h5
 
-    # #* note: tried various combinations of function calls, always worse, WIP
+    # #* note: tried various combinations of function calls, always worse
     # @setup_workload begin
     #     map_map  = ones(3,3)
     #     map_xx   = map_yy = [0.1:0.1:0.3;]

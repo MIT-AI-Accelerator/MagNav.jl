@@ -38,7 +38,7 @@ for airborne magnetic anomaly navigation.
 - `acc_tau`:  (optional) accelerometer time constant [s]
 - `gyro_tau`: (optional) gyroscope time constant [s]
 - `fogm_tau`: (optional) FOGM catch-all time constant [s]
-- `date`:     (optional) measurement date for IGRF [yr]
+- `date`:     (optional) measurement date (decimal year) for IGRF [yr]
 - `core`:     (optional) if true, include core magnetic field in measurement
 
 **Returns:**
@@ -143,7 +143,7 @@ for airborne magnetic anomaly navigation.
 - `acc_tau`:  (optional) accelerometer time constant [s]
 - `gyro_tau`: (optional) gyroscope time constant [s]
 - `fogm_tau`: (optional) FOGM catch-all time constant [s]
-- `date`:     (optional) measurement date for IGRF [yr]
+- `date`:     (optional) measurement date (decimal year) for IGRF [yr]
 - `core`:     (optional) if true, include core magnetic field in measurement
 
 **Returns:**
@@ -200,7 +200,7 @@ time step with a pre-computed `Phi` dynamics matrix.
 - `Qd`:       discrete time process/system noise matrix
 - `R`:        measurement (white) noise variance
 - `x`:        filtered states, i.e., E(x_t | y_1,..,y_t)
-- `date`:     (optional) measurement date for IGRF [yr]
+- `date`:     (optional) measurement date (decimal year) for IGRF [yr]
 - `core`:     (optional) if true, include core magnetic field in measurement
 
 **Returns:**
@@ -254,6 +254,7 @@ end # function ekf_single
                acc_tau              = 3600.0,
                gyro_tau             = 3600.0,
                fogm_tau             = 600.0,
+               η_adam               = 0.1,
                epoch_adam::Int      = 10,
                hidden::Int          = 1,
                activation::Function = swish,
@@ -287,6 +288,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
 - `acc_tau`:    (optional) accelerometer time constant [s]
 - `gyro_tau`:   (optional) gyroscope time constant [s]
 - `fogm_tau`:   (optional) FOGM catch-all time constant [s]
+- `η_adam`:     (optional) learning rate for Adam optimizer
 - `epoch_adam`: (optional) number of epochs for Adam optimizer
 - `hidden`:     (optional) hidden layers & nodes (e.g., `[8,8]` for 2 hidden layers, 8 nodes each)
 - `activation`: (optional) activation function
@@ -296,7 +298,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
     - `tanh`  = hyperbolic tan
     - run `plot_activation()` for a visual
 - `l_window`:   (optional) temporal window length
-- `date`:       (optional) measurement date for IGRF [yr]
+- `date`:       (optional) measurement date (decimal year) for IGRF [yr]
 - `core`:       (optional) if true, include core magnetic field in measurement
 
 **Returns:**
@@ -311,6 +313,7 @@ function nekf_train(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt,
                     acc_tau              = 3600.0,
                     gyro_tau             = 3600.0,
                     fogm_tau             = 600.0,
+                    η_adam               = 0.1,
                     epoch_adam::Int      = 10,
                     hidden::Int          = 1,
                     activation::Function = swish,
@@ -336,7 +339,7 @@ function nekf_train(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt,
 
     P = P0
 
-    # create loss function
+    # setup loss function
     function loss(x_nn, y_nn)
         N = size(y_nn,1)
         x = zero(P[:,1])
@@ -355,7 +358,7 @@ function nekf_train(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt,
     end # function loss
 
     # train RNN
-    opt = Flux.Adam()
+    opt = Flux.Adam(η_adam)
     for _ = 1:epoch_adam
         for j in eachindex(x_seqs)
             Flux.train!(loss,Flux.params(m),zip(x_seqs[j:j],y_seqs[j:j]),opt)
@@ -375,6 +378,7 @@ end # function nekf_train
                acc_tau              = 3600.0,
                gyro_tau             = 3600.0,
                fogm_tau             = 600.0,
+               η_adam               = 0.1,
                epoch_adam::Int      = 10,
                hidden::Int          = 1,
                activation::Function = swish,
@@ -398,6 +402,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
 - `acc_tau`:    (optional) accelerometer time constant [s]
 - `gyro_tau`:   (optional) gyroscope time constant [s]
 - `fogm_tau`:   (optional) FOGM catch-all time constant [s]
+- `η_adam`:     (optional) learning rate for Adam optimizer
 - `epoch_adam`: (optional) number of epochs for Adam optimizer
 - `hidden`:     (optional) hidden layers & nodes (e.g., `[8,8]` for 2 hidden layers, 8 nodes each)
 - `activation`: (optional) activation function
@@ -407,7 +412,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
     - `tanh`  = hyperbolic tan
     - run `plot_activation()` for a visual
 - `l_window`:   (optional) temporal window length
-- `date`:       (optional) measurement date for IGRF [yr]
+- `date`:       (optional) measurement date (decimal year) for IGRF [yr]
 - `core`:       (optional) if true, include core magnetic field in measurement
 
 **Returns:**
@@ -421,6 +426,7 @@ function nekf_train(ins::INS, meas, itp_mapS, x_nn::Matrix, y_nn::Matrix;
                     acc_tau              = 3600.0,
                     gyro_tau             = 3600.0,
                     fogm_tau             = 600.0,
+                    η_adam               = 0.1,
                     epoch_adam::Int      = 10,
                     hidden::Int          = 1,
                     activation::Function = swish,
@@ -434,6 +440,7 @@ function nekf_train(ins::INS, meas, itp_mapS, x_nn::Matrix, y_nn::Matrix;
                acc_tau    = acc_tau,
                gyro_tau   = gyro_tau,
                fogm_tau   = fogm_tau,
+               η_adam     = η_adam,
                epoch_adam = epoch_adam,
                hidden     = hidden,
                activation = activation,
@@ -451,6 +458,7 @@ end # function nekf_train
                acc_tau              = 3600.0,
                gyro_tau             = 3600.0,
                fogm_tau             = 600.0,
+               η_adam               = 0.1,
                epoch_adam::Int      = 10,
                hidden::Int          = 1,
                activation::Function = swish,
@@ -474,6 +482,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
 - `acc_tau`:    (optional) accelerometer time constant [s]
 - `gyro_tau`:   (optional) gyroscope time constant [s]
 - `fogm_tau`:   (optional) FOGM catch-all time constant [s]
+- `η_adam`:     (optional) learning rate for Adam optimizer
 - `epoch_adam`: (optional) number of epochs for Adam optimizer
 - `hidden`:     (optional) hidden layers & nodes (e.g., `[8,8]` for 2 hidden layers, 8 nodes each)
 - `activation`: (optional) activation function
@@ -483,7 +492,7 @@ Train a measurement noise covariance-adaptive neural extended Kalman filter
     - `tanh`  = hyperbolic tan
     - run `plot_activation()` for a visual
 - `l_window`:   (optional) temporal window length
-- `date`:       (optional) measurement date for IGRF [yr]
+- `date`:       (optional) measurement date (decimal year) for IGRF [yr]
 - `core`:       (optional) if true, include core magnetic field in measurement
 
 **Returns:**
@@ -498,6 +507,7 @@ function nekf_train(xyz::XYZ, ind, meas, itp_mapS, x::Matrix;
                     acc_tau              = 3600.0,
                     gyro_tau             = 3600.0,
                     fogm_tau             = 600.0,
+                    η_adam               = 0.1,
                     epoch_adam::Int      = 10,
                     hidden::Int          = 1,
                     activation::Function = swish,
@@ -522,6 +532,7 @@ function nekf_train(xyz::XYZ, ind, meas, itp_mapS, x::Matrix;
                    acc_tau    = acc_tau,
                    gyro_tau   = gyro_tau,
                    fogm_tau   = fogm_tau,
+                   η_adam     = η_adam,
                    epoch_adam = epoch_adam,
                    hidden     = hidden,
                    activation = activation,

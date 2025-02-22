@@ -252,12 +252,11 @@ md"The second way to create a 3D map is to combine multiple 2D maps using the `m
 # ╔═╡ eaa6b007-97cf-4178-bb9a-2656632df7c1
 begin
 	p_mapS3D_2 = map_combine([e_mapS_395,p_mapS_800]; # 3D map
-	                         n_levels = 2,
 	                         dx       = get_step(p_mapS_800.xx),
 	                         dy       = get_step(p_mapS_800.yy),
 	                         xx_lim   = extrema(p_mapS_800.xx),
 	                         yy_lim   = extrema(p_mapS_800.yy));
-	println(p_mapS3D_2.alt) # map altitude levels
+	println(p_mapS3D_2.alt) # map altitude levels (default is 3)
 	p10 = plot_map(p_mapS3D_2) # plot single map level (default is lowest)
 end
 
@@ -274,7 +273,7 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 [compat]
 CSV = "~0.10.15"
 DataFrames = "~1.7.0"
-MagNav = "~1.2.1"
+MagNav = "~1.2.2"
 Plots = "~1.40.9"
 Random = "~1.11.0"
 Statistics = "~1.11.1"

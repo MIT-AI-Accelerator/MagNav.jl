@@ -35,7 +35,7 @@ Extended Kalman filter (EKF) with online learning of neural network weights.
 - `acc_tau`:  (optional) accelerometer time constant [s]
 - `gyro_tau`: (optional) gyroscope time constant [s]
 - `fogm_tau`: (optional) FOGM catch-all time constant [s]
-- `date`:     (optional) measurement date for IGRF [yr]
+- `date`:     (optional) measurement date (decimal year) for IGRF [yr]
 - `core`:     (optional) if true, include core magnetic field in measurement
 - `terms`:    (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
 
@@ -113,7 +113,7 @@ function ekf_online_nn(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
 end # function ekf_online_nn
 
 """
-    nn_grad(m::Chain,x)
+    nn_grad(m::Chain, x)
 
 Internal helper function to get neural network gradients.
 
@@ -124,7 +124,7 @@ Internal helper function to get neural network gradients.
 **Returns:**
 - `g`: tuple of gradients of `m` using `x`
 """
-nn_grad(m::Chain,x) = gradient(m -> sum(m(x)), m)[1].layers # function nn_grad
+nn_grad(m::Chain, x) = gradient(m -> sum(m(x)), m)[1].layers # function nn_grad
 
 """
     get_Hnn(g::Tuple)
@@ -171,7 +171,7 @@ Extended Kalman filter (EKF) with online learning of neural network weights.
 - `acc_tau`:  (optional) accelerometer time constant [s]
 - `gyro_tau`: (optional) gyroscope time constant [s]
 - `fogm_tau`: (optional) FOGM catch-all time constant [s]
-- `date`:     (optional) measurement date for IGRF [yr]
+- `date`:     (optional) measurement date (decimal year) for IGRF [yr]
 - `core`:     (optional) if true, include core magnetic field in measurement
 
 **Returns:**

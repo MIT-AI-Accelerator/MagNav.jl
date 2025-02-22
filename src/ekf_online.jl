@@ -35,7 +35,7 @@ Extended Kalman filter (EKF) with online learning of Tolles-Lawson coefficients.
 - `acc_tau`:      (optional) accelerometer time constant [s]
 - `gyro_tau`:     (optional) gyroscope time constant [s]
 - `fogm_tau`:     (optional) FOGM catch-all time constant [s]
-- `date`:         (optional) measurement date for IGRF [yr]
+- `date`:         (optional) measurement date (decimal year) for IGRF [yr]
 - `core`:         (optional) if true, include core magnetic field in measurement
 - `terms`:        (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
 - `Bt_scale`:     (optional) scaling factor for induced & eddy current terms [nT]
@@ -176,7 +176,7 @@ Extended Kalman filter (EKF) with online learning of Tolles-Lawson coefficients.
 - `acc_tau`:  (optional) accelerometer time constant [s]
 - `gyro_tau`: (optional) gyroscope time constant [s]
 - `fogm_tau`: (optional) FOGM catch-all time constant [s]
-- `date`:     (optional) measurement date for IGRF [yr]
+- `date`:     (optional) measurement date (decimal year) for IGRF [yr]
 - `core`:     (optional) if true, include core magnetic field in measurement
 - `terms`:    (optional) Tolles-Lawson terms to use {`:permanent`,`:induced`,`:eddy`,`:bias`}
 - `Bt_scale`: (optional) scaling factor for induced & eddy current terms [nT]
