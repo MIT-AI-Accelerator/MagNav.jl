@@ -18,6 +18,7 @@ module MagNav
     using Interpolations: Linear, OnGrid, Quadratic, ScaledInterpolation
     using Interpolations: interpolate, linear_interpolation, scale
     using IterTools: ncycle
+    using KernelFunctions: Kernel, PolynomialKernel, kernelmatrix
     using MAT: matopen
     using MLJLinearModels: ElasticNetRegression, fit
     using NearestNeighbors: KDTree, knn, nn
@@ -1303,7 +1304,7 @@ module MagNav
     dn2dlat,de2dlon,dlat2dn,dlon2de,linreg,detrend,get_bpf,bpf_data,bpf_data!,
     get_x,get_y,get_Axy,get_nn_m,sparse_group_lasso,err_segs,
     norm_sets,denorm_sets,get_ind,chunk_data,predict_rnn_full,
-    predict_rnn_windowed,eval_shapley,plot_shapley,eval_gsa,
+    predict_rnn_windowed,krr_fit,krr_test,eval_shapley,plot_shapley,eval_gsa,
     get_IGRF,get_igrf,project_body_field_to_2d_igrf,get_optimal_rotation_matrix,
     get_days_in_year,get_years,filter_events!,filter_events,gif_animation_m3,
     plot_basic,plot_activation,plot_mag,plot_mag_c,plot_PSD,plot_spectrogram,
