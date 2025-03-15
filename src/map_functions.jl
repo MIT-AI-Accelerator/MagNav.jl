@@ -1959,7 +1959,7 @@ function map_clims(c, map_map::Matrix)
     lc = length(c) # length of original color scale
     map_mask = abs.(map_map) .>= 1e-3 # mask for approximately non-zero map data
 
-    if sum(map_mask) > length(c)
+    if length(unique(map_map[map_mask])) > lc
         indc  = round.(Int,LinRange(0.5,lc-0.5,lc)/lc*sum(map_mask)) # bin indices
         bcen  = sort(map_map[map_mask])[indc] # bin centers
         bwid  = fdm(bcen) # bin widths
