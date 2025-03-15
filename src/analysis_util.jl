@@ -2025,9 +2025,9 @@ end # function eval_shapley
 
 """
     plot_shapley(df_shap, baseline_shap,
-                 range_shap::AbstractUnitRange=axes(df_shap,1);
-                 title::String = "features \$range_shap",
-                 dpi::Int      = 200)
+                 range_shap::UnitRange = UnitRange(axes(df_shap,1));
+                 title::String         = "features \$range_shap",
+                 dpi::Int              = 200)
 
 Plot horizontal bar graph of feature importance (Shapley effects).
 
@@ -2046,23 +2046,25 @@ Plot horizontal bar graph of feature importance (Shapley effects).
 - `p1`: plot of Shapley effects
 """
 function plot_shapley(df_shap, baseline_shap,
-                      range_shap::AbstractUnitRange=axes(df_shap,1);
-                      title::String = "features $range_shap",
-                      dpi::Int      = 200)
+                      range_shap::UnitRange = UnitRange(axes(df_shap,1));
+                      title::String         = "features $range_shap",
+                      dpi::Int              = 200)
 
     # print warning about too many features
-    s = "range_shap length of $(length(range_shap)) may produce congested plot"
-    length(range_shap) > 20 && @info(s)
+    l = length(range_shap)
+    l > 20 && @info("plotting $l features may produce congested plot")
 
     # get data & axis labels
-    x    = df_shap.mean_effect[range_shap]
-    y    = df_shap.feature_name[range_shap]
+    df   = df_shap[range_shap,:]
+    x    = df.mean_effect
+    y    = df.feature_name
     xlab = "|Shapley effect| (baseline = $baseline_shap)"
     ylab = "feature"
+    ylim = extrema(range_shap) .+ (-1,1)
 
     # plot horizontal bar graph
-    p1 = bar(x,yticks=(eachindex(range_shap),y),lab=false,
-             dpi=dpi,xlab=xlab,ylab=ylab,title=title,
+    p1 = bar(range_shap,x,yticks=(range_shap,y),lab=false,
+             dpi=dpi,xlab=xlab,ylab=ylab,ylim=ylim,title=title,
              orientation=:h,yflip=true,margin=4*mm)
 
     return (p1)
