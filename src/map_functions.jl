@@ -758,7 +758,7 @@ function map_correct_igrf(map_map::Matrix, map_alt,
                           zone_utm::Int       = 18,
                           is_north::Bool      = true,
                           map_units::Symbol   = :rad)
-    map_map = deepcopy(map_map)
+    map_map = float.(map_map)
     map_correct_igrf!(map_map,map_alt,map_xx,map_yy;
                       sub_igrf_date = sub_igrf_date,
                       add_igrf_date = add_igrf_date,
@@ -829,7 +829,7 @@ function map_fill!(map_map::Matrix, map_xx::Vector, map_yy::Vector; k::Int = 3)
     pts  = vcat(vec(repeat(map_xx',ny,1)[ind0])',
                 vec(repeat(map_yy ,1,nx)[ind0])') # xx & yy at ind0 [2 x N0]
     vals = vec(map_map[ind1]) # map data at ind1 [N1]
-    tree = KDTree(data)
+    tree = KDTree(float.(data))
     inds = knn(tree,pts,k,true)[1]
 
     j = 0
@@ -980,7 +980,7 @@ function map_chessboard!(map_map::Matrix, map_alt::Matrix, map_xx::Vector,
 
     for k = 1:nz # time consumer
         if k == k0
-            map_3D[:,:,k] = deepcopy(map_map)
+            map_3D[:,:,k] = float.(map_map)
         else
             @inbounds map_3D[:,:,k] = upward_fft(map_map,dx,dy,alt_lev[k];
                                                  expand=true,α=α)
@@ -1164,8 +1164,8 @@ function map_utm2lla!(mapS::Union{MapS,MapSd,MapS3D};
                      save_h5  = save_h5,
                      map_h5   = map_h5)
     elseif mapS isa MapS3D
-        map_xx_ = deepcopy(mapS.xx)
-        map_yy_ = deepcopy(mapS.yy)
+        map_xx_ = float.(mapS.xx)
+        map_yy_ = float.(mapS.yy)
         for i in eachindex(mapS.alt)
             (map_map,map_xx,map_yy,map_mask) = map_utm2lla(mapS.map[:,:,i],
                                                            map_xx_,map_yy_,
@@ -1221,11 +1221,11 @@ function map_utm2lla(map_map::Matrix, map_xx::Vector, map_yy::Vector,
                      is_north::Bool   = true,
                      save_h5::Bool    = false,
                      map_h5::String   = "map_data.h5")
-    map_map  = deepcopy(map_map)
-    map_xx   = deepcopy(map_xx)
-    map_yy   = deepcopy(map_yy)
-    alt      = deepcopy(alt)
-    map_mask = deepcopy(map_mask)
+    map_map  = float.(map_map)
+    map_xx   = float.(map_xx)
+    map_yy   = float.(map_yy)
+    alt      = float.(alt)
+    map_mask = true .* map_mask
     map_utm2lla!(map_map,map_xx,map_yy,alt,map_mask;
                  map_info = map_info,
                  zone_utm = zone_utm,
@@ -2000,8 +2000,8 @@ function plot_path!(p1::Plot, lat, lon;
                     zoom_plot::Bool    = false,
                     path_color::Symbol = :ignore)
 
-    lon = downsample(rad2deg.(deepcopy(lon)),Nmax)
-    lat = downsample(rad2deg.(deepcopy(lat)),Nmax)
+    lon = downsample(rad2deg.(lon),Nmax)
+    lat = downsample(rad2deg.(lat),Nmax)
 
     if path_color == :ignore
         p1 = plot!(p1,lon,lat,lab=lab,legend=true)
@@ -2879,8 +2879,8 @@ Resample map with new grid.
 function map_resample(map_map::Matrix, map_xx::Vector, map_yy::Vector,
                       map_mask::BitMatrix, map_xx_new::Vector, map_yy_new::Vector)
 
-    map_map_  = deepcopy(map_map)
-    map_mask_ = deepcopy(map_mask)
+    map_map_  = float.(map_map)
+    map_mask_ = true .* map_mask
     (map_xx,ind_xx) = expand_range(map_xx,extrema(map_xx_new),true)
     (map_yy,ind_yy) = expand_range(map_yy,extrema(map_yy_new),true)
     map_map   = zeros(eltype(map_map ),length.((map_yy,map_xx)))

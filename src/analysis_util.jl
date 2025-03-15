@@ -167,7 +167,7 @@ Bandpass (or low-pass or high-pass) filter columns of matrix.
 - `x_f`: data matrix, filtered
 """
 function bpf_data(x::AbstractMatrix; bpf=get_bpf())
-    x_f = deepcopy(x)
+    x_f = float.(x)
     for i in axes(x,2)
         (std(x[:,i]) <= eps(eltype(x))) || (x_f[:,i] = filtfilt(bpf,x[:,i]))
     end

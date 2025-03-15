@@ -36,7 +36,7 @@ function upward_fft(map_map::Matrix, dx, dy, dz; expand::Bool = true, α = 0)
         (Ny,Nx,px,py) = (ny,nx,0,0)
     end
 
-    map_map = length(dz) == 1 ? deepcopy(map_map) : repeat(map_map,1,1,length(dz))
+    map_map = length(dz) == 1 ? float.(map_map) : repeat(map_map,1,1,length(dz))
     all(dz .≈ 0) && return map_map
 
     (k,_,_) = create_k(dx,dy,Nx,Ny) # radial wavenumber grid
@@ -233,7 +233,7 @@ continuation.
 """
 function map_expand(map_map::Matrix, pad::Int = 1)
 
-    map_ = deepcopy(map_map)
+    map_ = float.(map_map)
 
     (ny,nx) = size(map_) # original map size
     (Ny,Nx) = smooth7.((ny,nx).+2*pad) # map size with 7-smooth padding
@@ -246,7 +246,7 @@ function map_expand(map_map::Matrix, pad::Int = 1)
     # place original map in middle of new map
     (x1,x2) = (1,nx) .+ padx[1]
     (y1,y2) = (1,ny) .+ pady[1]
-    map_map = zeros(eltype(map_map),Ny,Nx)
+    map_map = zeros(eltype(map_),Ny,Nx)
     map_map[y1:y2,x1:x2] = map_
 
     # fill row edges (right/left)
