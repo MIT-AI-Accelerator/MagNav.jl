@@ -3,7 +3,7 @@
                     map_xx::AbstractVector{T},
                     map_yy::AbstractVector{T},
                     type::Symbol = :cubic,
-                    map_alt::AbstractVector = []) where T
+                    map_alt::AbstractVector{T} = T[0]) where T
 
 Create map interpolation function, equivalent of griddedInterpolant in MATLAB.
 
@@ -21,14 +21,15 @@ function map_interpolate(map_map::AbstractArray{T},
                          map_xx::AbstractVector{T},
                          map_yy::AbstractVector{T},
                          type::Symbol = :cubic,
-                         map_alt::AbstractVector = []) where T
+                         map_alt::AbstractVector{T} = T[0]) where T
 
     # uses Interpolations package rather than Dierckx or GridInterpolations,
     # as Interpolations was found to be fastest for MagNav use cases.
 
     (ny,nx,nz) = length.((map_yy,map_xx,map_alt))
-    @assert nx == size(map_map,2) "xx map dimensions are inconsistent"
-    @assert ny == size(map_map,1) "yy map dimensions are inconsistent"
+    @assert nx == size(map_map,2)  "xx map dimensions are inconsistent"
+    @assert ny == size(map_map,1)  "yy map dimensions are inconsistent"
+    @assert nz == size(map_map,3) "alt map dimensions are inconsistent"
 
     if type == :linear
         spline_type = BSpline(Linear())
@@ -43,10 +44,11 @@ function map_interpolate(map_map::AbstractArray{T},
     xx = LinRange(extrema(map_xx)...,nx)
     yy = LinRange(extrema(map_yy)...,ny)
 
-    if nz == 0
-        itp_map = scale(interpolate(map_map,spline_type),yy,xx)
+    if nz == 1
+        s = "3D map has 1 map altitude level, providing 2D map interpolation"
+        map_map isa AbstractMatrix || @info(s) # print warning for 3D map
+        itp_map = scale(interpolate(map_map[:,:,1],spline_type),yy,xx)
     else
-        @assert nz == size(map_map,3) "alt map dimensions are inconsistent"
         zz = LinRange(extrema(map_alt)...,nz)
         itp_map = scale(interpolate(map_map,spline_type),yy,xx,zz)
     end
