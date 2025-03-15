@@ -1049,8 +1049,8 @@ function zero_ins_ll(ins_lat::Vector, ins_lon::Vector, err::Real = 0.0,
     N_zero_lat == N_zero_lon ? (N_zero = N_zero_lat) : error("N_lat ≂̸ N_lon")
 
     # avoid modifying original data (possibly in xyz struct)
-    ins_lat = deepcopy(ins_lat)
-    ins_lon = deepcopy(ins_lon)
+    ins_lat = float.(ins_lat)
+    ins_lon = float.(ins_lon)
 
     # correct 1:N_zero
     δlat = ins_lat[1:N_zero] - lat

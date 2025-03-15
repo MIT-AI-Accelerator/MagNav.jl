@@ -3,7 +3,7 @@
                     map_xx::AbstractVector{T},
                     map_yy::AbstractVector{T},
                     type::Symbol = :cubic,
-                    map_alt::AbstractVector = []) where T
+                    map_alt::AbstractVector{T} = T[0]) where T
 
 Create map interpolation function, equivalent of griddedInterpolant in MATLAB.
 
@@ -21,14 +21,15 @@ function map_interpolate(map_map::AbstractArray{T},
                          map_xx::AbstractVector{T},
                          map_yy::AbstractVector{T},
                          type::Symbol = :cubic,
-                         map_alt::AbstractVector = []) where T
+                         map_alt::AbstractVector{T} = T[0]) where T
 
     # uses Interpolations package rather than Dierckx or GridInterpolations,
     # as Interpolations was found to be fastest for MagNav use cases.
 
     (ny,nx,nz) = length.((map_yy,map_xx,map_alt))
-    @assert nx == size(map_map,2) "xx map dimensions are inconsistent"
-    @assert ny == size(map_map,1) "yy map dimensions are inconsistent"
+    @assert nx == size(map_map,2)  "xx map dimensions are inconsistent"
+    @assert ny == size(map_map,1)  "yy map dimensions are inconsistent"
+    @assert nz == size(map_map,3) "alt map dimensions are inconsistent"
 
     if type == :linear
         spline_type = BSpline(Linear())
@@ -43,10 +44,11 @@ function map_interpolate(map_map::AbstractArray{T},
     xx = LinRange(extrema(map_xx)...,nx)
     yy = LinRange(extrema(map_yy)...,ny)
 
-    if nz == 0
-        itp_map = scale(interpolate(map_map,spline_type),yy,xx)
+    if nz == 1
+        s = "3D map has 1 map altitude level, providing 2D map interpolation"
+        map_map isa AbstractMatrix || @info(s) # print warning for 3D map
+        itp_map = scale(interpolate(map_map[:,:,1],spline_type),yy,xx)
     else
-        @assert nz == size(map_map,3) "alt map dimensions are inconsistent"
         zz = LinRange(extrema(map_alt)...,nz)
         itp_map = scale(interpolate(map_map,spline_type),yy,xx,zz)
     end
@@ -758,7 +760,7 @@ function map_correct_igrf(map_map::Matrix, map_alt,
                           zone_utm::Int       = 18,
                           is_north::Bool      = true,
                           map_units::Symbol   = :rad)
-    map_map = deepcopy(map_map)
+    map_map = float.(map_map)
     map_correct_igrf!(map_map,map_alt,map_xx,map_yy;
                       sub_igrf_date = sub_igrf_date,
                       add_igrf_date = add_igrf_date,
@@ -829,7 +831,7 @@ function map_fill!(map_map::Matrix, map_xx::Vector, map_yy::Vector; k::Int = 3)
     pts  = vcat(vec(repeat(map_xx',ny,1)[ind0])',
                 vec(repeat(map_yy ,1,nx)[ind0])') # xx & yy at ind0 [2 x N0]
     vals = vec(map_map[ind1]) # map data at ind1 [N1]
-    tree = KDTree(data)
+    tree = KDTree(float.(data))
     inds = knn(tree,pts,k,true)[1]
 
     j = 0
@@ -980,7 +982,7 @@ function map_chessboard!(map_map::Matrix, map_alt::Matrix, map_xx::Vector,
 
     for k = 1:nz # time consumer
         if k == k0
-            map_3D[:,:,k] = deepcopy(map_map)
+            map_3D[:,:,k] = float.(map_map)
         else
             @inbounds map_3D[:,:,k] = upward_fft(map_map,dx,dy,alt_lev[k];
                                                  expand=true,α=α)
@@ -1034,11 +1036,12 @@ function map_chessboard(mapSd::MapSd, alt::Real;
                         dz              = 5,
                         down_max        = 150,
                         α               = 200)
+    mapSd  = deepcopy(mapSd)
     map_xx = zero(mapSd.xx)
     map_yy = zero(mapSd.yy)
     for i in eachindex(map_xx)[2:end]
         map_xx[i] = map_xx[i-1] + dlon2de(mapSd.xx[i] - mapSd.xx[i-1],
-                                          mean(mapSd.yy[i-1:i]))
+                                          mean(mapSd.yy))
     end
     for i in eachindex(map_yy)[2:end]
         map_yy[i] = map_yy[i-1] + dlat2dn(mapSd.yy[i] - mapSd.yy[i-1],
@@ -1164,8 +1167,8 @@ function map_utm2lla!(mapS::Union{MapS,MapSd,MapS3D};
                      save_h5  = save_h5,
                      map_h5   = map_h5)
     elseif mapS isa MapS3D
-        map_xx_ = deepcopy(mapS.xx)
-        map_yy_ = deepcopy(mapS.yy)
+        map_xx_ = float.(mapS.xx)
+        map_yy_ = float.(mapS.yy)
         for i in eachindex(mapS.alt)
             (map_map,map_xx,map_yy,map_mask) = map_utm2lla(mapS.map[:,:,i],
                                                            map_xx_,map_yy_,
@@ -1221,11 +1224,11 @@ function map_utm2lla(map_map::Matrix, map_xx::Vector, map_yy::Vector,
                      is_north::Bool   = true,
                      save_h5::Bool    = false,
                      map_h5::String   = "map_data.h5")
-    map_map  = deepcopy(map_map)
-    map_xx   = deepcopy(map_xx)
-    map_yy   = deepcopy(map_yy)
-    alt      = deepcopy(alt)
-    map_mask = deepcopy(map_mask)
+    map_map  = float.(map_map)
+    map_xx   = float.(map_xx)
+    map_yy   = float.(map_yy)
+    alt      = float.(alt)
+    map_mask = true .* map_mask
     map_utm2lla!(map_map,map_xx,map_yy,alt,map_mask;
                  map_info = map_info,
                  zone_utm = zone_utm,
@@ -1954,9 +1957,9 @@ Internal helper function to adjust map color scale for histogram equalization
 function map_clims(c, map_map::Matrix)
 
     lc = length(c) # length of original color scale
-    map_mask = abs.(map_map) .>= 1e-3 # mask for (approximately) non-zero map data
+    map_mask = abs.(map_map) .>= 1e-3 # mask for approximately non-zero map data
 
-    if sum(map_mask) > length(c)
+    if length(unique(map_map[map_mask])) > lc
         indc  = round.(Int,LinRange(0.5,lc-0.5,lc)/lc*sum(map_mask)) # bin indices
         bcen  = sort(map_map[map_mask])[indc] # bin centers
         bwid  = fdm(bcen) # bin widths
@@ -2000,8 +2003,8 @@ function plot_path!(p1::Plot, lat, lon;
                     zoom_plot::Bool    = false,
                     path_color::Symbol = :ignore)
 
-    lon = downsample(rad2deg.(deepcopy(lon)),Nmax)
-    lat = downsample(rad2deg.(deepcopy(lat)),Nmax)
+    lon = downsample(rad2deg.(lon),Nmax)
+    lat = downsample(rad2deg.(lat),Nmax)
 
     if path_color == :ignore
         p1 = plot!(p1,lon,lat,lab=lab,legend=true)
@@ -2511,11 +2514,11 @@ function get_map_val(map_map_vec::Vector, path::Path, ind = trues(path.N); α = 
 end # function get_map_val
 
 """
-    get_step(x::Vector)
+    get_step(x::AbstractVector)
 
 Internal helper function to get the step size (spacing) of elements in `x`.
 """
-function get_step(x::Vector)
+function get_step(x::AbstractVector)
     step(LinRange(x[1],x[end],length(x)))
 end # function get_step
 
@@ -2776,7 +2779,7 @@ function map_border_singles(ind::BitMatrix)
         end
     end
     return (ind_ .& .!ind[2:Ny-1,2:Nx-1])
-end # map_border_singles
+end # function map_border_singles
 
 """
     map_border_doubles(ind::BitMatrix)
@@ -2817,7 +2820,7 @@ function map_border_doubles(ind::BitMatrix)
         end
     end
     return (ind_ .& .!ind[2:Ny-1,2:Nx-1])
-end # map_border_doubles
+end # function map_border_doubles
 
 """
     map_border_clean!(ind::BitMatrix)
@@ -2839,7 +2842,7 @@ function map_border_clean!(ind::BitMatrix)
         ind .= ind .& .!ind_singles .& .!ind_doubles
     end
     return (nothing)
-end # map_border_clean!
+end # function map_border_clean!
 
 """
     map_border_clean(ind::BitMatrix)
@@ -2856,7 +2859,7 @@ function map_border_clean(ind::BitMatrix)
     ind = deepcopy(ind)
     map_border_clean!(ind)
     return (ind)
-end # map_border_clean
+end # function map_border_clean
 
 """
     map_resample(map_map::Matrix, map_xx::Vector, map_yy::Vector,
@@ -2879,8 +2882,8 @@ Resample map with new grid.
 function map_resample(map_map::Matrix, map_xx::Vector, map_yy::Vector,
                       map_mask::BitMatrix, map_xx_new::Vector, map_yy_new::Vector)
 
-    map_map_  = deepcopy(map_map)
-    map_mask_ = deepcopy(map_mask)
+    map_map_  = float.(map_map)
+    map_mask_ = true .* map_mask
     (map_xx,ind_xx) = expand_range(map_xx,extrema(map_xx_new),true)
     (map_yy,ind_yy) = expand_range(map_yy,extrema(map_yy_new),true)
     map_map   = zeros(eltype(map_map ),length.((map_yy,map_xx)))

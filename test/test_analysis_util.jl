@@ -264,12 +264,12 @@ m_rnn = Chain(GRU(3 => 1), Dense(1 => 1))
     @test predict_rnn_full(m_rnn,x) == predict_rnn_windowed(m_rnn,x,size(x,1))
 end
 
-# (model,data_norms,_,_) = krr_fit(x,y)
+(model,data_norms,_,_) = krr_fit(x,y)
 
-# @testset "krr tests" begin
-#     @test krr_fit(x,y)[2:4] == krr_fit( x,y;data_norms      )[2:4]
-#     @test krr_fit(x,y)[3:4] == krr_test(x,y,data_norms,model)[1:2]
-# end
+@testset "krr tests" begin
+    @test krr_fit(x,y)[2:4] == krr_fit( x,y;data_norms      )[2:4]
+    @test krr_fit(x,y)[3:4] == krr_test(x,y,data_norms,model)[1:2]
+end
 
 features = [:f1,:f2,:f3]
 (df_shap,baseline_shap) = eval_shapley(m,x,features)

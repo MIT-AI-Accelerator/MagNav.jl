@@ -1203,7 +1203,7 @@ function units_ellipse(P; conf_units::Symbol = :m, lat1 = deg2rad(45))
     @assert size(P,1) == 2 "P is size $(size(P)) ≂̸ (2,2)"
     @assert size(P,2) == 2 "P is size $(size(P)) ≂̸ (2,2)"
 
-    P = deepcopy(P)
+    P = float.(P)
 
     if conf_units == :deg
         P = rad2deg.(rad2deg.(P)) # deg^2
@@ -1235,7 +1235,7 @@ Internal helper function to convert (position) confidence ellipse units for a
 """
 function units_ellipse(filt_res::FILTres, filt_out::FILTout;
                        conf_units::Symbol = :m)
-    units_ellipse(deepcopy(filt_res.P[1:2,1:2,:]);
+    units_ellipse(float.(filt_res.P[1:2,1:2,:]);
                   conf_units = conf_units,
                   lat1       = mean(filt_out.lat))
 end # function units_ellipse

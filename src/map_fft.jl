@@ -7,7 +7,7 @@ domain, applies an upward continuation filter, and uses the inverse FFT to
 convert the map back to the spatial domain. Optionally expands the map
 temporarily with periodic padding. Downward continuation may be performed to a
 limited degree as well, but be careful, as this is generally unstable and
-amplify high frequencies (i.e., noise).
+amplifies high frequencies (i.e., noise).
 
 Reference: Blakely, Potential Theory in Gravity and Magnetic Applications,
 2009, Chapter 12 & Appendix B (pg. 315-317 & 402).
@@ -16,12 +16,12 @@ Reference: Blakely, Potential Theory in Gravity and Magnetic Applications,
 - `map_map`: `ny` x `nx` 2D gridded map data
 - `dx`:      x-direction map step size [m]
 - `dy`:      y-direction map step size [m]
-- `dz`:      z-direction upward/downward continuation distance(s) [m]
+- `dz`:      `nz` z-direction upward/downward continuation distance(s) [m]
 - `expand`:  (optional) if true, expand map temporarily to reduce edge effects
 - `α`:       (optional) regularization parameter for downward continuation
 
 **Returns:**
-- `map_map`: `ny` x `nx` 2D gridded map data, upward/downward continued
+- `map_map`: `ny` x `nx` (x `nz`) 2D or 3D gridded map data, upward/downward continued
 """
 function upward_fft(map_map::Matrix, dx, dy, dz; expand::Bool = true, α = 0)
 
@@ -36,7 +36,8 @@ function upward_fft(map_map::Matrix, dx, dy, dz; expand::Bool = true, α = 0)
         (Ny,Nx,px,py) = (ny,nx,0,0)
     end
 
-    map_map = length(dz) == 1 ? deepcopy(map_map) : repeat(map_map,1,1,length(dz))
+    nz = length(dz)
+    map_map = nz == 1 ? float.(map_map) : repeat(map_map,1,1,nz)
     all(dz .≈ 0) && return map_map
 
     (k,_,_) = create_k(dx,dy,Nx,Ny) # radial wavenumber grid
@@ -59,7 +60,7 @@ domain, applies an upward continuation filter, and uses the inverse FFT to
 convert the map back to the spatial domain. Optionally expands the map
 temporarily with periodic padding. Downward continuation may be performed to a
 limited degree as well, but be careful, as this is generally unstable and
-amplify high frequencies (i.e., noise).
+amplifies high frequencies (i.e., noise).
 
 Reference: Blakely, Potential Theory in Gravity and Magnetic Applications,
 2009, Chapter 12 & Appendix B (pg. 315-317 & 402).
@@ -91,12 +92,12 @@ function upward_fft(map_map::Map, alt; expand::Bool = true, α = 0)
         dz = alt .- median(map_map.alt)
 
         if map_map isa Union{MapS,MapSd} # scalar map
-            if N_alt > 1
+            if N_alt > 1 # 3D map
                 map_map = MapS3D(map_map.info,
                                  upward_fft(map_map.map,dx,dy,dz,expand=expand,α=α),
                                  map_map.xx,map_map.yy,alt,
                                  cat((map_map.mask for _ = 1:N_alt)...,dims=3))
-            else # 3D map
+            else
                 map_map = MapS(map_map.info,
                                upward_fft(map_map.map,dx,dy,dz,expand=expand,α=α),
                                map_map.xx,map_map.yy,alt,map_map.mask)
@@ -233,7 +234,7 @@ continuation.
 """
 function map_expand(map_map::Matrix, pad::Int = 1)
 
-    map_ = deepcopy(map_map)
+    map_ = float.(map_map)
 
     (ny,nx) = size(map_) # original map size
     (Ny,Nx) = smooth7.((ny,nx).+2*pad) # map size with 7-smooth padding
@@ -246,20 +247,20 @@ function map_expand(map_map::Matrix, pad::Int = 1)
     # place original map in middle of new map
     (x1,x2) = (1,nx) .+ padx[1]
     (y1,y2) = (1,ny) .+ pady[1]
-    map_map = zeros(eltype(map_map),Ny,Nx)
+    map_map = zeros(eltype(map_),Ny,Nx)
     map_map[y1:y2,x1:x2] = map_
 
     # fill row edges (right/left)
     for i = y1:y2
         vals = LinRange(map_map[i,x1],map_map[i,x2],Nx-nx+2)[2:end-1]
-        map_map[i,1:x1-1  ] = reverse(vals[1:1:padx[1]])
+        map_map[i,1:x1-1  ] = reverse(vals[1:padx[1]])
         map_map[i,x2+1:end] = reverse(vals[(1:padx[2]).+padx[1]])
     end
 
     # fill column edges (top/bottom)
     for i = 1:Nx
         vals = LinRange(map_map[y1,i],map_map[y2,i],Ny-ny+2)[2:end-1]
-        map_map[1:y1-1  ,i] = reverse(vals[1:1:pady[1]])
+        map_map[1:y1-1  ,i] = reverse(vals[1:pady[1]])
         map_map[y2+1:end,i] = reverse(vals[(1:pady[2]).+pady[1]])
     end
 

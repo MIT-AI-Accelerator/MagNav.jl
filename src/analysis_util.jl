@@ -167,7 +167,7 @@ Bandpass (or low-pass or high-pass) filter columns of matrix.
 - `x_f`: data matrix, filtered
 """
 function bpf_data(x::AbstractMatrix; bpf=get_bpf())
-    x_f = deepcopy(x)
+    x_f = float.(x)
     for i in axes(x,2)
         (std(x[:,i]) <= eps(eltype(x))) || (x_f[:,i] = filtfilt(bpf,x[:,i]))
     end
@@ -1851,114 +1851,114 @@ function predict_rnn_windowed(m, x, l_window::Int)
     return (y_hat)
 end # function predict_rnn_windowed
 
-# """
-#     krr_fit(x, y, no_norm = falses(size(x,2));
-#             k::Kernel           = PolynomialKernel(;degree=1),
-#             λ::Real             = 0.5,
-#             norm_type_x::Symbol = :standardize,
-#             norm_type_y::Symbol = :standardize,
-#             data_norms::Tuple   = (zeros(1,1),zeros(1,1),[0.0],[0.0]),
-#             l_segs::Vector      = [length(y)],
-#             silent::Bool        = false)
+"""
+    krr_fit(x, y, no_norm = falses(size(x,2));
+            k::Kernel           = PolynomialKernel(;degree=1),
+            λ::Real             = 0.5,
+            norm_type_x::Symbol = :standardize,
+            norm_type_y::Symbol = :standardize,
+            data_norms::Tuple   = (zeros(1,1),zeros(1,1),[0.0],[0.0]),
+            l_segs::Vector      = [length(y)],
+            silent::Bool        = false)
 
-# Fit a kernel ridge regression (KRR) model to data.
+Fit a kernel ridge regression (KRR) model to data.
 
-# **Arguments:**
-# - `x`:           `N` x `Nf` data matrix (`Nf` is number of features)
-# - `y`:           length-`N` target vector
-# - `no_norm`:     (optional) length-`Nf` Boolean indices of features to not be normalized
-# - `k`:           (optional) kernel
-# - `λ`:           (optional) ridge parameter
-# - `norm_type_x`: (optional) normalization for `x` data matrix
-# - `norm_type_y`: (optional) normalization for `y` target vector
-# - `data_norms`:  (optional) length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
-# - `l_segs`:      (optional) length-`N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
-# - `silent`:      (optional) if true, no print outs
+**Arguments:**
+- `x`:           `N` x `Nf` data matrix (`Nf` is number of features)
+- `y`:           length-`N` target vector
+- `no_norm`:     (optional) length-`Nf` Boolean indices of features to not be normalized
+- `k`:           (optional) kernel
+- `λ`:           (optional) ridge parameter
+- `norm_type_x`: (optional) normalization for `x` data matrix
+- `norm_type_y`: (optional) normalization for `y` target vector
+- `data_norms`:  (optional) length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
+- `l_segs`:      (optional) length-`N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
+- `silent`:      (optional) if true, no print outs
 
-# **Returns:**
-# - `model`:      length-`3` tuple of KRR-based model, (`k`, length-`N` coefficients, `N` x `Nf` data matrix, normalized)
-# - `data_norms`: length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
-# - `y_hat`:      length-`N` prediction vector
-# - `err`:        length-`N` mean-corrected (per line) error
-# """
-# function krr_fit(x, y, no_norm = falses(size(x,2));
-#                  k::Kernel           = PolynomialKernel(;degree=1),
-#                  λ::Real             = 0.5,
-#                  norm_type_x::Symbol = :standardize,
-#                  norm_type_y::Symbol = :standardize,
-#                  data_norms::Tuple   = (zeros(1,1),zeros(1,1),[0.0],[0.0]),
-#                  l_segs::Vector      = [length(y)],
-#                  silent::Bool        = false)
+**Returns:**
+- `model`:      length-`3` tuple of KRR-based model, (`k`, length-`N` coefficients, `N` x `Nf` data matrix, normalized)
+- `data_norms`: length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
+- `y_hat`:      length-`N` prediction vector
+- `err`:        length-`N` mean-corrected (per line) error
+"""
+function krr_fit(x, y, no_norm = falses(size(x,2));
+                 k::Kernel           = PolynomialKernel(;degree=1),
+                 λ::Real             = 0.5,
+                 norm_type_x::Symbol = :standardize,
+                 norm_type_y::Symbol = :standardize,
+                 data_norms::Tuple   = (zeros(1,1),zeros(1,1),[0.0],[0.0]),
+                 l_segs::Vector      = [length(y)],
+                 silent::Bool        = false)
 
-#     # normalize data
-#     if sum(data_norms[end]) == 0 # normalize data
-#         (x_bias,x_scale,x_norm) = norm_sets(x;norm_type=norm_type_x,no_norm=no_norm)
-#         (y_bias,y_scale,y_norm) = norm_sets(y;norm_type=norm_type_y)
-#     else # unpack data normalizations
-#         (x_bias,x_scale,y_bias,y_scale) = data_norms
-#         x_norm = (x .- x_bias) ./ x_scale
-#         y_norm = (y .- y_bias) ./ y_scale
-#     end
+    # normalize data
+    if sum(data_norms[end]) == 0 # normalize data
+        (x_bias,x_scale,x_norm) = norm_sets(x;norm_type=norm_type_x,no_norm=no_norm)
+        (y_bias,y_scale,y_norm) = norm_sets(y;norm_type=norm_type_y)
+    else # unpack data normalizations
+        (x_bias,x_scale,y_bias,y_scale) = data_norms
+        x_norm = (x .- x_bias) ./ x_scale
+        y_norm = (y .- y_bias) ./ y_scale
+    end
 
-#     # KRR to get coefficients
-#     K  = kernelmatrix(k,x_norm;obsdim=1)
-#     kt = (K + λ*I) \ y_norm
+    # KRR to get coefficients
+    K  = kernelmatrix(k,x_norm;obsdim=1)
+    kt = (K + λ*I) \ y_norm
 
-#     # unpack KRR model weights
-#     x_norm_ = x_norm
-#     model   = (k,kt,x_norm_)
+    # unpack KRR model weights
+    x_norm_ = x_norm
+    model   = (k,kt,x_norm_)
 
-#     # get results
-#     y_hat_norm = K*kt
-#     y_hat      = denorm_sets(y_bias,y_scale,y_hat_norm)
-#     err        = err_segs(y_hat,y,l_segs;silent=silent_debug)
-#     silent || @info("fit   error: $(round(std(err),digits=2)) nT")
+    # get results
+    y_hat_norm = K*kt
+    y_hat      = denorm_sets(y_bias,y_scale,y_hat_norm)
+    err        = err_segs(y_hat,y,l_segs;silent=silent_debug)
+    silent || @info("fit   error: $(round(std(err),digits=2)) nT")
 
-#     # pack data normalizations
-#     data_norms = (x_bias,x_scale,y_bias,y_scale)
+    # pack data normalizations
+    data_norms = (x_bias,x_scale,y_bias,y_scale)
 
-#     return (model, data_norms, y_hat, err)
-# end # function krr_fit
+    return (model, data_norms, y_hat, err)
+end # function krr_fit
 
-# """
-#     krr_test(x, y, data_norms::Tuple, model::Tuple;
-#              l_segs::Vector = [length(y)],
-#              silent::Bool   = false)
+"""
+    krr_test(x, y, data_norms::Tuple, model::Tuple;
+             l_segs::Vector = [length(y)],
+             silent::Bool   = false)
 
-# Evaluate performance of a kernel ridge regression (KRR) model.
+Evaluate performance of a kernel ridge regression (KRR) model.
 
-# **Arguments:**
-# - `x`:          `N` x `Nf` data matrix (`Nf` is number of features)
-# - `y`:          length-`N` target vector
-# - `data_norms`: length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
-# - `model`:      length-`3` tuple of KRR-based model, (`k`, length-`N_train` coefficients, `N_train` x `Nf` training data matrix, normalized)
-# - `l_segs`:     (optional) length-`N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
-# - `silent`:     (optional) if true, no print outs
+**Arguments:**
+- `x`:          `N` x `Nf` data matrix (`Nf` is number of features)
+- `y`:          length-`N` target vector
+- `data_norms`: length-`4` tuple of data normalizations, `(x_bias,x_scale,y_bias,y_scale)`
+- `model`:      length-`3` tuple of KRR-based model, (`k`, length-`N_train` coefficients, `N_train` x `Nf` training data matrix, normalized)
+- `l_segs`:     (optional) length-`N_lines` vector of lengths of `lines`, sum(l_segs) = `N`
+- `silent`:     (optional) if true, no print outs
 
-# **Returns:**
-# - `y_hat`: length-`N` prediction vector
-# - `err`:   length-`N` mean-corrected (per line) error
-# """
-# function krr_test(x, y, data_norms::Tuple, model::Tuple;
-#                   l_segs::Vector = [length(y)],
-#                   silent::Bool   = false)
+**Returns:**
+- `y_hat`: length-`N` prediction vector
+- `err`:   length-`N` mean-corrected (per line) error
+"""
+function krr_test(x, y, data_norms::Tuple, model::Tuple;
+                  l_segs::Vector = [length(y)],
+                  silent::Bool   = false)
 
-#     # unpack data normalizations
-#     (x_bias,x_scale,y_bias,y_scale) = data_norms
-#     x_norm = (x .- x_bias) ./ x_scale
+    # unpack data normalizations
+    (x_bias,x_scale,y_bias,y_scale) = data_norms
+    x_norm = (x .- x_bias) ./ x_scale
 
-#     # unpack KRR model weights
-#     (k,kt,x_norm_) = model
-#     K = kernelmatrix(k,x_norm,x_norm_;obsdim=1)
+    # unpack KRR model weights
+    (k,kt,x_norm_) = model
+    K = kernelmatrix(k,x_norm,x_norm_;obsdim=1)
 
-#     # get results
-#     y_hat_norm = K*kt
-#     y_hat      = denorm_sets(y_bias,y_scale,y_hat_norm)
-#     err        = err_segs(y_hat,y,l_segs;silent=silent_debug)
-#     silent || @info("test  error: $(round(std(err),digits=2)) nT")
+    # get results
+    y_hat_norm = K*kt
+    y_hat      = denorm_sets(y_bias,y_scale,y_hat_norm)
+    err        = err_segs(y_hat,y,l_segs;silent=silent_debug)
+    silent || @info("test  error: $(round(std(err),digits=2)) nT")
 
-#     return (y_hat, err)
-# end # function krr_test
+    return (y_hat, err)
+end # function krr_test
 
 """
     predict_shapley(m::Chain, df::DataFrame)
@@ -2025,9 +2025,9 @@ end # function eval_shapley
 
 """
     plot_shapley(df_shap, baseline_shap,
-                 range_shap::AbstractUnitRange=axes(df_shap,1);
-                 title::String = "features \$range_shap",
-                 dpi::Int      = 200)
+                 range_shap::UnitRange = UnitRange(axes(df_shap,1));
+                 title::String         = "features \$range_shap",
+                 dpi::Int              = 200)
 
 Plot horizontal bar graph of feature importance (Shapley effects).
 
@@ -2046,23 +2046,25 @@ Plot horizontal bar graph of feature importance (Shapley effects).
 - `p1`: plot of Shapley effects
 """
 function plot_shapley(df_shap, baseline_shap,
-                      range_shap::AbstractUnitRange=axes(df_shap,1);
-                      title::String = "features $range_shap",
-                      dpi::Int      = 200)
+                      range_shap::UnitRange = UnitRange(axes(df_shap,1));
+                      title::String         = "features $range_shap",
+                      dpi::Int              = 200)
 
     # print warning about too many features
-    s = "range_shap length of $(length(range_shap)) may produce congested plot"
-    length(range_shap) > 20 && @info(s)
+    l = length(range_shap)
+    l > 20 && @info("plotting $l features may produce congested plot")
 
     # get data & axis labels
-    x    = df_shap.mean_effect[range_shap]
-    y    = df_shap.feature_name[range_shap]
+    df   = df_shap[range_shap,:]
+    x    = df.mean_effect
+    y    = df.feature_name
     xlab = "|Shapley effect| (baseline = $baseline_shap)"
     ylab = "feature"
+    ylim = extrema(range_shap) .+ (-1,1)
 
     # plot horizontal bar graph
-    p1 = bar(x,yticks=(eachindex(range_shap),y),lab=false,
-             dpi=dpi,xlab=xlab,ylab=ylab,title=title,
+    p1 = bar(range_shap,x,yticks=(range_shap,y),lab=false,
+             dpi=dpi,xlab=xlab,ylab=ylab,ylim=ylim,title=title,
              orientation=:h,yflip=true,margin=4*mm)
 
     return (p1)
