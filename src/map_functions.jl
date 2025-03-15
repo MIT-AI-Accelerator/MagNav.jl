@@ -1036,11 +1036,12 @@ function map_chessboard(mapSd::MapSd, alt::Real;
                         dz              = 5,
                         down_max        = 150,
                         α               = 200)
+    mapSd  = deepcopy(mapSd)
     map_xx = zero(mapSd.xx)
     map_yy = zero(mapSd.yy)
     for i in eachindex(map_xx)[2:end]
         map_xx[i] = map_xx[i-1] + dlon2de(mapSd.xx[i] - mapSd.xx[i-1],
-                                          mean(mapSd.yy[i-1:i]))
+                                          mean(mapSd.yy))
     end
     for i in eachindex(map_yy)[2:end]
         map_yy[i] = map_yy[i-1] + dlat2dn(mapSd.yy[i] - mapSd.yy[i-1],
