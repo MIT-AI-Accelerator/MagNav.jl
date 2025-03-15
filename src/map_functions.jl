@@ -1954,7 +1954,7 @@ Internal helper function to adjust map color scale for histogram equalization
 function map_clims(c, map_map::Matrix)
 
     lc = length(c) # length of original color scale
-    map_mask = abs.(map_map) .>= 1e-3 # mask for (approximately) non-zero map data
+    map_mask = abs.(map_map) .>= 1e-3 # mask for approximately non-zero map data
 
     if sum(map_mask) > length(c)
         indc  = round.(Int,LinRange(0.5,lc-0.5,lc)/lc*sum(map_mask)) # bin indices
@@ -2511,11 +2511,11 @@ function get_map_val(map_map_vec::Vector, path::Path, ind = trues(path.N); α = 
 end # function get_map_val
 
 """
-    get_step(x::Vector)
+    get_step(x::AbstractVector)
 
 Internal helper function to get the step size (spacing) of elements in `x`.
 """
-function get_step(x::Vector)
+function get_step(x::AbstractVector)
     step(LinRange(x[1],x[end],length(x)))
 end # function get_step
 
@@ -2776,7 +2776,7 @@ function map_border_singles(ind::BitMatrix)
         end
     end
     return (ind_ .& .!ind[2:Ny-1,2:Nx-1])
-end # map_border_singles
+end # function map_border_singles
 
 """
     map_border_doubles(ind::BitMatrix)
@@ -2817,7 +2817,7 @@ function map_border_doubles(ind::BitMatrix)
         end
     end
     return (ind_ .& .!ind[2:Ny-1,2:Nx-1])
-end # map_border_doubles
+end # function map_border_doubles
 
 """
     map_border_clean!(ind::BitMatrix)
@@ -2839,7 +2839,7 @@ function map_border_clean!(ind::BitMatrix)
         ind .= ind .& .!ind_singles .& .!ind_doubles
     end
     return (nothing)
-end # map_border_clean!
+end # function map_border_clean!
 
 """
     map_border_clean(ind::BitMatrix)
@@ -2856,7 +2856,7 @@ function map_border_clean(ind::BitMatrix)
     ind = deepcopy(ind)
     map_border_clean!(ind)
     return (ind)
-end # map_border_clean
+end # function map_border_clean
 
 """
     map_resample(map_map::Matrix, map_xx::Vector, map_yy::Vector,
