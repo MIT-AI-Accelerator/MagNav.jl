@@ -9,7 +9,7 @@ grid_data = matopen(test_file,"r") do file
 end
 
 map_file  = joinpath(@__DIR__,"test_data/test_data_map.mat")
-mapS      = get_map(map_file)
+mapS      = get_map(map_file,:map_data)
 itp_mapS  = map_interpolate(mapS,:linear) # linear to match MATLAB
 
 traj_file = joinpath(@__DIR__,"test_data/test_data_traj.mat")
