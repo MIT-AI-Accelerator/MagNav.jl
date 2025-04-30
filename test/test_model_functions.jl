@@ -73,17 +73,11 @@ fe  = traj_data["fe"][1]
 fd  = traj_data["fd"][1]
 Cnb = traj_data["Cnb"][:,:,1]
 
-fogm_data_MT = [0.7396206598864331
-                0.6954048478836197
-                0.6591146045997668
-                0.5585131871428970
-                0.5185764218327329] # MersenneTwister
-
-fogm_data_XO = [-0.00573724460026025
-                 0.09446430193246710
-                 0.03368954850407684
-                 0.06685250250778804
-                 0.04552990438603038] # Xoshiro
+fogm_data = [-0.00573724460026025
+              0.09446430193246710
+              0.03368954850407684
+              0.06685250250778804
+              0.04552990438603038]
 
 mapS = MagNav.MapS(map_info,map_map,map_xx,map_yy,map_alt,map_mask)
 (itp_mapS  ,der_mapS  ) = map_interpolate(mapS,:linear;return_vert_deriv=true) # linear to match MATLAB
@@ -160,10 +154,5 @@ end
 end
 
 @testset "fogm tests" begin
-    fogm_data = fogm(fogm_sigma,fogm_tau,dt,length(fogm_data_MT))
-    if VERSION < v"1.7"
-        @test fogm_data ≈ fogm_data_MT
-    else
-        @test fogm_data ≈ fogm_data_XO
-    end
+    @test fogm_data ≈ fogm(fogm_sigma,fogm_tau,dt,length(fogm_data))
 end
