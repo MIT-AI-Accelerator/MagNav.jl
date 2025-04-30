@@ -187,7 +187,6 @@ function nn_comp_1_train(x, y, no_norm = falses(size(x,2));
         function lbfgs_train!(s_l,data_l,iter,silent)
             (x_l,y_l) = data_l.data
             loss_() = loss_m1(s_l,x_l,y_l)
-            refresh()
             params = Params(trainables(s_l))
             opt = LBFGS()
             (fg!,p0) = lbfgs_setup(loss_,params)
@@ -551,7 +550,6 @@ function nn_comp_2_train(A, x, y, no_norm = falses(size(x,2));
         function lbfgs_train!(s_l,data_l,iter,t_l,silent)
             (A_l,x_l,y_l) = data_l.data
             loss_() = loss_m2(s_l,A_l,x_l,y_l,t_l)
-            refresh()
             params = Params(trainables(s_l))
             opt = LBFGS()
             (fg!,p0) = lbfgs_setup(loss_,params)
@@ -1456,7 +1454,6 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm = falses(size(x,2));
         function lbfgs_train!(s_l,data_l,iter,t_l,silent)
             (Bu_l,Bv_l,Bvd_l,x_l,y_l) = data_l.data
             loss_() = loss_m3(s_l,Bu_l,Bv_l,Bvd_l,x_l,y_l,t_l,true)
-            refresh()
             params = Params(trainables(s_l))
             opt = LBFGS()
             (fg!,p0) = lbfgs_setup(loss_,params)

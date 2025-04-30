@@ -34,7 +34,7 @@ module MagNav
     using SpecialFunctions: gamma, gamma_inc, gamma_inc_inv
     using Statistics: cor, cov, mean, median, std, var
     using StatsBase: autocor, skewness
-    using Zygote: Params, gradient, refresh
+    using Zygote: Params, gradient
 
     project_toml = normpath(joinpath(@__DIR__,"../Project.toml"))
 
