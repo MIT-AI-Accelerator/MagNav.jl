@@ -1,8 +1,9 @@
-# Custom Structs
+# API: Structs
 
-The following are custom structs used within the package.
+The following is a full listing of the custom structs within the package.
 
 ## Magnetic Anomaly Maps
+
 ```@docs
 MagNav.Map
 ```
@@ -28,11 +29,13 @@ MagNav.Map_Cache
 ```
 
 ## Vector Magnetometer
+
 ```@docs
 MagNav.MagV
 ```
 
 ## Flight Paths
+
 ```@docs
 MagNav.Path
 ```
@@ -46,6 +49,7 @@ MagNav.INS
 ```
 
 ## Flight Data
+
 ```@docs
 MagNav.XYZ
 ```
@@ -67,6 +71,7 @@ MagNav.XYZ21
 ```
 
 ## Output Wrappers
+
 ```@docs
 MagNav.FILTres
 ```
@@ -84,11 +89,13 @@ MagNav.FILTout
 ```
 
 ## Real-time EKF
+
 ```@docs
 MagNav.EKF_RT
 ```
 
 ## Compensation Parameters
+
 ```@docs
 MagNav.CompParams
 ```
