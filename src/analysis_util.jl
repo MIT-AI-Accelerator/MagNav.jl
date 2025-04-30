@@ -309,7 +309,7 @@ function get_x(xyz::XYZ, ind = trues(xyz.traj.N),
 
     # 4th derivative central difference
     # Reference: Loughlin Tuck, Characterization and compensation of magnetic
-    # interference resulting from unmanned aircraft systems, 2019. (pg. 28)
+    # interference resulting from unmanned aircraft systems, 2019 (pg. 28).
     for mag in mags_all
         lab = Symbol(mag,"_dot4")
         val = fdm(getfield(xyz,mag)[ind] - sub;scheme=:fourth)
@@ -1255,12 +1255,12 @@ end # function get_nn_m
 """
     sparse_group_lasso(weights::Params, α=1)
 
-Internal helper function to get the sparse group Lasso term for sparse-input
-regularization, which is the combined L1 & L2 norm of the first-layer neural
-network weights corresponding to each input feature.
+Get the sparse group Lasso term for sparse-input regularization, which is the
+combined L1 & L2 norm of the first-layer neural network weights corresponding
+to each input feature.
 
 Reference: Feng & Simon, Sparse-Input Neural Networks for High-dimensional
-Nonparametric Regression and Classification, 2017. (pg. 4)
+Nonparametric Regression and Classification, 2017 (pg. 4).
 
 **Arguments:**
 - `weights`: neural network model weights
@@ -1276,6 +1276,13 @@ end # function sparse_group_lasso
 
 """
     sparse_group_lasso(m::Chain, α=1)
+
+Get the sparse group Lasso term for sparse-input regularization, which is the
+combined L1 & L2 norm of the first-layer neural network weights corresponding
+to each input feature.
+
+Reference: Feng & Simon, Sparse-Input Neural Networks for High-dimensional
+Nonparametric Regression and Classification, 2017 (pg. 4).
 
 **Arguments:**
 - `m`: neural network model
@@ -2105,7 +2112,7 @@ end # function eval_gsa
              norm_igrf::Bool = false,
              check_xyz::Bool = true)
 
-Returns the IGRF Earth vector in the body or navigation frame given an `XYZ`
+Get the IGRF Earth vector in the body or navigation frame given an `XYZ`
 flight data struct containing trajectory information, valid indices, a start
 date in IGRF time (years since 0 CE), and reference frame.
 
@@ -2185,7 +2192,7 @@ end # function project_vec_to_2d
 """
     project_body_field_to_2d_igrf(vec_body, igrf_nav, Cnb)
 
-Projects a body frame vector onto a 2D plane defined by the direction of the
+Project a body frame vector onto a 2D plane defined by the direction of the
 IGRF and a tangent vector to the Earth ellipsoid, which is computed by taking
 the cross product of the IGRF with the upward direction. Returns a 2D vector
 whose components describe the amount of the body field that is in alignment
@@ -2216,7 +2223,7 @@ end # function project_body_field_to_2d_igrf
 """
     get_optimal_rotation_matrix(v1s, v2s)
 
-Returns the `3` x `3` rotation matrix rotating the directions of v1s into v2s.
+Get the `3` x `3` rotation matrix rotating the directions of v1s into v2s.
 Uses the Kabsch algorithm.
 
 Reference: https://en.wikipedia.org/wiki/Kabsch_algorithm
@@ -2258,7 +2265,7 @@ end # function get_optimal_rotation_matrix
 """
     get_days_in_year(year)
 
-Get days in year based on (rounded down) year.
+Internal helper function to get days in year based on (rounded down) year.
 
 **Arguments:**
 - `year`: year (rounded down)
@@ -2410,9 +2417,9 @@ end # function filter_events
                      save_plot::Bool  = false,
                      mag_gif::String  = "comp_xai.gif")
 
-After calling `comp_m3_test` to generate the individual model components,
-this function makes a GIF animation of the model components and the true and
-predicted scalar magnetic field.
+Create a GIF animation of the model 3 components and the true and predicted
+scalar magnetic field. First run `comp_m3_test()` to generate the individual
+model components 3.
 
 **Arguments**
 - `TL_perm`:     `3` x `N` matrix of TL permanent vector field

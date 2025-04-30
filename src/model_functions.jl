@@ -14,7 +14,7 @@
               fogm_state::Bool = true,
               P0_TL            = [])
 
-Internal helper function to create P0, initial covariance matrix.
+Create initial covariance matrix `P0`.
 
 **Arguments:**
 - `lat1`:           initial approximate latitude [rad]
@@ -103,7 +103,7 @@ end # function create_P0
               vec_states::Bool = false,
               fogm_state::Bool = true)
 
-Internal helper function to create Qd, discrete time process/system noise matrix.
+Create the discrete time process/system noise matrix `Qd`.
 
 **Arguments:**
 - `dt`:         measurement time step [s]
@@ -200,7 +200,7 @@ end # function create_Qd
                  fogm_state::Bool = true,
                  P0_TL            = [])
 
-Create magnetic navigation model for EKF or MPF.
+Create a magnetic navigation filter model for use in an EKF or a MPF.
 
 **Arguments:**
 - `dt`:             measurement time step [s]
@@ -303,8 +303,7 @@ end # function create_model
                fogm_state::Bool = true,
                k1=3e-2, k2=3e-4, k3=1e-6)
 
-Internal helper function to get `nx` x `nx` Pinson dynamics matrix.
-States (errors) are:
+Get the `nx` x `nx` Pinson dynamics matrix. States (errors) are:
 
 |**Num**|**State**|**Units**|**Description**
 |:--|:--|:--|:--

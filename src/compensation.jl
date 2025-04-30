@@ -780,8 +780,7 @@ end # function TL_vec_split
 """
     TL_vec2mat(TL_coef::Vector, terms; Bt_scale = 50000f0)
 
-Internal helper function to extract the matrix form of Tolles-Lawson
-coefficients from the vector form.
+Extract the matrix form of Tolles-Lawson coefficients from the vector form.
 
 **Arguments:**
 - `TL_coef`:  Tolles-Lawson coefficients (must include `:permanent` & `:induced`)
@@ -840,8 +839,7 @@ end # function TL_vec2mat
 """
     TL_mat2vec(TL_coef_p, TL_coef_i, TL_coef_e, terms; Bt_scale = 50000f0)
 
-Internal helper function to extract the vector form of Tolles-Lawson
-coefficients from the matrix form.
+Extract the vector form of Tolles-Lawson coefficients from the matrix form.
 
 **Arguments:**
 - `TL_coef_p`: length-`3` vector of permanent field coefficients

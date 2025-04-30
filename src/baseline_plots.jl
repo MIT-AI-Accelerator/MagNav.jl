@@ -402,7 +402,8 @@ end # function plot_mag_c
              save_plot::Bool   = false,
              plot_png::String  = "PSD.png")
 
-Plot the Welch power spectral density (PSD) for signal `x`.
+Internal helper function to plot the Welch power spectral density (PSD) of
+signal `x`.
 
 **Arguments:**
 - `x`:         data vector
@@ -442,7 +443,7 @@ end # function plot_PSD
                      save_plot::Bool   = false,
                      plot_png::String  = "spectrogram.png")
 
-Create a spectrogram for signal `x`.
+Internal helper function to plot a spectrogram of signal `x`.
 
 **Arguments:**
 - `x`:         data vector
