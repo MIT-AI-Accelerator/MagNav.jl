@@ -50,11 +50,11 @@ end
 end
 
 @testset "downward_L tests" begin
-    @test downward_L(mapS,mapS.alt-dz,[1,10,100];expand=false) isa Vector
-    @test downward_L(mapS,mapS.alt-dz,[1,10,100];expand=true ) isa Vector
+    @test MagNav.downward_L(mapS,mapS.alt-dz,[1,10,100];expand=false) isa Vector
+    @test MagNav.downward_L(mapS,mapS.alt-dz,[1,10,100];expand=true ) isa Vector
 end
 
 @testset "psd tests" begin
-    @test psd(map_map,dx,dy) isa NTuple{3,Matrix}
-    @test psd(mapS) isa NTuple{3,Matrix}
+    @test MagNav.psd(map_map,dx,dy) isa NTuple{3,Matrix}
+    @test MagNav.psd(mapS) isa NTuple{3,Matrix}
 end

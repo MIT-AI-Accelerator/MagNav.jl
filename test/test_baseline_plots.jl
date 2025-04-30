@@ -140,21 +140,21 @@ end
 end
 
 @testset "plot_PSD tests" begin
-    @test plot_PSD(mag_1_c;show_plot) isa Plot
-    @test plot_PSD(mag_1_c,1;
-                   window    = hamming,
-                   dpi       = 100,
-                   show_plot = false,
-                   save_plot = false) isa Plot
+    @test MagNav.plot_PSD(mag_1_c;show_plot) isa Plot
+    @test MagNav.plot_PSD(mag_1_c,1;
+                          window    = hamming,
+                          dpi       = 100,
+                          show_plot = false,
+                          save_plot = false) isa Plot
 end
 
 @testset "plot_spectrogram tests" begin
-    @test plot_spectrogram(mag_1_c;show_plot) isa Plot
-    @test plot_spectrogram(mag_1_c,1;
-                           window    = hamming,
-                           dpi       = 100,
-                           show_plot = false,
-                           save_plot = false) isa Plot
+    @test MagNav.plot_spectrogram(mag_1_c;show_plot) isa Plot
+    @test MagNav.plot_spectrogram(mag_1_c,1;
+                                  window    = hamming,
+                                  dpi       = 100,
+                                  show_plot = false,
+                                  save_plot = false) isa Plot
 end
 
 @testset "plot_frequency tests" begin

@@ -63,11 +63,11 @@ end
 end
 
 @testset "fdm tests" begin
-    @test fdm(mag_1_c_d;scheme=:backward ) isa Vector
-    @test fdm(mag_1_c_d;scheme=:forward  ) isa Vector
-    @test fdm(mag_1_c_d;scheme=:central  ) isa Vector
-    @test fdm(mag_1_c_d;scheme=:backward2) isa Vector
-    @test fdm(mag_1_c_d;scheme=:forward2 ) isa Vector
-    @test fdm(mag_1_c_d;scheme=:fourth   ) isa Vector
-    @test fdm(mag_1_c_d;scheme=:test     ) isa Vector
+    @test MagNav.fdm(mag_1_c_d;scheme=:backward ) isa Vector
+    @test MagNav.fdm(mag_1_c_d;scheme=:forward  ) isa Vector
+    @test MagNav.fdm(mag_1_c_d;scheme=:central  ) isa Vector
+    @test MagNav.fdm(mag_1_c_d;scheme=:backward2) isa Vector
+    @test MagNav.fdm(mag_1_c_d;scheme=:forward2 ) isa Vector
+    @test MagNav.fdm(mag_1_c_d;scheme=:fourth   ) isa Vector
+    @test MagNav.fdm(mag_1_c_d;scheme=:test     ) isa Vector
 end

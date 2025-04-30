@@ -154,5 +154,5 @@ end
 end
 
 @testset "fogm tests" begin
-    @test fogm_data ≈ fogm(fogm_sigma,fogm_tau,dt,length(fogm_data))
+    @test fogm_data ≈ MagNav.fogm(fogm_sigma,fogm_tau,dt,length(fogm_data))
 end

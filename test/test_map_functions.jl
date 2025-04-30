@@ -16,7 +16,7 @@ traj_file = joinpath(@__DIR__,"test_data/test_data_traj.mat")
 traj      = get_traj(traj_file,:traj,silent=true)
 
 gxf_file  = MagNav.ottawa_area_maps_gxf()*"/HighAlt_Mag.gxf"
-(map_map,map_xx,map_yy) = map_get_gxf(gxf_file)
+(map_map,map_xx,map_yy) = MagNav.map_get_gxf(gxf_file)
 mapP = get_map(MagNav.ottawa_area_maps()*"/HighAlt_5181.h5")
 
 mapV = get_map(MagNav.emm720)
@@ -43,7 +43,7 @@ mapS_  = MapS("Map",[0.0 1; 1 1],map_xx[1:2],map_yy[1:2],mapS.alt,trues(2,2))
 end
 
 @testset "map_get_gxf tests" begin
-    @test map_get_gxf(gxf_file) isa Tuple{Matrix,Vector,Vector}
+    @test MagNav.map_get_gxf(gxf_file) isa Tuple{Matrix,Vector,Vector}
 end
 
 @testset "map_params tests" begin
@@ -67,15 +67,15 @@ end
 add_igrf_date = get_years(2013,293)
 
 @testset "map_correct_igrf tests" begin
-    @test map_correct_igrf(mapS.map,mapS.alt,mapS.xx,mapS.yy;
-                           add_igrf_date=add_igrf_date,map_units=:rad) ==
-          map_correct_igrf(mapS.map,mapS.alt,rad2deg.(mapS.xx),rad2deg.(mapS.yy);
-                           add_igrf_date=add_igrf_date,map_units=:deg)
-    @test_throws ErrorException map_correct_igrf(mapS.map,mapS.alt,mapS.xx,mapS.yy;
-                                                 add_igrf_date=add_igrf_date,map_units=:test)
-    @test map_correct_igrf(mapS  ;add_igrf_date=add_igrf_date) isa MapS
-    @test map_correct_igrf(mapSd ;add_igrf_date=add_igrf_date) isa MapSd
-    @test map_correct_igrf(mapS3D;add_igrf_date=add_igrf_date) isa MapS3D
+    @test MagNav.map_correct_igrf(mapS.map,mapS.alt,mapS.xx,mapS.yy;
+                                  add_igrf_date=add_igrf_date,map_units=:rad) ==
+          MagNav.map_correct_igrf(mapS.map,mapS.alt,rad2deg.(mapS.xx),rad2deg.(mapS.yy);
+                                  add_igrf_date=add_igrf_date,map_units=:deg)
+    @test_throws ErrorException MagNav.map_correct_igrf(mapS.map,mapS.alt,mapS.xx,mapS.yy;
+                                                        add_igrf_date=add_igrf_date,map_units=:test)
+    @test MagNav.map_correct_igrf(mapS  ;add_igrf_date=add_igrf_date) isa MapS
+    @test MagNav.map_correct_igrf(mapSd ;add_igrf_date=add_igrf_date) isa MapSd
+    @test MagNav.map_correct_igrf(mapS3D;add_igrf_date=add_igrf_date) isa MapS3D
 end
 
 @testset "map_fill tests" begin
@@ -88,8 +88,8 @@ end
 @testset "map_chessboard tests" begin
     mapSd.alt[1,1] = mapS.alt+200
     mapSd.alt[2,2] = mapS.alt-601
-    @test map_chessboard(mapSd,mapS.alt;dz=200) isa MapS
-    @test map_chessboard(mapSd,mapS.alt;down_cont=false,dz=200) isa MapS
+    @test MagNav.map_chessboard(mapSd,mapS.alt;dz=200) isa MapS
+    @test MagNav.map_chessboard(mapSd,mapS.alt;down_cont=false,dz=200) isa MapS
 end
 
 (zone_utm,is_north) = utm_zone(mean(rad2deg.(mapS.yy)),mean(rad2deg.(mapS.xx)))
@@ -103,11 +103,11 @@ mapUTM3D  = MapS3D(mapUTM.info,mapUTM.map[:,:,[1,1]],mapUTM_xx,mapUTM_yy,
                    [mapUTM.alt,mapUTM.alt+5],mapUTM.mask[:,:,[1,1]])
 
 @testset "map_utm2lla tests" begin
-    @test map_utm2lla(mapUTM.map,mapUTM.xx,mapUTM.yy,mapUTM.alt,mapUTM.mask)[1] isa Matrix
-    @test map_utm2lla(mapUTM  ) isa MapS
-    @test map_utm2lla(mapUTMd ) isa MapSd
-    @test map_utm2lla(mapUTM3D) isa MapS3D
-    @test map_utm2lla(mapS_.map,mapUTM.xx[1:2],mapUTM.yy[1:2],mapS_.alt,mapS_.mask)[1] isa Matrix
+    @test MagNav.map_utm2lla(mapUTM.map,mapUTM.xx,mapUTM.yy,mapUTM.alt,mapUTM.mask)[1] isa Matrix
+    @test MagNav.map_utm2lla(mapUTM  ) isa MapS
+    @test MagNav.map_utm2lla(mapUTMd ) isa MapSd
+    @test MagNav.map_utm2lla(mapUTM3D) isa MapS3D
+    @test MagNav.map_utm2lla(mapS_.map,mapUTM.xx[1:2],mapUTM.yy[1:2],mapS_.alt,mapS_.mask)[1] isa Matrix
 end
 
 map_h5 = joinpath(@__DIR__,"test_map_functions.h5")
@@ -252,8 +252,8 @@ end
 ind = [1,100]
 
 @testset "map_resample tests" begin
-    @test map_resample(mapS,mapS.xx[ind],mapS.yy[ind]).map ≈ mapS.map[ind,ind]
-    @test map_resample(mapS,mapS) isa MapS
+    @test MagNav.map_resample(mapS,mapS.xx[ind],mapS.yy[ind]).map ≈ mapS.map[ind,ind]
+    @test MagNav.map_resample(mapS,mapS) isa MapS
 end
 
 xx_lim = extrema(mapS.xx) .+ (-0.01,0.01)

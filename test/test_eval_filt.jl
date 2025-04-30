@@ -87,14 +87,14 @@ end
 (filt_res,crlb_P) = run_filt(traj,ins,mag_1_c,itp_mapS,:ekf;extract=false)
 
 @testset "eval_results tests" begin
-    @test eval_results(traj,ins,filt_res,crlb_P) isa
+    @test MagNav.eval_results(traj,ins,filt_res,crlb_P) isa
           Tuple{MagNav.CRLBout,MagNav.INSout,MagNav.FILTout}
-    @test eval_crlb(traj,crlb_P) isa MagNav.CRLBout
-    @test eval_ins(traj,ins2) isa MagNav.INSout
+    @test MagNav.eval_crlb(traj,crlb_P) isa MagNav.CRLBout
+    @test MagNav.eval_ins(traj,ins2) isa MagNav.INSout
     @test eval_filt(traj,ins2,filt_res) isa MagNav.FILTout
 end
 
-(crlb_out,ins_out,filt_out) = eval_results(traj,ins,filt_res,crlb_P)
+(crlb_out,ins_out,filt_out) = MagNav.eval_results(traj,ins,filt_res,crlb_P)
 
 show_plot = false
 p1 = plot()
