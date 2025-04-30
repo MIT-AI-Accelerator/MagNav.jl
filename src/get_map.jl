@@ -1,5 +1,6 @@
 """
-    get_map(map_file::String   = namad;
+    get_map(map_file::String   = namad,
+            map_field::Symbol  = :map_data;
             map_info::String   = splitpath(map_file)[end],
             map_units::Symbol  = :rad,
             file_units::Symbol = :deg,
@@ -10,6 +11,7 @@ Maps are typically saved in `:deg` units, while `:rad` is used internally.
 
 **Arguments:**
 - `map_file`:   path/name of map data HDF5 or MAT file (`.h5` or `.mat` extension required) or folder containing CSV files
+- `map_field`:  (optional) struct field within MAT file to use, not relevant for CSV or HDF5 file
 - `map_info`:   (optional) map information, only used if not in `map_file`
 - `map_units`:  (optional) map xx/yy units to use in `map_map` {`:rad`,`:deg`}
 - `file_units`: (optional) map xx/yy units used in `map_file` {`:rad`,`:deg`}
@@ -18,7 +20,8 @@ Maps are typically saved in `:deg` units, while `:rad` is used internally.
 **Returns:**
 - `map_map`: `Map` magnetic anomaly map struct
 """
-function get_map(map_file::String   = namad;
+function get_map(map_file::String   = namad,
+                 map_field::Symbol  = :map_data;
                  map_info::String   = splitpath(map_file)[end],
                  map_units::Symbol  = :rad,
                  file_units::Symbol = :deg,
@@ -57,7 +60,7 @@ function get_map(map_file::String   = namad;
     elseif occursin(".mat",map_file) # get data from MAT file
 
         map_data = matopen(map_file,"r") do file
-            read(file,"map_data")
+            read(file,"$map_field")
         end
 
         if haskey(map_data,"mapX") # vector map
@@ -81,15 +84,15 @@ function get_map(map_file::String   = namad;
 
     else # get data from CSV files
 
-        mapX_csv = map_file*"/mapX.csv"
-        mapY_csv = map_file*"/mapY.csv"
-        mapZ_csv = map_file*"/mapZ.csv"
-        map_csv  = map_file*"/map.csv"
-        xx_csv   = map_file*"/xx.csv"
-        yy_csv   = map_file*"/yy.csv"
-        alt_csv  = map_file*"/alt.csv"
-        info_csv = map_file*"/info.csv"
-        mask_csv = map_file*"/mask.csv"
+        mapX_csv = joinpath(map_file,"mapX.csv")
+        mapY_csv = joinpath(map_file,"mapY.csv")
+        mapZ_csv = joinpath(map_file,"mapZ.csv")
+        map_csv  = joinpath(map_file,"map.csv")
+        xx_csv   = joinpath(map_file,"xx.csv")
+        yy_csv   = joinpath(map_file,"yy.csv")
+        alt_csv  = joinpath(map_file,"alt.csv")
+        info_csv = joinpath(map_file,"info.csv")
+        mask_csv = joinpath(map_file,"mask.csv")
 
         if isfile(mapX_csv) # vector map
             map_vec  = true
@@ -170,7 +173,8 @@ function get_map(map_file::String   = namad;
 end # function get_map
 
 """
-    get_map(map_name::Symbol, df_map::DataFrame;
+    get_map(map_name::Symbol, df_map::DataFrame,
+            map_field::Symbol  = :map_data;
             map_info::String   = "\$map_name",
             map_units::Symbol  = :rad,
             file_units::Symbol = :deg,
@@ -188,6 +192,7 @@ used internally.
 `map_name`|`Symbol`| name of magnetic anomaly map
 `map_file`|`String`| path/name of map data HDF5 or MAT file (`.h5` or `.mat` extension required) or folder containing CSV files
 - `map_info`:   (optional) map information, only used if not in `map_file`
+- `map_field`:  (optional) struct field within MAT file to use, not relevant for CSV or HDF5 file
 - `map_units`:  (optional) map xx/yy units to use in `map_map` {`:rad`,`:deg`}
 - `file_units`: (optional) map xx/yy units used in files within `df_map` {`:rad`,`:deg`}
 - `flip_map`:   (optional) if true, vertically flip data from map file (possibly useful for CSV map)
@@ -195,13 +200,14 @@ used internally.
 **Returns:**
 - `map_map`: `Map` magnetic anomaly map struct
 """
-function get_map(map_name::Symbol, df_map::DataFrame;
+function get_map(map_name::Symbol, df_map::DataFrame,
+                 map_field::Symbol  = :map_data;
                  map_info::String   = "$map_name",
                  map_units::Symbol  = :rad,
                  file_units::Symbol = :deg,
                  flip_map::Bool     = false)
     ind = findfirst(Symbol.(df_map.map_name) .== map_name)
-    get_map(String(df_map.map_file[ind]);
+    get_map(String(df_map.map_file[ind]),map_field;
             map_info   = map_info,
             map_units  = map_units,
             file_units = file_units,

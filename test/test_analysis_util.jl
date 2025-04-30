@@ -1,13 +1,14 @@
 using MagNav, Test, MAT
 using DataFrames, DSP, Flux, LinearAlgebra, Plots, Statistics
-using MagNav: project_vec_to_2d, unpack_data_norms
+using MagNav: get_x, get_y, get_Axy, get_nn_m
+using MagNav: project_vec_to_2d, project_body_field_to_2d_igrf, unpack_data_norms
 
-test_file = joinpath(@__DIR__,"test_data/test_data_params.mat")
+test_file = joinpath(@__DIR__,"test_data","test_data_params.mat")
 params    = matopen(test_file,"r") do file
     read(file,"params")
 end
 
-test_file = joinpath(@__DIR__,"test_data/test_data_TL.mat")
+test_file = joinpath(@__DIR__,"test_data","test_data_TL.mat")
 TL_data   = matopen(test_file,"r") do file
     read(file,"TL_data")
 end
@@ -17,7 +18,7 @@ end
 A_a_f_t      = TL_data["A_a_f_t"]
 mag_1_uc_f_t = vec(TL_data["mag_1_uc_f_t"])
 
-TL_a_1       = linreg(mag_1_uc_f_t,A_a_f_t;λ=λ)
+TL_a_1       = MagNav.linreg(mag_1_uc_f_t,A_a_f_t;λ=λ)
 mag_1_comp_d = detrend(TL_data["mag_1_comp"])
 
 lat    = deg2rad(39.160667350241980)
@@ -45,8 +46,8 @@ end
 end
 
 @testset "linreg tests" begin
-    @test TL_a_1          ≈ vec(TL_data["TL_a_1"])
-    @test linreg([3,6,9]) ≈ [0,3]
+    @test TL_a_1 ≈ vec(TL_data["TL_a_1"])
+    @test MagNav.linreg([3,6,9]) ≈ [0,3]
 end
 
 @testset "detrend tests" begin
@@ -172,8 +173,8 @@ weights = Flux.Params(Flux.trainables(m))
 α = 0.5
 
 @testset "sparse_group_lasso tests" begin
-    @test sparse_group_lasso(m)   ≈ sparse_group_lasso(weights)
-    @test sparse_group_lasso(m,α) ≈ sparse_group_lasso(weights,α)
+    @test MagNav.sparse_group_lasso(m)   ≈ MagNav.sparse_group_lasso(weights)
+    @test MagNav.sparse_group_lasso(m,α) ≈ MagNav.sparse_group_lasso(weights,α)
 end
 
 A = randn(Float32,5,9)
@@ -252,23 +253,25 @@ end
 end
 
 @testset "chunk_data tests" begin
-    @test chunk_data(x,y,size(x,1)) == ([x'],[y])
-    @test chunk_data([1:4 1:4],1:4,2) == ([[1 2; 1 2],[3 4; 3 4]],[[1,2],[3,4]])
+    @test MagNav.chunk_data(x,y,size(x,1)) == ([x'],[y])
+    @test MagNav.chunk_data([1:4 1:4],1:4,2) == ([[1 2; 1 2],[3 4; 3 4]],[[1,2],[3,4]])
 end
 
 m_rnn = Chain(GRU(3 => 1), Dense(1 => 1))
 
 @testset "predict_rnn tests" begin
-    @test predict_rnn_full(m_rnn,x) isa Vector
-    @test predict_rnn_windowed(m_rnn,x,3) isa Vector
-    @test predict_rnn_full(m_rnn,x) == predict_rnn_windowed(m_rnn,x,size(x,1))
+    rnn_full_out     = MagNav.predict_rnn_full(m_rnn,x)
+    rnn_windowed_out = MagNav.predict_rnn_windowed(m_rnn,x,size(x,1))
+    @test rnn_full_out isa Vector
+    @test rnn_windowed_out isa Vector
+    @test rnn_full_out == rnn_windowed_out
 end
 
-(model,data_norms,_,_) = krr_fit(x,y)
+(model,data_norms,_,_) = MagNav.krr_fit(x,y)
 
 @testset "krr tests" begin
-    @test krr_fit(x,y)[2:4] == krr_fit( x,y;data_norms      )[2:4]
-    @test krr_fit(x,y)[3:4] == krr_test(x,y,data_norms,model)[1:2]
+    @test MagNav.krr_fit(x,y)[2:4] == MagNav.krr_fit( x,y;data_norms      )[2:4]
+    @test MagNav.krr_fit(x,y)[3:4] == MagNav.krr_test(x,y,data_norms,model)[1:2]
 end
 
 features = [:f1,:f2,:f3]
@@ -330,10 +333,10 @@ end
 end
 
 @testset "get_optimal_rotation_matrix tests" begin
-    @test_throws AssertionError get_optimal_rotation_matrix([1 0],vec_body')
-    @test_throws AssertionError get_optimal_rotation_matrix([1 0],[1 0 0])
-    @test_throws AssertionError get_optimal_rotation_matrix([1 0 0],[1 0])
-    @test size(get_optimal_rotation_matrix(vec_nav',vec_body')) == (3,3)
+    @test_throws AssertionError MagNav.get_optimal_rotation_matrix([1 0],vec_body')
+    @test_throws AssertionError MagNav.get_optimal_rotation_matrix([1 0],[1 0 0])
+    @test_throws AssertionError MagNav.get_optimal_rotation_matrix([1 0 0],[1 0])
+    @test size(MagNav.get_optimal_rotation_matrix(vec_nav',vec_body')) == (3,3)
 end
 
 x = [-1,0,1]

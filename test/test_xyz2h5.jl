@@ -1,6 +1,6 @@
 using MagNav, Test, MAT
 
-xyz_file = joinpath(@__DIR__,"test_data/Flt1003_sample.xyz")
+xyz_file = joinpath(@__DIR__,"test_data","Flt1003_sample.xyz")
 xyz_h5   = joinpath(@__DIR__,"Flt1003_sample.h5")
 
 data = xyz2h5(xyz_file,xyz_h5,:Flt1003;return_data=true)
@@ -36,8 +36,8 @@ rm(xyz_h5)
 
 comp_params_0 = NNCompParams()
 comp_params_1 = NNCompParams(comp_params_0,terms=[:p],reorient_vec=true)
-comp_params_2 = NNCompParams(comp_params_1,model=get_nn_m(1))
-comp_params_3 = NNCompParams(comp_params_2,model=get_nn_m(2))
+comp_params_2 = NNCompParams(comp_params_1,model=MagNav.get_nn_m(1))
+comp_params_3 = NNCompParams(comp_params_2,model=MagNav.get_nn_m(2))
 comp_params_4 = NNCompParams(comp_params_3,TL_coef=zeros(18))
 
 @testset "xyz field tests" begin

@@ -5,23 +5,41 @@ The following are key functions related to magnetic anomaly maps.
 ## Load Map Data
 
 ```@docs
-get_map
+MagNav.get_map
+```
+
+### Built-in map data
+
+```@docs
+MagNav.ottawa_area_maps
+```
+
+```@docs
+MagNav.namad
+```
+
+```@docs
+MagNav.emag2
+```
+
+```@docs
+MagNav.emm720
 ```
 
 ## Upward Continue Map
 
 ```@docs
-upward_fft
+MagNav.upward_fft
 ```
 
 ## Interpolate Map
 
 ```@docs
-map_interpolate
+MagNav.map_interpolate
 ```
 
 ## Plot Map
 
 ```@docs
-plot_map
+MagNav.plot_map
 ```

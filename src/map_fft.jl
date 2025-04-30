@@ -217,11 +217,10 @@ end # function create_k
 """
     map_expand(map_map::Matrix, pad::Int = 1)
 
-Internal helper function to expand a map with padding on each edge to eliminate
-discontinuities in the discrete Fourier transform. The map is “wrapped around”
-to make it periodic. Padding expands the map to 7-smooth dimensions, allowing
-for a faster Fast Fourier Transform algorithm to be used during upward/downward
-continuation.
+Expand a map with padding on each edge to eliminate discontinuities in the
+discrete Fourier transform. The map is “wrapped around” to make it periodic.
+Padding expands the map to 7-smooth dimensions, allowing for a faster Fast
+Fourier Transform algorithm to be used during upward/downward continuation.
 
 **Arguments:**
 - `map_map`: `ny` x `nx` 2D gridded map data
@@ -251,10 +250,10 @@ function map_expand(map_map::Matrix, pad::Int = 1)
     map_map[y1:y2,x1:x2] = map_
 
     # fill row edges (right/left)
-    for i = y1:y2
-        vals = LinRange(map_map[i,x1],map_map[i,x2],Nx-nx+2)[2:end-1]
-        map_map[i,1:x1-1  ] = reverse(vals[1:padx[1]])
-        map_map[i,x2+1:end] = reverse(vals[(1:padx[2]).+padx[1]])
+    for j = y1:y2
+        vals = LinRange(map_map[j,x1],map_map[j,x2],Nx-nx+2)[2:end-1]
+        map_map[j,1:x1-1  ] = reverse(vals[1:padx[1]])
+        map_map[j,x2+1:end] = reverse(vals[(1:padx[2]).+padx[1]])
     end
 
     # fill column edges (top/bottom)

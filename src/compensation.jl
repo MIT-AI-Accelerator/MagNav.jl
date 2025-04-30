@@ -187,7 +187,6 @@ function nn_comp_1_train(x, y, no_norm = falses(size(x,2));
         function lbfgs_train!(s_l,data_l,iter,silent)
             (x_l,y_l) = data_l.data
             loss_() = loss_m1(s_l,x_l,y_l)
-            refresh()
             params = Params(trainables(s_l))
             opt = LBFGS()
             (fg!,p0) = lbfgs_setup(loss_,params)
@@ -551,7 +550,6 @@ function nn_comp_2_train(A, x, y, no_norm = falses(size(x,2));
         function lbfgs_train!(s_l,data_l,iter,t_l,silent)
             (A_l,x_l,y_l) = data_l.data
             loss_() = loss_m2(s_l,A_l,x_l,y_l,t_l)
-            refresh()
             params = Params(trainables(s_l))
             opt = LBFGS()
             (fg!,p0) = lbfgs_setup(loss_,params)
@@ -780,8 +778,7 @@ end # function TL_vec_split
 """
     TL_vec2mat(TL_coef::Vector, terms; Bt_scale = 50000f0)
 
-Internal helper function to extract the matrix form of Tolles-Lawson
-coefficients from the vector form.
+Extract the matrix form of Tolles-Lawson coefficients from the vector form.
 
 **Arguments:**
 - `TL_coef`:  Tolles-Lawson coefficients (must include `:permanent` & `:induced`)
@@ -840,8 +837,7 @@ end # function TL_vec2mat
 """
     TL_mat2vec(TL_coef_p, TL_coef_i, TL_coef_e, terms; Bt_scale = 50000f0)
 
-Internal helper function to extract the vector form of Tolles-Lawson
-coefficients from the matrix form.
+Extract the vector form of Tolles-Lawson coefficients from the matrix form.
 
 **Arguments:**
 - `TL_coef_p`: length-`3` vector of permanent field coefficients
@@ -1458,7 +1454,6 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm = falses(size(x,2));
         function lbfgs_train!(s_l,data_l,iter,t_l,silent)
             (Bu_l,Bv_l,Bvd_l,x_l,y_l) = data_l.data
             loss_() = loss_m3(s_l,Bu_l,Bv_l,Bvd_l,x_l,y_l,t_l,true)
-            refresh()
             params = Params(trainables(s_l))
             opt = LBFGS()
             (fg!,p0) = lbfgs_setup(loss_,params)
@@ -4218,17 +4213,12 @@ function & gradient together, as well as vectorized `params`. For LBFGS.
 function lbfgs_setup(loss::Function, params::Params)
     p0 = zeros(sum(length,params.params))
     copy!(p0,params)
-    function fg!(F, G, w)
+    function fg!(_, G, w)
         copy!(params,w)
-        if !isnothing(G)
-            (l,back) = pullback(loss,params)
-            grads = back(1)
-            copy!(G,grads)
-            return (l)
-        end
-        if !isnothing(F)
-            return loss()
-        end
+        (l,back) = pullback(loss,params)
+        grads = back(1)
+        copy!(G,grads)
+        return (l)
     end # function fg!
     return (fg!, p0)
 end # function lbfgs_setup

@@ -2,7 +2,7 @@ using MagNav, Test, MAT
 using DataFrames, DelimitedFiles
 using BSON: bson, @save
 
-test_data_map = joinpath(@__DIR__,"test_data/test_data_map.mat")
+test_data_map = joinpath(@__DIR__,"test_data","test_data_map.mat")
 map_data  = matopen(test_data_map,"r") do file
     read(file,"map_data")
 end
@@ -67,7 +67,7 @@ map_names = [:map_1,:map_2,:map_3,:map_4,:map_5,:map_6,:map_7,:map_8,:map_9]
 df_map    = DataFrame(map_file=map_files,map_name=map_names)
 
 mapV   = MagNav.MapV(map_info,map_map,map_map,map_map,map_xx,map_yy,map_alt,map_mask)
-mapS   = get_map(map_files[1])
+mapS   = get_map(map_files[1],:map_data)
 map_h5 = joinpath(@__DIR__,"test_save_map")
 
 @testset "save_map tests" begin
@@ -103,10 +103,10 @@ map_h5 = MagNav.add_extension(map_h5,".h5")
     end
     @test get_map(map_files[6];map_units=:deg,file_units=:rad) isa MagNav.MapS
     @test_throws ErrorException get_map(map_files[6];map_units=:utm,file_units=:deg)
-    @test get_map(map_files[1];map_units=:utm,file_units=:utm) isa MagNav.MapS
+    @test get_map(map_files[1],:map_data;map_units=:utm,file_units=:utm) isa MagNav.MapS
     @test_throws AssertionError get_map("test")
-    @test_throws ErrorException get_map(test_data_map_badS)
-    @test_throws ErrorException get_map(test_data_map_badV)
+    @test_throws ErrorException get_map(test_data_map_badS,:map_data)
+    @test_throws ErrorException get_map(test_data_map_badV,:map_data)
 end
 
 rm(map_csv_dir;force=true,recursive=true)

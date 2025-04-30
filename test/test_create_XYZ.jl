@@ -2,17 +2,17 @@ using MagNav, Test, MAT
 using LinearAlgebra, Random, Statistics
 Random.seed!(2)
 
-test_file = joinpath(@__DIR__,"test_data/test_data_ins.mat")
+test_file = joinpath(@__DIR__,"test_data","test_data_ins.mat")
 ins_data  = matopen(test_file,"r") do file
     read(file,"ins_data")
 end
 
-test_file = joinpath(@__DIR__,"test_data/test_data_params.mat")
+test_file = joinpath(@__DIR__,"test_data","test_data_params.mat")
 params    = matopen(test_file,"r") do file
     read(file,"params")
 end
 
-test_file = joinpath(@__DIR__,"test_data/test_data_traj.mat")
+test_file = joinpath(@__DIR__,"test_data","test_data_traj.mat")
 traj_data = matopen(test_file,"r") do file
     read(file,"traj")
 end
@@ -84,15 +84,15 @@ ins  = create_ins(traj;
                   acc_tau        = acc_tau,
                   gyro_tau       = gyro_tau)
 
-(mag_1_uc,_,_) = corrupt_mag(mag_1_c,flux_a_x,flux_a_y,flux_a_z;
-                             dt           = dt,
-                             cor_sigma    = cor_sigma,
-                             cor_tau      = cor_tau,
-                             cor_var      = cor_var,
-                             cor_drift    = cor_drift,
-                             cor_perm_mag = cor_perm_mag,
-                             cor_ind_mag  = cor_ind_mag,
-                             cor_eddy_mag = cor_eddy_mag)
+(mag_1_uc,_,_) = MagNav.corrupt_mag(mag_1_c,flux_a_x,flux_a_y,flux_a_z;
+                                    dt           = dt,
+                                    cor_sigma    = cor_sigma,
+                                    cor_tau      = cor_tau,
+                                    cor_var      = cor_var,
+                                    cor_drift    = cor_drift,
+                                    cor_perm_mag = cor_perm_mag,
+                                    cor_ind_mag  = cor_ind_mag,
+                                    cor_eddy_mag = cor_eddy_mag)
 
 mapS = map_trim(get_map(),traj)
 

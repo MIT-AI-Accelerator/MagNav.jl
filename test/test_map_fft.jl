@@ -1,12 +1,12 @@
 using MagNav, Test, MAT
 using MagNav: MapS, MapSd, MapS3D, MapV
 
-test_file = joinpath(@__DIR__,"test_data/test_data_map.mat")
+test_file = joinpath(@__DIR__,"test_data","test_data_map.mat")
 map_data  = matopen(test_file,"r") do file
     read(file,"map_data")
 end
 
-traj_file = joinpath(@__DIR__,"test_data/test_data_traj.mat")
+traj_file = joinpath(@__DIR__,"test_data","test_data_traj.mat")
 traj = get_traj(traj_file,:traj,silent=true)
 
 map_map = map_data["map"]
@@ -50,11 +50,11 @@ end
 end
 
 @testset "downward_L tests" begin
-    @test downward_L(mapS,mapS.alt-dz,[1,10,100];expand=false) isa Vector
-    @test downward_L(mapS,mapS.alt-dz,[1,10,100];expand=true ) isa Vector
+    @test MagNav.downward_L(mapS,mapS.alt-dz,[1,10,100];expand=false) isa Vector
+    @test MagNav.downward_L(mapS,mapS.alt-dz,[1,10,100];expand=true ) isa Vector
 end
 
 @testset "psd tests" begin
-    @test psd(map_map,dx,dy) isa NTuple{3,Matrix}
-    @test psd(mapS) isa NTuple{3,Matrix}
+    @test MagNav.psd(map_map,dx,dy) isa NTuple{3,Matrix}
+    @test MagNav.psd(mapS) isa NTuple{3,Matrix}
 end

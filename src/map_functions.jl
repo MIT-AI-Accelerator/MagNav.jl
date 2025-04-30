@@ -917,9 +917,9 @@ end # function map_fill
                     down_max        = 150,
                     α               = 200)
 
-The `chessboard method`, which upward (and possibly downward) continues a map
-to multiple altitudes to create a 3D map, then vertically interpolates at each
-horizontal grid point.
+Perform the `chessboard method`, which upward (and possibly downward) continues
+a map to multiple altitudes to create a 3D map, then vertically interpolates at
+each horizontal grid point.
 
 Reference: Cordell, Phillips, & Godson, U.S. Geological Survey Potential-Field
 Software Version 2.0, 1992.
@@ -1013,9 +1013,9 @@ end # function map_chessboard!
                    down_max        = 150,
                    α               = 200)
 
-The `chessboard method`, which upward (and possibly downward) continues a map
-to multiple altitudes to create a 3D map, then vertically interpolates at each
-horizontal grid point.
+Perform the `chessboard method`, which upward (and possibly downward) continues
+a map to multiple altitudes to create a 3D map, then vertically interpolates at
+each horizontal grid point.
 
 Reference: Cordell, Phillips, & Godson, U.S. Geological Survey Potential-Field
 Software Version 2.0, 1992.
@@ -2516,7 +2516,7 @@ end # function get_map_val
 """
     get_step(x::AbstractVector)
 
-Internal helper function to get the step size (spacing) of elements in `x`.
+Get the step size (spacing) of elements in `x`.
 """
 function get_step(x::AbstractVector)
     step(LinRange(x[1],x[end],length(x)))
@@ -2716,7 +2716,7 @@ end # function map_border
 """
     map_border_sort(yy::Vector, xx::Vector, dy, dx)
 
-Sort map border data points sequentially.
+Interval helper function to sort map border data points sequentially.
 
 **Arguments:**
 - `yy`: border y-direction (latitude)  coordinates

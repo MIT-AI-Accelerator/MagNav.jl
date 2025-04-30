@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.4
+# v0.20.8
 
 using Markdown
 using InteractiveUtils
@@ -141,11 +141,11 @@ md"Get training & testing data & normalize by feature (columns). Typically this 
 # ╔═╡ ed991fd4-05d9-4bee-b58b-547d63e5d199
 begin
 	(_,x_train,y_train,_,_,l_segs_train) =
-	    get_Axy(lines_train,df_all,df_flight,df_map,features;
-	            use_mag=use_mag,use_vec=use_vec,terms=terms)
+	    MagNav.get_Axy(lines_train,df_all,df_flight,df_map,features;
+	                   use_mag=use_mag,use_vec=use_vec,terms=terms)
 	(_,x_test,y_test,_,_,l_segs_test) =
-	    get_Axy(lines_test,df_nav,df_flight,df_map,features;
-	            use_mag=use_mag,use_vec=use_vec,terms=terms)
+	    MagNav.get_Axy(lines_test,df_nav,df_flight,df_map,features;
+	                   use_mag=use_mag,use_vec=use_vec,terms=terms)
 	(x_bias,x_scale,x_train_norm,x_test_norm) = norm_sets(x_train,x_test)
 	(y_bias,y_scale,y_train_norm,y_test_norm) = norm_sets(y_train,y_test)
 	x   = x_train_norm # for conciseness
@@ -262,8 +262,8 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 [compat]
 CSV = "~0.10.15"
 DataFrames = "~1.7.0"
-MagNav = "~1.3.0"
-Plots = "~1.40.10"
+MagNav = "~1.3.1"
+Plots = "~1.40.13"
 Random = "~1.11.0"
 Statistics = "~1.11.1"
 """

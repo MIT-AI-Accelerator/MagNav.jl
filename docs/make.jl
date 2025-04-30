@@ -47,7 +47,8 @@ makedocs(
     ),
     pages = [
         "Home"                      => "index.md",
-        "Custom Structs"            => "structs.md",
+        "API: Functions"            => "api_functions.md",
+        "API: Structs"              => "api_structs.md",
         "Flight Path & INS Data"    => "data.md",
         "Magnetic Anomaly Maps"     => "maps.md",
         "Aeromagnetic Compensation" => "comp.md",
@@ -57,9 +58,9 @@ makedocs(
     ],
     checkdocs = :exports,
     warnonly  = true,
-    # remotes   = nothing, #* uncomment for local development
 )
 
+#* comment for local development
 deploydocs(
     repo = "github.com/MIT-AI-Accelerator/MagNav.jl.git",
 )

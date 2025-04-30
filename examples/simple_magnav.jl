@@ -54,7 +54,7 @@ mapS3   = get_map(map_mat);
 xyz  = xyz2;
 mapS = mapS2;
 
-##* Create navigation model
+##* Create MagNav filter model
 (P0,Qd,R) = create_model(xyz.traj.dt, xyz.traj.lat[1];
                          init_pos_sigma = 3.0,           # initial position uncertainty [m]
                          init_alt_sigma = 0.001,         # initial altitude uncertainty [m]
@@ -74,7 +74,7 @@ mapS = mapS2;
                          gyro_tau       = 3600.0,        # gyroscope time constant [s]
                          fogm_tau       = 600.0);        # FOGM catch-all time constant [s]
 
-##* Run navigation filter
+##* Run MagNav filter
 itp_mapS = map_interpolate(mapS); # map interpolation function
 (crlb_out,ins_out,filt_out) = run_filt(xyz.traj, xyz.ins, xyz.mag_1_c, itp_mapS, :ekf;
                                        P0       = P0,     # initial covariance matrix
@@ -87,5 +87,5 @@ itp_mapS = map_interpolate(mapS); # map interpolation function
                                        date     = get_years(2025,1), # measurement date (decimal year), for core = true
                                        core     = false);            # if core field contained within xyz.mag_1_c field
 
-##* Plot navigation results
+##* Plot MagNav filter results
 p1 = plot_filt(xyz.traj,xyz.ins,filt_out;show_plot=false)[1]

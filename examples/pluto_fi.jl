@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.4
+# v0.20.8
 
 using Markdown
 using InteractiveUtils
@@ -93,11 +93,11 @@ md"Get training & testing data & normalize by feature (columns). Typically this 
 # ╔═╡ 0f23b8ae-a153-4018-a2e2-78cf462a03e8
 begin
 	(_,x_train,y_train,_,_,_) =
-	    get_Axy(lines_train,df_all,df_flight,df_map,features;
-	            use_mag=use_mag,use_vec=use_vec,terms=terms)
+	    MagNav.get_Axy(lines_train,df_all,df_flight,df_map,features;
+	                   use_mag=use_mag,use_vec=use_vec,terms=terms)
 	(_,x_test,y_test,_,_,_) =
-	    get_Axy(lines_test ,df_nav,df_flight,df_map,features;
-	            use_mag=use_mag,use_vec=use_vec,terms=terms)
+	    MagNav.get_Axy(lines_test ,df_nav,df_flight,df_map,features;
+	                   use_mag=use_mag,use_vec=use_vec,terms=terms)
 	(x_bias,x_scale,x_train_norm,x_test_norm) = norm_sets(x_train,x_test)
 	(y_bias,y_scale,y_train_norm,y_test_norm) = norm_sets(y_train,y_test)
 end;
@@ -144,10 +144,10 @@ begin
 	comp_params_sgl =
 		comp_train(comp_params_sgl_init,lines_train,df_all,df_flight,df_map)[1]
 	m_sgl  = comp_params_sgl.model # extract trained NN model
-	w_sgl  = comp_params_sgl.data_norms[3]*sparse_group_lasso(m_sgl,1)
+	w_sgl  = comp_params_sgl.data_norms[3]*MagNav.sparse_group_lasso(m_sgl,1)
 	df_sgl = sort(DataFrame(feature=feats,w_norm=w_sgl),:w_norm,by=abs,rev=true)
 	# m_sgl_  = comp_params.model # extract trained NN model
-	# w_sgl_  = comp_params.data_norms[3]*sparse_group_lasso(m_sgl_,1)
+	# w_sgl_  = comp_params.data_norms[3]*MagNav.sparse_group_lasso(m_sgl_,1)
 	# df_sgl_ = sort(DataFrame(feature=feats,w_norm=w_sgl_),:w_norm,by=abs,rev=true)
 end
 
@@ -164,8 +164,8 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 [compat]
 CSV = "~0.10.15"
 DataFrames = "~1.7.0"
-MagNav = "~1.3.0"
-Plots = "~1.40.10"
+MagNav = "~1.3.1"
+Plots = "~1.40.13"
 Random = "~1.11.0"
 Statistics = "~1.11.1"
 """

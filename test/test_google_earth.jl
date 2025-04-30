@@ -1,11 +1,11 @@
 using MagNav, Test, MAT
 
-test_file = joinpath(@__DIR__,"test_data/test_data_map.mat")
+test_file = joinpath(@__DIR__,"test_data","test_data_map.mat")
 map_data  = matopen(test_file,"r") do file
     read(file,"map_data")
 end
 
-test_file = joinpath(@__DIR__,"test_data/test_data_traj.mat")
+test_file = joinpath(@__DIR__,"test_data","test_data_traj.mat")
 traj_data = matopen(test_file,"r") do file
     read(file,"traj")
 end

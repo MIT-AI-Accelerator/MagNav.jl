@@ -2,26 +2,40 @@
 
 The following are key functions related to navigation algorithms.
 
+## MagNav Filter Model
+
+```@docs
+MagNav.create_model
+```
+
+### MagNav Filter Model Internals
+
+```@docs
+MagNav.create_P0
+```
+
+```@docs
+MagNav.create_Qd
+```
+
+```@docs
+MagNav.get_pinson
+```
+
 ## Cramér–Rao Lower Bound
 
 ```@docs
-crlb
+MagNav.crlb
 ```
 
 ## Extended Kalman Filter
 
 ```@docs
-ekf
-```
-
-## Rao-Blackwellized (Marginalized) Particle Filter
-
-```@docs
-mpf
+MagNav.ekf
 ```
 
 ## Run Filter (with additional options)
 
 ```@docs
-run_filt
+MagNav.run_filt
 ```

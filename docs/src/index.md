@@ -12,6 +12,16 @@ Pages = [
 Depth = 1
 ```
 
+The public API is listed on the following two pages:
+
+```@contents
+Pages = [
+    "api_functions.md",
+    "api_structs.md",
+]
+Depth = 1
+```
+
 There are also multiple example Pluto notebooks available that showcase various functionalities.
 
 ## Version

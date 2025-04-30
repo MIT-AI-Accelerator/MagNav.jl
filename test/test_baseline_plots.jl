@@ -2,12 +2,12 @@ using MagNav, Test, MAT
 using DSP: hamming
 using Plots: Plot
 
-test_file = joinpath(@__DIR__,"test_data/test_data_ins.mat")
+test_file = joinpath(@__DIR__,"test_data","test_data_ins.mat")
 ins_data  = matopen(test_file,"r") do file
     read(file,"ins_data")
 end
 
-test_file = joinpath(@__DIR__,"test_data/test_data_traj.mat")
+test_file = joinpath(@__DIR__,"test_data","test_data_traj.mat")
 traj_data = matopen(test_file,"r") do file
     read(file,"traj")
 end
@@ -140,21 +140,21 @@ end
 end
 
 @testset "plot_PSD tests" begin
-    @test plot_PSD(mag_1_c;show_plot) isa Plot
-    @test plot_PSD(mag_1_c,1;
-                   window    = hamming,
-                   dpi       = 100,
-                   show_plot = false,
-                   save_plot = false) isa Plot
+    @test MagNav.plot_PSD(mag_1_c;show_plot) isa Plot
+    @test MagNav.plot_PSD(mag_1_c,1;
+                          window    = hamming,
+                          dpi       = 100,
+                          show_plot = false,
+                          save_plot = false) isa Plot
 end
 
 @testset "plot_spectrogram tests" begin
-    @test plot_spectrogram(mag_1_c;show_plot) isa Plot
-    @test plot_spectrogram(mag_1_c,1;
-                           window    = hamming,
-                           dpi       = 100,
-                           show_plot = false,
-                           save_plot = false) isa Plot
+    @test MagNav.plot_spectrogram(mag_1_c;show_plot) isa Plot
+    @test MagNav.plot_spectrogram(mag_1_c,1;
+                                  window    = hamming,
+                                  dpi       = 100,
+                                  show_plot = false,
+                                  save_plot = false) isa Plot
 end
 
 @testset "plot_frequency tests" begin

@@ -1,12 +1,12 @@
 using MagNav, Test, MAT
 using Statistics
 
-test_file = joinpath(@__DIR__,"test_data/test_data_params.mat")
+test_file = joinpath(@__DIR__,"test_data","test_data_params.mat")
 params    = matopen(test_file,"r") do file
     read(file,"params")
 end
 
-test_file = joinpath(@__DIR__,"test_data/test_data_TL.mat")
+test_file = joinpath(@__DIR__,"test_data","test_data_TL.mat")
 TL_data   = matopen(test_file,"r") do file
     read(file,"TL_data")
 end
@@ -63,11 +63,11 @@ end
 end
 
 @testset "fdm tests" begin
-    @test fdm(mag_1_c_d;scheme=:backward ) isa Vector
-    @test fdm(mag_1_c_d;scheme=:forward  ) isa Vector
-    @test fdm(mag_1_c_d;scheme=:central  ) isa Vector
-    @test fdm(mag_1_c_d;scheme=:backward2) isa Vector
-    @test fdm(mag_1_c_d;scheme=:forward2 ) isa Vector
-    @test fdm(mag_1_c_d;scheme=:fourth   ) isa Vector
-    @test fdm(mag_1_c_d;scheme=:test     ) isa Vector
+    @test MagNav.fdm(mag_1_c_d;scheme=:backward ) isa Vector
+    @test MagNav.fdm(mag_1_c_d;scheme=:forward  ) isa Vector
+    @test MagNav.fdm(mag_1_c_d;scheme=:central  ) isa Vector
+    @test MagNav.fdm(mag_1_c_d;scheme=:backward2) isa Vector
+    @test MagNav.fdm(mag_1_c_d;scheme=:forward2 ) isa Vector
+    @test MagNav.fdm(mag_1_c_d;scheme=:fourth   ) isa Vector
+    @test MagNav.fdm(mag_1_c_d;scheme=:test     ) isa Vector
 end

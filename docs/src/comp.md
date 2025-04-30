@@ -5,21 +5,21 @@ The following are key functions related to aeromagnetic compensation.
 ## Tolles-Lawson
 
 ```@docs
-create_TL_A
+MagNav.create_TL_A
 ```
 
 ```@docs
-create_TL_coef
+MagNav.create_TL_coef
 ```
 
 ## Model Training/Fitting
 
 ```@docs
-comp_train
+MagNav.comp_train
 ```
 
 ## Model Testing
 
 ```@docs
-comp_test
+MagNav.comp_test
 ```
