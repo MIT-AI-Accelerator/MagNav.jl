@@ -4213,17 +4213,12 @@ function & gradient together, as well as vectorized `params`. For LBFGS.
 function lbfgs_setup(loss::Function, params::Params)
     p0 = zeros(sum(length,params.params))
     copy!(p0,params)
-    function fg!(F, G, w)
+    function fg!(_, G, w)
         copy!(params,w)
-        if !isnothing(G)
-            (l,back) = pullback(loss,params)
-            grads = back(1)
-            copy!(G,grads)
-            return (l)
-        end
-        if !isnothing(F)
-            return loss()
-        end
+        (l,back) = pullback(loss,params)
+        grads = back(1)
+        copy!(G,grads)
+        return (l)
     end # function fg!
     return (fg!, p0)
 end # function lbfgs_setup

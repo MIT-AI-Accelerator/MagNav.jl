@@ -429,6 +429,18 @@ terms_pi3e3 = [:p,:i3,:e3]
     end
 end
 
+@testset "TL_vec_split tests" begin
+    @test MagNav.TL_vec_split([1:18;],[:p,:induced,:e]) ==
+          MagNav.TL_vec_split([1:18;],[:p,:i,:eddy])
+    @test MagNav.TL_vec_split([1:18;],[:p,:i6,:e9]) == ([1:3;],[4:9;],[10:18;])
+    @test MagNav.TL_vec_split([1:16;],[:p,:i5,:e8]) == ([1:3;],[4:8;],[9:16;])
+    @test MagNav.TL_vec_split([1:9; ],[:p,:i3,:e3]) == ([1:3;],[4:6;],[7:9;])
+    @test_throws AssertionError MagNav.TL_vec_split([1:12;],[:p,:e])
+    @test_throws AssertionError MagNav.TL_vec_split([1:15;],[:i,:e])
+    @test_throws AssertionError MagNav.TL_vec_split([1:19;],[:p,:i,:e,:b])
+    @test_throws AssertionError MagNav.TL_vec_split([1:3;],[:p,:i,:e])
+end
+
 @testset "get_split tests" begin
     @test MagNav.get_split(2,0.5,:none)[1][1] in [1,2]
     @test MagNav.get_split(2,1  ,:none)[1] == 1:2
@@ -441,6 +453,11 @@ end
 
 x_norm = ones(3,3) ./ 3
 y      = ones(3)
+
+@testset "get_temporal_data tests" begin
+    @test size(MagNav.get_temporal_data(x_norm,[1,1,1],1)) == (3,1,3)
+    @test size(MagNav.get_temporal_data(x_norm,[1,1,1],3)) == (3,3,3)
+end
 
 @testset "linear_test tests" begin
     @test MagNav.linear_test(x_norm,y,[0],[1],(y,[0]);silent)[1] == y
