@@ -139,7 +139,7 @@ comp_params_list = [comp_params_1,
                     comp_params_3s_drop,
                     comp_params_3s_perm]
 
-comp_csv = joinpath(@__DIR__,"test_data/comp_err.csv")
+comp_csv = joinpath(@__DIR__,"test_data","comp_err.csv")
 
 if generate
     comp_err = zeros(Float32,length(comp_params_list),2)

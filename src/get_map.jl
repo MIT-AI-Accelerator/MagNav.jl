@@ -84,15 +84,15 @@ function get_map(map_file::String   = namad,
 
     else # get data from CSV files
 
-        mapX_csv = map_file*"/mapX.csv"
-        mapY_csv = map_file*"/mapY.csv"
-        mapZ_csv = map_file*"/mapZ.csv"
-        map_csv  = map_file*"/map.csv"
-        xx_csv   = map_file*"/xx.csv"
-        yy_csv   = map_file*"/yy.csv"
-        alt_csv  = map_file*"/alt.csv"
-        info_csv = map_file*"/info.csv"
-        mask_csv = map_file*"/mask.csv"
+        mapX_csv = joinpath(map_file,"mapX.csv")
+        mapY_csv = joinpath(map_file,"mapY.csv")
+        mapZ_csv = joinpath(map_file,"mapZ.csv")
+        map_csv  = joinpath(map_file,"map.csv")
+        xx_csv   = joinpath(map_file,"xx.csv")
+        yy_csv   = joinpath(map_file,"yy.csv")
+        alt_csv  = joinpath(map_file,"alt.csv")
+        info_csv = joinpath(map_file,"info.csv")
+        mask_csv = joinpath(map_file,"mask.csv")
 
         if isfile(mapX_csv) # vector map
             map_vec  = true

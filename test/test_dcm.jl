@@ -1,6 +1,6 @@
 using MagNav, Test, MAT
 
-test_file = joinpath(@__DIR__,"test_data/test_data_dcm.mat")
+test_file = joinpath(@__DIR__,"test_data","test_data_dcm.mat")
 dcm_data  = matopen(test_file,"r") do file
     read(file,"dcm_data")
 end

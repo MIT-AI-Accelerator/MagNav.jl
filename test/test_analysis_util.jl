@@ -3,12 +3,12 @@ using DataFrames, DSP, Flux, LinearAlgebra, Plots, Statistics
 using MagNav: get_x, get_y, get_Axy, get_nn_m
 using MagNav: project_vec_to_2d, project_body_field_to_2d_igrf, unpack_data_norms
 
-test_file = joinpath(@__DIR__,"test_data/test_data_params.mat")
+test_file = joinpath(@__DIR__,"test_data","test_data_params.mat")
 params    = matopen(test_file,"r") do file
     read(file,"params")
 end
 
-test_file = joinpath(@__DIR__,"test_data/test_data_TL.mat")
+test_file = joinpath(@__DIR__,"test_data","test_data_TL.mat")
 TL_data   = matopen(test_file,"r") do file
     read(file,"TL_data")
 end

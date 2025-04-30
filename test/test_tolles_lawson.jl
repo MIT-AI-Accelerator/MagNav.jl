@@ -1,12 +1,12 @@
 using MagNav, Test, MAT
 using Statistics
 
-test_file = joinpath(@__DIR__,"test_data/test_data_params.mat")
+test_file = joinpath(@__DIR__,"test_data","test_data_params.mat")
 params    = matopen(test_file,"r") do file
     read(file,"params")
 end
 
-test_file = joinpath(@__DIR__,"test_data/test_data_TL.mat")
+test_file = joinpath(@__DIR__,"test_data","test_data_TL.mat")
 TL_data   = matopen(test_file,"r") do file
     read(file,"TL_data")
 end

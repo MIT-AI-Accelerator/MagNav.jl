@@ -1,8 +1,8 @@
 using MagNav, Test, MAT
 using Flux
 
-map_file  = joinpath(@__DIR__,"test_data/test_data_map.mat")
-traj_file = joinpath(@__DIR__,"test_data/test_data_traj.mat")
+map_file  = joinpath(@__DIR__,"test_data","test_data_map.mat")
+traj_file = joinpath(@__DIR__,"test_data","test_data_traj.mat")
 
 mapS      = get_map(map_file,:map_data)
 map_cache = Map_Cache(maps=[mapS])

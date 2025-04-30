@@ -37,7 +37,7 @@ module MagNav
     using StatsBase: autocor, skewness
     using Zygote: Params, gradient
 
-    project_toml = normpath(joinpath(@__DIR__,"../Project.toml"))
+    project_toml = normpath(joinpath(@__DIR__,"..","Project.toml"))
 
     """
         magnav_version::VersionNumber

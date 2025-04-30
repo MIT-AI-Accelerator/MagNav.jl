@@ -2,8 +2,8 @@ using MagNav, Test, MAT
 using DataFrames, CSV
 using MagNav: delete_field, write_field
 
-traj_mat = joinpath(@__DIR__,"test_data/test_data_traj.mat")
-ins_mat  = joinpath(@__DIR__,"test_data/test_data_ins.mat")
+traj_mat = joinpath(@__DIR__,"test_data","test_data_traj.mat")
+ins_mat  = joinpath(@__DIR__,"test_data","test_data_ins.mat")
 
 traj_field = :traj
 ins_field  = :ins_data

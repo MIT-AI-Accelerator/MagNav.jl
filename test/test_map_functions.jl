@@ -3,16 +3,16 @@ using DataFrames, LinearAlgebra, Plots, Statistics
 using MagNav: MapS, MapSd, MapS3D, MapV
 using Geodesy: LLA, LLAfromUTM, UTM, UTMfromLLA, WGS84, utm_zone
 
-test_file = joinpath(@__DIR__,"test_data/test_data_grid.mat")
+test_file = joinpath(@__DIR__,"test_data","test_data_grid.mat")
 grid_data = matopen(test_file,"r") do file
     read(file,"grid_data")
 end
 
-map_file  = joinpath(@__DIR__,"test_data/test_data_map.mat")
+map_file  = joinpath(@__DIR__,"test_data","test_data_map.mat")
 mapS      = get_map(map_file,:map_data)
 itp_mapS  = map_interpolate(mapS,:linear) # linear to match MATLAB
 
-traj_file = joinpath(@__DIR__,"test_data/test_data_traj.mat")
+traj_file = joinpath(@__DIR__,"test_data","test_data_traj.mat")
 traj      = get_traj(traj_file,:traj,silent=true)
 
 gxf_file  = MagNav.ottawa_area_maps_gxf()*"/HighAlt_Mag.gxf"

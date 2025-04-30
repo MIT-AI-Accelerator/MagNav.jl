@@ -2,32 +2,32 @@ using MagNav, Test, MAT
 using Random
 Random.seed!(2)
 
-test_file = joinpath(@__DIR__,"test_data/test_data_ekf.mat")
+test_file = joinpath(@__DIR__,"test_data","test_data_ekf.mat")
 ekf_data  = matopen(test_file,"r") do file
     read(file,"ekf_data")
 end
 
-test_file = joinpath(@__DIR__,"test_data/test_data_grid.mat")
+test_file = joinpath(@__DIR__,"test_data","test_data_grid.mat")
 grid_data = matopen(test_file,"r") do file
     read(file,"grid_data")
 end
 
-test_file = joinpath(@__DIR__,"test_data/test_data_map.mat")
+test_file = joinpath(@__DIR__,"test_data","test_data_map.mat")
 map_data  = matopen(test_file,"r") do file
     read(file,"map_data")
 end
 
-test_file = joinpath(@__DIR__,"test_data/test_data_params.mat")
+test_file = joinpath(@__DIR__,"test_data","test_data_params.mat")
 params    = matopen(test_file,"r") do file
     read(file,"params")
 end
 
-test_file   = joinpath(@__DIR__,"test_data/test_data_pinson.mat")
+test_file   = joinpath(@__DIR__,"test_data","test_data_pinson.mat")
 pinson_data = matopen(test_file,"r") do file
     read(file,"pinson_data")
 end
 
-test_file = joinpath(@__DIR__,"test_data/test_data_traj.mat")
+test_file = joinpath(@__DIR__,"test_data","test_data_traj.mat")
 traj_data = matopen(test_file,"r") do file
     read(file,"traj")
 end

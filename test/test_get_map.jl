@@ -2,7 +2,7 @@ using MagNav, Test, MAT
 using DataFrames, DelimitedFiles
 using BSON: bson, @save
 
-test_data_map = joinpath(@__DIR__,"test_data/test_data_map.mat")
+test_data_map = joinpath(@__DIR__,"test_data","test_data_map.mat")
 map_data  = matopen(test_data_map,"r") do file
     read(file,"map_data")
 end
