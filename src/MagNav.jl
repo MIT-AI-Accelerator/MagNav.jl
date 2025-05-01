@@ -1307,7 +1307,7 @@ module MagNav
     linreg,get_x,get_y,get_Axy,get_nn_m,sparse_group_lasso,
     chunk_data,predict_rnn_full,predict_rnn_windowed,krr_fit,krr_test,
     project_body_field_to_2d_igrf,get_optimal_rotation_matrix,
-    get_days_in_year,filter_events!,filter_events,
+    filter_events!,filter_events,
     TL_vec2mat,TL_mat2vec,plsr_fit,elasticnet_fit,linear_fit,linear_test,
     create_mag_c,corrupt_mag,
     eval_results,eval_crlb,eval_ins,

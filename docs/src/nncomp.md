@@ -8,7 +8,7 @@ The goal of neural network-based aeromagnetic compensation is to use machine lea
 
 ![m1](assets/m1.png)
 
-The approach taken here is to include additional data along with the typical magnetometer data. An example of possible data fields is provided in the Appendix of [Gnadt, 2022](https://magnav.mit.edu/publications). The idea here is that this additional data allows for greater observability of the aircraft magnetic field, and machine learning can learn the relationship between the data and aircraft field. A baseline model for this approach is to use a standard neural network to represent the compensation model in a pure data-driven approach, as shown above.
+The approach taken here is to include additional data along with the typical magnetometer data. An example of possible data fields is provided in the Appendix of [Gnadt, 2022](https://dspace.mit.edu/handle/1721.1/145137). The idea here is that this additional data allows for greater observability of the aircraft magnetic field, and machine learning can learn the relationship between the data and aircraft field. A baseline model for this approach is to use a standard neural network to represent the compensation model in a pure data-driven approach, as shown above.
 
 Here, the input data $\boldsymbol{data}_\mathrm{aux}$, also known as features, can be raw measurements and/or the Tolles-Lawson $\boldsymbol{A}$ matrix terms. Using the Tolles-Lawson terms is a form of scientific machine learning (SciML), as these terms represent prior scientific knowledge. This can potentially reduce the amount of data required for training. Note that during training, the mean squared error (MSE) of the aeromagnetic compensation output is compared with the output target. During testing (evaluation), the aeromagnetic compensation output just prior to the "loss MSE" in the figure is used for navigation.
 
@@ -20,7 +20,7 @@ Here, the input data $\boldsymbol{data}_\mathrm{aux}$, also known as features, c
 
 ![m2a](assets/m2a.png)
 
-Model 1 can be extended into even more of a SciML approach using the physics of aeromagnetic compensation. Model 2a, shown above, more closely resembles the classical Tolles-Lawson model, now with 
+Model 1 can be extended into even more of a SciML approach using the physics of aeromagnetic compensation. Model 2a, shown above, more closely resembles the classical Tolles-Lawson model, now with
 
 $B_\mathrm{target} = \boldsymbol{A}~\boldsymbol{\beta}_\mathrm{NN}$
 

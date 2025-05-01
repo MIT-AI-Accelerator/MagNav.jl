@@ -20,7 +20,7 @@ end;
 
 # ╔═╡ 66e96968-4daa-11ee-31cd-7b4d78033095
 md"# Feature Importance/Selection
-This file is best viewed in a [Pluto](https://plutojl.org/) notebook. To run it this way, from the MagNav.jl directory, do:
+This file is best viewed in a [Pluto](https://plutojl.org/) notebook. To do so, from the MagNav.jl directory, run:
 ```julia
 julia> using Pluto
 julia> Pluto.run() # select & open notebook

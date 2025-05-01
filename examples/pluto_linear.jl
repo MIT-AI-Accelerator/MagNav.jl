@@ -27,7 +27,7 @@ end;
 
 # ╔═╡ e336e668-4d9f-11ee-2517-b3a384f42e23
 md"# Linear Models
-This file is best viewed in a [Pluto](https://plutojl.org/) notebook. To run it this way, from the MagNav.jl directory, do:
+This file is best viewed in a [Pluto](https://plutojl.org/) notebook. To do so, from the MagNav.jl directory, run:
 ```julia
 julia> using Pluto
 julia> Pluto.run() # select & open notebook

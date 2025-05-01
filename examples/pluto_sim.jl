@@ -19,8 +19,8 @@ begin
 end;
 
 # ╔═╡ d9ac0df2-3d79-11ee-0869-73b7f6649d95
-md"# Using the MagNav Package with Simulated Data
-This file is best viewed in a [Pluto](https://plutojl.org/) notebook. To run it this way, from the MagNav.jl directory, do:
+md"# Using MagNav.jl with Simulated Data
+This file is best viewed in a [Pluto](https://plutojl.org/) notebook. To do so, from the MagNav.jl directory, run:
 ```julia
 julia> using Pluto
 julia> Pluto.run() # select & open notebook
