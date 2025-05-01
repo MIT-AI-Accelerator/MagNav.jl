@@ -164,7 +164,7 @@ The original map area is show with a black outline. During upward (or downward) 
 # ╔═╡ 39bdbe6a-52ae-44d2-8e80-2e7d2a75e322
 begin
     using MagNav: get_step
-	(map_map,px,py) = MagNav.map_expand(e_mapS_395.map,200)
+	(map_map,px,py) = map_expand(e_mapS_395.map,200)
 	px_end    = size(map_map,2) - length(e_mapS_395.xx) - px
 	py_end    = size(map_map,1) - length(e_mapS_395.yy) - py
 	dx        = get_step(e_mapS_395.xx)

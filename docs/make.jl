@@ -1,31 +1,33 @@
+package_dir = normpath(joinpath(@__DIR__,"..")) # package directory
+
+#* uncomment for local development
+# using Pkg; Pkg.develop(PackageSpec(path=package_dir)); Pkg.instantiate()
+
 using Documenter, MagNav, PlutoStaticHTML
 
-# define directory paths
-package_dir  = pkgdir(MagNav)
-docs_src_dir = joinpath(package_dir,"docs","src")
-folder       = "examples"
-
-# run Pluto notebooks in src_dir & create Markdown files
+# run Pluto notebooks in nb_dir & create Markdown files
 # done sequentially to avoid recompiling multiple times
-src_dir = joinpath(package_dir,folder)
-bopts   = BuildOptions(src_dir;
-                       output_format   = documenter_output,
-                       use_distributed = false)
+folder = "examples"
+nb_dir = joinpath(package_dir,folder)
+b_opts = PlutoStaticHTML.BuildOptions(nb_dir;
+                                      output_format   = documenter_output,
+                                      use_distributed = false)
 println("building example Pluto notebooks")
-build_notebooks(bopts)
+PlutoStaticHTML.build_notebooks(b_opts)
 
 # map sidebar names to Markdown files
 notebooks = [
-    "Feature Importance"    => "$folder/pluto_fi.md",
-    "Linear Models"         => "$folder/pluto_linear.md",
-    "Magnetic Anomaly Maps" => "$folder/pluto_maps.md",
-    "Model 3"               => "$folder/pluto_model3.md",
-    "Using SGL Data"        => "$folder/pluto_sgl.md",
-    "Using Simulated Data"  => "$folder/pluto_sim.md",
+    "Feature Importance"    => joinpath(folder,"pluto_fi.md"),
+    "Linear Models"         => joinpath(folder,"pluto_linear.md"),
+    "Magnetic Anomaly Maps" => joinpath(folder,"pluto_maps.md"),
+    "Model 3"               => joinpath(folder,"pluto_model3.md"),
+    "Using SGL Data"        => joinpath(folder,"pluto_sgl.md"),
+    "Using Simulated Data"  => joinpath(folder,"pluto_sim.md"),
 ]
 
 # create folder in docs_src_dir if it doesn't exist
-dst_dir = joinpath(docs_src_dir,folder)
+docs_src_dir = joinpath(package_dir,"docs","src")
+dst_dir      = joinpath(docs_src_dir,folder)
 isdir(dst_dir) || mkdir(dst_dir)
 
 # move Markdown files into folder in docs_src_dir
@@ -36,7 +38,7 @@ for notebook in notebooks
     mv(src,dst;force=true)
 end
 
-makedocs(
+Documenter.makedocs(
     modules  = [MagNav],
     sitename = "MagNav.jl",
     format   = Documenter.HTML(
@@ -61,6 +63,6 @@ makedocs(
 )
 
 #* comment for local development
-deploydocs(
+Documenter.deploydocs(
     repo = "github.com/MIT-AI-Accelerator/MagNav.jl.git",
 )

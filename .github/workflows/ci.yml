@@ -1,17 +1,19 @@
 name: CI
 
 on:
+  pull_request:
+    branches:
+      - master
   push:
     branches:
       - master
     tags: '*'
-  pull_request:
 
 jobs:
   test:
     name: Julia ${{ matrix.julia-version }} - ${{ matrix.os }} - ${{ matrix.julia-arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
-    permissions: # needed to allow julia-actions/cache to proactively delete old caches that it has created
+    permissions: # needed for julia-actions/cache to delete old caches
       actions: write
       contents: read
     strategy:
@@ -44,6 +46,7 @@ jobs:
         with:
           version: '1'
       - uses: julia-actions/cache@v2
+      - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-docdeploy@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
