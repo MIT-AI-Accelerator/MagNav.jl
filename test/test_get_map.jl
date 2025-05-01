@@ -85,13 +85,17 @@ rm(map_csv_dir;force=true,recursive=true)
 mkdir(map_csv_dir)
 
 for f in ["map","alt","xx","yy"]
-    writedlm("$map_csv_dir/$f.csv",map_data[f],',')
+    writedlm(joinpath(map_csv_dir,"$f.csv"),map_data[f],',')
 end
 
 map_h5 = MagNav.add_extension(map_h5,".h5")
 
 @testset "get_map tests" begin
     @test get_map(map_csv_dir) isa MagNav.MapS
+    writedlm(joinpath(map_csv_dir,"mapX.csv"),map_data["map"],',')
+    writedlm(joinpath(map_csv_dir,"mapY.csv"),map_data["map"],',')
+    writedlm(joinpath(map_csv_dir,"mapZ.csv"),map_data["map"],',')
+    @test get_map(map_csv_dir) isa MagNav.MapV
     @test get_map(map_h5) isa MagNav.MapS3D
     for map_file in map_files
         println(map_file)
