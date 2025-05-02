@@ -186,6 +186,7 @@ function remove_extension(data_file::String, extension::String)
     f = data_file
     e = extension
     l = length(e)
+    length(f) <= l && (return f)
     f = lowercase(f[end-l+1:end]) == lowercase(e) ? f[1:end-l] : f
 end # function remove_extension
 
@@ -206,6 +207,7 @@ function add_extension(data_file::String, extension::String)
     f = data_file
     e = extension
     l = length(e)
+    length(f) <= l && (return f*e)
     f = lowercase(f[end-l+1:end]) == lowercase(e) ? f : f*e
 end # function add_extension
 
