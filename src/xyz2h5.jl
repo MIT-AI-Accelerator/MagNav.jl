@@ -186,6 +186,7 @@ function remove_extension(data_file::String, extension::String)
     f = data_file
     e = extension
     l = length(e)
+    length(f) <= l && (return f)
     f = lowercase(f[end-l+1:end]) == lowercase(e) ? f[1:end-l] : f
 end # function remove_extension
 
@@ -206,6 +207,7 @@ function add_extension(data_file::String, extension::String)
     f = data_file
     e = extension
     l = length(e)
+    length(f) <= l && (return f*e)
     f = lowercase(f[end-l+1:end]) == lowercase(e) ? f : f*e
 end # function add_extension
 
@@ -539,9 +541,9 @@ Internal helper function to get field names for given SGL flight.
 function xyz_fields(flight::Symbol)
 
     # get csv files containing fields from sgl_flight_data_fields artifact
-    fields20  = sgl_fields()*"/fields_sgl_2020.csv"
-    fields21  = sgl_fields()*"/fields_sgl_2021.csv"
-    fields160 = sgl_fields()*"/fields_sgl_160.csv"
+    fields20  = sgl_fields(:fields_sgl_2020)
+    fields21  = sgl_fields(:fields_sgl_2021)
+    fields160 = sgl_fields(:fields_sgl_160)
 
     d = Dict{Symbol,Vector{Symbol}}()
     push!(d, :fields20  => Symbol.(vec(readdlm(fields20 ,','))))

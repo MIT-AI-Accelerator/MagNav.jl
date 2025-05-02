@@ -135,11 +135,10 @@ rm(xyz_csv)
 rm(xyz_mat)
 rm(xyz_h5)
 
-xyz_dir   = MagNav.sgl_2020_train()
 flights   = [:Flt1002,:Flt1003,:Flt1004,:Flt1005,:Flt1006,:Flt1007]
 xyz_types = repeat([:XYZ20],length(flights))
 xyz_sets  = repeat([1],length(flights))
-xyz_files = [xyz_dir*"/$(f)_train.h5" for f in flights]
+xyz_files = MagNav.sgl_2020_train.(flights)
 df_flight = DataFrame(flight   = flights,
                       xyz_type = xyz_types,
                       xyz_set  = xyz_sets,
@@ -163,12 +162,11 @@ df_flight = DataFrame(flight   = flights,
     end
 end
 
-xyz_dir   = MagNav.sgl_2021_train()
 flights   = [:Flt2001,:Flt2002,:Flt2004,:Flt2005,:Flt2006,
              :Flt2007,:Flt2008,:Flt2015,:Flt2016,:Flt2017]
 xyz_types = repeat([:XYZ21],length(flights))
 xyz_sets  = repeat([1],length(flights))
-xyz_files = [xyz_dir*"/$(f)_train.h5" for f in flights]
+xyz_files = MagNav.sgl_2021_train.(flights)
 df_flight = DataFrame(flight   = flights,
                       xyz_type = xyz_types,
                       xyz_set  = xyz_sets,

@@ -31,22 +31,22 @@ dir = "simple_magnav_data";
 
 ##* Option 1: load data from CSV files
 seed!(33); # for reproducibility
-xyz_csv = "$dir/xyz.csv";
-map_csv = "$dir/map"; # folder with alt, map, xx, & yy CSV files
+xyz_csv = joinpath(dir,"xyz.csv");
+map_csv = joinpath(dir,"map"); # folder with alt, map, xx, & yy CSV files
 xyz1    = get_XYZ0(xyz_csv);
 mapS1   = get_map(map_csv);
 
 ##* Option 2: load data from HDF5 files
 seed!(33); # for reproducibility
-xyz_h5  = "$dir/xyz.h5";
-map_h5  = "$dir/map.h5";
+xyz_h5  = joinpath(dir,"xyz.h5");
+map_h5  = joinpath(dir,"map.h5");
 xyz2    = get_XYZ0(xyz_h5);
 mapS2   = get_map(map_h5);
 
 ##* Option 3: load data from MAT files
 seed!(33); # for reproducibility
-xyz_mat = "$dir/xyz.mat";
-map_mat = "$dir/map.mat";
+xyz_mat = joinpath(dir,"xyz.mat");
+map_mat = joinpath(dir,"map.mat");
 xyz3    = get_XYZ0(xyz_mat);
 mapS3   = get_map(map_mat);
 
@@ -76,16 +76,16 @@ mapS = mapS2;
 
 ##* Run MagNav filter
 itp_mapS = map_interpolate(mapS); # map interpolation function
-(crlb_out,ins_out,filt_out) = run_filt(xyz.traj, xyz.ins, xyz.mag_1_c, itp_mapS, :ekf;
-                                       P0       = P0,     # initial covariance matrix
-                                       Qd       = Qd,     # discrete time process/system noise matrix
-                                       R        = R,      # measurement (white) noise variance
-                                       baro_tau = 3600.0, # barometer time constant [s]
-                                       acc_tau  = 3600.0, # accelerometer time constant [s]
-                                       gyro_tau = 3600.0, # gyroscope time constant [s]
-                                       fogm_tau = 600.0,  # FOGM catch-all time constant [s]
-                                       date     = get_years(2025,1), # measurement date (decimal year), for core = true
-                                       core     = false);            # if core field contained within xyz.mag_1_c field
+(_,_,filt_out) = run_filt(xyz.traj, xyz.ins, xyz.mag_1_c, itp_mapS, :ekf;
+                          P0       = P0,     # initial covariance matrix
+                          Qd       = Qd,     # discrete time process/system noise matrix
+                          R        = R,      # measurement (white) noise variance
+                          baro_tau = 3600.0, # barometer time constant [s]
+                          acc_tau  = 3600.0, # accelerometer time constant [s]
+                          gyro_tau = 3600.0, # gyroscope time constant [s]
+                          fogm_tau = 600.0,  # FOGM catch-all time constant [s]
+                          date     = get_years(2025,1), # measurement date (decimal year), for core = true
+                          core     = false);            # if core field contained within xyz.mag_1_c field
 
 ##* Plot MagNav filter results
 p1 = plot_filt(xyz.traj,xyz.ins,filt_out;show_plot=false)[1]

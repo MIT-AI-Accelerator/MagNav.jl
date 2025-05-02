@@ -20,7 +20,7 @@ end;
 
 # ╔═╡ e289486a-57ed-4eeb-9ec9-6500f0bc563b
 md"# Magnetic Anomaly Maps
-This file is best viewed in a [Pluto](https://plutojl.org/) notebook. To run it this way, from the MagNav.jl directory, do:
+This file is best viewed in a [Pluto](https://plutojl.org/) notebook. To do so, from the MagNav.jl directory, run:
 ```julia
 julia> using Pluto
 julia> Pluto.run() # select & open notebook
@@ -52,7 +52,7 @@ This is the Perth map (at 800 m) as provided by Sander Geophysics Ltd.
 
 # ╔═╡ bf9f72f0-c351-48d3-a811-418ee965073c
 begin
-	map_gxf = MagNav.ottawa_area_maps_gxf()*"/Perth_Mag.gxf"
+	map_gxf = MagNav.ottawa_area_maps_gxf(:Perth)
 	p_mapS_800 = map_gxf2h5(map_gxf,800)
 	p1 = plot_map(p_mapS_800)
 end
@@ -164,7 +164,7 @@ The original map area is show with a black outline. During upward (or downward) 
 # ╔═╡ 39bdbe6a-52ae-44d2-8e80-2e7d2a75e322
 begin
     using MagNav: get_step
-	(map_map,px,py) = MagNav.map_expand(e_mapS_395.map,200)
+	(map_map,px,py) = map_expand(e_mapS_395.map,200)
 	px_end    = size(map_map,2) - length(e_mapS_395.xx) - px
 	py_end    = size(map_map,1) - length(e_mapS_395.yy) - py
 	dx        = get_step(e_mapS_395.xx)
@@ -235,7 +235,7 @@ end
 # ╔═╡ 18eecde1-3cc3-4775-a139-c77beffe394e
 md"## Create a 3D map
 
-All of the functionality in MagNav.jl can use 3D maps, which contain multiple stacked 2D maps with constant altitude spacing between each map level. There are 2 ways to create a 3D map, the first of which is to upward/downward continue to multiple altitudes using the `upward_fft` function. In this case, a filled Perth map at 800 m is stacked with the same map upward continued to 810 m.
+Most functionality in MagNav.jl can use 3D maps, which contain multiple stacked 2D maps with constant altitude spacing between each map level. There are 2 ways to create a 3D map, the first of which is to upward/downward continue to multiple altitudes using the `upward_fft` function. In this case, a filled Perth map at 800 m is stacked with the same map upward continued to 810 m.
 "
 
 # ╔═╡ e28ee51a-7d9f-4ce8-a63e-69f2ce654901

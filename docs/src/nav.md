@@ -8,7 +8,7 @@ The following are key functions related to navigation algorithms.
 MagNav.create_model
 ```
 
-### MagNav Filter Model Internals
+### MagNav filter model internals
 
 ```@docs
 MagNav.create_P0

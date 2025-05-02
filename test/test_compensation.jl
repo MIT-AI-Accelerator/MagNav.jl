@@ -10,8 +10,8 @@ flight   = :Flt1007
 line     = 1007.06
 xyz_type = :XYZ20
 map_name = :Renfrew_395
-xyz_h5   = MagNav.sgl_2020_train()*"/$(flight)_train.h5"
-map_h5   = MagNav.ottawa_area_maps()*"/$(map_name).h5"
+xyz_h5   = MagNav.sgl_2020_train(flight)
+map_h5   = MagNav.ottawa_area_maps(map_name)
 
 xyz = get_XYZ20(xyz_h5;tt_sort=true,silent)
 ind = xyz.line .== line
@@ -430,8 +430,16 @@ terms_pi3e3 = [:p,:i3,:e3]
 end
 
 @testset "TL_vec_split tests" begin
-    @test MagNav.TL_vec_split([1:18;],[:p,:induced,:e]) ==
-          MagNav.TL_vec_split([1:18;],[:p,:i,:eddy])
+    @test MagNav.TL_vec_split([1:18;],[:permanent,:induced,:eddy]) ==
+          MagNav.TL_vec_split([1:18;],[:p,:i,:e])
+    @test MagNav.TL_vec_split([1:18;],[:permanent3,:induced6,:eddy9]) ==
+          MagNav.TL_vec_split([1:18;],[:p3,:i6,:e9])
+    @test MagNav.TL_vec_split([1:14;],[:permanent3,:induced3,:eddy8]) ==
+          MagNav.TL_vec_split([1:14;],[:p3,:i3,:e8])
+    @test MagNav.TL_vec_split([1:11;],[:permanent3,:induced5,:eddy3]) ==
+          MagNav.TL_vec_split([1:11;],[:p3,:i5,:e3])
+    @test MagNav.TL_vec_split([1:9; ],[:permanent3,:induced6]) ==
+          MagNav.TL_vec_split([1:9; ],[:p3,:i6])
     @test MagNav.TL_vec_split([1:18;],[:p,:i6,:e9]) == ([1:3;],[4:9;],[10:18;])
     @test MagNav.TL_vec_split([1:16;],[:p,:i5,:e8]) == ([1:3;],[4:8;],[9:16;])
     @test MagNav.TL_vec_split([1:9; ],[:p,:i3,:e3]) == ([1:3;],[4:6;],[7:9;])

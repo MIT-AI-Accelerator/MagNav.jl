@@ -15,9 +15,9 @@ itp_mapS  = map_interpolate(mapS,:linear) # linear to match MATLAB
 traj_file = joinpath(@__DIR__,"test_data","test_data_traj.mat")
 traj      = get_traj(traj_file,:traj,silent=true)
 
-gxf_file  = MagNav.ottawa_area_maps_gxf()*"/HighAlt_Mag.gxf"
+gxf_file  = MagNav.ottawa_area_maps_gxf(:HighAlt)
 (map_map,map_xx,map_yy) = MagNav.map_get_gxf(gxf_file)
-mapP = get_map(MagNav.ottawa_area_maps()*"/HighAlt_5181.h5")
+mapP = get_map(MagNav.ottawa_area_maps(:HighAlt_5181))
 
 mapV = get_map(MagNav.emm720)
 mapV = map_trim(mapV,traj)

@@ -3,12 +3,12 @@ module MagNav
     using LinearAlgebra, Plots, TOML, ZipFile, Zygote
     using BSON: bson, load
     using Compat: @compat
-    using DataFrames: DataFrame, combine, groupby, order, sort
-    using DelimitedFiles: readdlm, writedlm
-    using Distributions: MvNormal, Normal, Uniform
     using DSP: Bandpass, Butterworth, Highpass, Lowpass
     using DSP: digitalfilter, fft, fftfreq, filtfilt, hamming, ifft
     using DSP: pow2db, rms, spectrogram, welch_pgram
+    using DataFrames: DataFrame, combine, groupby, order, sort
+    using DelimitedFiles: readdlm, writedlm
+    using Distributions: MvNormal, Normal, Uniform
     using ExponentialUtilities: exponential!
     using Flux: @layer, Adam, Chain, DataLoader, Dense
     using Flux: destructure, flatten, huber_loss, mae, mse, trainables
@@ -18,7 +18,6 @@ module MagNav
     using Interpolations: BSpline, BSplineInterpolation, Cubic, Line
     using Interpolations: Linear, OnGrid, Quadratic, ScaledInterpolation
     using Interpolations: interpolate, linear_interpolation, scale
-    using IterTools: ncycle
     using KernelFunctions: Kernel, PolynomialKernel, kernelmatrix
     using MAT: matopen
     using MLJLinearModels: ElasticNetRegression, fit
@@ -27,9 +26,7 @@ module MagNav
     using Parameters: @unpack, @with_kw
     using Pkg.Artifacts: @artifact_str
     using Plots: Plot, annotate!, contourf!, heatmap, mm, plot, plot!, scatter
-    using PrecompileTools
     using Random: rand, randn, randperm, seed!, shuffle
-    using RecipesBase: @recipe
     using SatelliteToolboxGeomagneticField: igrf, igrfd
     using ShapML: shap
     using SpecialFunctions: gamma, gamma_inc, gamma_inc_inv
@@ -106,17 +103,28 @@ module MagNav
     const silent_debug = true
 
     """
-        sgl_fields()
+        sgl_fields(f::Union{String,Symbol} = "")
 
     Data fields in SGL flight data collections, contains:
     - `fields_sgl_2020.csv`
     - `fields_sgl_2021.csv`
     - `fields_sgl_160.csv`
+
+    **Arguments:**
+    - `f`: (optional) name of data file (`.csv` extension optional)
+
+    **Returns:**
+    - `p`: path of folder or `f` data file
     """
-    sgl_fields() = joinpath(artifact"sgl_fields","sgl_fields")
+    function sgl_fields(f = "")
+        p = joinpath(artifact"sgl_fields","sgl_fields")
+        d = "$f"
+        !isempty(d) && (p = joinpath(p,add_extension(d,".csv")))
+        return (p)
+    end # function sgl_fields
 
     """
-        sgl_2020_train()
+        sgl_2020_train(f::Union{String,Symbol} = "")
 
     Flight data from the 2020 SGL flight data collection - training portion.
     Collected from 20-Jun-2020 to 07-Jul-2020 near Ottawa, Ontario, Canada by
@@ -127,11 +135,22 @@ module MagNav
     - `Flt1005_train.h5`
     - `Flt1006_train.h5`
     - `Flt1007_train.h5`
+
+    **Arguments:**
+    - `f`: (optional) name of data file (`_train` & `.h5` extension optional)
+
+    **Returns:**
+    - `p`: path of folder or `f` data file
     """
-    sgl_2020_train() = joinpath(artifact"sgl_2020_train","sgl_2020_train")
+    function sgl_2020_train(f = "")
+        p = joinpath(artifact"sgl_2020_train","sgl_2020_train")
+        d = remove_extension("$f","_train")
+        !isempty(d) && (p = joinpath(p,add_extension(d,"_train.h5")))
+        return (p)
+    end # function sgl_2020_train
 
     """
-        sgl_2021_train()
+        sgl_2021_train(f::Union{String,Symbol} = "")
 
     Flight data from the 2021 SGL flight data collection - training portion.
     Collected from 13-Dec-2021 to 05-Jan-2022 near Ottawa, Ontario, Canada by
@@ -146,8 +165,19 @@ module MagNav
     - `Flt2015_train.h5`
     - `Flt2016_train.h5`
     - `Flt2017_train.h5`
+
+    **Arguments:**
+    - `f`: (optional) name of data file (`_train` & `.h5` extension optional)
+
+    **Returns:**
+    - `p`: path of folder or `f` data file
     """
-    sgl_2021_train() = joinpath(artifact"sgl_2021_train","sgl_2021_train")
+    function sgl_2021_train(f = "")
+        p = joinpath(artifact"sgl_2021_train","sgl_2021_train")
+        d = remove_extension("$f","_train")
+        !isempty(d) && (p = joinpath(p,add_extension(d,"_train.h5")))
+        return (p)
+    end # function sgl_2021_train
 
     """
         const emag2
@@ -183,7 +213,7 @@ module MagNav
     const namad = joinpath(artifact"NAMAD_305","NAMAD_305.h5")
 
     """
-        ottawa_area_maps()
+        ottawa_area_maps(f::Union{String,Symbol} = "")
 
     Magnetic anomaly maps near Ottawa, Ontario, Canada, contains:
     - `Eastern_395.h5`:   Eastern Ontario at 395 m HAE
@@ -200,17 +230,39 @@ module MagNav
     for more accurate and consistent upward continuation of the maps. Use the
     `map_check` function with the desired map and flight path data to check if
     the map may be used without navigating into filled-in (artificial) areas.
+
+    **Arguments:**
+    - `f`: (optional) name of data file (`.h5` extension optional)
+
+    **Returns:**
+    - `p`: path of folder or `f` data file
     """
-    ottawa_area_maps() = joinpath(artifact"ottawa_area_maps","ottawa_area_maps")
+    function ottawa_area_maps(f = "")
+        p = joinpath(artifact"ottawa_area_maps","ottawa_area_maps")
+        d = "$f"
+        !isempty(d) && (p = joinpath(p,add_extension(d,".h5")))
+        return (p)
+    end # function ottawa_area_maps
 
     """
-        ottawa_area_maps_gxf()
+        ottawa_area_maps_gxf(f::Union{String,Symbol} = "")
 
     GXF versions of small magnetic anomaly maps near Ottawa, Ontario, Canada, contains:
     - `HighAlt_Mag.gxf`: High Altitude mini-survey (within Renfrew) at 5181 m HAE
     - `Perth_Mag.gxf`:   Perth mini-survey (within Eastern Ontario) at 800 m HAE
+
+    **Arguments:**
+    - `f`: (optional) name of data file (`_Mag` & `.gxf` extension optional)
+
+    **Returns:**
+    - `p`: path of folder or `f` data file
     """
-    ottawa_area_maps_gxf() = joinpath(artifact"ottawa_area_maps_gxf","ottawa_area_maps_gxf")
+    function ottawa_area_maps_gxf(f = "")
+        p = joinpath(artifact"ottawa_area_maps_gxf","ottawa_area_maps_gxf")
+        d = remove_extension("$f","_Mag")
+        !isempty(d) && (p = joinpath(p,add_extension(d,"_Mag.gxf")))
+        return (p)
+    end # function ottawa_area_maps_gxf
 
     """
         Map{T2 <: AbstractFloat}
@@ -1307,11 +1359,11 @@ module MagNav
     linreg,get_x,get_y,get_Axy,get_nn_m,sparse_group_lasso,
     chunk_data,predict_rnn_full,predict_rnn_windowed,krr_fit,krr_test,
     project_body_field_to_2d_igrf,get_optimal_rotation_matrix,
-    get_days_in_year,filter_events!,filter_events,
+    filter_events!,filter_events,
     TL_vec2mat,TL_mat2vec,plsr_fit,elasticnet_fit,linear_fit,linear_test,
     create_mag_c,corrupt_mag,
     eval_results,eval_crlb,eval_ins,
-    map_expand,downward_L,psd,
+    downward_L,psd,
     map_get_gxf,map_correct_igrf!,map_correct_igrf,map_chessboard!,
     map_chessboard,map_utm2lla!,map_utm2lla,map_resample,get_step,
     create_P0,create_Qd,get_pinson,fogm,
@@ -1338,7 +1390,7 @@ module MagNav
     get_XYZ20,get_XYZ21,get_XYZ,get_xyz,get_XYZ0,get_XYZ1,
     get_flux,get_magv,get_MagV,get_traj,get_Traj,get_ins,get_INS,
     map2kmz,path2kml,
-    upward_fft,vector_fft,
+    upward_fft,vector_fft,map_expand,
     map_interpolate,map_itp,map_trim,map_fill!,map_fill,map_gxf2h5,
     plot_map!,plot_map,plot_path!,plot_path,plot_events!,plot_events,
     map_check,get_map_val,get_cached_map,map_border,map_combine,
@@ -1347,31 +1399,5 @@ module MagNav
     nekf,nekf_train,
     create_TL_A,create_TL_coef,
     xyz2h5
-
-    # #* note: tried various combinations of function calls, always worse
-    # @setup_workload begin
-    #     map_map  = ones(3,3)
-    #     map_xx   = map_yy = [0.1:0.1:0.3;]
-    #     map_alt  = 1000.0
-    #     map_mask = map_params(map_map,map_xx,map_yy)[2]
-    #     mapS = MapS("Map",map_map,map_xx,map_yy,map_alt,map_mask)
-    #     xyz  = create_XYZ0(mapS;alt=mapS.alt,t=5,N_waves=0,silent=true)
-    #     @compile_workload begin
-    #         itp_mapS = map_itp(mapS)
-    #         ind      = get_ind(xyz)
-    #         terms    = [:permanent3,:induced3]
-    #         TL_coef  = create_TL_coef(xyz.flux_a,xyz.mag_1_c;terms=terms)
-    #         for model_type in [:m1,:m2c,:m3v]
-    #             comp_params = NNCompParams(model_type = model_type,
-    #                                        terms      = terms,
-    #                                        terms_A    = terms,
-    #                                        TL_coef    = TL_coef,
-    #                                        epoch_adam = 1,
-    #                                        batchsize  = 5)
-    #             comp_train_test(comp_params,xyz,xyz,ind,ind;silent=true)
-    #         end
-    #         ekf(xyz.ins,xyz.mag_1_c,itp_mapS;R=2.0)
-    #     end
-    # end
 
 end # module MagNav

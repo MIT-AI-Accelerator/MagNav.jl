@@ -49,21 +49,11 @@ matopen(test_data_map_drpS,"w") do file
     write(file,"map_data",map_data_drpS)
 end
 
-data_dir         = MagNav.ottawa_area_maps()
-Eastern_395_h5   = data_dir*"/Eastern_395.h5"
-Eastern_drape_h5 = data_dir*"/Eastern_drape.h5"
-Renfrew_395_h5   = data_dir*"/Renfrew_395.h5"
-Renfrew_555_h5   = data_dir*"/Renfrew_555.h5"
-Renfrew_drape_h5 = data_dir*"/Renfrew_drape.h5"
-HighAlt_5181_h5  = data_dir*"/HighAlt_5181.h5"
-Perth_800_h5     = data_dir*"/Perth_800.h5"
-
 # emag2, emm720, & namad all tested elsewhere
-map_files = [test_data_map,test_data_map_drpS,
-             Eastern_395_h5,Eastern_drape_h5,
-             Renfrew_395_h5,Renfrew_555_h5,Renfrew_drape_h5,
-             HighAlt_5181_h5,Perth_800_h5]
-map_names = [:map_1,:map_2,:map_3,:map_4,:map_5,:map_6,:map_7,:map_8,:map_9]
+map_names = [:test_data_map,:test_data_map_drpS,:Eastern_395,:Eastern_drape,
+             :Renfrew_395,:Renfrew_555,:Renfrew_drape,:HighAlt_5181,:Perth_800]
+map_files = [test_data_map;test_data_map_drpS;
+             MagNav.ottawa_area_maps.(map_names[3:end])]
 df_map    = DataFrame(map_file=map_files,map_name=map_names)
 
 mapV   = MagNav.MapV(map_info,map_map,map_map,map_map,map_xx,map_yy,map_alt,map_mask)
@@ -85,13 +75,17 @@ rm(map_csv_dir;force=true,recursive=true)
 mkdir(map_csv_dir)
 
 for f in ["map","alt","xx","yy"]
-    writedlm("$map_csv_dir/$f.csv",map_data[f],',')
+    writedlm(joinpath(map_csv_dir,"$f.csv"),map_data[f],',')
 end
 
 map_h5 = MagNav.add_extension(map_h5,".h5")
 
 @testset "get_map tests" begin
     @test get_map(map_csv_dir) isa MagNav.MapS
+    writedlm(joinpath(map_csv_dir,"mapX.csv"),map_data["map"],',')
+    writedlm(joinpath(map_csv_dir,"mapY.csv"),map_data["map"],',')
+    writedlm(joinpath(map_csv_dir,"mapZ.csv"),map_data["map"],',')
+    @test get_map(map_csv_dir) isa MagNav.MapV
     @test get_map(map_h5) isa MagNav.MapS3D
     for map_file in map_files
         println(map_file)

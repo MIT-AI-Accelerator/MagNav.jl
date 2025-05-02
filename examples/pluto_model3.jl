@@ -20,7 +20,7 @@ end;
 
 # ╔═╡ e289486a-57ed-4eeb-9ec9-6500f0bc563b
 md"# Model 3 Training & Explainability
-This file is best viewed in a [Pluto](https://plutojl.org/) notebook. To run it this way, from the MagNav.jl directory, do:
+This file is best viewed in a [Pluto](https://plutojl.org/) notebook. To do so, from the MagNav.jl directory, run:
 ```julia
 julia> using Pluto
 julia> Pluto.run() # select & open notebook

@@ -19,8 +19,8 @@ begin
 end;
 
 # ╔═╡ 13ac32f0-3d77-11ee-3009-e70e93e2e71b
-md"# Using the MagNav Package with Real SGL Flight Data
-This file is best viewed in a [Pluto](https://plutojl.org/) notebook. To run it this way, from the MagNav.jl directory, do:
+md"# Using MagNav.jl with Real SGL Flight Data
+This file is best viewed in a [Pluto](https://plutojl.org/) notebook. To do so, from the MagNav.jl directory, run:
 ```julia
 julia> using Pluto
 julia> Pluto.run() # select & open notebook
