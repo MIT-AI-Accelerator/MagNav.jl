@@ -103,17 +103,28 @@ module MagNav
     const silent_debug = true
 
     """
-        sgl_fields()
+        sgl_fields(f::Union{String,Symbol} = "")
 
     Data fields in SGL flight data collections, contains:
     - `fields_sgl_2020.csv`
     - `fields_sgl_2021.csv`
     - `fields_sgl_160.csv`
+
+    **Arguments:**
+    - `f`: (optional) name of data file (`.csv` extension optional)
+
+    **Returns:**
+    - `p`: path of folder or `f` data file
     """
-    sgl_fields() = joinpath(artifact"sgl_fields","sgl_fields")
+    function sgl_fields(f = "")
+        p = joinpath(artifact"sgl_fields","sgl_fields")
+        d = "$f"
+        !isempty(d) && (p = joinpath(p,add_extension(d,".csv")))
+        return (p)
+    end # function sgl_fields
 
     """
-        sgl_2020_train()
+        sgl_2020_train(f::Union{String,Symbol} = "")
 
     Flight data from the 2020 SGL flight data collection - training portion.
     Collected from 20-Jun-2020 to 07-Jul-2020 near Ottawa, Ontario, Canada by
@@ -124,11 +135,22 @@ module MagNav
     - `Flt1005_train.h5`
     - `Flt1006_train.h5`
     - `Flt1007_train.h5`
+
+    **Arguments:**
+    - `f`: (optional) name of data file (`_train` & `.h5` extension optional)
+
+    **Returns:**
+    - `p`: path of folder or `f` data file
     """
-    sgl_2020_train() = joinpath(artifact"sgl_2020_train","sgl_2020_train")
+    function sgl_2020_train(f = "")
+        p = joinpath(artifact"sgl_2020_train","sgl_2020_train")
+        d = remove_extension("$f","_train")
+        !isempty(d) && (p = joinpath(p,add_extension(d,"_train.h5")))
+        return (p)
+    end # function sgl_2020_train
 
     """
-        sgl_2021_train()
+        sgl_2021_train(f::Union{String,Symbol} = "")
 
     Flight data from the 2021 SGL flight data collection - training portion.
     Collected from 13-Dec-2021 to 05-Jan-2022 near Ottawa, Ontario, Canada by
@@ -143,8 +165,19 @@ module MagNav
     - `Flt2015_train.h5`
     - `Flt2016_train.h5`
     - `Flt2017_train.h5`
+
+    **Arguments:**
+    - `f`: (optional) name of data file (`_train` & `.h5` extension optional)
+
+    **Returns:**
+    - `p`: path of folder or `f` data file
     """
-    sgl_2021_train() = joinpath(artifact"sgl_2021_train","sgl_2021_train")
+    function sgl_2021_train(f = "")
+        p = joinpath(artifact"sgl_2021_train","sgl_2021_train")
+        d = remove_extension("$f","_train")
+        !isempty(d) && (p = joinpath(p,add_extension(d,"_train.h5")))
+        return (p)
+    end # function sgl_2021_train
 
     """
         const emag2
@@ -180,7 +213,7 @@ module MagNav
     const namad = joinpath(artifact"NAMAD_305","NAMAD_305.h5")
 
     """
-        ottawa_area_maps()
+        ottawa_area_maps(f::Union{String,Symbol} = "")
 
     Magnetic anomaly maps near Ottawa, Ontario, Canada, contains:
     - `Eastern_395.h5`:   Eastern Ontario at 395 m HAE
@@ -197,17 +230,39 @@ module MagNav
     for more accurate and consistent upward continuation of the maps. Use the
     `map_check` function with the desired map and flight path data to check if
     the map may be used without navigating into filled-in (artificial) areas.
+
+    **Arguments:**
+    - `f`: (optional) name of data file (`.h5` extension optional)
+
+    **Returns:**
+    - `p`: path of folder or `f` data file
     """
-    ottawa_area_maps() = joinpath(artifact"ottawa_area_maps","ottawa_area_maps")
+    function ottawa_area_maps(f = "")
+        p = joinpath(artifact"ottawa_area_maps","ottawa_area_maps")
+        d = "$f"
+        !isempty(d) && (p = joinpath(p,add_extension(d,".h5")))
+        return (p)
+    end # function ottawa_area_maps
 
     """
-        ottawa_area_maps_gxf()
+        ottawa_area_maps_gxf(f::Union{String,Symbol} = "")
 
     GXF versions of small magnetic anomaly maps near Ottawa, Ontario, Canada, contains:
     - `HighAlt_Mag.gxf`: High Altitude mini-survey (within Renfrew) at 5181 m HAE
     - `Perth_Mag.gxf`:   Perth mini-survey (within Eastern Ontario) at 800 m HAE
+
+    **Arguments:**
+    - `f`: (optional) name of data file (`_Mag` & `.gxf` extension optional)
+
+    **Returns:**
+    - `p`: path of folder or `f` data file
     """
-    ottawa_area_maps_gxf() = joinpath(artifact"ottawa_area_maps_gxf","ottawa_area_maps_gxf")
+    function ottawa_area_maps_gxf(f = "")
+        p = joinpath(artifact"ottawa_area_maps_gxf","ottawa_area_maps_gxf")
+        d = remove_extension("$f","_Mag")
+        !isempty(d) && (p = joinpath(p,add_extension(d,"_Mag.gxf")))
+        return (p)
+    end # function ottawa_area_maps_gxf
 
     """
         Map{T2 <: AbstractFloat}

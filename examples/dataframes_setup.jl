@@ -15,10 +15,10 @@ df_flight[!,:xyz_file] = String.(df_flight[!,:xyz_file])
 #* and make sure the file locations match up with the xyz_file column
 for (i,flight) in enumerate(df_flight.flight)
     if df_flight.xyz_type[i] == :XYZ20
-        df_flight.xyz_file[i] = MagNav.sgl_2020_train()*"/$(flight)_train.h5"
+        df_flight.xyz_file[i] = MagNav.sgl_2020_train(flight)
     end
     if df_flight.xyz_type[i] == :XYZ21
-        df_flight.xyz_file[i] = MagNav.sgl_2021_train()*"/$(flight)_train.h5"
+        df_flight.xyz_file[i] = MagNav.sgl_2021_train(flight)
     end
 end
 
@@ -30,7 +30,7 @@ df_map[!,:map_file] = String.(df_map[!,:map_file])
 #* to store/load the maps locally, uncomment the for loop below
 #* and make sure the file locations match up with the map_file column
 for (i,map_name) in enumerate(df_map.map_name)
-    df_map.map_file[i] = MagNav.ottawa_area_maps()*"/$map_name.h5"
+    df_map.map_file[i] = MagNav.ottawa_area_maps(map_name)
 end
 
 ## all flight lines

@@ -52,7 +52,7 @@ This is the Perth map (at 800 m) as provided by Sander Geophysics Ltd.
 
 # ╔═╡ bf9f72f0-c351-48d3-a811-418ee965073c
 begin
-	map_gxf = MagNav.ottawa_area_maps_gxf()*"/Perth_Mag.gxf"
+	map_gxf = MagNav.ottawa_area_maps_gxf(:Perth)
 	p_mapS_800 = map_gxf2h5(map_gxf,800)
 	p1 = plot_map(p_mapS_800)
 end

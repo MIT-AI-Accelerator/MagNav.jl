@@ -541,9 +541,9 @@ Internal helper function to get field names for given SGL flight.
 function xyz_fields(flight::Symbol)
 
     # get csv files containing fields from sgl_flight_data_fields artifact
-    fields20  = sgl_fields()*"/fields_sgl_2020.csv"
-    fields21  = sgl_fields()*"/fields_sgl_2021.csv"
-    fields160 = sgl_fields()*"/fields_sgl_160.csv"
+    fields20  = sgl_fields(:fields_sgl_2020)
+    fields21  = sgl_fields(:fields_sgl_2021)
+    fields160 = sgl_fields(:fields_sgl_160)
 
     d = Dict{Symbol,Vector{Symbol}}()
     push!(d, :fields20  => Symbol.(vec(readdlm(fields20 ,','))))
