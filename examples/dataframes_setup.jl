@@ -1,4 +1,5 @@
 ## setup DataFrames for use with examples
+using CSV, DataFrames, MagNav
 
 ## SGL calibration flight lines
 df_cal = DataFrame(CSV.File("dataframes/df_cal.csv"))

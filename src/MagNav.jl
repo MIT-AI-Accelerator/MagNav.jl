@@ -3,12 +3,12 @@ module MagNav
     using LinearAlgebra, Plots, TOML, ZipFile, Zygote
     using BSON: bson, load
     using Compat: @compat
-    using DataFrames: DataFrame, combine, groupby, order, sort
-    using DelimitedFiles: readdlm, writedlm
-    using Distributions: MvNormal, Normal, Uniform
     using DSP: Bandpass, Butterworth, Highpass, Lowpass
     using DSP: digitalfilter, fft, fftfreq, filtfilt, hamming, ifft
     using DSP: pow2db, rms, spectrogram, welch_pgram
+    using DataFrames: DataFrame, combine, groupby, order, sort
+    using DelimitedFiles: readdlm, writedlm
+    using Distributions: MvNormal, Normal, Uniform
     using ExponentialUtilities: exponential!
     using Flux: @layer, Adam, Chain, DataLoader, Dense
     using Flux: destructure, flatten, huber_loss, mae, mse, trainables
@@ -1308,7 +1308,7 @@ module MagNav
     TL_vec2mat,TL_mat2vec,plsr_fit,elasticnet_fit,linear_fit,linear_test,
     create_mag_c,corrupt_mag,
     eval_results,eval_crlb,eval_ins,
-    map_expand,downward_L,psd,
+    downward_L,psd,
     map_get_gxf,map_correct_igrf!,map_correct_igrf,map_chessboard!,
     map_chessboard,map_utm2lla!,map_utm2lla,map_resample,get_step,
     create_P0,create_Qd,get_pinson,fogm,
@@ -1335,7 +1335,7 @@ module MagNav
     get_XYZ20,get_XYZ21,get_XYZ,get_xyz,get_XYZ0,get_XYZ1,
     get_flux,get_magv,get_MagV,get_traj,get_Traj,get_ins,get_INS,
     map2kmz,path2kml,
-    upward_fft,vector_fft,
+    upward_fft,vector_fft,map_expand,
     map_interpolate,map_itp,map_trim,map_fill!,map_fill,map_gxf2h5,
     plot_map!,plot_map,plot_path!,plot_path,plot_events!,plot_events,
     map_check,get_map_val,get_cached_map,map_border,map_combine,
