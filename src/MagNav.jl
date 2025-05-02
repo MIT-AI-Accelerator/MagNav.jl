@@ -18,7 +18,6 @@ module MagNav
     using Interpolations: BSpline, BSplineInterpolation, Cubic, Line
     using Interpolations: Linear, OnGrid, Quadratic, ScaledInterpolation
     using Interpolations: interpolate, linear_interpolation, scale
-    using IterTools: ncycle
     using KernelFunctions: Kernel, PolynomialKernel, kernelmatrix
     using MAT: matopen
     using MLJLinearModels: ElasticNetRegression, fit
@@ -27,9 +26,7 @@ module MagNav
     using Parameters: @unpack, @with_kw
     using Pkg.Artifacts: @artifact_str
     using Plots: Plot, annotate!, contourf!, heatmap, mm, plot, plot!, scatter
-    using PrecompileTools
     using Random: rand, randn, randperm, seed!, shuffle
-    using RecipesBase: @recipe
     using SatelliteToolboxGeomagneticField: igrf, igrfd
     using ShapML: shap
     using SpecialFunctions: gamma, gamma_inc, gamma_inc_inv
@@ -1347,31 +1344,5 @@ module MagNav
     nekf,nekf_train,
     create_TL_A,create_TL_coef,
     xyz2h5
-
-    # #* note: tried various combinations of function calls, always worse
-    # @setup_workload begin
-    #     map_map  = ones(3,3)
-    #     map_xx   = map_yy = [0.1:0.1:0.3;]
-    #     map_alt  = 1000.0
-    #     map_mask = map_params(map_map,map_xx,map_yy)[2]
-    #     mapS = MapS("Map",map_map,map_xx,map_yy,map_alt,map_mask)
-    #     xyz  = create_XYZ0(mapS;alt=mapS.alt,t=5,N_waves=0,silent=true)
-    #     @compile_workload begin
-    #         itp_mapS = map_itp(mapS)
-    #         ind      = get_ind(xyz)
-    #         terms    = [:permanent3,:induced3]
-    #         TL_coef  = create_TL_coef(xyz.flux_a,xyz.mag_1_c;terms=terms)
-    #         for model_type in [:m1,:m2c,:m3v]
-    #             comp_params = NNCompParams(model_type = model_type,
-    #                                        terms      = terms,
-    #                                        terms_A    = terms,
-    #                                        TL_coef    = TL_coef,
-    #                                        epoch_adam = 1,
-    #                                        batchsize  = 5)
-    #             comp_train_test(comp_params,xyz,xyz,ind,ind;silent=true)
-    #         end
-    #         ekf(xyz.ins,xyz.mag_1_c,itp_mapS;R=2.0)
-    #     end
-    # end
 
 end # module MagNav
