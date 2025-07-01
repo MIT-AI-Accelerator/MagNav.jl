@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.8
+# v0.20.13
 
 using Markdown
 using InteractiveUtils
@@ -165,8 +165,8 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 [compat]
 CSV = "~0.10.15"
 DataFrames = "~1.7.0"
-MagNav = "~1.3.1"
-Plots = "~1.40.13"
+MagNav = "~1.3.2"
+Plots = "~1.40.14"
 Random = "~1.11.0"
 Statistics = "~1.11.1"
 """
