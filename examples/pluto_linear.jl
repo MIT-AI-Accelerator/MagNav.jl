@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.8
+# v0.20.13
 
 using Markdown
 using InteractiveUtils
@@ -254,6 +254,7 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MagNav = "f91b31a4-be4d-40e3-b767-4b8c09c10076"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -262,8 +263,9 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 [compat]
 CSV = "~0.10.15"
 DataFrames = "~1.7.0"
-MagNav = "~1.3.1"
-Plots = "~1.40.13"
+LinearAlgebra = "~1.11.0"
+MagNav = "~1.3.3"
+Plots = "~1.40.14"
 Random = "~1.11.0"
 Statistics = "~1.11.1"
 """

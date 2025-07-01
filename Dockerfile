@@ -13,7 +13,8 @@ FROM jupyter/julia-notebook:latest
 
 # Add packages & precompile
 RUN julia -e 'import Pkg; Pkg.update(); \
-    Pkg.add(["MagNav","CSV","DataFrames","Plots"]); \
+    Pkg.add(["LinearAlgebra","Random","Statistics"]); \
+    Pkg.add(["CSV","DataFrames","MagNav","Plots"]); \
     Pkg.precompile();'
 
 # Download examples

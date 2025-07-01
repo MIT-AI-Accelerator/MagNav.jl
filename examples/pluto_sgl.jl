@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.8
+# v0.20.13
 
 using Markdown
 using InteractiveUtils
@@ -359,7 +359,7 @@ begin
 	plot!(p7,tt,mag_4_uc,lab="mag_4_uc")
 	plot!(p7,tt,mag_5_uc,lab="mag_5_uc")
 	plot_events!(p7,flight,df_event;t0=t0,t_units=:min)
-    display(p7)
+	p7
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -375,8 +375,8 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 [compat]
 CSV = "~0.10.15"
 DataFrames = "~1.7.0"
-MagNav = "~1.3.1"
-Plots = "~1.40.13"
+MagNav = "~1.3.3"
+Plots = "~1.40.14"
 Random = "~1.11.0"
 Statistics = "~1.11.1"
 """

@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.8
+# v0.20.13
 
 using Markdown
 using InteractiveUtils
@@ -122,6 +122,22 @@ begin
 	p2
 end
 
+# ╔═╡ 39bdbe6a-52ae-44d2-8e80-2e7d2a75e322
+begin
+    using MagNav: get_step
+	(map_map,px,py) = map_expand(e_mapS_395.map,200)
+	px_end    = size(map_map,2) - length(e_mapS_395.xx) - px
+	py_end    = size(map_map,1) - length(e_mapS_395.yy) - py
+	dx        = get_step(e_mapS_395.xx)
+	dy        = get_step(e_mapS_395.yy)
+	xx        = [(e_mapS_395.xx[1]-dx*px):dx:(e_mapS_395.xx[end]+dx*px_end);]
+	yy        = [(e_mapS_395.yy[1]-dy*py):dy:(e_mapS_395.yy[end]+dy*py_end);]
+	(lat,lon) = map_border(e_mapS_395;sort_border=true) # get map border
+	p5 = plot_map(map_map,xx,yy;dpi=dpi)
+	plot_path!(p5,lat,lon;path_color=:black)
+	p5
+end
+
 # ╔═╡ 2d18bbeb-ad4e-4c5b-80a3-25bd99f45c73
 md"## Plot Eastern Ontario altitude map CDF
 
@@ -160,22 +176,6 @@ md"## Plot expanded Eastern Ontario map
 
 The original map area is show with a black outline. During upward (or downward) continuation, the map is temporarily expanded with \"wrapped\" edges for a more accurate result.
 "
-
-# ╔═╡ 39bdbe6a-52ae-44d2-8e80-2e7d2a75e322
-begin
-    using MagNav: get_step
-	(map_map,px,py) = map_expand(e_mapS_395.map,200)
-	px_end    = size(map_map,2) - length(e_mapS_395.xx) - px
-	py_end    = size(map_map,1) - length(e_mapS_395.yy) - py
-	dx        = get_step(e_mapS_395.xx)
-	dy        = get_step(e_mapS_395.yy)
-	xx        = [(e_mapS_395.xx[1]-dx*px):dx:(e_mapS_395.xx[end]+dx*px_end);]
-	yy        = [(e_mapS_395.yy[1]-dy*py):dy:(e_mapS_395.yy[end]+dy*py_end);]
-	(lat,lon) = map_border(e_mapS_395;sort_border=true) # get map border
-	p5 = plot_map(map_map,xx,yy;dpi=dpi)
-	plot_path!(p5,lat,lon;path_color=:black)
-	p5
-end
 
 # ╔═╡ 8b5c030a-e0b9-4a7a-a901-a6967edbe70b
 md"## Plot combined Eastern Ontario and NAMAD maps together
@@ -273,8 +273,8 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 [compat]
 CSV = "~0.10.15"
 DataFrames = "~1.7.0"
-MagNav = "~1.3.1"
-Plots = "~1.40.13"
+MagNav = "~1.3.3"
+Plots = "~1.40.14"
 Random = "~1.11.0"
 Statistics = "~1.11.1"
 """
