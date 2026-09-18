@@ -4,7 +4,7 @@
 [![Codecov](https://codecov.io/gh/MIT-AI-Accelerator/MagNav.jl/graph/badge.svg)](https://app.codecov.io/gh/MIT-AI-Accelerator/MagNav.jl)
 [![docs-stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://mit-ai-accelerator.github.io/MagNav.jl/stable/)
 
-MagNav.jl contains a full suite of tools for airborne **Mag**netic anomaly **Nav**igation (MagNav), including flight path & INS data import or simulation, mapping, aeromagnetic compensation, and navigation. The package has been tested on the long-term support (LTS) and latest stable versions of Julia, which may be downloaded from [here](https://julialang.org/downloads/). The recommended IDE for Julia is [Visual Studio Code](https://code.visualstudio.com/) (with the Julia extension).
+MagNav.jl contains a full suite of tools for airborne **Mag**netic anomaly **Nav**igation (MagNav), including flight path & INS data import or simulation, mapping, aeromagnetic compensation, and navigation. The package has been tested on the long-term support (LTS) and ~~latest stable versions~~ v1.12 of Julia, which may be downloaded from [here](https://julialang.org/downloads/). The recommended IDE for Julia is [Visual Studio Code](https://code.visualstudio.com/) (with the Julia extension).
 
 **Note:** This package was developed as part of the [DAF-MIT Artificial Intelligence Accelerator](https://aia.mit.edu/), and this specific project has concluded. Only minimal changes will be made moving forward for package maintenance.
 
