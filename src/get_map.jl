@@ -79,8 +79,8 @@ function get_map(map_file::String   = namad,
         map_alt = map_data["alt"]
 
         # these fields might not be included
-        map_info = haskey(map_data,"info") ? d["info"] : map_info
-        map_mask = haskey(map_data,"mask") ? d["mask"] : map_mask
+        map_info = haskey(map_data,"info") ? map_data["info"] : map_info
+        map_mask = haskey(map_data,"mask") ? map_data["mask"] : map_mask
 
     else # get data from CSV files
 
