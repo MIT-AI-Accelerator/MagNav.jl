@@ -1700,7 +1700,7 @@ function get_ind(xyz::XYZ, line::Real, df_line::DataFrame;
     tt_lim = [df_line.t_start[df_line.line .== line][1],
               df_line.t_end[  df_line.line .== line][end]]
     fields = fieldnames(typeof(xyz))
-    line_  = :line in fields ? xyz.line : one.(xyz.traj.tt[ind])
+    line_  = :line in fields ? xyz.line : one.(xyz.traj.tt)
     inds   = get_ind(xyz.traj.tt,line_;
                      lines  = [line],
                      tt_lim = tt_lim,
