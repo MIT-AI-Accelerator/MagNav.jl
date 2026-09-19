@@ -140,9 +140,17 @@ comp_params_list = [comp_params_1,
                     comp_params_3s_perm]
 
 if pkgversion(ForwardDiff) < v"1"
-    comp_csv = joinpath(@__DIR__,"test_data","comp_err.csv")
+    if VERSION.minor < 13
+        comp_csv = joinpath(@__DIR__,"test_data","comp_err.csv")
+    else
+        comp_csv = joinpath(@__DIR__,"test_data","comp_err_Julia13.csv")
+    end
 else
-    comp_csv = joinpath(@__DIR__,"test_data","comp_err_ForwardDiffv1.csv")
+    if VERSION.minor < 13
+        comp_csv = joinpath(@__DIR__,"test_data","comp_err_ForwardDiffv1.csv")
+    else
+        comp_csv = joinpath(@__DIR__,"test_data","comp_err_ForwardDiffv1_Julia13.csv")
+    end
 end
 
 if generate
