@@ -1,5 +1,5 @@
 using MagNav, Test, MAT
-using DataFrames, Flux, Statistics, Zygote
+using DataFrames, Flux, ForwardDiff, Statistics, Zygote
 using DelimitedFiles: readdlm, writedlm
 
 generate = false       # to generate comp_csv
