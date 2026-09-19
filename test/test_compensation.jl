@@ -1,5 +1,5 @@
 using MagNav, Test, MAT
-using DataFrames, Flux, Statistics, Zygote
+using DataFrames, Flux, ForwardDiff, Statistics, Zygote
 using DelimitedFiles: readdlm, writedlm
 
 generate = false       # to generate comp_csv
@@ -139,7 +139,11 @@ comp_params_list = [comp_params_1,
                     comp_params_3s_drop,
                     comp_params_3s_perm]
 
-comp_csv = joinpath(@__DIR__,"test_data","comp_err.csv")
+if pkgversion(ForwardDiff) < v"1"
+    comp_csv = joinpath(@__DIR__,"test_data","comp_err.csv")
+else
+    comp_csv = joinpath(@__DIR__,"test_data","comp_err_ForwardDiffv1.csv")
+end
 
 if generate
     comp_err = zeros(Float32,length(comp_params_list),2)
