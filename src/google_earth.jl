@@ -47,7 +47,7 @@ function map2kmz(map_map::Matrix, map_xx::Vector, map_yy::Vector,
     map_name  = remove_extension(map_kmz,".kmz")
     map_kml   = map_name*".kml"
     map_png   = map_name*".png"
-    map_trans = string(round(Int,opacity*255),base=16)*"ffffff" # ABGR
+    map_trans = string(round(Int,opacity*255),base=16,pad=2)*"ffffff" # ABGR
 
     p1  = plot_map(map_map;
                    clims     = clims,
