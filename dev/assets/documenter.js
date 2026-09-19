@@ -10,15 +10,15 @@ requirejs.config({
     'highlight-julia-repl': 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/julia-repl.min',
   },
   shim: {
+  "highlight-julia": {
+    "deps": [
+      "highlight"
+    ]
+  },
   "headroom-jquery": {
     "deps": [
       "jquery",
       "headroom"
-    ]
-  },
-  "highlight-julia": {
-    "deps": [
-      "highlight"
     ]
   },
   "highlight-julia-repl": {
@@ -26,15 +26,19 @@ requirejs.config({
       "highlight"
     ]
   }
-}});
+}
+});
 ////////////////////////////////////////////////////////////////////////////////
 require([], function() {
 window.MathJax = {
-  "options": {
-    "ignoreHtmlClass": "tex2jax_ignore",
-    "processHtmlClass": "tex2jax_process"
-  },
   "tex": {
+    "tags": "ams",
+    "packages": [
+      "base",
+      "ams",
+      "autoload",
+      "mhchem"
+    ],
     "inlineMath": [
       [
         "$",
@@ -44,16 +48,14 @@ window.MathJax = {
         "\\(",
         "\\)"
       ]
-    ],
-    "packages": [
-      "base",
-      "ams",
-      "autoload",
-      "mhchem"
-    ],
-    "tags": "ams"
+    ]
+  },
+  "options": {
+    "processHtmlClass": "tex2jax_process",
+    "ignoreHtmlClass": "tex2jax_ignore"
   }
-};
+}
+;
 
 (function () {
     var script = document.createElement('script');
