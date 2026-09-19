@@ -71,7 +71,7 @@ function nn_comp_1_train(x, y, no_norm = falses(size(x,2));
             end
             (_,S,V) = svd(cov(x_norm))
             v_scale = V[:,1:k_pca]*inv(Diagonal(sqrt.(S[1:k_pca])))
-            var_ret = round(sum(sqrt.(S[1:k_pca]))/sum(sqrt.(S))*100,digits=6)
+            var_ret = round(sum(S[1:k_pca])/sum(S)*100,digits=6)
             silent || @info("k_pca = $k_pca of $Nf, variance retained: $var_ret %")
         else
             v_scale = I(Nf)
@@ -395,7 +395,7 @@ function nn_comp_2_train(A, x, y, no_norm = falses(size(x,2));
             end
             (_,S,V) = svd(cov(x_norm))
             v_scale = V[:,1:k_pca]*inv(Diagonal(sqrt.(S[1:k_pca])))
-            var_ret = round(sum(sqrt.(S[1:k_pca]))/sum(sqrt.(S))*100,digits=6)
+            var_ret = round(sum(S[1:k_pca])/sum(S)*100,digits=6)
             silent || @info("k_pca = $k_pca of $Nf, variance retained: $var_ret %")
         else
             v_scale = I(Nf)
@@ -1191,7 +1191,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y, no_norm = falses(size(x,2));
             end
             (_,S,V) = svd(cov(x_norm))
             v_scale = V[:,1:k_pca]*inv(Diagonal(sqrt.(S[1:k_pca])))
-            var_ret = round(sum(sqrt.(S[1:k_pca]))/sum(sqrt.(S))*100,digits=6)
+            var_ret = round(sum(S[1:k_pca])/sum(S)*100,digits=6)
             silent || @info("k_pca = $k_pca of $Nf, variance retained: $var_ret %")
         else
             v_scale = I(Nf)
