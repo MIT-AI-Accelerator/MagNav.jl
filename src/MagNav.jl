@@ -22,7 +22,8 @@ module MagNav
     using MAT: matopen
     using MLJLinearModels: ElasticNetRegression, fit
     using NearestNeighbors: KDTree, knn, nn
-    using Optim: LBFGS, Options, only_fg!, optimize
+    using NLSolversBase: only_fg!
+    using Optim: LBFGS, Options, optimize
     using Parameters: @unpack, @with_kw
     using Pkg.Artifacts: @artifact_str
     using Plots: Plot, annotate!, contourf!, heatmap, mm, plot, plot!, scatter
