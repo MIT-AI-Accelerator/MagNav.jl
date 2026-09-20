@@ -149,7 +149,6 @@ function mpf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS;
         # Kalman filter mean update
         y_hat = get_h(itp_mapS,[xn;xl],lat[t],lon[t],alt[t];date=date,core=core)
         e  = repeat(meas[t,:],1,np) - repeat(y_hat',ny,1)
-        xl_temp = xl
         xl = xl + K*e                                               # eq 22a
 
         # store linear particle states
@@ -168,7 +167,7 @@ function mpf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS;
 
         # particle filter propagation                               # eq 25b
         xn_temp = xn
-        xn = An_n*xn_temp + An_l*xl_temp + chol(M)'*randn(T2,nxn,np)
+        xn = An_n*xn_temp + An_l*xl + chol(M)'*randn(T2,nxn,np)
 
         # Kalman filter mean propagation
         z  = xn - An_n*xn_temp                                      # eq 24a
