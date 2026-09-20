@@ -9,7 +9,7 @@
 # ------------------------------------------------------------------------------
 
 # Get Julia, Jupyter, & Pluto image, should use latest Julia version
-FROM jupyter/julia-notebook:latest
+FROM quay.io/jupyter/julia-notebook:latest
 
 # Add packages & precompile
 RUN julia -e 'using Pkg; \
