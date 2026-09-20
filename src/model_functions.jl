@@ -407,7 +407,7 @@ function get_pinson(nx::Int, lat, vn, ve, vd, fn, fe, fd, Cnb;
     F[6,11]  =  1
 
     F[7,1]   = -ω_earth*sin_l
-    F[7,3]   = -ve^2 / r_earth^2
+    F[7,3]   = -ve / r_earth^2
     F[7,5]   =  1 / r_earth
     F[7,8]   = -ω_earth*sin_l - ve*tan_l / r_earth
     F[7,9]   =  vn / r_earth
