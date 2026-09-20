@@ -240,16 +240,18 @@ function get_XYZ0(xyz_file::String,
     year   = convert.(eltype(traj.lat),year)
     doy    = convert.(eltype(traj.lat),doy)
 
-    ind  = tt_sort ? sortperm(traj.tt) : trues(traj.N)
-    igrf = zero.(traj.lat)
-    xyz  = XYZ0(info, traj(ind), ins(ind), flux_a(ind),
-                flight[ind], line[ind], year[ind], doy[ind],
-                diurnal[ind], igrf[ind], mag_1_c[ind], mag_1_uc[ind])
-    igrf = norm.(get_igrf(xyz;
-                          frame     = :body,
-                          norm_igrf = false,
-                          check_xyz = false))
-    xyz.igrf .= igrf
+    ind = tt_sort ? sortperm(traj.tt) : trues(traj.N)
+    xyz = XYZ0(info, traj(ind), ins(ind), flux_a(ind),
+               flight[ind], line[ind], year[ind], doy[ind],
+               diurnal[ind], igrf[ind], mag_1_c[ind], mag_1_uc[ind])
+
+    # if needed, create igrf
+    if any(isnan.(xyz.igrf))
+        xyz.igrf .= norm.(get_igrf(xyz;
+                                   frame     = :body,
+                                   norm_igrf = false,
+                                   check_xyz = false))
+    end
 
     return (xyz)
 end # function get_XYZ0
