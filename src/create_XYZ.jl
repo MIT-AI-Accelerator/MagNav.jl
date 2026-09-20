@@ -409,7 +409,7 @@ end # function create_traj
                init_pos_sigma = 3.0,
                init_alt_sigma = 0.001,
                init_vel_sigma = 0.01,
-               init_att_sigma = deg2rad(0.01),
+               init_att_sigma = deg2rad(0.00001),
                VRW_sigma      = 0.000238,
                ARW_sigma      = 0.000000581,
                baro_sigma     = 1.0,
