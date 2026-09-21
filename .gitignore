@@ -4,6 +4,7 @@
 LocalPreferences.toml
 Manifest.toml
 Overrides.toml
+settings.json
 data/
 dev/
 docs/build/
@@ -11,4 +12,3 @@ docs/src/examples/
 examples/*.html
 examples/*.md
 maps/
-settings.json
