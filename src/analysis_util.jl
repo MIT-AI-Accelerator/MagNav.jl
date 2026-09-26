@@ -1055,10 +1055,10 @@ end # function LPE
 Internal helper function to apply batch normalization across the first
 dimension of a tensor.
 
-**Arguments**
+**Arguments:**
 - `x`: data tensor (e.g., number of features, window length, mini-batch size)
 
-**Returns**
+**Returns:**
 - `x_b`: `x` with batch normalization applied across the first dimension
 """
 function batchnorm(x::AbstractArray)
@@ -2421,7 +2421,7 @@ Create a GIF animation of the model 3 components and the true and predicted
 scalar magnetic field. First run `comp_m3_test()` to generate the individual
 model components 3.
 
-**Arguments**
+**Arguments:**
 - `TL_perm`:     `3` x `N` matrix of TL permanent vector field
 - `TL_induced`:  `3` x `N` matrix of TL induced vector field
 - `TL_eddy`:     `3` x `N` matrix of TL eddy current vector field
@@ -2439,10 +2439,10 @@ model components 3.
 - `save_plot`:   (optional) if true, save `g1` as `mag_gif`
 - `mag_gif`:     (optional) path/name of magnetic field GIF file to save (`.gif` extension optional)
 
-**Returns**
+**Returns:**
 - `g1`: magnetic field GIF animation
 
-**Example**
+**Example:**
 ```julia
 gif_animation_m3(TL_perm, TL_induced, TL_eddy, TL_aircraft, B_unit,
                  y_nn, y, y_hat, xyz, filt_lat, filt_lon; ind=ind, tt_lim=(0.0,10.0),
