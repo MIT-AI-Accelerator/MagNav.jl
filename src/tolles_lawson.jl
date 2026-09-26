@@ -68,7 +68,7 @@ function create_TL_A(Bx, By, Bz;
 
     # add (3) permanent field terms - all
     if any([:permanent,:p,:permanent3,:p3] .∈ (terms,))
-    	A = [A Bx_hat By_hat Bz_hat]
+        A = [A Bx_hat By_hat Bz_hat]
     end
 
     # add (6) induced field terms - all
@@ -163,11 +163,11 @@ end # function create_TL_A
                    Bt         = sqrt.(Bx.^2+By.^2+Bz.^2),
                    λ          = 0,
                    terms      = [:permanent,:induced,:eddy],
-	               pass1      = 0.1,
+                   pass1      = 0.1,
                    pass2      = 0.9,
                    fs         = 10.0,
                    pole::Int  = 4,
-	               trim::Int  = 20,
+                   trim::Int  = 20,
                    Bt_scale   = 50000,
                    return_var = false)
 
