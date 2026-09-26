@@ -879,7 +879,7 @@ function plot_mag_map_err(path::Path, mag, itp_mapS;
     show_plot && display(p1)
     save_plot && png(p1,plot_png)
 
-	err = round(std(mag[i] - map_val),digits=2)
+    err = round(std(mag[i] - map_val),digits=2)
     @info("mag-map error standard deviation = $err nT")
 
     return (p1)

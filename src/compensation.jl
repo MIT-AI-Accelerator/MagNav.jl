@@ -1753,7 +1753,7 @@ function plsr_fit(x, y, k::Int = size(x,2), no_norm = falses(size(x,2));
                   return_set::Bool  = false,
                   silent::Bool      = false)
 
-	Nf = size(x,2)
+    Nf = size(x,2)
     Ny = size(y,2)
 
     if k > Nf
@@ -1782,8 +1782,8 @@ function plsr_fit(x, y, k::Int = size(x,2), no_norm = falses(size(x,2));
     coef_set = zeros(eltype(x),Nf,Ny,k) # Nf x Ny x k
 
     # covariance & cross-covariance matrices
-	Cxx = cov(x_norm)                   # Nf x Nf
-	Cyx = collect(cov(y_norm,x_norm))   # Ny x Nf
+    Cxx = cov(x_norm)                   # Nf x Nf
+    Cyx = collect(cov(y_norm,x_norm))   # Ny x Nf
 
     for i = 1:k
 
