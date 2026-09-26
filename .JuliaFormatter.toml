@@ -1,0 +1,5 @@
+style                     = "yas"
+margin                    = 120
+align_assignment          = true
+align_struct_field        = true
+whitespace_ops_in_indices = false

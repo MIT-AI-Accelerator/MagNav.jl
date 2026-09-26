@@ -6,16 +6,16 @@ using InteractiveUtils
 
 # ╔═╡ f799c623-3802-491b-9709-6c1a01ac3978
 begin
-	cd(@__DIR__)
-	# uncomment line below to use local MagNav.jl (downloaded folder)
-	# using Pkg; Pkg.activate("../"); Pkg.instantiate()
-	using MagNav
-	using CSV, DataFrames
-	using Plots: plot, plot!
-	using Random: seed!
-	using Statistics: mean, median, std
-	seed!(33); # for reproducibility
-	include("dataframes_setup.jl"); # setup DataFrames
+    cd(@__DIR__)
+    # uncomment line below to use local MagNav.jl (downloaded folder)
+    # using Pkg; Pkg.activate("../"); Pkg.instantiate()
+    using MagNav
+    using CSV, DataFrames
+    using Plots: plot, plot!
+    using Random: seed!
+    using Statistics: mean, median, std
+    seed!(33) # for reproducibility
+    include("dataframes_setup.jl") # setup DataFrames
 end;
 
 # ╔═╡ d9ac0df2-3d79-11ee-0869-73b7f6649d95
@@ -52,14 +52,14 @@ The built-in [NAMAD](https://mrdata.usgs.gov/magnetic/map-us.html) map is used t
 
 # ╔═╡ ff29f1c4-74ef-43cb-95be-14b5518e2cc6
 begin
-	seed!(33)  # ensure create_XYZ0() reproducibility
-	t    = 600 # flight time [s]
-	mapS = get_map(MagNav.namad) # load map data
-	xyz  = create_XYZ0(mapS;alt=mapS.alt,t=t) # create flight data
-	traj = xyz.traj # trajectory (GPS) struct
-	ins  = xyz.ins  # INS struct
-	mapS = map_trim(mapS,traj;pad=10) # trim map for given trajectory (with padding)
-	itp_mapS = map_interpolate(mapS)  # map interpolation function
+    seed!(33)  # ensure create_XYZ0() reproducibility
+    t = 600 # flight time [s]
+    mapS = get_map(MagNav.namad) # load map data
+    xyz = create_XYZ0(mapS; alt=mapS.alt, t=t) # create flight data
+    traj = xyz.traj # trajectory (GPS) struct
+    ins = xyz.ins  # INS struct
+    mapS = map_trim(mapS, traj; pad=10) # trim map for given trajectory (with padding)
+    itp_mapS = map_interpolate(mapS)  # map interpolation function
 end;
 
 # ╔═╡ a2dafd09-e9f7-4a58-b269-32fee40d602d
@@ -79,7 +79,7 @@ Create a navigation filter model.
 "
 
 # ╔═╡ 49eafe6d-120d-4e9e-8a34-2a5034f7de3f
-(P0,Qd,R) = create_model(traj.dt,traj.lat[1]);
+(P0, Qd, R) = create_model(traj.dt, traj.lat[1]);
 
 # ╔═╡ 9a092951-05fd-47c2-932d-002231135486
 md"Run the navigation filter (EKF), determine the Cramér–Rao lower bound (CRLB), & extract output data.
@@ -87,8 +87,8 @@ md"Run the navigation filter (EKF), determine the Cramér–Rao lower bound (CRL
 
 # ╔═╡ 81a1f9fd-245d-42ca-bce0-fe78a69009ac
 begin
-	mag_use = xyz.mag_1_c # selected magnetometer (using compensated mag)
-	(crlb_out,ins_out,filt_out) = run_filt(traj,ins,mag_use,itp_mapS,:ekf;P0,Qd,R)
+    mag_use = xyz.mag_1_c # selected magnetometer (using compensated mag)
+    (crlb_out, ins_out, filt_out) = run_filt(traj, ins, mag_use, itp_mapS, :ekf; P0, Qd, R)
 end;
 
 # ╔═╡ 4b40ae5b-6641-4792-89bb-dcceb553dd41
@@ -97,8 +97,8 @@ md"Plotting setup.
 
 # ╔═╡ 8f417413-6739-4c25-848f-7d47a491b89a
 begin
-	t0 = traj.tt[1]/60    # [min]
-	tt = traj.tt/60 .- t0 # [min]
+    t0 = traj.tt[1]/60    # [min]
+    tt = traj.tt/60 .- t0 # [min]
 end;
 
 # ╔═╡ dc5aa915-9037-4792-a3e1-09074431d786
@@ -107,9 +107,9 @@ md"Position (lat & lot) for trajectory (GPS), INS (after zeroing), & navigation 
 
 # ╔═╡ 363b668b-bece-4bcd-8ac4-287b3138fdee
 begin
-	p1 = plot_map(mapS;map_color=:gray); # map background
-	plot_filt!(p1,traj,ins,filt_out;show_plot=false) # overlay GPS, INS, & filter
-	plot!(p1,legend=:topleft) # move as needed
+    p1 = plot_map(mapS; map_color=:gray) # map background
+    plot_filt!(p1, traj, ins, filt_out; show_plot=false) # overlay GPS, INS, & filter
+    plot!(p1; legend=:topleft) # move as needed
 end
 
 # ╔═╡ 9f90be51-1d9b-45a0-8ef3-91c93aa9bf2b
@@ -118,13 +118,13 @@ md"Northing & easting INS error (after zeroing).
 
 # ╔═╡ 3699e96c-48b4-4116-8c33-13cbc64bb3df
 begin
-	p2 = plot(xlab="time [min]",ylab="error [m]",legend=:topright,dpi=200)
-	plot!(p2,tt,ins_out.n_err,lab="northing")
-	plot!(p2,tt,ins_out.e_err,lab="easting")
+    p2 = plot(; xlab="time [min]", ylab="error [m]", legend=:topright, dpi=200)
+    plot!(p2, tt, ins_out.n_err; lab="northing")
+    plot!(p2, tt, ins_out.e_err; lab="easting")
 end
 
 # ╔═╡ 7fecb8d4-5b8d-4731-b224-22b9adfad5ee
-(p3,p4) = plot_filt_err(traj,filt_out,crlb_out;show_plot=false);
+(p3, p4) = plot_filt_err(traj, filt_out, crlb_out; show_plot=false);
 
 # ╔═╡ 9e6376e6-3280-4f10-8a52-870c8c43f1b2
 md"Northing navigation filter residuals.
@@ -146,10 +146,10 @@ md"Display the map or flight paths in Google Earth by uncommenting below to gene
 
 # ╔═╡ 26810eff-0812-43cc-b1bc-d4f5d7c9542d
 begin
-	# map2kmz(mapS,"pluto_sim_map")
-	# path2kml(traj,"pluto_sim_gps")
-	# path2kml(ins,"pluto_sim_ins")
-	# path2kml(filt_out,"pluto_sim_filt")
+    # map2kmz(mapS,"pluto_sim_map")
+    # path2kml(traj,"pluto_sim_gps")
+    # path2kml(ins,"pluto_sim_ins")
+    # path2kml(filt_out,"pluto_sim_filt")
 end;
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
