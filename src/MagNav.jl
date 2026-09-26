@@ -1035,6 +1035,11 @@ module MagNav
     """
     abstract type CompParams end
 
+    # Helper aeromagnetic compensation parameter types
+    LinDataNormsT = Tuple{Matrix{Float64},Matrix{Float64},Vector{Float64},Vector{Float64}}
+    LinModelT     = Tuple{Vector{Float64},Float64}
+    NNDataNormsT  = Tuple{Matrix{Float32},Matrix{Float32},Matrix{Float32},Matrix{Float32},Matrix{Float32},Vector{Float32},Vector{Float32}}
+
     """
         LinCompParams <: CompParams
 
@@ -1053,8 +1058,8 @@ module MagNav
     |`y_type`          |Symbol          | `y` target type (`see below`)
     |`use_mag`         |Symbol          | uncompensated scalar magnetometer to use for `y` target vector {`:mag_1_uc`, etc.}, only used for `y_type = :c, :d, :e`
     |`use_vec`         |Symbol          | vector magnetometer (fluxgate) to use for "external" Tolles-Lawson `A` matrix {`:flux_a`, etc.}, only used for `model_type = :TL, :mod_TL, :map_TL`
-    |`data_norms`      |Tuple           | length-`4` tuple of data normalizations, `(A_bias,A_scale,y_bias,y_scale)` for `model_type = :TL, :mod_TL, :map_TL` or `(x_bias,x_scale,y_bias,y_scale)` for `model_type = :elasticnet, :plsr`
-    |`model`           |Tuple           | linear model coefficients
+    |`data_norms`      |LinDataNormsT   | length-`4` tuple of data normalizations, `(A_bias,A_scale,y_bias,y_scale)` for `model_type = :TL, :mod_TL, :map_TL` or `(x_bias,x_scale,y_bias,y_scale)` for `model_type = :elasticnet, :plsr`
+    |`model`           |LinModelT       | length-`2` tuple of linear model coefficients
     |`terms`           |Vector{`Symbol`}| Tolles-Lawson terms to use for Tolles-Lawson `A` matrix (or matrices) within `x` data matrix {`:permanent`,`:induced`,`:eddy`}, only used for `model_type = :elasticnet, :plsr`
     |`terms_A`         |Vector{`Symbol`}| Tolles-Lawson terms to use for "external" Tolles-Lawson `A` matrix {`:permanent`,`:induced`,`:eddy`,`:bias`}, only used for `model_type = :TL, :mod_TL, :map_TL`
     |`sub_diurnal`     |Bool            | if true, subtract diurnal from scalar magnetometer measurements
@@ -1100,8 +1105,8 @@ module MagNav
         y_type           :: Symbol          = :d
         use_mag          :: Symbol          = :mag_1_uc
         use_vec          :: Symbol          = :flux_a
-        data_norms       :: Tuple{Matrix{Float64},Matrix{Float64},Vector{Float64},Vector{Float64}} = (zeros(1,1),zeros(1,1),[0.0],[0.0])
-        model            :: Tuple{Vector{Float64},Float64} = ([0.0],0.0)
+        data_norms       :: LinDataNormsT   = (zeros(1,1),zeros(1,1),[0.0],[0.0])
+        model            :: LinModelT       = ([0.0],0.0)
         terms            :: Vector{Symbol}  = [:permanent,:induced,:eddy]
         terms_A          :: Vector{Symbol}  = [:permanent,:induced,:eddy,:bias]
         sub_diurnal      :: Bool            = false
@@ -1134,7 +1139,7 @@ module MagNav
     |`y_type`          |Symbol          | `y` target type (`see below`)
     |`use_mag`         |Symbol          | uncompensated scalar magnetometer to use for `y` target vector {`:mag_1_uc`, etc.}, only used for `y_type = :c, :d, :e`
     |`use_vec`         |Symbol          | vector magnetometer (fluxgate) to use for "external" Tolles-Lawson `A` matrix {`:flux_a`, etc.}, not used for `model_type = :m1`
-    |`data_norms`      |Tuple           | length-`7` tuple of data normalizations, `(A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale)`
+    |`data_norms`      |NNDataNormsT    | length-`7` tuple of data normalizations, `(A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale)`
     |`model`           |Chain           | neural network model
     |`terms`           |Vector{`Symbol`}| Tolles-Lawson terms to use for Tolles-Lawson `A` matrix (or matrices) within `x` data matrix {`:permanent`,`:induced`,`:eddy`}
     |`terms_A`         |Vector{`Symbol`}| Tolles-Lawson terms to use for "external" Tolles-Lawson `A` matrix {`:permanent`,`:induced`,`:eddy`,`:bias`}, not used for `model_type = :m1`
@@ -1214,7 +1219,7 @@ module MagNav
         y_type           :: Symbol          = :d
         use_mag          :: Symbol          = :mag_1_uc
         use_vec          :: Symbol          = :flux_a
-        data_norms       :: Tuple{Matrix{Float32},Matrix{Float32},Matrix{Float32},Matrix{Float32},Matrix{Float32},Vector{Float32},Vector{Float32}} = (zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),[0f0],[0f0])
+        data_norms       :: NNDataNormsT    = (zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),[0f0],[0f0])
         model            :: Chain           = Chain()
         terms            :: Vector{Symbol}  = [:permanent,:induced,:eddy]
         terms_A          :: Vector{Symbol}  = [:permanent,:induced,:eddy,:bias]
