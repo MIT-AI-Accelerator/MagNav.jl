@@ -78,7 +78,7 @@ function map2kmz(map_map::Matrix, map_xx::Vector, map_yy::Vector,
         if plot_alt > 0 # put map at altitude specified, otherwise ground
         println(file,
         "        <altitude>",plot_alt,"</altitude> \n",
-        "   	   <altitudeMode>absolute</altitudeMode> ")
+        "          <altitudeMode>absolute</altitudeMode> ")
         end
         println(file,
         "        <LatLonBox> \n",
