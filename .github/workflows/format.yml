@@ -17,7 +17,7 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      uses: julia-actions/julia-format@v4
-      with:
-        version: '1'
-        paths: 'src/, test/'
+      - uses: julia-actions/julia-format@v4
+        with:
+          version: '1'
+          paths: 'src/, test/'
