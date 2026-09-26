@@ -28,7 +28,6 @@ function map2kmz(map_map::Matrix, map_xx::Vector, map_yy::Vector,
                  plot_alt::Real    = 0,
                  opacity::Real     = 0.75,
                  clims::Tuple      = ())
-
     if map_units == :rad
         map_west  = rad2deg(minimum(map_xx))
         map_east  = rad2deg(maximum(map_xx))
@@ -43,64 +42,64 @@ function map2kmz(map_map::Matrix, map_xx::Vector, map_yy::Vector,
         error("[$map_units] map xx/yy units not defined")
     end
 
-    map_kmz   = add_extension(map_kmz,".kmz")
-    map_name  = remove_extension(map_kmz,".kmz")
+    map_kmz   = add_extension(map_kmz, ".kmz")
+    map_name  = remove_extension(map_kmz, ".kmz")
     map_kml   = map_name*".kml"
     map_png   = map_name*".png"
-    map_trans = string(round(Int,opacity*255),base=16,pad=2)*"ffffff" # ABGR
+    map_trans = string(round(Int, opacity*255); base=16, pad=2)*"ffffff" # ABGR
 
-    p1  = plot_map(map_map;
-                   clims     = clims,
-                   dpi       = 200,
-                   margin    = -2, # remove 2mm default margin
-                   Nmax      = 10^10,
-                   legend    = false,
-                   axis      = false,
-                   bg_color  = :transparent)
+    p1 = plot_map(map_map;
+                  clims    = clims,
+                  dpi      = 200,
+                  margin   = -2, # remove 2mm default margin
+                  Nmax     = 10^10,
+                  legend   = false,
+                  axis     = false,
+                  bg_color = :transparent)
 
-    plot!(p1,size=min.(size(map_map),10000))
+    plot!(p1; size=min.(size(map_map), 10000))
 
-    png(p1,map_png)
+    png(p1, map_png)
 
-    open(map_kml,"w") do file
+    open(map_kml, "w") do file
         println(file,
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n",
-        "<kml xmlns=\"http://www.opengis.net/kml/2.2\" xmlns:gx=\"http://www.google.com/kml/ext/2.2\" xmlns:kml=\"http://www.opengis.net/kml/2.2\" xmlns:atom=\"http://www.w3.org/2005/Atom\"> \n",
-        "  <Document> ")
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n",
+                "<kml xmlns=\"http://www.opengis.net/kml/2.2\" xmlns:gx=\"http://www.google.com/kml/ext/2.2\" xmlns:kml=\"http://www.opengis.net/kml/2.2\" xmlns:atom=\"http://www.w3.org/2005/Atom\"> \n",
+                "  <Document> ")
 
         println(file,
-        "    <Folder> \n",
-        "      <GroundOverlay> \n",
-        "        <Icon> \n",
-        "          <href>",map_png,"</href> \n",
-        "        </Icon> \n",
-        "        <color>",map_trans,"</color> ")
+                "    <Folder> \n",
+                "      <GroundOverlay> \n",
+                "        <Icon> \n",
+                "          <href>", map_png, "</href> \n",
+                "        </Icon> \n",
+                "        <color>", map_trans, "</color> ")
         if plot_alt > 0 # put map at altitude specified, otherwise ground
-        println(file,
-        "        <altitude>",plot_alt,"</altitude> \n",
-        "   	   <altitudeMode>absolute</altitudeMode> ")
+            println(file,
+                    "        <altitude>", plot_alt, "</altitude> \n",
+                    "   	   <altitudeMode>absolute</altitudeMode> ")
         end
         println(file,
-        "        <LatLonBox> \n",
-        "          <north>",map_north,"</north> \n",
-        "          <south>",map_south,"</south> \n",
-        "          <east>",map_east,"</east> \n",
-        "          <west>",map_west,"</west> \n",
-        "          <rotation>0</rotation> \n",
-        "        </LatLonBox> \n",
-        "      </GroundOverlay> \n",
-        "    </Folder> ")
+                "        <LatLonBox> \n",
+                "          <north>", map_north, "</north> \n",
+                "          <south>", map_south, "</south> \n",
+                "          <east>", map_east, "</east> \n",
+                "          <west>", map_west, "</west> \n",
+                "          <rotation>0</rotation> \n",
+                "        </LatLonBox> \n",
+                "      </GroundOverlay> \n",
+                "    </Folder> ")
 
-        println(file,
-        "  </Document> \n",
-        "</kml> ")
+        return println(file,
+                       "  </Document> \n",
+                       "</kml> ")
     end
 
     w = ZipFile.Writer(map_kmz)
 
-    for file in [map_kml,map_png]
-        f = ZipFile.addfile(w,file,method=ZipFile.Deflate)
-        write(f,read(file))
+    for file in [map_kml, map_png]
+        f = ZipFile.addfile(w, file; method=ZipFile.Deflate)
+        write(f, read(file))
     end
 
     close(w)
@@ -139,8 +138,8 @@ function map2kmz(mapS::Union{MapS,MapSd,MapS3D},
                  opacity::Real   = 0.75,
                  clims::Tuple    = ())
     mapS isa MapS3D && @info("3D map provided, using map at lowest altitude")
-    map_mask = use_mask ? mapS.mask[:,:,1] : trues(size(mapS.map[:,:,1]))
-    map2kmz(mapS.map[:,:,1].*map_mask,mapS.xx,mapS.yy,map_kmz;
+    map_mask = use_mask ? mapS.mask[:, :, 1] : trues(size(mapS.map[:, :, 1]))
+    map2kmz(mapS.map[:, :, 1] .* map_mask, mapS.xx, mapS.yy, map_kmz;
             map_units = :rad,
             plot_alt  = plot_alt,
             opacity   = opacity,
@@ -186,9 +185,9 @@ function path2kml(lat::Vector, lon::Vector, alt::Vector,
     # color1 = "ff00ff00" # ABGR green
     # color1 = "ff0000ff" # ABGR red
 
-    N   = length(lat) # maximum number of points
+    N = length(lat) # maximum number of points
     lim = points ? 1000 : 30000 # set points limit
-    frac = N > lim ? ceil(Int,N/lim) : 1 # use to avoid Google Earth issues
+    frac = N > lim ? ceil(Int, N/lim) : 1 # use to avoid Google Earth issues
 
     if path_units == :rad
         lat = rad2deg.(lat)
@@ -197,106 +196,107 @@ function path2kml(lat::Vector, lon::Vector, alt::Vector,
         error("$path_units lat/lon units not defined")
     end
 
-    path_kml = add_extension(path_kml,".kml")
+    path_kml = add_extension(path_kml, ".kml")
 
     if points
-        open(path_kml,"w") do file
+        open(path_kml, "w") do file
             println(file,
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n",
-            "<kml xmlns=\"http://www.opengis.net/kml/2.2\" xmlns:gx=\"http://www.google.com/kml/ext/2.2\" xmlns:kml=\"http://www.opengis.net/kml/2.2\" xmlns:atom=\"http://www.w3.org/2005/Atom\"> \n",
-            "  <Document> \n",
-            "    <Folder> ")
+                    "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n",
+                    "<kml xmlns=\"http://www.opengis.net/kml/2.2\" xmlns:gx=\"http://www.google.com/kml/ext/2.2\" xmlns:kml=\"http://www.opengis.net/kml/2.2\" xmlns:atom=\"http://www.w3.org/2005/Atom\"> \n",
+                    "  <Document> \n",
+                    "    <Folder> ")
 
-            for i = 1:frac:N
-            println(file,
-            "      <Placemark> \n",
-            "        <visibility>1</visibility> \n",
-            "        <Point> \n",
-            "          <coordinates>",
-            lon[i],",",lat[i],",",alt[i],"</coordinates> \n",
-            "        </Point> \n",
-            "        <Model> \n",
-            "          <altitudeMode>relativeToGround</altitudeMode> \n",
-            "          <Location><longitude>",
-            lon[i],"</longitude><latitude>",lat[i],"</latitude><altitude>",alt[i],"</altitude></Location> \n",
-            "            <Scale><x>50</x><y>50</y><z>1</z></Scale> \n",
-            "          <Link><href>$icon_circle</href></Link> \n",
-            "        </Model> \n",
-            "      </Placemark> ")
+            for i in 1:frac:N
+                println(file,
+                        "      <Placemark> \n",
+                        "        <visibility>1</visibility> \n",
+                        "        <Point> \n",
+                        "          <coordinates>",
+                        lon[i], ",", lat[i], ",", alt[i], "</coordinates> \n",
+                        "        </Point> \n",
+                        "        <Model> \n",
+                        "          <altitudeMode>relativeToGround</altitudeMode> \n",
+                        "          <Location><longitude>",
+                        lon[i], "</longitude><latitude>", lat[i], "</latitude><altitude>", alt[i],
+                        "</altitude></Location> \n",
+                        "            <Scale><x>50</x><y>50</y><z>1</z></Scale> \n",
+                        "          <Link><href>$icon_circle</href></Link> \n",
+                        "        </Model> \n",
+                        "      </Placemark> ")
             end
 
-            println(file,
-            "    </Folder> \n",
-            "  </Document> \n",
-            "</kml> ")
+            return println(file,
+                           "    </Folder> \n",
+                           "  </Document> \n",
+                           "</kml> ")
         end
     else
-        open(path_kml,"w") do file
+        open(path_kml, "w") do file
             println(file,
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n",
-            "<kml xmlns=\"http://www.opengis.net/kml/2.2\" xmlns:gx=\"http://www.google.com/kml/ext/2.2\" xmlns:kml=\"http://www.opengis.net/kml/2.2\" xmlns:atom=\"http://www.w3.org/2005/Atom\"> \n",
-            "  <Document> ")
+                    "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n",
+                    "<kml xmlns=\"http://www.opengis.net/kml/2.2\" xmlns:gx=\"http://www.google.com/kml/ext/2.2\" xmlns:kml=\"http://www.opengis.net/kml/2.2\" xmlns:atom=\"http://www.w3.org/2005/Atom\"> \n",
+                    "  <Document> ")
 
             println(file,
-            "    <Style id=\"line1-normal\"> \n",
-            "      <LineStyle> \n",
-            "        <color>",color1,"</color> \n",
-            "        <width>",width,"</width> \n",
-            "      </LineStyle> \n",
-            "      <PolyStyle> \n",
-            "        <color>",color2,"</color> \n",
-            "        <outline>0</outline> \n",
-            "      </PolyStyle> \n",
-            "      <BalloonStyle> \n",
-            "        <text><![CDATA[<h3>\$[name]</h3>]]></text> \n",
-            "      </BalloonStyle> \n",
-            "    </Style> \n",
-            "    <Style id=\"line1-highlight\"> \n",
-            "      <LineStyle> \n",
-            "        <color>",color1,"</color> \n",
-            "        <width>",1.5*width,"</width> \n",
-            "      </LineStyle> \n",
-            "      <PolyStyle> \n",
-            "        <color>",color2,"</color> \n",
-            "        <outline>0</outline> \n",
-            "      </PolyStyle> \n",
-            "      <BalloonStyle> \n",
-            "        <text><![CDATA[<h3>\$[name]</h3>]]></text> \n",
-            "      </BalloonStyle> \n",
-            "    </Style> \n",
-            "    <StyleMap id=\"line1\"> \n",
-            "      <Pair> \n",
-            "        <key>normal</key> \n",
-            "        <styleUrl>#line1-normal</styleUrl> \n",
-            "      </Pair> \n",
-            "      <Pair> \n",
-            "        <key>highlight</key> \n",
-            "        <styleUrl>#line1-highlight</styleUrl> \n",
-            "      </Pair> \n",
-            "    </StyleMap> ")
+                    "    <Style id=\"line1-normal\"> \n",
+                    "      <LineStyle> \n",
+                    "        <color>", color1, "</color> \n",
+                    "        <width>", width, "</width> \n",
+                    "      </LineStyle> \n",
+                    "      <PolyStyle> \n",
+                    "        <color>", color2, "</color> \n",
+                    "        <outline>0</outline> \n",
+                    "      </PolyStyle> \n",
+                    "      <BalloonStyle> \n",
+                    "        <text><![CDATA[<h3>\$[name]</h3>]]></text> \n",
+                    "      </BalloonStyle> \n",
+                    "    </Style> \n",
+                    "    <Style id=\"line1-highlight\"> \n",
+                    "      <LineStyle> \n",
+                    "        <color>", color1, "</color> \n",
+                    "        <width>", 1.5*width, "</width> \n",
+                    "      </LineStyle> \n",
+                    "      <PolyStyle> \n",
+                    "        <color>", color2, "</color> \n",
+                    "        <outline>0</outline> \n",
+                    "      </PolyStyle> \n",
+                    "      <BalloonStyle> \n",
+                    "        <text><![CDATA[<h3>\$[name]</h3>]]></text> \n",
+                    "      </BalloonStyle> \n",
+                    "    </Style> \n",
+                    "    <StyleMap id=\"line1\"> \n",
+                    "      <Pair> \n",
+                    "        <key>normal</key> \n",
+                    "        <styleUrl>#line1-normal</styleUrl> \n",
+                    "      </Pair> \n",
+                    "      <Pair> \n",
+                    "        <key>highlight</key> \n",
+                    "        <styleUrl>#line1-highlight</styleUrl> \n",
+                    "      </Pair> \n",
+                    "    </StyleMap> ")
 
             println(file,
-            "    <Folder> \n",
-            "      <Placemark> \n",
-            "        <name>aircraft path</name> \n",
-            "        <styleUrl>#line1</styleUrl> \n",
-            "        <LineString> \n",
-            "          <extrude>1</extrude> \n",
-            "          <tessellate>1</tessellate> \n",
-            "          <altitudeMode>relativeToGround</altitudeMode> \n",
-            "          <coordinates> ")
-            for i = 1:frac:N
-                println(file,"            ",lon[i],",",lat[i],",",alt[i])
+                    "    <Folder> \n",
+                    "      <Placemark> \n",
+                    "        <name>aircraft path</name> \n",
+                    "        <styleUrl>#line1</styleUrl> \n",
+                    "        <LineString> \n",
+                    "          <extrude>1</extrude> \n",
+                    "          <tessellate>1</tessellate> \n",
+                    "          <altitudeMode>relativeToGround</altitudeMode> \n",
+                    "          <coordinates> ")
+            for i in 1:frac:N
+                println(file, "            ", lon[i], ",", lat[i], ",", alt[i])
             end
             println(file,
-            "          </coordinates> \n",
-            "        </LineString> \n",
-            "      </Placemark> \n",
-            "    </Folder> ")
+                    "          </coordinates> \n",
+                    "        </LineString> \n",
+                    "      </Placemark> \n",
+                    "    </Folder> ")
 
-            println(file,
-            "  </Document> \n",
-            "</kml> ")
+            return println(file,
+                           "  </Document> \n",
+                           "</kml> ")
         end
     end
     return (nothing)
@@ -329,17 +329,16 @@ function path2kml(path::Path,
                   color1::String   = "",
                   color2::String   = "00ffffff",
                   points::Bool     = false)
-
     if isempty(color1)
-        path isa Traj    && (color1 = "ffff8500")
-        path isa INS     && (color1 = "ff2b50ec")
+        path isa Traj && (color1 = "ffff8500")
+        path isa INS && (color1 = "ff2b50ec")
         path isa FILTout && (color1 = "ff319b00")
     end
 
-    color1 in ["black","k"] && (color1 = "ff000000")
-    color2 in ["black","k"] && (color2 = "80000000")
+    color1 in ["black", "k"] && (color1 = "ff000000")
+    color2 in ["black", "k"] && (color2 = "80000000")
 
-    path2kml(path.lat,path.lon,path.alt,path_kml;
+    path2kml(path.lat, path.lon, path.alt, path_kml;
              path_units = :rad,
              width      = width,
              color1     = color1,

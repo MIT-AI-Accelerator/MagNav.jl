@@ -45,7 +45,7 @@ for airborne magnetic anomaly navigation.
 - `filt_res`: `FILTres` filter results struct
 """
 function nekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS,
-              x_nn::Matrix = meas[:,:],
+              x_nn::Matrix = meas[:, :],
               m            = Dense(1 => 1);
               P0           = create_P0(),
               Qd           = create_Qd(),
@@ -54,38 +54,37 @@ function nekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS,
               acc_tau      = 3600.0,
               gyro_tau     = 3600.0,
               fogm_tau     = 600.0,
-              date         = get_years(2020,185),
+              date         = get_years(2020, 185),
               core::Bool   = false)
+    N     = length(lat)
+    nx    = size(P0, 1)
+    ny    = size(meas, 2)
+    x_out = zeros(eltype(P0), nx, N)
+    P_out = zeros(eltype(P0), nx, nx, N)
+    r_out = zeros(eltype(P0), ny, N)
+    R_nn  = m(x_nn') # pre-compute R correction
 
-    N      = length(lat)
-    nx     = size(P0,1)
-    ny     = size(meas,2)
-    x_out  = zeros(eltype(P0),nx,N)
-    P_out  = zeros(eltype(P0),nx,nx,N)
-    r_out  = zeros(eltype(P0),ny,N)
-    R_nn   = m(x_nn') # pre-compute R correction
-
-    x = zeros(eltype(P0),nx) # state estimate
+    x = zeros(eltype(P0), nx) # state estimate
     P = P0 # covariance matrix
     map_cache = itp_mapS isa Map_Cache ? itp_mapS : nothing
 
-    for t = 1:N
+    for t in 1:N
         # custom itp_mapS from map cache, if available
         if map_cache isa Map_Cache
-            itp_mapS = get_cached_map(map_cache,lat[t],lon[t],alt[t];silent=true)
+            itp_mapS = get_cached_map(map_cache, lat[t], lon[t], alt[t]; silent=true)
         end
 
         # Pinson matrix exponential
-        Phi = get_Phi(nx,lat[t],vn[t],ve[t],vd[t],fn[t],fe[t],fd[t],Cnb[:,:,t],
-                      baro_tau,acc_tau,gyro_tau,fogm_tau,dt)
+        Phi = get_Phi(nx, lat[t], vn[t], ve[t], vd[t], fn[t], fe[t], fd[t], Cnb[:, :, t],
+                      baro_tau, acc_tau, gyro_tau, fogm_tau, dt)
 
         # measurement residual [ny]
-        resid = meas[t,:] .- get_h(itp_mapS,x,lat[t],lon[t],alt[t];
-                                   date=date,core=core)
+        resid = meas[t, :] .- get_h(itp_mapS, x, lat[t], lon[t], alt[t];
+                                    date=date, core=core)
 
         # measurement Jacobian (repeated gradient here) [ny x nx]
-        H = repeat(get_H(itp_mapS,x,lat[t],lon[t],alt[t];
-                         date=date,core=core)',ny,1)
+        H = repeat(get_H(itp_mapS, x, lat[t], lon[t], alt[t];
+                         date=date, core=core)', ny, 1)
 
         # measurement residual covariance
         S = H*P*H' .+ R .* (1 + R_nn[t]) # S_t [ny x ny]
@@ -98,16 +97,16 @@ function nekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS,
         P = (I - K*H) * P       # P_t [nx x nx]
 
         # state, covariance, & residual store
-        x_out[:,t]   = x
-        P_out[:,:,t] = P
-        r_out[:,t]   = resid
+        x_out[:, t]    = x
+        P_out[:, :, t] = P
+        r_out[:, t]    = resid
 
         # state & covariance propagate (predict)
         x = Phi*x               # x_t|t-1 [nx]
         P = Phi*P*Phi' + Qd     # P_t|t-1 [nx x nx]
     end
 
-    println("R_nn at [1, N/2, N]: ",round.(R_nn[[1,round(Int,N/2),N]],digits=5))
+    println("R_nn at [1, N/2, N]: ", round.(R_nn[[1, round(Int, N/2), N]]; digits=5))
 
     return FILTres(x_out, P_out, r_out, true)
 end # function nekf
@@ -149,7 +148,7 @@ for airborne magnetic anomaly navigation.
 - `filt_res`: `FILTres` filter results struct
 """
 function nekf(ins::INS, meas, itp_mapS,
-              x_nn::Matrix = meas[:,:],
+              x_nn::Matrix = meas[:, :],
               m            = Dense(1 => 1);
               P0           = create_P0(),
               Qd           = create_Qd(),
@@ -158,19 +157,19 @@ function nekf(ins::INS, meas, itp_mapS,
               acc_tau      = 3600.0,
               gyro_tau     = 3600.0,
               fogm_tau     = 600.0,
-              date         = get_years(2020,185),
+              date         = get_years(2020, 185),
               core::Bool   = false)
-    nekf(ins.lat,ins.lon,ins.alt,ins.vn,ins.ve,ins.vd,
-         ins.fn,ins.fe,ins.fd,ins.Cnb,meas,ins.dt,itp_mapS,x_nn,m;
-         P0       = P0,
-         Qd       = Qd,
-         R        = R,
-         baro_tau = baro_tau,
-         acc_tau  = acc_tau,
-         gyro_tau = gyro_tau,
-         fogm_tau = fogm_tau,
-         date     = date,
-         core     = core)
+    return nekf(ins.lat, ins.lon, ins.alt, ins.vn, ins.ve, ins.vd,
+                ins.fn, ins.fe, ins.fd, ins.Cnb, meas, ins.dt, itp_mapS, x_nn, m;
+                P0       = P0,
+                Qd       = Qd,
+                R        = R,
+                baro_tau = baro_tau,
+                acc_tau  = acc_tau,
+                gyro_tau = gyro_tau,
+                fogm_tau = fogm_tau,
+                date     = date,
+                core     = core)
 end # function nekf
 
 """
@@ -205,23 +204,22 @@ time step with a pre-computed `Phi` dynamics matrix.
 - `x`: filtered states, i.e., E(x_t | y_1,..,y_t)
 """
 function ekf_single(lat, lon, alt, Phi, meas, itp_mapS,
-                    P            = create_P0(),
-                    Qd           = create_Qd(),
-                    R            = 1.0,
-                    R_nn         = 0.0,
-                    x            = zeros(eltype(P),18);
-                    date         = get_years(2020,185),
-                    core::Bool   = false)
-
+                    P          = create_P0(),
+                    Qd         = create_Qd(),
+                    R          = 1.0,
+                    R_nn       = 0.0,
+                    x          = zeros(eltype(P), 18);
+                    date       = get_years(2020, 185),
+                    core::Bool = false)
     @assert !(itp_mapS isa Map_Cache) "Map_Cache not supported for nEKF training"
 
     ny = length(meas)
 
     # measurement residual [ny]
-    resid = meas .- get_h(itp_mapS,x,lat,lon,alt;date=date,core=core)
+    resid = meas .- get_h(itp_mapS, x, lat, lon, alt; date=date, core=core)
 
     # measurement Jacobian (repeated gradient here) [ny x nx]
-    H = repeat(get_H(itp_mapS,x,lat,lon,alt;date=date,core=core)',ny,1)
+    H = repeat(get_H(itp_mapS, x, lat, lon, alt; date=date, core=core)', ny, 1)
 
     # measurement residual covariance
     S = H*P*H' .+ R .* (1 + R_nn) # S_t [ny x ny]
@@ -314,55 +312,54 @@ function nekf_train(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt,
                     hidden::Int          = 1,
                     activation::Function = swish,
                     l_window::Int        = 50,
-                    date                 = get_years(2020,185),
+                    date                 = get_years(2020, 185),
                     core::Bool           = false)
-
-    (N,Nf) = size(x_nn) # number of samples (instances) & features
+    (N, Nf) = size(x_nn) # number of samples (instances) & features
     Ny = 1 # length of output
-    m  = Chain(LSTM(Nf => hidden), Dense(hidden => Ny, activation))
+    m = Chain(LSTM(Nf => hidden), Dense(hidden => Ny, activation))
 
-    x_seqs = chunk_data(Float32.(x_nn),zero(lat),l_window)[1]
-    y_seqs = chunk_data(Float32.(y_nn),zero(lat),l_window)[1]
+    x_seqs = chunk_data(Float32.(x_nn), zero(lat), l_window)[1]
+    y_seqs = chunk_data(Float32.(y_nn), zero(lat), l_window)[1]
     N_seqs = [[N_nn;;] for N_nn in l_window:l_window:N]
 
     # pre-compute Phi
     N   = length(lat)
-    Phi = zeros(Float64,18,18,N)
-    for t = 1:N
-        Phi[:,:,t] = get_Phi(size(Phi)[1],lat[t],vn[t],ve[t],vd[t],
-                             fn[t],fe[t],fd[t],Cnb[:,:,t],
-                             baro_tau,acc_tau,gyro_tau,fogm_tau,dt)
+    Phi = zeros(Float64, 18, 18, N)
+    for t in 1:N
+        Phi[:, :, t] = get_Phi(size(Phi)[1], lat[t], vn[t], ve[t], vd[t],
+                               fn[t], fe[t], fd[t], Cnb[:, :, t],
+                               baro_tau, acc_tau, gyro_tau, fogm_tau, dt)
     end
 
     P = P0
 
     # setup loss function
     function loss(m, x_nn, y_nn, N_nn)
-        N = size(x_nn,2)
-        x = zero(P[:,1])
+        N = size(x_nn, 2)
+        x = zero(P[:, 1])
 
         R_nn = m(x_nn) # pre-compute R correction
 
         l = 0
-        for i = 1:N
+        for i in 1:N
             t = N_nn[1] - N + i
-            (P,x) = ekf_single(lat[t],lon[t],alt[t],Phi[:,:,t],meas[t],
-                               itp_mapS,P,Qd,R,R_nn[i],x;date=date,core=core)
+            (P, x) = ekf_single(lat[t], lon[t], alt[t], Phi[:, :, t], meas[t],
+                                itp_mapS, P, Qd, R, R_nn[i], x; date=date, core=core)
 
-            l += dlat2dn(y_nn[1,i] - (lat[t]+x[1]), lat[t]+x[1])^2 +
-                 dlon2de(y_nn[2,i] - (lon[t]+x[2]), lat[t]+x[1])^2
+            l += dlat2dn(y_nn[1, i] - (lat[t]+x[1]), lat[t]+x[1])^2 +
+                 dlon2de(y_nn[2, i] - (lon[t]+x[2]), lat[t]+x[1])^2
         end
 
         return sqrt(l/N) # DRMS
     end # function loss
 
     # setup Adam optimizer
-    opt = Flux.setup(Adam(η_adam),m)
+    opt = Flux.setup(Adam(η_adam), m)
 
     # train RNN with Adam optimizer
-    for _ = 1:epoch_adam
-        Flux.train!(loss,m,zip(x_seqs,y_seqs,N_seqs),opt)
-        println("loss: ",sum(loss.((m,),x_seqs,y_seqs,N_seqs)))
+    for _ in 1:epoch_adam
+        Flux.train!(loss, m, zip(x_seqs, y_seqs, N_seqs), opt)
+        println("loss: ", sum(loss.((m,), x_seqs, y_seqs, N_seqs)))
     end
 
     return (m)
@@ -430,22 +427,22 @@ function nekf_train(ins::INS, meas, itp_mapS, x_nn::Matrix, y_nn::Matrix;
                     hidden::Int          = 1,
                     activation::Function = swish,
                     l_window::Int        = 50,
-                    date                 = get_years(2020,185),
+                    date                 = get_years(2020, 185),
                     core::Bool           = false)
-    nekf_train(ins.lat,ins.lon,ins.alt,ins.vn,ins.ve,ins.vd,
-               ins.fn,ins.fe,ins.fd,ins.Cnb,meas,ins.dt,itp_mapS,x_nn,y_nn;
-               P0=P0,Qd=Qd,R=R,
-               baro_tau   = baro_tau,
-               acc_tau    = acc_tau,
-               gyro_tau   = gyro_tau,
-               fogm_tau   = fogm_tau,
-               η_adam     = η_adam,
-               epoch_adam = epoch_adam,
-               hidden     = hidden,
-               activation = activation,
-               l_window   = l_window,
-               date       = date,
-               core       = core);
+    return nekf_train(ins.lat, ins.lon, ins.alt, ins.vn, ins.ve, ins.vd,
+                      ins.fn, ins.fe, ins.fd, ins.Cnb, meas, ins.dt, itp_mapS, x_nn, y_nn;
+                      P0         = P0, Qd         = Qd, R          = R,
+                      baro_tau   = baro_tau,
+                      acc_tau    = acc_tau,
+                      gyro_tau   = gyro_tau,
+                      fogm_tau   = fogm_tau,
+                      η_adam     = η_adam,
+                      epoch_adam = epoch_adam,
+                      hidden     = hidden,
+                      activation = activation,
+                      l_window   = l_window,
+                      date       = date,
+                      core       = core)
 end # function nekf_train
 
 """
@@ -511,22 +508,22 @@ function nekf_train(xyz::XYZ, ind, meas, itp_mapS, x::Matrix;
                     hidden::Int          = 1,
                     activation::Function = swish,
                     l_window::Int        = 50,
-                    date                 = get_years(2020,185),
+                    date                 = get_years(2020, 185),
                     core::Bool           = false)
 
     # get traj, ins, & y_nn (position)
-    traj = get_traj(xyz,ind)
-    ins  = get_ins(xyz,ind;N_zero_ll=1)
+    traj = get_traj(xyz, ind)
+    ins  = get_ins(xyz, ind; N_zero_ll=1)
     y_nn = [traj.lat traj.lon]
 
     # normalize x
-    (x_bias,x_scale,x_norm) = norm_sets(x;norm_type=:standardize)
-    (_,S,V) = svd(cov(x_norm))
-    v_scale = V[:,1:1]*inv(Diagonal(sqrt.(S[1:1])))
+    (x_bias, x_scale, x_norm) = norm_sets(x; norm_type=:standardize)
+    (_, S, V) = svd(cov(x_norm))
+    v_scale = V[:, 1:1]*inv(Diagonal(sqrt.(S[1:1])))
     x_nn = x_norm * v_scale
 
-    m = nekf_train(ins,meas,itp_mapS,x_nn,y_nn;
-                   P0=P0,Qd=Qd,R=R,
+    m = nekf_train(ins, meas, itp_mapS, x_nn, y_nn;
+                   P0         = P0, Qd         = Qd, R          = R,
                    baro_tau   = baro_tau,
                    acc_tau    = acc_tau,
                    gyro_tau   = gyro_tau,
@@ -540,7 +537,7 @@ function nekf_train(xyz::XYZ, ind, meas, itp_mapS, x::Matrix;
                    core       = core)
 
     # pack normalizations
-    data_norms = (v_scale,x_bias,x_scale)
+    data_norms = (v_scale, x_bias, x_scale)
 
     return (m, data_norms)
 end # function nekf_train

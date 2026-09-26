@@ -2,19 +2,19 @@ using MagNav, Test, MAT
 using LinearAlgebra, Random, Statistics
 Random.seed!(2)
 
-test_file = joinpath(@__DIR__,"test_data","test_data_ins.mat")
-ins_data  = matopen(test_file,"r") do file
-    read(file,"ins_data")
+test_file = joinpath(@__DIR__, "test_data", "test_data_ins.mat")
+ins_data  = matopen(test_file, "r") do file
+    return read(file, "ins_data")
 end
 
-test_file = joinpath(@__DIR__,"test_data","test_data_params.mat")
-params    = matopen(test_file,"r") do file
-    read(file,"params")
+test_file = joinpath(@__DIR__, "test_data", "test_data_params.mat")
+params    = matopen(test_file, "r") do file
+    return read(file, "params")
 end
 
-test_file = joinpath(@__DIR__,"test_data","test_data_traj.mat")
-traj_data = matopen(test_file,"r") do file
-    read(file,"traj")
+test_file = joinpath(@__DIR__, "test_data", "test_data_traj.mat")
+traj_data = matopen(test_file, "r") do file
+    return read(file, "traj")
 end
 
 ins_lat = deg2rad.(vec(ins_data["lat"]))
@@ -26,7 +26,7 @@ ins_vd  = vec(ins_data["vd"])
 ins_Cnb = ins_data["Cnb"]
 
 dt             = params["dt"]
-num_mc         = round(Int,params["numSims"])
+num_mc         = round(Int, params["numSims"])
 init_pos_sigma = params["init_pos_sigma"]
 init_alt_sigma = params["init_alt_sigma"]
 init_vel_sigma = params["init_vel_sigma"]
@@ -67,89 +67,89 @@ cor_perm_mag = 10.0
 cor_ind_mag  = 5.0
 cor_eddy_mag = 1.0
 
-traj = MagNav.Traj(N,dt,tt,lat,lon,alt,vn,ve,vd,fn,fe,fd,Cnb)
+traj = MagNav.Traj(N, dt, tt, lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb)
 ins  = create_ins(traj;
-                  init_pos_sigma = init_pos_sigma,
-                  init_alt_sigma = init_alt_sigma,
-                  init_vel_sigma = init_vel_sigma,
-                  init_att_sigma = init_att_sigma,
-                  VRW_sigma      = VRW_sigma,
-                  ARW_sigma      = ARW_sigma,
-                  baro_sigma     = baro_sigma,
-                  ha_sigma       = ha_sigma,
-                  a_hat_sigma    = a_hat_sigma,
-                  acc_sigma      = acc_sigma,
-                  gyro_sigma     = gyro_sigma,
-                  baro_tau       = baro_tau,
-                  acc_tau        = acc_tau,
-                  gyro_tau       = gyro_tau)
+init_pos_sigma = init_pos_sigma,
+init_alt_sigma = init_alt_sigma,
+init_vel_sigma = init_vel_sigma,
+init_att_sigma = init_att_sigma,
+VRW_sigma      = VRW_sigma,
+ARW_sigma      = ARW_sigma,
+baro_sigma     = baro_sigma,
+ha_sigma       = ha_sigma,
+a_hat_sigma    = a_hat_sigma,
+acc_sigma      = acc_sigma,
+gyro_sigma     = gyro_sigma,
+baro_tau       = baro_tau,
+acc_tau        = acc_tau,
+gyro_tau       = gyro_tau)
 
-(mag_1_uc,_,_) = MagNav.corrupt_mag(mag_1_c,flux_a_x,flux_a_y,flux_a_z;
-                                    dt           = dt,
-                                    cor_sigma    = cor_sigma,
-                                    cor_tau      = cor_tau,
-                                    cor_var      = cor_var,
-                                    cor_drift    = cor_drift,
-                                    cor_perm_mag = cor_perm_mag,
-                                    cor_ind_mag  = cor_ind_mag,
-                                    cor_eddy_mag = cor_eddy_mag)
+(mag_1_uc, _, _) = MagNav.corrupt_mag(mag_1_c, flux_a_x, flux_a_y, flux_a_z;
+                                      dt           = dt,
+                                      cor_sigma    = cor_sigma,
+                                      cor_tau      = cor_tau,
+                                      cor_var      = cor_var,
+                                      cor_drift    = cor_drift,
+                                      cor_perm_mag = cor_perm_mag,
+                                      cor_ind_mag  = cor_ind_mag,
+                                      cor_eddy_mag = cor_eddy_mag)
 
-mapS = map_trim(get_map(),traj)
+mapS = map_trim(get_map(), traj)
 
 mapS_mod   = deepcopy(mapS)
-N_mod      = ceil(Int,length(mapS.map)*0.01)
-ind_xx_mod = rand(1:size(mapS.map,2),N_mod)
-ind_yy_mod = rand(1:size(mapS.map,1),N_mod)
-[mapS_mod.map[ind_yy_mod[i],ind_xx_mod[i]] = 0 for i = 1:N_mod]
+N_mod      = ceil(Int, length(mapS.map)*0.01)
+ind_xx_mod = rand(1:size(mapS.map, 2), N_mod)
+ind_yy_mod = rand(1:size(mapS.map, 1), N_mod)
+[mapS_mod.map[ind_yy_mod[i], ind_xx_mod[i]] = 0 for i in 1:N_mod]
 
 mapV = get_map(MagNav.emm720)
-mapV = map_trim(mapV,traj)
+mapV = map_trim(mapV, traj)
 
-xyz_h5 = joinpath(@__DIR__,"test_create_XYZ0.h5")
+xyz_h5 = joinpath(@__DIR__, "test_create_XYZ0.h5")
 
 @testset "create_XYZ0 tests" begin
-    @test create_XYZ0(mapS;alt=2000,t=10,mapV=mapV,
-                      save_h5=true,xyz_h5=xyz_h5) isa MagNav.XYZ0
-    @test_throws ErrorException create_XYZ0(mapS;t=10,mapV=mapV,VRW_sigma=1e6)
-    @test create_XYZ0(mapS_mod;N_waves=0,mapV=mapV,
-                      ll1 = rad2deg.((traj.lat[1],traj.lon[1])),
-                      ll2 = rad2deg.((traj.lat[end],traj.lon[end]))) isa MagNav.XYZ0
+    @test create_XYZ0(mapS; alt=2000, t=10, mapV=mapV,
+                      save_h5=true, xyz_h5=xyz_h5) isa MagNav.XYZ0
+    @test_throws ErrorException create_XYZ0(mapS; t=10, mapV=mapV, VRW_sigma=1e6)
+    @test create_XYZ0(mapS_mod; N_waves=0, mapV=mapV,
+                      ll1=rad2deg.((traj.lat[1], traj.lon[1])),
+                      ll2=rad2deg.((traj.lat[end], traj.lon[end]))) isa MagNav.XYZ0
 end
 
 rm(xyz_h5)
 
 @testset "create_ins tests" begin
-    @test isapprox(ins.lat, ins_lat,atol=1e-3)
-    @test isapprox(ins.lon, ins_lon,atol=1e-3)
-    @test isapprox(ins.alt, ins_alt,atol=1000)
-    @test isapprox(ins.vn , ins_vn ,atol=10)
-    @test isapprox(ins.ve , ins_ve ,atol=10)
-    @test isapprox(ins.vd , ins_vd ,atol=10)
-    @test isapprox(ins.Cnb, ins_Cnb,atol=0.1)
+    @test isapprox(ins.lat, ins_lat, atol=1e-3)
+    @test isapprox(ins.lon, ins_lon, atol=1e-3)
+    @test isapprox(ins.alt, ins_alt, atol=1000)
+    @test isapprox(ins.vn, ins_vn, atol=10)
+    @test isapprox(ins.ve, ins_ve, atol=10)
+    @test isapprox(ins.vd, ins_vd, atol=10)
+    @test isapprox(ins.Cnb, ins_Cnb, atol=0.1)
 end
 
 @testset "corrupt_mag tests" begin
-    @test minimum(mag_1_uc .!= mag_1_c )
+    @test minimum(mag_1_uc .!= mag_1_c)
     @test minimum(abs.(mag_1_uc-mag_1_c) .< mean(abs.(mag_1_c)))
 end
 
 # create original XYZ0 struct
 xyz  = create_XYZ0(mapS; alt=2000, t=10, mapV=mapV)
 ind  = get_ind(xyz)
-traj = get_traj(xyz,ind)
+traj = get_traj(xyz, ind)
 
 # create displaced XYZ0 struct
 use_vec   = :flux_a
 use_mag   = :mag_1_uc
-TL_coef   = create_TL_coef(getfield(xyz,use_vec), getfield(xyz,use_mag), ind;
-                           terms=[:p,:e,:i], λ=0.025)
+TL_coef   = create_TL_coef(getfield(xyz, use_vec), getfield(xyz, use_mag), ind;
+terms=[:p, :e, :i], λ=0.025)
 xyz_disp  = create_informed_xyz(xyz, ind, mapS, use_mag, use_vec, TL_coef)
-traj_disp = get_traj(xyz_disp,ind)
+traj_disp = get_traj(xyz_disp, ind)
 lat_disp  = traj_disp.lat[1] - traj.lat[1]
 lon_disp  = traj_disp.lon[1] - traj.lon[1]
 
 @testset "create_informed_xyz" begin
-    @test traj_disp.tt  == traj.tt
+    @test traj_disp.tt == traj.tt
     @test traj_disp.alt == traj.alt
     @test 0.0 < abs(lat_disp) < 0.01
     @test 0.0 < abs(lon_disp) < 0.01

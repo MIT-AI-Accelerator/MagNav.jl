@@ -63,30 +63,29 @@ Run navigation filter and optionally compute Cramér–Rao lower bound (CRLB).
 - if `extract = false` & `run_crlb = false`
     - `filt_res`: `FILTres` filter results struct
 """
-function run_filt(traj::Traj, ins::INS, meas, itp_mapS, filt_type::Symbol = :ekf;
-                  P0             = create_P0(),
-                  Qd             = create_Qd(),
-                  R              = 1.0,
-                  num_part       = 1000,
-                  thresh         = 0.8,
-                  baro_tau       = 3600.0,
-                  acc_tau        = 3600.0,
-                  gyro_tau       = 3600.0,
-                  fogm_tau       = 600.0,
-                  date           = get_years(2020,185),
-                  core::Bool     = false,
-                  map_alt        = 0,
-                  x_nn           = nothing,
-                  m              = nothing,
-                  y_norms        = nothing,
-                  terms          = [:permanent,:induced,:eddy,:bias],
-                  flux::MagV     = MagV([0.0],[0.0],[0.0],[0.0]),
-                  x0_TL          = ones(eltype(P0),19),
-                  extract::Bool  = true,
-                  run_crlb::Bool = true)
-
+function run_filt(traj::Traj, ins::INS, meas, itp_mapS, filt_type::Symbol=:ekf;
+                  P0=create_P0(),
+                  Qd=create_Qd(),
+                  R=1.0,
+                  num_part=1000,
+                  thresh=0.8,
+                  baro_tau=3600.0,
+                  acc_tau=3600.0,
+                  gyro_tau=3600.0,
+                  fogm_tau=600.0,
+                  date=get_years(2020, 185),
+                  core::Bool=false,
+                  map_alt=0,
+                  x_nn=nothing,
+                  m=nothing,
+                  y_norms=nothing,
+                  terms=[:permanent, :induced, :eddy, :bias],
+                  flux::MagV=MagV([0.0], [0.0], [0.0], [0.0]),
+                  x0_TL=ones(eltype(P0), 19),
+                  extract::Bool=true,
+                  run_crlb::Bool=true)
     if filt_type == :ekf
-        filt_res = ekf(ins,meas,itp_mapS;
+        filt_res = ekf(ins, meas, itp_mapS;
                        P0       = P0,
                        Qd       = Qd,
                        R        = R,
@@ -96,26 +95,26 @@ function run_filt(traj::Traj, ins::INS, meas, itp_mapS, filt_type::Symbol = :ekf
                        fogm_tau = fogm_tau,
                        date     = date,
                        core     = core,
-                       map_alt  = map_alt);
+                       map_alt  = map_alt)
     elseif filt_type == :ekf_online
-        filt_res = ekf_online(ins,meas,flux,itp_mapS,x0_TL,P0,Qd,R;
+        filt_res = ekf_online(ins, meas, flux, itp_mapS, x0_TL, P0, Qd, R;
                               baro_tau = baro_tau,
                               acc_tau  = acc_tau,
                               gyro_tau = gyro_tau,
                               fogm_tau = fogm_tau,
                               date     = date,
                               core     = core,
-                              terms    = terms);
+                              terms    = terms)
     elseif filt_type == :ekf_online_nn
-        filt_res = ekf_online_nn(ins,meas,itp_mapS,x_nn,m,y_norms,P0,Qd,R;
+        filt_res = ekf_online_nn(ins, meas, itp_mapS, x_nn, m, y_norms, P0, Qd, R;
                                  baro_tau = baro_tau,
                                  acc_tau  = acc_tau,
                                  gyro_tau = gyro_tau,
                                  fogm_tau = fogm_tau,
                                  date     = date,
-                                 core     = core);
+                                 core     = core)
     elseif filt_type == :mpf
-        filt_res = mpf(ins,meas,itp_mapS;
+        filt_res = mpf(ins, meas, itp_mapS;
                        P0       = P0,
                        Qd       = Qd,
                        R        = R,
@@ -126,9 +125,9 @@ function run_filt(traj::Traj, ins::INS, meas, itp_mapS, filt_type::Symbol = :ekf
                        gyro_tau = gyro_tau,
                        fogm_tau = fogm_tau,
                        date     = date,
-                       core     = core);
+                       core     = core)
     elseif filt_type == :nekf
-        filt_res = nekf(ins,meas,itp_mapS,x_nn,m;
+        filt_res = nekf(ins, meas, itp_mapS, x_nn, m;
                         P0       = P0,
                         Qd       = Qd,
                         R        = R,
@@ -137,13 +136,13 @@ function run_filt(traj::Traj, ins::INS, meas, itp_mapS, filt_type::Symbol = :ekf
                         gyro_tau = gyro_tau,
                         fogm_tau = fogm_tau,
                         date     = date,
-                        core     = core);
+                        core     = core)
     else
         error("filt_type $filt_type not defined")
     end
 
     if run_crlb
-        crlb_P = crlb(traj,itp_mapS;
+        crlb_P = crlb(traj, itp_mapS;
                       P0       = P0,
                       Qd       = Qd,
                       R        = R,
@@ -154,13 +153,13 @@ function run_filt(traj::Traj, ins::INS, meas, itp_mapS, filt_type::Symbol = :ekf
                       date     = date,
                       core     = core)
         if extract
-            return eval_results(traj,ins,filt_res,crlb_P)
+            return eval_results(traj, ins, filt_res, crlb_P)
         else
             return (filt_res, crlb_P)
         end
     else
         if extract
-            return eval_filt(traj,ins,filt_res)
+            return eval_filt(traj, ins, filt_res)
         else
             return (filt_res)
         end
@@ -187,41 +186,39 @@ function run_filt(traj::Traj, ins::INS, meas, itp_mapS,
                   acc_tau    = 3600.0,
                   gyro_tau   = 3600.0,
                   fogm_tau   = 600.0,
-                  date       = get_years(2020,185),
+                  date       = get_years(2020, 185),
                   core::Bool = false,
                   map_alt    = 0,
                   x_nn       = nothing,
                   m          = nothing,
                   y_norms    = nothing,
-                  terms      = [:permanent,:induced,:eddy,:bias],
-                  flux::MagV = MagV([0.0],[0.0],[0.0],[0.0]),
-                  x0_TL      = ones(eltype(P0),19))
-
+                  terms      = [:permanent, :induced, :eddy, :bias],
+                  flux::MagV = MagV([0.0], [0.0], [0.0], [0.0]),
+                  x0_TL      = ones(eltype(P0), 19))
     for i in eachindex(filt_type)
         @info("running $(filt_type[i]) filter")
-        run_filt(traj,ins,meas,itp_mapS,filt_type[i];
-                 P0          = P0,
-                 Qd          = Qd,
-                 R           = R,
-                 num_part    = num_part,
-                 thresh      = thresh,
-                 baro_tau    = baro_tau,
-                 acc_tau     = acc_tau,
-                 gyro_tau    = gyro_tau,
-                 fogm_tau    = fogm_tau,
-                 date        = date,
-                 core        = core,
-                 map_alt     = map_alt,
-                 x_nn        = x_nn,
-                 m           = m,
-                 y_norms     = y_norms,
-                 terms       = terms,
-                 flux        = flux,
-                 x0_TL       = x0_TL,
-                 extract     = true,
-                 run_crlb    = false)
+        run_filt(traj, ins, meas, itp_mapS, filt_type[i];
+                 P0       = P0,
+                 Qd       = Qd,
+                 R        = R,
+                 num_part = num_part,
+                 thresh   = thresh,
+                 baro_tau = baro_tau,
+                 acc_tau  = acc_tau,
+                 gyro_tau = gyro_tau,
+                 fogm_tau = fogm_tau,
+                 date     = date,
+                 core     = core,
+                 map_alt  = map_alt,
+                 x_nn     = x_nn,
+                 m        = m,
+                 y_norms  = y_norms,
+                 terms    = terms,
+                 flux     = flux,
+                 x0_TL    = x0_TL,
+                 extract  = true,
+                 run_crlb = false)
     end
-
 end # function run_filt
 
 """
@@ -241,9 +238,9 @@ Extract CRLB, INS, & filter results.
 - `filt_out`: `FILTout` filter extracted output struct
 """
 function eval_results(traj::Traj, ins::INS, filt_res::FILTres, crlb_P::Array)
-    return (eval_crlb(traj,crlb_P),
-            eval_ins( traj,ins),
-            eval_filt(traj,ins,filt_res))
+    return (eval_crlb(traj, crlb_P),
+            eval_ins(traj, ins),
+            eval_filt(traj, ins, filt_res))
 end # function eval_results
 
 """
@@ -259,26 +256,25 @@ Extract Cramér–Rao lower bound (CRLB) results.
 - `crlb_out`: `CRLBout` Cramér–Rao lower bound extracted output struct
 """
 function eval_crlb(traj::Traj, crlb_P::Array)
-
     N = traj.N
     N_fields = length(fieldnames(CRLBout))
-    crlb_out = CRLBout((zeros(Float64,N) for _ = 1:N_fields)...)
+    crlb_out = CRLBout((zeros(Float64, N) for _ in 1:N_fields)...)
 
-    crlb_out.lat_std  .= sqrt.(crlb_P[1,1,:])
-    crlb_out.lon_std  .= sqrt.(crlb_P[2,2,:])
-    crlb_out.alt_std  .= sqrt.(crlb_P[3,3,:])
-    crlb_out.vn_std   .= sqrt.(crlb_P[4,4,:])
-    crlb_out.ve_std   .= sqrt.(crlb_P[5,5,:])
-    crlb_out.vd_std   .= sqrt.(crlb_P[6,6,:])
-    crlb_out.tn_std   .= sqrt.(crlb_P[7,7,:])
-    crlb_out.te_std   .= sqrt.(crlb_P[8,8,:])
-    crlb_out.td_std   .= sqrt.(crlb_P[9,9,:])
-    crlb_out.fogm_std .= sqrt.(crlb_P[18,18,:])
+    crlb_out.lat_std  .= sqrt.(crlb_P[1, 1, :])
+    crlb_out.lon_std  .= sqrt.(crlb_P[2, 2, :])
+    crlb_out.alt_std  .= sqrt.(crlb_P[3, 3, :])
+    crlb_out.vn_std   .= sqrt.(crlb_P[4, 4, :])
+    crlb_out.ve_std   .= sqrt.(crlb_P[5, 5, :])
+    crlb_out.vd_std   .= sqrt.(crlb_P[6, 6, :])
+    crlb_out.tn_std   .= sqrt.(crlb_P[7, 7, :])
+    crlb_out.te_std   .= sqrt.(crlb_P[8, 8, :])
+    crlb_out.td_std   .= sqrt.(crlb_P[9, 9, :])
+    crlb_out.fogm_std .= sqrt.(crlb_P[18, 18, :])
 
-    crlb_out.n_std    .= dlat2dn.(crlb_out.lat_std,traj.lat)
-    crlb_out.e_std    .= dlon2de.(crlb_out.lon_std,traj.lat)
+    crlb_out.n_std .= dlat2dn.(crlb_out.lat_std, traj.lat)
+    crlb_out.e_std .= dlon2de.(crlb_out.lon_std, traj.lat)
 
-    crlb_DRMS = round(Int,sqrt(mean(crlb_out.n_std.^2+crlb_out.e_std.^2)))
+    crlb_DRMS = round(Int, sqrt(mean(crlb_out.n_std .^ 2+crlb_out.e_std .^ 2)))
     @info("CRLB DRMS error = $crlb_DRMS m")
 
     return (crlb_out)
@@ -300,25 +296,25 @@ function eval_ins(traj::Traj, ins::INS)
 
     # not doing vn,ve,vd,tn,te,td,ax,ay,az,gx,gy,gz
 
-    N = traj.N
+    N        = traj.N
     N_fields = length(fieldnames(INSout))
-    ins_out  = INSout((zeros(Float64,N) for _ = 1:N_fields)...)
+    ins_out  = INSout((zeros(Float64, N) for _ in 1:N_fields)...)
 
     if !iszero(ins.P)
-        ins_out.lat_std .= sqrt.(ins.P[1,1,:])
-        ins_out.lon_std .= sqrt.(ins.P[2,2,:])
-        ins_out.alt_std .= sqrt.(ins.P[3,3,:])
-        ins_out.n_std   .= dlat2dn.(ins_out.lat_std,ins.lat)
-        ins_out.e_std   .= dlon2de.(ins_out.lon_std,ins.lat)
+        ins_out.lat_std .= sqrt.(ins.P[1, 1, :])
+        ins_out.lon_std .= sqrt.(ins.P[2, 2, :])
+        ins_out.alt_std .= sqrt.(ins.P[3, 3, :])
+        ins_out.n_std   .= dlat2dn.(ins_out.lat_std, ins.lat)
+        ins_out.e_std   .= dlon2de.(ins_out.lon_std, ins.lat)
     end
 
     ins_out.lat_err .= ins.lat - traj.lat
     ins_out.lon_err .= ins.lon - traj.lon
     ins_out.alt_err .= ins.alt - traj.alt
-    ins_out.n_err   .= dlat2dn.(ins_out.lat_err,ins.lat)
-    ins_out.e_err   .= dlon2de.(ins_out.lon_err,ins.lat)
+    ins_out.n_err   .= dlat2dn.(ins_out.lat_err, ins.lat)
+    ins_out.e_err   .= dlon2de.(ins_out.lon_err, ins.lat)
 
-    ins_DRMS = round(Int,sqrt(mean(ins_out.n_err.^2+ins_out.e_err.^2)))
+    ins_DRMS = round(Int, sqrt(mean(ins_out.n_err .^ 2+ins_out.e_err .^ 2)))
     @info("INS  DRMS error = $ins_DRMS m")
 
     return (ins_out)
@@ -338,80 +334,79 @@ Extract filter results.
 - `filt_out`: `FILTout` filter extracted output struct
 """
 function eval_filt(traj::Traj, ins::INS, filt_res::FILTres)
-
-    N  = traj.N
+    N = traj.N
     dt = traj.dt
     N_fields = length(fieldnames(FILTout))
-    filt_out = FILTout(N,dt,(zeros(Float64,N) for _ = 1:N_fields-2)...)
+    filt_out = FILTout(N, dt, (zeros(Float64, N) for _ in 1:(N_fields-2))...)
 
     filt_out.tt   .= traj.tt
-    filt_out.lat  .= ins.lat + filt_res.x[1,:]
-    filt_out.lon  .= ins.lon + filt_res.x[2,:]
-    filt_out.alt  .= ins.alt + filt_res.x[3,:]
-    filt_out.vn   .= ins.vn  + filt_res.x[4,:]
-    filt_out.ve   .= ins.ve  + filt_res.x[5,:]
-    filt_out.vd   .= ins.vd  + filt_res.x[6,:]
-    filt_out.tn   .=           filt_res.x[7,:]
-    filt_out.te   .=           filt_res.x[8,:]
-    filt_out.td   .=           filt_res.x[9,:]
-    filt_out.ha   .=           filt_res.x[10,:]
-    filt_out.ah   .=           filt_res.x[11,:]
-    filt_out.ax   .=           filt_res.x[12,:]
-    filt_out.ay   .=           filt_res.x[13,:]
-    filt_out.az   .=           filt_res.x[14,:]
-    filt_out.gx   .=           filt_res.x[15,:]
-    filt_out.gy   .=           filt_res.x[16,:]
-    filt_out.gz   .=           filt_res.x[17,:]
-    filt_out.fogm .=           filt_res.x[end,:]
+    filt_out.lat  .= ins.lat + filt_res.x[1, :]
+    filt_out.lon  .= ins.lon + filt_res.x[2, :]
+    filt_out.alt  .= ins.alt + filt_res.x[3, :]
+    filt_out.vn   .= ins.vn + filt_res.x[4, :]
+    filt_out.ve   .= ins.ve + filt_res.x[5, :]
+    filt_out.vd   .= ins.vd + filt_res.x[6, :]
+    filt_out.tn   .= filt_res.x[7, :]
+    filt_out.te   .= filt_res.x[8, :]
+    filt_out.td   .= filt_res.x[9, :]
+    filt_out.ha   .= filt_res.x[10, :]
+    filt_out.ah   .= filt_res.x[11, :]
+    filt_out.ax   .= filt_res.x[12, :]
+    filt_out.ay   .= filt_res.x[13, :]
+    filt_out.az   .= filt_res.x[14, :]
+    filt_out.gx   .= filt_res.x[15, :]
+    filt_out.gy   .= filt_res.x[16, :]
+    filt_out.gz   .= filt_res.x[17, :]
+    filt_out.fogm .= filt_res.x[end, :]
 
-    filt_out.lat_std  .= sqrt.(filt_res.P[1,1,:])
-    filt_out.lon_std  .= sqrt.(filt_res.P[2,2,:])
-    filt_out.alt_std  .= sqrt.(filt_res.P[3,3,:])
-    filt_out.vn_std   .= sqrt.(filt_res.P[4,4,:])
-    filt_out.ve_std   .= sqrt.(filt_res.P[5,5,:])
-    filt_out.vd_std   .= sqrt.(filt_res.P[6,6,:])
-    filt_out.tn_std   .= sqrt.(filt_res.P[7,7,:])
-    filt_out.te_std   .= sqrt.(filt_res.P[8,8,:])
-    filt_out.td_std   .= sqrt.(filt_res.P[9,9,:])
-    filt_out.ha_std   .= sqrt.(filt_res.P[10,10,:])
-    filt_out.ah_std   .= sqrt.(filt_res.P[11,11,:])
-    filt_out.ax_std   .= sqrt.(filt_res.P[12,12,:])
-    filt_out.ay_std   .= sqrt.(filt_res.P[13,13,:])
-    filt_out.az_std   .= sqrt.(filt_res.P[14,14,:])
-    filt_out.gx_std   .= sqrt.(filt_res.P[15,15,:])
-    filt_out.gy_std   .= sqrt.(filt_res.P[16,16,:])
-    filt_out.gz_std   .= sqrt.(filt_res.P[17,17,:])
-    filt_out.fogm_std .= sqrt.(filt_res.P[18,18,:])
+    filt_out.lat_std  .= sqrt.(filt_res.P[1, 1, :])
+    filt_out.lon_std  .= sqrt.(filt_res.P[2, 2, :])
+    filt_out.alt_std  .= sqrt.(filt_res.P[3, 3, :])
+    filt_out.vn_std   .= sqrt.(filt_res.P[4, 4, :])
+    filt_out.ve_std   .= sqrt.(filt_res.P[5, 5, :])
+    filt_out.vd_std   .= sqrt.(filt_res.P[6, 6, :])
+    filt_out.tn_std   .= sqrt.(filt_res.P[7, 7, :])
+    filt_out.te_std   .= sqrt.(filt_res.P[8, 8, :])
+    filt_out.td_std   .= sqrt.(filt_res.P[9, 9, :])
+    filt_out.ha_std   .= sqrt.(filt_res.P[10, 10, :])
+    filt_out.ah_std   .= sqrt.(filt_res.P[11, 11, :])
+    filt_out.ax_std   .= sqrt.(filt_res.P[12, 12, :])
+    filt_out.ay_std   .= sqrt.(filt_res.P[13, 13, :])
+    filt_out.az_std   .= sqrt.(filt_res.P[14, 14, :])
+    filt_out.gx_std   .= sqrt.(filt_res.P[15, 15, :])
+    filt_out.gy_std   .= sqrt.(filt_res.P[16, 16, :])
+    filt_out.gz_std   .= sqrt.(filt_res.P[17, 17, :])
+    filt_out.fogm_std .= sqrt.(filt_res.P[18, 18, :])
 
-    filt_out.n_std   .= dlat2dn.(filt_out.lat_std,filt_out.lat)
-    filt_out.e_std   .= dlon2de.(filt_out.lon_std,filt_out.lat)
+    filt_out.n_std .= dlat2dn.(filt_out.lat_std, filt_out.lat)
+    filt_out.e_std .= dlon2de.(filt_out.lon_std, filt_out.lat)
 
     filt_out.lat_err .= filt_out.lat - traj.lat
     filt_out.lon_err .= filt_out.lon - traj.lon
     filt_out.alt_err .= filt_out.alt - traj.alt
-    filt_out.vn_err  .= filt_out.vn  - traj.vn
-    filt_out.ve_err  .= filt_out.ve  - traj.ve
-    filt_out.vd_err  .= filt_out.vd  - traj.vd
+    filt_out.vn_err  .= filt_out.vn - traj.vn
+    filt_out.ve_err  .= filt_out.ve - traj.ve
+    filt_out.vd_err  .= filt_out.vd - traj.vd
 
-    n_tilt = zeros(eltype(filt_out.lat),N)
-    e_tilt = zeros(eltype(filt_out.lat),N)
-    d_tilt = zeros(eltype(filt_out.lat),N)
+    n_tilt = zeros(eltype(filt_out.lat), N)
+    e_tilt = zeros(eltype(filt_out.lat), N)
+    d_tilt = zeros(eltype(filt_out.lat), N)
 
-    for k = 1:N
-        tilt_temp = ins.Cnb[:,:,k]*traj.Cnb[:,:,k]'
-        n_tilt[k] = tilt_temp[3,2] # ≈ -tilt_temp[2,3]
-        e_tilt[k] = tilt_temp[1,3] # ≈ -tilt_temp[3,1]
-        d_tilt[k] = tilt_temp[2,1] # ≈ -tilt_temp[1,2]
+    for k in 1:N
+        tilt_temp = ins.Cnb[:, :, k]*traj.Cnb[:, :, k]'
+        n_tilt[k] = tilt_temp[3, 2] # ≈ -tilt_temp[2,3]
+        e_tilt[k] = tilt_temp[1, 3] # ≈ -tilt_temp[3,1]
+        d_tilt[k] = tilt_temp[2, 1] # ≈ -tilt_temp[1,2]
     end
 
     filt_out.tn_err .= filt_out.tn - n_tilt
     filt_out.te_err .= filt_out.te - e_tilt
     filt_out.td_err .= filt_out.td - d_tilt
 
-    filt_out.n_err  .= dlat2dn.(filt_out.lat_err,filt_out.lat)
-    filt_out.e_err  .= dlon2de.(filt_out.lon_err,filt_out.lat)
+    filt_out.n_err .= dlat2dn.(filt_out.lat_err, filt_out.lat)
+    filt_out.e_err .= dlon2de.(filt_out.lon_err, filt_out.lat)
 
-    filt_DRMS = round(Int,sqrt(mean(filt_out.n_err.^2+filt_out.e_err.^2)))
+    filt_DRMS = round(Int, sqrt(mean(filt_out.n_err .^ 2+filt_out.e_err .^ 2)))
     @info("FILT DRMS error = $filt_DRMS m")
 
     return (filt_out)
@@ -444,20 +439,19 @@ function plot_filt!(p1::Plot, traj::Traj, ins::INS, filt_out::FILTout;
                     Nmax::Int       = 5000,
                     show_plot::Bool = true,
                     save_plot::Bool = false)
+    i    = downsample(1:traj.N, Nmax)
+    lon  = rad2deg.([traj.lon; ins.lon; filt_out.lon])
+    lat  = rad2deg.([traj.lat; ins.lat; filt_out.lat])
+    xlim = get_lim(lon, 0.05)
+    ylim = get_lim(lat, 0.05)
 
-    i    = downsample(1:traj.N,Nmax)
-    lon  = rad2deg.([traj.lon;ins.lon;filt_out.lon])
-    lat  = rad2deg.([traj.lat;ins.lat;filt_out.lat])
-    xlim = get_lim(lon,0.05)
-    ylim = get_lim(lat,0.05)
-
-    plot!(p1,xlab="longitude [deg]",ylab="latitude [deg]",dpi=dpi)
-    plot!(p1,rad2deg.(traj.lon[i])    ,rad2deg.(traj.lat[i])    ,lab="GPS")
-    plot!(p1,rad2deg.(ins.lon[i])     ,rad2deg.(ins.lat[i])     ,lab="INS")
-    plot!(p1,rad2deg.(filt_out.lon[i]),rad2deg.(filt_out.lat[i]),lab="MagNav")
-    plot!(p1,xlim=xlim,ylim=ylim)
+    plot!(p1; xlab="longitude [deg]", ylab="latitude [deg]", dpi=dpi)
+    plot!(p1, rad2deg.(traj.lon[i]), rad2deg.(traj.lat[i]); lab="GPS")
+    plot!(p1, rad2deg.(ins.lon[i]), rad2deg.(ins.lat[i]); lab="INS")
+    plot!(p1, rad2deg.(filt_out.lon[i]), rad2deg.(filt_out.lat[i]); lab="MagNav")
+    plot!(p1; xlim=xlim, ylim=ylim)
     show_plot && display(p1)
-    save_plot && png(p1,"flight_path.png")
+    save_plot && png(p1, "flight_path.png")
 
     return (nothing)
 end # function plot_filt!
@@ -496,45 +490,44 @@ function plot_filt(p1::Plot, traj::Traj, ins::INS, filt_out::FILTout;
                    plot_vel::Bool  = false,
                    show_plot::Bool = true,
                    save_plot::Bool = false)
-
     p2 = deepcopy(p1)
-    plot_filt!(p2,traj,ins,filt_out;
+    plot_filt!(p2, traj, ins, filt_out;
                dpi       = dpi,
                Nmax      = Nmax,
                show_plot = show_plot,
                save_plot = save_plot)
 
-    i  = downsample(1:traj.N,Nmax)
+    i  = downsample(1:traj.N, Nmax)
     tt = (traj.tt[i] .- traj.tt[i][1]) / 60
 
-    p3 = plot(xlab="time [min]",ylab="latitude [deg]",dpi=dpi)
-    plot!(p3,tt,rad2deg.(traj.lat[i])    ,lab="GPS")
-    plot!(p3,tt,rad2deg.(ins.lat[i])     ,lab="INS")
-    plot!(p3,tt,rad2deg.(filt_out.lat[i]),lab="MagNav")
+    p3 = plot(; xlab="time [min]", ylab="latitude [deg]", dpi=dpi)
+    plot!(p3, tt, rad2deg.(traj.lat[i]); lab="GPS")
+    plot!(p3, tt, rad2deg.(ins.lat[i]); lab="INS")
+    plot!(p3, tt, rad2deg.(filt_out.lat[i]); lab="MagNav")
     show_plot && display(p3)
-    save_plot && png(p3,"latitude.png")
+    save_plot && png(p3, "latitude.png")
 
-    p4 = plot(xlab="time [min]",ylab="longitude [deg]",dpi=dpi)
-    plot!(p4,tt,rad2deg.(traj.lon[i])    ,lab="GPS")
-    plot!(p4,tt,rad2deg.(ins.lon[i])     ,lab="INS")
-    plot!(p4,tt,rad2deg.(filt_out.lon[i]),lab="MagNav")
+    p4 = plot(; xlab="time [min]", ylab="longitude [deg]", dpi=dpi)
+    plot!(p4, tt, rad2deg.(traj.lon[i]); lab="GPS")
+    plot!(p4, tt, rad2deg.(ins.lon[i]); lab="INS")
+    plot!(p4, tt, rad2deg.(filt_out.lon[i]); lab="MagNav")
     show_plot && display(p4)
-    save_plot && png(p4,"longitude.png")
+    save_plot && png(p4, "longitude.png")
 
     if plot_vel
-        p5 = plot(xlab="time [min]",ylab="north velocity [m/s]",dpi=dpi)
-        plot!(p5,tt,traj.vn[i]    ,lab="GPS")
-        plot!(p5,tt,ins.vn[i]     ,lab="INS")
-        plot!(p5,tt,filt_out.vn[i],lab="MagNav")
+        p5 = plot(; xlab="time [min]", ylab="north velocity [m/s]", dpi=dpi)
+        plot!(p5, tt, traj.vn[i]; lab="GPS")
+        plot!(p5, tt, ins.vn[i]; lab="INS")
+        plot!(p5, tt, filt_out.vn[i]; lab="MagNav")
         show_plot && display(p5)
-        save_plot && png(p5,"north_velocity.png")
+        save_plot && png(p5, "north_velocity.png")
 
-        p6 = plot(xlab="time [min]",ylab="east velocity [m/s]",dpi=dpi)
-        plot!(p6,tt,traj.ve[i]    ,lab="GPS")
-        plot!(p6,tt,ins.ve[i]     ,lab="INS")
-        plot!(p6,tt,filt_out.ve[i],lab="MagNav")
+        p6 = plot(; xlab="time [min]", ylab="east velocity [m/s]", dpi=dpi)
+        plot!(p6, tt, traj.ve[i]; lab="GPS")
+        plot!(p6, tt, ins.ve[i]; lab="INS")
+        plot!(p6, tt, filt_out.ve[i]; lab="MagNav")
         show_plot && display(p6)
-        save_plot && png(p6,"east_velocity.png")
+        save_plot && png(p6, "east_velocity.png")
     end
 
     # p7 = plot(xlab="time [min]",ylab="altitude [m]",dpi=dpi)
@@ -619,12 +612,12 @@ function plot_filt(traj::Traj, ins::INS, filt_out::FILTout;
                    show_plot::Bool = true,
                    save_plot::Bool = false)
     p1 = plot()
-    plot_filt(p1,traj,ins,filt_out;
-              dpi       = dpi,
-              Nmax      = Nmax,
-              plot_vel  = plot_vel,
-              show_plot = show_plot,
-              save_plot = save_plot)
+    return plot_filt(p1, traj, ins, filt_out;
+                     dpi       = dpi,
+                     Nmax      = Nmax,
+                     plot_vel  = plot_vel,
+                     show_plot = show_plot,
+                     save_plot = save_plot)
 end # function plot_filt
 
 """
@@ -659,44 +652,41 @@ function plot_filt_err(traj::Traj, filt_out::FILTout, crlb_out::CRLBout;
                        plot_vel::Bool  = false,
                        show_plot::Bool = true,
                        save_plot::Bool = false)
-
-    i  = downsample(1:traj.N,Nmax)
+    i  = downsample(1:traj.N, Nmax)
     tt = (traj.tt[i] .- traj.tt[i][1]) / 60
 
-    p1 = plot(xlab="time [min]",ylab="northing error [m]",dpi=dpi)
-    plot!(p1,tt, filt_out.n_err[i],lab="filter error",lc=:black,lw=2)
-    plot!(p1,tt, filt_out.n_std[i],lab="filter 1-σ",lc=:blue)
-    plot!(p1,tt,-filt_out.n_std[i],lab=false,lc=:blue)
-    plot!(p1,tt, crlb_out.n_std[i],lab="CRLB 1-σ",lc=:red,ls=:dash)
-    plot!(p1,tt,-crlb_out.n_std[i],lab=false,lc=:red,ls=:dash)
+    p1 = plot(; xlab="time [min]", ylab="northing error [m]", dpi=dpi)
+    plot!(p1, tt, filt_out.n_err[i]; lab="filter error", lc=:black, lw=2)
+    plot!(p1, tt, filt_out.n_std[i]; lab="filter 1-σ", lc=:blue)
+    plot!(p1, tt, -filt_out.n_std[i]; lab=false, lc=:blue)
+    plot!(p1, tt, crlb_out.n_std[i]; lab="CRLB 1-σ", lc=:red, ls=:dash)
+    plot!(p1, tt, -crlb_out.n_std[i]; lab=false, lc=:red, ls=:dash)
     show_plot && display(p1)
-    save_plot && png(p1,"northing_error.png")
+    save_plot && png(p1, "northing_error.png")
 
-    p2 = plot(xlab="time [min]",ylab="easting error [m]",dpi=dpi)
-    plot!(p2,tt, filt_out.e_err[i],lab="filter error",lc=:black,lw=2)
-    plot!(p2,tt, filt_out.e_std[i],lab="filter 1-σ",lc=:blue)
-    plot!(p2,tt,-filt_out.e_std[i],lab=false,lc=:blue)
-    plot!(p2,tt, crlb_out.e_std[i],lab="CRLB 1-σ",lc=:red,ls=:dash)
-    plot!(p2,tt,-crlb_out.e_std[i],lab=false,lc=:red,ls=:dash)
+    p2 = plot(; xlab="time [min]", ylab="easting error [m]", dpi=dpi)
+    plot!(p2, tt, filt_out.e_err[i]; lab="filter error", lc=:black, lw=2)
+    plot!(p2, tt, filt_out.e_std[i]; lab="filter 1-σ", lc=:blue)
+    plot!(p2, tt, -filt_out.e_std[i]; lab=false, lc=:blue)
+    plot!(p2, tt, crlb_out.e_std[i]; lab="CRLB 1-σ", lc=:red, ls=:dash)
+    plot!(p2, tt, -crlb_out.e_std[i]; lab=false, lc=:red, ls=:dash)
     show_plot && display(p2)
-    save_plot && png(p2,"easting_error.png")
+    save_plot && png(p2, "easting_error.png")
 
     if plot_vel
-
-        p3 = plot(xlab="time [min]",ylab="north velocity error [m/s]",dpi=dpi) # , ylim=(-10,10))
-        plot!(p3,tt, filt_out.vn_err[i],lab="filter error",lc=:black,lw=2)
-        plot!(p3,tt, filt_out.vn_std[i],lab="filter 1-σ",lc=:blue)
-        plot!(p3,tt,-filt_out.vn_std[i],lab=false,lc=:blue)
+        p3 = plot(; xlab="time [min]", ylab="north velocity error [m/s]", dpi=dpi) # , ylim=(-10,10))
+        plot!(p3, tt, filt_out.vn_err[i]; lab="filter error", lc=:black, lw=2)
+        plot!(p3, tt, filt_out.vn_std[i]; lab="filter 1-σ", lc=:blue)
+        plot!(p3, tt, -filt_out.vn_std[i]; lab=false, lc=:blue)
         show_plot && display(p3)
-        save_plot && png(p3,"north_velocity_error.png")
+        save_plot && png(p3, "north_velocity_error.png")
 
-        p4 = plot(xlab="time [min]",ylab="east velocity error [m/s]",dpi=dpi) # , ylim=(-10,10))
-        plot!(p4,tt, filt_out.ve_err[i],lab="filter error",lc=:black,lw=2)
-        plot!(p4,tt, filt_out.ve_std[i],lab="filter 1-σ",lc=:blue)
-        plot!(p4,tt,-filt_out.ve_std[i],lab=false,lc=:blue)
+        p4 = plot(; xlab="time [min]", ylab="east velocity error [m/s]", dpi=dpi) # , ylim=(-10,10))
+        plot!(p4, tt, filt_out.ve_err[i]; lab="filter error", lc=:black, lw=2)
+        plot!(p4, tt, filt_out.ve_std[i]; lab="filter 1-σ", lc=:blue)
+        plot!(p4, tt, -filt_out.ve_std[i]; lab=false, lc=:blue)
         show_plot && display(p4)
-        save_plot && png(p4,"east_velocity_error.png")
-
+        save_plot && png(p4, "east_velocity_error.png")
     end
 
     # p5 = plot(xlab="time [min]",ylab="altitude error [m]",dpi=dpi)
@@ -803,27 +793,26 @@ function plot_mag_map(path::Path, mag, itp_mapS;
                       show_plot::Bool    = true,
                       save_plot::Bool    = false,
                       plot_png::String   = "mag_vs_map.png")
-
-    i  = downsample(1:path.N,Nmax)
+    i  = downsample(1:path.N, Nmax)
     tt = (path.tt[i] .- path.tt[i][1]) / 60
 
-    map_val = itp_mapS.(path.lat[i],path.lon[i],path.alt[i])
-    mag_val = detrend_data ? detrend(mag[i] ) : mag[i]
+    map_val = itp_mapS.(path.lat[i], path.lon[i], path.alt[i])
+    mag_val = detrend_data ? detrend(mag[i]) : mag[i]
     map_val = detrend_data ? detrend(map_val) : map_val
 
-    p1 = plot(xlab="time [min]",ylab="magnetic field [nT]",dpi=dpi)
+    p1 = plot(; xlab="time [min]", ylab="magnetic field [nT]", dpi=dpi)
     if order == :magmap
-        plot!(p1,tt,mag_val,lab=lab)
-        plot!(p1,tt,map_val,lab="anomaly map")
+        plot!(p1, tt, mag_val; lab=lab)
+        plot!(p1, tt, map_val; lab="anomaly map")
     elseif order == :mapmag
-        plot!(p1,tt,map_val,lab="anomaly map")
-        plot!(p1,tt,mag_val,lab=lab)
+        plot!(p1, tt, map_val; lab="anomaly map")
+        plot!(p1, tt, mag_val; lab=lab)
     else
         error("order $order not defined")
     end
 
     show_plot && display(p1)
-    save_plot && png(p1,plot_png)
+    save_plot && png(p1, plot_png)
 
     return (p1)
 end # function plot_mag_map
@@ -863,23 +852,22 @@ function plot_mag_map_err(path::Path, mag, itp_mapS;
                           show_plot::Bool    = true,
                           save_plot::Bool    = false,
                           plot_png::String   = "mag_map_err.png")
-
-    i  = downsample(1:path.N,Nmax)
+    i  = downsample(1:path.N, Nmax)
     tt = (path.tt[i] .- path.tt[i][1]) / 60
 
     l  = detrend_data ? "detrended " : ""
-    p1 = plot(xlab="time [min]",ylab=l*"magnetic signal error [nT]",dpi=dpi)
+    p1 = plot(; xlab="time [min]", ylab=l*"magnetic signal error [nT]", dpi=dpi)
 
     f = detrend_data ? detrend : x -> x
 
-    map_val = itp_mapS.(path.lat[i],path.lon[i],path.alt[i])
+    map_val = itp_mapS.(path.lat[i], path.lon[i], path.alt[i])
 
-    plot!(p1,tt,f(mag[i] - map_val),lab=lab)
+    plot!(p1, tt, f(mag[i] - map_val); lab=lab)
 
     show_plot && display(p1)
-    save_plot && png(p1,plot_png)
+    save_plot && png(p1, plot_png)
 
-    err = round(std(mag[i] - map_val),digits=2)
+    err = round(std(mag[i] - map_val); digits=2)
     @info("mag-map error standard deviation = $err nT")
 
     return (p1)
@@ -899,13 +887,13 @@ Get autocorrelation of data (e.g., actual - expected measurements).
 - `sigma`: standard deviation
 - `tau`:   autocorrelation decay to e^-1 of `x` [s]
 """
-function get_autocor(x::Vector, dt = 0.1, dt_max = 300.0)
-    sigma = round(Int,std(x))
+function get_autocor(x::Vector, dt=0.1, dt_max=300.0)
+    sigma = round(Int, std(x))
     dts   = 0:dt:dt_max
-    lags  = round.(Int,dts/dt)
-    x_ac  = autocor(x,lags)
+    lags  = round.(Int, dts/dt)
+    x_ac  = autocor(x, lags)
     i     = findfirst(x_ac .< exp(-1))
-    tau   = i isa Nothing ? dt_max : round(Int,dts[i])
+    tau   = i isa Nothing ? dt_max : round(Int, dts[i])
     return (sigma, tau)
 end # function get_autocor
 
@@ -929,24 +917,23 @@ Plot autocorrelation of data (e.g., actual - expected measurements). Prints out
 **Returns:**
 - `p1`: plot of autocorrelation of `x`
 """
-function plot_autocor(x::Vector, dt = 0.1, dt_max = 300.0;
+function plot_autocor(x::Vector, dt               = 0.1, dt_max           = 300.0;
                       show_plot::Bool  = true,
                       save_plot::Bool  = false,
                       plot_png::String = "autocor.png")
-
-    (sigma,tau) = get_autocor(x,dt,dt_max) # 1002.17: σ = 5, τ ≈ 45
+    (sigma, tau) = get_autocor(x, dt, dt_max) # 1002.17: σ = 5, τ ≈ 45
 
     @info("σ ≈ $sigma")
     @info("τ ≈ $tau")
     tau == dt_max && @info("τ not in range")
 
     dts  = 0:dt:dt_max
-    lags = round.(Int,dts/dt)
-    x_ac = autocor(x,lags)
-    p1   = plot(dts,x_ac,lab=false);
+    lags = round.(Int, dts/dt)
+    x_ac = autocor(x, lags)
+    p1   = plot(dts, x_ac; lab=false)
 
     show_plot && display(p1)
-    save_plot && png(p1,plot_png)
+    save_plot && png(p1, plot_png)
 
     return (p1)
 end # function plot_autocor
@@ -963,7 +950,7 @@ Probability density function (PDF) of the chi-square distribution.
 **Returns:**
 - `f`: probability density function (PDF) at `x` with `k`
 """
-function chisq_pdf(x, k::Int = 1)
+function chisq_pdf(x, k::Int=1)
     f = x > 0 ? x^(k/2-1) * exp(-x/2) / (2^(k/2) * gamma(k/2)) : 0
     return float(f)
 end # function chisq_pdf
@@ -980,8 +967,8 @@ Cumulative distribution function (CDF) of the chi-square distribution.
 **Returns:**
 - `F`: cumulative distribution function (CDF) at `x` with `k`
 """
-function chisq_cdf(x, k::Int = 1)
-    F = x > 0 ? gamma_inc.(k/2,x/2)[1] : 0
+function chisq_cdf(x, k::Int=1)
+    F = x > 0 ? gamma_inc.(k/2, x/2)[1] : 0
     return float(F)
 end # function chisq_cdf
 
@@ -997,8 +984,8 @@ Quantile function (inverse CDF) of the chi-square distribution.
 **Returns:**
 - `x`: chi-square value
 """
-function chisq_q(P = 0.95, k::Int = 1)
-    gamma_inc_inv(k/2,P,1-P)*2
+function chisq_q(P=0.95, k::Int=1)
+    return gamma_inc_inv(k/2, P, 1-P)*2
 end # function chisq_q
 
 """
@@ -1016,16 +1003,16 @@ Internal helper function to create `x` & `y` confidence ellipse points for a
 - `x`: x-axis confidence ellipse points
 - `y`: y-axis confidence ellipse points
 """
-function points_ellipse(P; clip = Inf, n::Int = 61)
-    θ = LinRange(0,2*pi,n) # angles around circle
+function points_ellipse(P; clip=Inf, n::Int=61)
+    θ = LinRange(0, 2*pi, n) # angles around circle
 
-    (eigval,eigvec) = eigen(P); # eigenvalues & eigenvectors
+    (eigval, eigvec) = eigen(P) # eigenvalues & eigenvectors
     xy = [cos.(θ) sin.(θ)] * sqrt.(Diagonal(eigval)) * eigvec' # transformation
-    x  = xy[:,1]
-    y  = xy[:,2]
+    x = xy[:, 1]
+    y = xy[:, 2]
 
     # clip data to clipping radius
-    r = sqrt.(x.^2 + y.^2) # Euclidian distance
+    r = sqrt.(x .^ 2 + y .^ 2) # Euclidian distance
     i = r .> clip
     x[i] .= NaN
     y[i] .= NaN
@@ -1072,7 +1059,7 @@ a 2D confidence interval.
 - `nothing`: confidence ellipse is plotted on `p1`
 """
 function conf_ellipse!(p1::Plot, P;
-                       μ                    = zeros(eltype(P),2),
+                       μ                    = zeros(eltype(P), 2),
                        conf                 = 0.95,
                        clip                 = Inf,
                        n::Int               = 61,
@@ -1084,35 +1071,34 @@ function conf_ellipse!(p1::Plot, P;
                        bg_color::Symbol     = :white,
                        ce_color::Symbol     = :black,
                        b_e::AbstractBackend = gr())
-
-    (eigval,eigvec) = eigen(P)
-    eigax = I*sqrt.(Diagonal(eigval)) * eigvec'
+    (eigval, eigvec) = eigen(P)
+    eigax = I * sqrt.(Diagonal(eigval)) * eigvec'
 
     # check arguments
-    xlim = ylim = lim isa Nothing  ? lim : (-lim,lim)
-    xlab = ylab = axis             ? lab : ""
+    xlim = ylim = lim isa Nothing ? lim : (-lim, lim)
+    xlab = ylab = axis ? lab : ""
     @assert all(real(eigval) .> 0) "P is not positive definite"
-    @assert size(P) == (2,2)       "P is size $(size(P)) ≂̸ (2,2)"
-    @assert length(μ) == 2         "μ is length $(length(μ)) ≂̸ 2"
-    @assert 0 < conf < 1           "conf is not 0 < $conf < 1"
+    @assert size(P) == (2, 2) "P is size $(size(P)) ≂̸ (2,2)"
+    @assert length(μ) == 2 "μ is length $(length(μ)) ≂̸ 2"
+    @assert 0 < conf < 1 "conf is not 0 < $conf < 1"
 
-    k  = sqrt(chisq_q(conf,2)) # compute quantile for desired percentile
+    k = sqrt(chisq_q(conf, 2)) # compute quantile for desired percentile
     b_e # backend
     if lim isa Nothing
-        plot!(p1,xlab=xlab,ylab=ylab,
-              legend=false,aspect_ratio=:equal,margin=margin*mm,
-              axis=axis,xticks=axis,yticks=axis,grid=axis,bg=bg_color)
+        plot!(p1; xlab=xlab, ylab=ylab,
+              legend=false, aspect_ratio=:equal, margin=margin*mm,
+              axis=axis, xticks=axis, yticks=axis, grid=axis, bg=bg_color)
     else
-        plot!(p1,xlim=xlim,ylim=ylim,xlab=xlab,ylab=ylab,
-              legend=false,aspect_ratio=:equal,margin=margin*mm,
-              axis=axis,xticks=axis,yticks=axis,grid=axis,bg=bg_color)
+        plot!(p1; xlim=xlim, ylim=ylim, xlab=xlab, ylab=ylab,
+              legend=false, aspect_ratio=:equal, margin=margin*mm,
+              axis=axis, xticks=axis, yticks=axis, grid=axis, bg=bg_color)
     end
 
-    (x,y) = points_ellipse(P;clip=clip,n=n)
-    plot!(p1, μ[1].+k*x, μ[2].+k*y, lc=ce_color, lw=2)
+    (x, y) = points_ellipse(P; clip=clip, n=n)
+    plot!(p1, μ[1] .+ k*x, μ[2] .+ k*y; lc=ce_color, lw=2)
     if plot_eigax
-        plot!(p1,[-k,k]*eigax[1,1],[-k,k]*eigax[1,2],lc=:red,ls=:dash,lw=1)
-        plot!(p1,[-k,k]*eigax[2,1],[-k,k]*eigax[2,2],lc=:red,ls=:dash,lw=2)
+        plot!(p1, [-k, k]*eigax[1, 1], [-k, k]*eigax[1, 2]; lc=:red, ls=:dash, lw=1)
+        plot!(p1, [-k, k]*eigax[2, 1], [-k, k]*eigax[2, 2]; lc=:red, ls=:dash, lw=2)
     end
 
     return (nothing)
@@ -1155,7 +1141,7 @@ matrix (2 degrees of freedom). Visualization of a 2D confidence interval.
 - `p1`: plot of confidence ellipse
 """
 function conf_ellipse(P;
-                      μ                    = zeros(eltype(P),2),
+                      μ                    = zeros(eltype(P), 2),
                       conf                 = 0.95,
                       clip                 = Inf,
                       n::Int               = 61,
@@ -1169,7 +1155,7 @@ function conf_ellipse(P;
                       b_e::AbstractBackend = gr())
     b_e # backend
     p1 = plot()
-    conf_ellipse!(p1,P;
+    conf_ellipse!(p1, P;
                   μ          = μ,
                   conf       = conf,
                   clip       = clip,
@@ -1199,16 +1185,16 @@ Internal helper function to convert (position) confidence ellipse units for a
 **Returns:**
 - `P`: `2` x `2` covariance matrix with converted units
 """
-function units_ellipse(P; conf_units::Symbol = :m, lat1 = deg2rad(45))
-    @assert size(P,1) == 2 "P is size $(size(P)) ≂̸ (2,2)"
-    @assert size(P,2) == 2 "P is size $(size(P)) ≂̸ (2,2)"
+function units_ellipse(P; conf_units::Symbol=:m, lat1=deg2rad(45))
+    @assert size(P, 1) == 2 "P is size $(size(P)) ≂̸ (2,2)"
+    @assert size(P, 2) == 2 "P is size $(size(P)) ≂̸ (2,2)"
 
     P = float.(P)
 
     if conf_units == :deg
         P = rad2deg.(rad2deg.(P)) # deg^2
-    elseif conf_units in [:m,:ft]
-        l = [dlat2dn(1,lat1),dlon2de(1,lat1)] # m/rad
+    elseif conf_units in [:m, :ft]
+        l = [dlat2dn(1, lat1), dlon2de(1, lat1)] # m/rad
         conf_units == :ft && (l ./= 0.3048)   # ft/rad
         P = P .* (l*l') # m^2 or ft^2
     elseif conf_units != :rad
@@ -1234,10 +1220,10 @@ Internal helper function to convert (position) confidence ellipse units for a
 - `P`: `2` x `2` covariance matrix with converted units
 """
 function units_ellipse(filt_res::FILTres, filt_out::FILTout;
-                       conf_units::Symbol = :m)
-    units_ellipse(float.(filt_res.P[1:2,1:2,:]);
-                  conf_units = conf_units,
-                  lat1       = mean(filt_out.lat))
+                       conf_units::Symbol=:m)
+    return units_ellipse(float.(filt_res.P[1:2, 1:2, :]);
+                         conf_units = conf_units,
+                         lat1       = mean(filt_out.lat))
 end # function units_ellipse
 
 """
@@ -1287,12 +1273,12 @@ covariance matrix.
 **Returns:**
 - `g1`: confidence ellipse GIF animation
 """
-function gif_ellipse(P, lat1 = deg2rad(45);
+function gif_ellipse(P, lat1                 = deg2rad(45);
                      dt                   = 0.1,
                      di::Int              = 10,
                      speedup::Int         = 60,
                      conf_units::Symbol   = :m,
-                     μ                    = zeros(eltype(P),2),
+                     μ                    = zeros(eltype(P), 2),
                      conf                 = 0.95,
                      clip                 = Inf,
                      n::Int               = 61,
@@ -1305,12 +1291,11 @@ function gif_ellipse(P, lat1 = deg2rad(45);
                      b_e::AbstractBackend = gr(),
                      save_plot::Bool      = false,
                      ellipse_gif::String  = "conf_ellipse.gif")
-
-    P  = units_ellipse(P;conf_units=conf_units,lat1=lat1)
+    P  = units_ellipse(P; conf_units=conf_units, lat1=lat1)
     a1 = Animation()
 
-    for i = 1:di:size(P,3)
-        p1 = conf_ellipse(P[:,:,i];
+    for i in 1:di:size(P, 3)
+        p1 = conf_ellipse(P[:, :, i];
                           μ          = μ,
                           conf       = conf,
                           clip       = clip,
@@ -1321,14 +1306,14 @@ function gif_ellipse(P, lat1 = deg2rad(45);
                           plot_eigax = plot_eigax,
                           bg_color   = bg_color,
                           ce_color   = ce_color,
-                          b_e        = b_e);
-        frame(a1,p1);
+                          b_e        = b_e)
+        frame(a1, p1)
     end
 
     # show or save gif
-    ellipse_gif = add_extension(ellipse_gif,".gif")
+    ellipse_gif = add_extension(ellipse_gif, ".gif")
     fps         = 1/dt/di*speedup
-    g1          = save_plot ? gif(a1,ellipse_gif;fps=fps) : gif(a1;fps=fps)
+    g1          = save_plot ? gif(a1, ellipse_gif; fps=fps) : gif(a1; fps=fps)
 
     return (g1)
 end # function gif_ellipse
@@ -1396,7 +1381,7 @@ function gif_ellipse(filt_res::FILTres,
                      di::Int              = 10,
                      speedup::Int         = 60,
                      conf_units::Symbol   = :m,
-                     μ                    = zeros(eltype(filt_res.P),2),
+                     μ                    = zeros(eltype(filt_res.P), 2),
                      conf                 = 0.95,
                      clip                 = Inf,
                      n::Int               = 61,
@@ -1412,42 +1397,40 @@ function gif_ellipse(filt_res::FILTres,
                      b_e::AbstractBackend = gr(),
                      save_plot::Bool      = false,
                      ellipse_gif::String  = "conf_ellipse.gif")
+    dx = dlon2de(get_step(map_map.xx), mean(map_map.yy))
+    dy = dlat2dn(get_step(map_map.yy), mean(map_map.yy))
 
-    dx = dlon2de(get_step(map_map.xx),mean(map_map.yy))
-    dy = dlat2dn(get_step(map_map.yy),mean(map_map.yy))
-
-    if !any(iszero.([dx,dy]) .| isnan.([dx,dy])) & isempty(clims)
-        num = ceil(Int,1.5*lim/minimum([dx,dy]))
-        x1  = findmin(abs.(map_map.xx.-minimum(filt_out.lon)))[2]
-        x2  = findmin(abs.(map_map.xx.-maximum(filt_out.lon)))[2]
-        y1  = findmin(abs.(map_map.yy.-minimum(filt_out.lat)))[2]
-        y2  = findmin(abs.(map_map.yy.-maximum(filt_out.lat)))[2]
-        (x1,x2)   = sort([x1,x2])
-        (y1,y2)   = sort([y1,y2])
-        (_,clims) = map_clims(map_cs(map_color),map_map.map[y1:y2,x1:x2,1])
+    if !any(iszero.([dx, dy]) .| isnan.([dx, dy])) & isempty(clims)
+        num        = ceil(Int, 1.5*lim/minimum([dx, dy]))
+        x1         = findmin(abs.(map_map.xx .- minimum(filt_out.lon)))[2]
+        x2         = findmin(abs.(map_map.xx .- maximum(filt_out.lon)))[2]
+        y1         = findmin(abs.(map_map.yy .- minimum(filt_out.lat)))[2]
+        y2         = findmin(abs.(map_map.yy .- maximum(filt_out.lat)))[2]
+        (x1, x2)   = sort([x1, x2])
+        (y1, y2)   = sort([y1, y2])
+        (_, clims) = map_clims(map_cs(map_color), map_map.map[y1:y2, x1:x2, 1])
     end
 
-    P  = units_ellipse(filt_res,filt_out;conf_units=conf_units)
+    P  = units_ellipse(filt_res, filt_out; conf_units=conf_units)
     a1 = Animation()
 
-    for i = 1:di:size(P,3)
-
-        if !any(iszero.([dx,dy]) .| isnan.([dx,dy]))
-            xi     = findmin(abs.(map_map.xx.-filt_out.lon[i]))[2]
-            yi     = findmin(abs.(map_map.yy.-filt_out.lat[i]))[2]
-            ind_xx = max(xi-num,1):min(xi+num,length(map_map.xx))
-            ind_yy = max(yi-num,1):min(yi+num,length(map_map.yy))
-            p1     = plot_map(map_map.map[ind_yy,ind_xx,1],
-                              map_map.xx[ind_xx],map_map.yy[ind_yy];
-                              clims=clims,dpi=dpi,margin=margin,Nmax=10^10,
-                              legend=false,axis=false,
-                              map_color=map_color,bg_color=bg_color,
-                              map_units=:rad,plot_units=conf_units,b_e=b_e)
+    for i in 1:di:size(P, 3)
+        if !any(iszero.([dx, dy]) .| isnan.([dx, dy]))
+            xi     = findmin(abs.(map_map.xx .- filt_out.lon[i]))[2]
+            yi     = findmin(abs.(map_map.yy .- filt_out.lat[i]))[2]
+            ind_xx = max(xi-num, 1):min(xi+num, length(map_map.xx))
+            ind_yy = max(yi-num, 1):min(yi+num, length(map_map.yy))
+            p1     = plot_map(map_map.map[ind_yy, ind_xx, 1],
+            map_map.xx[ind_xx], map_map.yy[ind_yy];
+            clims=clims, dpi=dpi, margin=margin, Nmax=10^10,
+            legend=false, axis=false,
+            map_color=map_color, bg_color=bg_color,
+            map_units=:rad, plot_units=conf_units, b_e=b_e)
         else
             p1 = plot()
         end
 
-        conf_ellipse!(p1,P[:,:,i];
+        conf_ellipse!(p1, P[:, :, i];
                       μ          = μ,
                       conf       = conf,
                       clip       = clip,
@@ -1458,14 +1441,14 @@ function gif_ellipse(filt_res::FILTres,
                       plot_eigax = plot_eigax,
                       bg_color   = bg_color,
                       ce_color   = ce_color,
-                      b_e        = b_e);
-        frame(a1,p1)
+                      b_e        = b_e)
+        frame(a1, p1)
     end
 
     # show or save gif
-    ellipse_gif = add_extension(ellipse_gif,".gif")
+    ellipse_gif = add_extension(ellipse_gif, ".gif")
     fps         = 1/dt/di*speedup
-    g1          = save_plot ? gif(a1,ellipse_gif;fps=fps) : gif(a1;fps=fps)
+    g1          = save_plot ? gif(a1, ellipse_gif; fps=fps) : gif(a1; fps=fps)
 
     return (g1)
 end # function gif_ellipse

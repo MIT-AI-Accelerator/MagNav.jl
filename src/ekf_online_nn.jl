@@ -48,46 +48,45 @@ function ekf_online_nn(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
                        acc_tau    = 3600.0,
                        gyro_tau   = 3600.0,
                        fogm_tau   = 600.0,
-                       date       = get_years(2020,185),
+                       date       = get_years(2020, 185),
                        core::Bool = false)
-
-    (y_bias,y_scale) = y_norms
+    (y_bias, y_scale) = y_norms
 
     N     = length(lat)
-    nx    = size(P0,1)
-    nx_nn = sum(length,Params(trainables(m)))
-    ny    = size(meas,2)
-    x_out = zeros(eltype(P0),nx,N)
-    P_out = zeros(eltype(P0),nx,nx,N)
-    r_out = zeros(eltype(P0),ny,N)
-    x     = zeros(eltype(P0),nx) # state estimate
+    nx    = size(P0, 1)
+    nx_nn = sum(length, Params(trainables(m)))
+    ny    = size(meas, 2)
+    x_out = zeros(eltype(P0), nx, N)
+    P_out = zeros(eltype(P0), nx, nx, N)
+    r_out = zeros(eltype(P0), ny, N)
+    x     = zeros(eltype(P0), nx) # state estimate
     P     = P0 # covariance matrix
 
-    (w0_nn,re) = destructure(m)
-    x[end-nx_nn:end-1] .= w0_nn
+    (w0_nn, re) = destructure(m)
+    x[(end-nx_nn):(end-1)] .= w0_nn
 
     map_cache = itp_mapS isa Map_Cache ? itp_mapS : nothing
 
-    for t = 1:N
+    for t in 1:N
         # custom itp_mapS from map cache, if available
         if map_cache isa Map_Cache
-            itp_mapS = get_cached_map(map_cache,lat[t],lon[t],alt[t];silent=true)
+            itp_mapS = get_cached_map(map_cache, lat[t], lon[t], alt[t]; silent=true)
         end
 
         # Pinson matrix exponential
-        Phi = get_Phi(nx,lat[t],vn[t],ve[t],vd[t],fn[t],fe[t],fd[t],Cnb[:,:,t],
-                      baro_tau,acc_tau,gyro_tau,fogm_tau,dt)
+        Phi = get_Phi(nx, lat[t], vn[t], ve[t], vd[t], fn[t], fe[t], fd[t], Cnb[:, :, t],
+                      baro_tau, acc_tau, gyro_tau, fogm_tau, dt)
 
         # measurement residual [ny]
-        m     = re(x[end-nx_nn:end-1])
-        resid = meas[t,:] .- (m(x_nn[t,:]).*y_scale.+y_bias) .-
-                get_h(itp_mapS,x,lat[t],lon[t],alt[t];date=date,core=core)
+        m     = re(x[(end-nx_nn):(end-1)])
+        resid = meas[t, :] .- (m(x_nn[t, :]) .* y_scale .+ y_bias) .-
+        get_h(itp_mapS, x, lat[t], lon[t], alt[t]; date=date, core=core)
 
         # measurement Jacobian (repeated gradient here) [ny x nx]
-        Hll = get_H(itp_mapS,x,lat[t],lon[t],alt[t];date=date,core=core)'
-        Hnn = get_Hnn(nn_grad(m,x_nn[t,:]))
-        H1  = [Hll[1:2]; zeros(eltype(Hll),nx-3-nx_nn); Hnn.*y_scale; 1]
-        H   = repeat(H1',ny,1)
+        Hll = get_H(itp_mapS, x, lat[t], lon[t], alt[t]; date=date, core=core)'
+        Hnn = get_Hnn(nn_grad(m, x_nn[t, :]))
+        H1  = [Hll[1:2]; zeros(eltype(Hll), nx-3-nx_nn); Hnn .* y_scale; 1]
+        H   = repeat(H1', ny, 1)
 
         # measurement residual covariance
         S = H*P*H' .+ R         # S_t [ny x ny]
@@ -100,9 +99,9 @@ function ekf_online_nn(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
         P = (I - K*H) * P   # P_t [nx x nx]
 
         # state, covariance, & residual store
-        x_out[:,t]   = x
-        P_out[:,:,t] = P
-        r_out[:,t]   = resid
+        x_out[:, t]    = x
+        P_out[:, :, t] = P
+        r_out[:, t]    = resid
 
         # state & covariance propagate (predict)
         x = Phi*x               # x_t|t-1 [nx]
@@ -140,8 +139,8 @@ Internal helper function to reshape neural network gradients.
 function get_Hnn(g::Tuple)
     Hnn = Float32[]
     for i in eachindex(g)
-        Hnn = [Hnn;vec(g[i].weight);]
-        !(g[i].bias isa Nothing) && (Hnn = [Hnn;vec(g[i].bias);])
+        Hnn = [Hnn; vec(g[i].weight);]
+        !(g[i].bias isa Nothing) && (Hnn = [Hnn; vec(g[i].bias);])
     end
     return (Hnn)
 end # function get_Hnn
@@ -182,17 +181,17 @@ function ekf_online_nn(ins::INS, meas, itp_mapS, x_nn, m, y_norms, P0, Qd, R;
                        acc_tau    = 3600.0,
                        gyro_tau   = 3600.0,
                        fogm_tau   = 600.0,
-                       date       = get_years(2020,185),
+                       date       = get_years(2020, 185),
                        core::Bool = false)
-    ekf_online_nn(ins.lat,ins.lon,ins.alt,ins.vn,ins.ve,ins.vd,
-                  ins.fn,ins.fe,ins.fd,ins.Cnb,meas,
-                  ins.dt,itp_mapS,x_nn,m,y_norms,P0,Qd,R;
-                  baro_tau = baro_tau,
-                  acc_tau  = acc_tau,
-                  gyro_tau = gyro_tau,
-                  fogm_tau = fogm_tau,
-                  date     = date,
-                  core     = core)
+    return ekf_online_nn(ins.lat, ins.lon, ins.alt, ins.vn, ins.ve, ins.vd,
+                         ins.fn, ins.fe, ins.fd, ins.Cnb, meas,
+                         ins.dt, itp_mapS, x_nn, m, y_norms, P0, Qd, R;
+                         baro_tau = baro_tau,
+                         acc_tau  = acc_tau,
+                         gyro_tau = gyro_tau,
+                         fogm_tau = fogm_tau,
+                         date     = date,
+                         core     = core)
 end # function ekf_online_nn
 
 # #* note: original initialization attempt
@@ -240,20 +239,20 @@ Setup for extended Kalman filter (EKF) with online learning of neural network we
 - `P0_nn`:    initial neural network weights covariance matrix
 - `nn_sigma`: initial neural network weights estimate std dev
 """
-function ekf_online_nn_setup(x, y, m, y_norms; N_sigma::Int = 1000)
+function ekf_online_nn_setup(x, y, m, y_norms; N_sigma::Int=1000)
     N_sigma_min = 10
     @assert N_sigma >= N_sigma_min "increase N_sigma to $N_sigma_min"
-    (y_bias,y_scale) = y_norms # unpack normalizations
+    (y_bias, y_scale) = y_norms # unpack normalizations
     m = deepcopy(m) # don't modify original NN model
-    (w_nn,re)  = destructure(m) # weights, restructure
-    w_nn_store = zeros(eltype(w_nn),length(w_nn),N_sigma) # initialize weights matrix
+    (w_nn, re) = destructure(m) # weights, restructure
+    w_nn_store = zeros(eltype(w_nn), length(w_nn), N_sigma) # initialize weights matrix
     P = I(length(w_nn)) # initialize covariance matrix
-    for i = 1:N_sigma   # run recursive least squares
+    for i in 1:N_sigma   # run recursive least squares
         m = re(w_nn)
         K = P*w_nn/(1+w_nn'*P*w_nn)
-        P     -= P*w_nn*w_nn'*P/(1+w_nn'*P*w_nn)
-        w_nn  += K.*(y[i].-(m(x[i,:]).*y_scale.+y_bias)) ./ y_scale
-        w_nn_store[:,i] = w_nn
+        P -= P*w_nn*w_nn'*P/(1+w_nn'*P*w_nn)
+        w_nn += K .* (y[i] .- (m(x[i, :]) .* y_scale .+ y_bias)) ./ y_scale
+        w_nn_store[:, i] = w_nn
         # println(w_nn[1])
     end
 
@@ -261,7 +260,7 @@ function ekf_online_nn_setup(x, y, m, y_norms; N_sigma::Int = 1000)
     # nn_sigma = sqrt.(diag(P0_TL))
     # nn_sigma = vec(abs.(median(w_nn_store[:,2:end]-w_nn_store[:,1:end-1],dims=2)))
     # nn_sigma = vec(std(abs.(w_nn_store[:,2:5]-w_nn_store[:,1:4]),dims=2))
-    nn_sigma = vec(minimum(abs.(w_nn_store[:,2:end]-w_nn_store[:,1:end-1]),dims=2))
+    nn_sigma = vec(minimum(abs.(w_nn_store[:, 2:end]-w_nn_store[:, 1:(end-1)]); dims=2))
     # nn_sigma = vec(abs.(w_nn_store[:,2]-w_nn_store[:,1]))
 
     return (P0_nn, nn_sigma) # , w_nn_store)

@@ -99,49 +99,48 @@ No required arguments, though many are available to create custom data.
 **Returns:**
 - `xyz`: `XYZ0` flight data struct
 """
-function create_XYZ0(mapS::Union{MapS,MapSd,MapS3D} = get_map(namad);
-                     alt            = 1000,
-                     dt             = 0.1,
-                     t              = 300,
-                     v              = 68,
-                     ll1::Tuple     = (), # (0.54, -1.44)
-                     ll2::Tuple     = (), # (0.55, -1.45)
-                     N_waves::Int   = 1,
-                     attempts::Int  = 10,
-                     info::String   = "Simulated data",
-                     flight         = 1,
-                     line           = 1,
-                     year           = 2023,
-                     doy            = 154,
-                     mapV::MapV     = get_map(emm720),
-                     cor_sigma      = 1.0,
-                     cor_tau        = 600.0,
-                     cor_var        = 1.0^2,
-                     cor_drift      = 0.001,
-                     cor_perm_mag   = 5.0,
-                     cor_ind_mag    = 5.0,
-                     cor_eddy_mag   = 0.5,
-                     init_pos_sigma = 3.0,
-                     init_alt_sigma = 0.001,
-                     init_vel_sigma = 0.01,
-                     init_att_sigma = deg2rad(0.01),
-                     VRW_sigma      = 0.000238,
-                     ARW_sigma      = 0.000000581,
-                     baro_sigma     = 1.0,
-                     ha_sigma       = 0.001,
-                     a_hat_sigma    = 0.01,
-                     acc_sigma      = 0.000245,
-                     gyro_sigma     = 0.00000000727,
-                     fogm_sigma     = 1.0,
-                     baro_tau       = 3600.0,
-                     acc_tau        = 3600.0,
-                     gyro_tau       = 3600.0,
-                     fogm_tau       = 600.0,
-                     save_h5::Bool  = false,
-                     xyz_h5::String = "xyz_data.h5",
-                     silent::Bool   = false)
-
-    xyz_h5 = add_extension(xyz_h5,".h5")
+function create_XYZ0(mapS::Union{MapS,MapSd,MapS3D}=get_map(namad);
+                     alt=1000,
+                     dt=0.1,
+                     t=300,
+                     v=68,
+                     ll1::Tuple=(), # (0.54, -1.44)
+                     ll2::Tuple=(), # (0.55, -1.45)
+                     N_waves::Int=1,
+                     attempts::Int=10,
+                     info::String="Simulated data",
+                     flight=1,
+                     line=1,
+                     year=2023,
+                     doy=154,
+                     mapV::MapV=get_map(emm720),
+                     cor_sigma=1.0,
+                     cor_tau=600.0,
+                     cor_var=1.0^2,
+                     cor_drift=0.001,
+                     cor_perm_mag=5.0,
+                     cor_ind_mag=5.0,
+                     cor_eddy_mag=0.5,
+                     init_pos_sigma=3.0,
+                     init_alt_sigma=0.001,
+                     init_vel_sigma=0.01,
+                     init_att_sigma=deg2rad(0.01),
+                     VRW_sigma=0.000238,
+                     ARW_sigma=0.000000581,
+                     baro_sigma=1.0,
+                     ha_sigma=0.001,
+                     a_hat_sigma=0.01,
+                     acc_sigma=0.000245,
+                     gyro_sigma=0.00000000727,
+                     fogm_sigma=1.0,
+                     baro_tau=3600.0,
+                     acc_tau=3600.0,
+                     gyro_tau=3600.0,
+                     fogm_tau=600.0,
+                     save_h5::Bool=false,
+                     xyz_h5::String="xyz_data.h5",
+                     silent::Bool=false)
+    xyz_h5 = add_extension(xyz_h5, ".h5")
 
     # create trajectory
     traj = create_traj(mapS;
@@ -176,38 +175,38 @@ function create_XYZ0(mapS::Union{MapS,MapSd,MapS3D} = get_map(namad);
                      ins_h5         = xyz_h5)
 
     # create compensated (clean) scalar magnetometer measurements
-    mag_1_c = create_mag_c(traj,mapS;
+    mag_1_c = create_mag_c(traj, mapS;
                            meas_var   = cor_var,
                            fogm_sigma = fogm_sigma,
                            fogm_tau   = fogm_tau,
                            silent     = silent)
 
     # create compensated (clean) vector magnetometer measurements
-    flux_a = create_flux(traj,mapV;
+    flux_a = create_flux(traj, mapV;
                          meas_var   = cor_var,
                          fogm_sigma = fogm_sigma,
                          fogm_tau   = fogm_tau,
                          silent     = silent)
 
     # create uncompensated (corrupted) scalar magnetometer measurements
-    (mag_1_uc,_,diurnal) = corrupt_mag(mag_1_c,flux_a;
-                                       dt           = dt,
-                                       cor_sigma    = cor_sigma,
-                                       cor_tau      = cor_tau,
-                                       cor_var      = cor_var,
-                                       cor_drift    = cor_drift,
-                                       cor_perm_mag = cor_perm_mag,
-                                       cor_ind_mag  = cor_ind_mag,
-                                       cor_eddy_mag = cor_eddy_mag)
+    (mag_1_uc, _, diurnal) = corrupt_mag(mag_1_c, flux_a;
+                                         dt           = dt,
+                                         cor_sigma    = cor_sigma,
+                                         cor_tau      = cor_tau,
+                                         cor_var      = cor_var,
+                                         cor_drift    = cor_drift,
+                                         cor_perm_mag = cor_perm_mag,
+                                         cor_ind_mag  = cor_ind_mag,
+                                         cor_eddy_mag = cor_eddy_mag)
 
     flights = flight*one.(traj.lat)
-    lines   = line  *one.(traj.lat)
-    years   = year  *one.(traj.lat)
-    doys    = doy   *one.(traj.lat)
+    lines   = line * one.(traj.lat)
+    years   = year * one.(traj.lat)
+    doys    = doy * one.(traj.lat)
 
     igrf = zero.(traj.lat)
-    xyz  = XYZ0(info, traj, ins, flux_a, flights, lines,
-                years, doys, diurnal, igrf, mag_1_c, mag_1_uc)
+    xyz = XYZ0(info, traj, ins, flux_a, flights, lines,
+               years, doys, diurnal, igrf, mag_1_c, mag_1_uc)
     igrf = norm.(get_igrf(xyz;
                           frame     = :body,
                           norm_igrf = false,
@@ -215,19 +214,19 @@ function create_XYZ0(mapS::Union{MapS,MapSd,MapS3D} = get_map(namad);
     xyz.igrf .= igrf
 
     if save_h5 # save `xyz_h5`
-        h5open(xyz_h5,"cw") do file # read-write, create file if not existing, preserve existing contents
-            write(file,"flux_a_x",flux_a.x)
-            write(file,"flux_a_y",flux_a.y)
-            write(file,"flux_a_z",flux_a.z)
-            write(file,"flux_a_t",flux_a.t)
-            write(file,"mag_1_uc",mag_1_uc)
-            write(file,"mag_1_c" ,mag_1_c)
-            write(file,"flight"  ,flights)
-            write(file,"line"    ,lines)
-            write(file,"year"    ,years)
-            write(file,"doy"     ,doys)
-            write(file,"diurnal" ,diurnal)
-            write(file,"igrf"    ,igrf)
+        h5open(xyz_h5, "cw") do file # read-write, create file if not existing, preserve existing contents
+            write(file, "flux_a_x", flux_a.x)
+            write(file, "flux_a_y", flux_a.y)
+            write(file, "flux_a_z", flux_a.z)
+            write(file, "flux_a_t", flux_a.t)
+            write(file, "mag_1_uc", mag_1_uc)
+            write(file, "mag_1_c", mag_1_c)
+            write(file, "flight", flights)
+            write(file, "line", lines)
+            write(file, "year", years)
+            write(file, "doy", doys)
+            write(file, "diurnal", diurnal)
+            return write(file, "igrf", igrf)
         end
     end
 
@@ -266,74 +265,73 @@ constant altitude (2D flight).
 **Returns:**
 - `traj`: `Traj` trajectory struct
 """
-function create_traj(mapS::Union{MapS,MapSd,MapS3D} = get_map(namad);
-                     alt             = 1000,
-                     dt              = 0.1,
-                     t               = 300,
-                     v               = 68,
-                     ll1::Tuple      = (),
-                     ll2::Tuple      = (),
-                     N_waves::Int    = 1,
-                     attempts::Int   = 10,
-                     save_h5::Bool   = false,
-                     traj_h5::String = "traj_data.h5")
-
-    traj_h5 = add_extension(traj_h5,".h5")
+function create_traj(mapS::Union{MapS,MapSd,MapS3D}=get_map(namad);
+                     alt=1000,
+                     dt=0.1,
+                     t=300,
+                     v=68,
+                     ll1::Tuple=(),
+                     ll2::Tuple=(),
+                     N_waves::Int=1,
+                     attempts::Int=10,
+                     save_h5::Bool=false,
+                     traj_h5::String="traj_data.h5")
+    traj_h5 = add_extension(traj_h5, ".h5")
 
     # check flight altitude
     alt_ = mapS isa Union{MapSd} ? median(mapS.alt[mapS.mask]) : mapS.alt[1]
-    alt  < alt_ && error("flight altitude $alt < map altitude $alt_")
+    alt < alt_ && error("flight altitude $alt < map altitude $alt_")
 
     i   = 0
     N   = 2
-    lat = zeros(Float64,N)
-    lon = zeros(Float64,N)
-    while (!map_check(mapS,lat,lon) & (i <= attempts)) | (i == 0)
+    lat = zeros(Float64, N)
+    lon = zeros(Float64, N)
+    while (!map_check(mapS, lat, lon) & (i <= attempts)) | (i == 0)
         i += 1
 
         if isempty(ll1) # put initial point in middle 50% of map
-            (lat_min,lat_max) = extrema(mapS.yy)
-            (lon_min,lon_max) = extrema(mapS.xx)
+            (lat_min, lat_max) = extrema(mapS.yy)
+            (lon_min, lon_max) = extrema(mapS.xx)
             lat1 = lat_min + (lat_max - lat_min) * (0.25 + 0.50*rand())
             lon1 = lon_min + (lon_max - lon_min) * (0.25 + 0.50*rand())
         else # use given initial point
-            (lat1,lon1) = deg2rad.(ll1)
+            (lat1, lon1) = deg2rad.(ll1)
         end
 
         if isempty(ll2) # use given velocity & time to set distance
-            N     = round(Int,t/dt+1)
+            N     = round(Int, t/dt+1)
             d     = v*t # distance
             θ_utm = 2*pi*rand() # random heading in utm coordinates
-            lat2  = lat1 + dn2dlat(d*sin(θ_utm),lat1)
-            lon2  = lon1 + de2dlon(d*cos(θ_utm),lat1)
+            lat2  = lat1 + dn2dlat(d*sin(θ_utm), lat1)
+            lon2  = lon1 + de2dlon(d*cos(θ_utm), lat1)
         else # use given final point directly
             N = 1000*(N_waves+1) # estimated N, to be corrected
-            (lat2,lon2) = deg2rad.(ll2)
+            (lat2, lon2) = deg2rad.(ll2)
         end
 
         dlat = lat2 - lat1 # straight line Δ latitude,  to be corrected
         dlon = lon2 - lon1 # straight line Δ longitude, to be corrected
 
-        θ_ll = atan(dlat,dlon) # heading in lat & lon coordinates
+        θ_ll = atan(dlat, dlon) # heading in lat & lon coordinates
 
-        lat  = [LinRange(lat1,lat2,N);] # initial latitudes
-        lon  = [LinRange(lon1,lon2,N);] # initial longitudes
+        lat = [LinRange(lat1, lat2, N);] # initial latitudes
+        lon = [LinRange(lon1, lon2, N);] # initial longitudes
 
         if N_waves > 0
-            ϕ   = LinRange(0,N_waves*2*pi,N) # waves steps
+            ϕ   = LinRange(0, N_waves*2*pi, N) # waves steps
             wav = [ϕ sin.(ϕ)] # waves
             rot = [cos(θ_ll) -sin(θ_ll); sin(θ_ll) cos(θ_ll)] # rotation matrix
             cor = wav*rot' # waves correction after rotation
-            lat = (cor[:,2] .- cor[1,2] .+ lat1) # latitude  with waves
-            lon = (cor[:,1] .- cor[1,1] .+ lon1) # longitude with waves
+            lat = (cor[:, 2] .- cor[1, 2] .+ lat1) # latitude  with waves
+            lon = (cor[:, 1] .- cor[1, 1] .+ lon1) # longitude with waves
         end
 
         frac1 = 0
         frac2 = 0
         while !(frac1 ≈ 1) | !(frac2 ≈ 1) # typically 4-5 iterations
-            dx = dlon2de.(fdm(lon),lat) # easting  distance per time step
-            dy = dlat2dn.(fdm(lat),lat) # northing distance per time step
-            d_now = sum(sqrt.(dx[2:N].^2+dy[2:N].^2)) # current distance
+            dx = dlon2de.(fdm(lon), lat) # easting  distance per time step
+            dy = dlat2dn.(fdm(lat), lat) # northing distance per time step
+            d_now = sum(sqrt.(dx[2:N] .^ 2+dy[2:N] .^ 2)) # current distance
 
             if isempty(ll2) # scale to target distance
                 frac1 = d / d_now # scaling factor
@@ -347,28 +345,27 @@ function create_traj(mapS::Union{MapS,MapSd,MapS3D} = get_map(namad);
             lon = (lon .- lon[1])*frac2 .+ lon[1] # scale to target
         end
 
-        dx = dlon2de.(fdm(lon),lat) # easting  distance per time step
-        dy = dlat2dn.(fdm(lat),lat) # northing distance per time step
-        d_now = sum(sqrt.(dx[2:N].^2+dy[2:N].^2)) # current distance
+        dx = dlon2de.(fdm(lon), lat) # easting  distance per time step
+        dy = dlat2dn.(fdm(lat), lat) # northing distance per time step
+        d_now = sum(sqrt.(dx[2:N] .^ 2+dy[2:N] .^ 2)) # current distance
 
         if ll2 != () # correct time & N for true distance & given velocity
-            range_old = LinRange(0,1,N) # starting range {0:1} with N_old
+            range_old = LinRange(0, 1, N) # starting range {0:1} with N_old
             t         = d_now/v # true time from true distance & given velocity
-            N         = round(Int,t/dt+1) # time steps needed for t with dt
-            range_new = LinRange(0,1,N) # ending range {0:1} with N_new
-            itp_lat   = linear_interpolation(range_old,lat) # lat itp = f(0:1)
-            itp_lon   = linear_interpolation(range_old,lon) # lon itp = f(0:1)
+            N         = round(Int, t/dt+1) # time steps needed for t with dt
+            range_new = LinRange(0, 1, N) # ending range {0:1} with N_new
+            itp_lat   = linear_interpolation(range_old, lat) # lat itp = f(0:1)
+            itp_lon   = linear_interpolation(range_old, lon) # lon itp = f(0:1)
             lat       = itp_lat.(range_new) # get interpolated lat
             lon       = itp_lon.(range_new) # get interpolated lon
         end
-
     end
 
     @assert i <= attempts "maximum attempts reached, decrease t or increase v"
 
-    (zone_utm,is_north) = utm_zone(mean(rad2deg.(lat)),mean(rad2deg.(lon)))
-    lla2utm = UTMfromLLA(zone_utm,is_north,WGS84)
-    utms    = lla2utm.(LLA.(rad2deg.(lat),rad2deg.(lon)))
+    (zone_utm, is_north) = utm_zone(mean(rad2deg.(lat)), mean(rad2deg.(lon)))
+    lla2utm = UTMfromLLA(zone_utm, is_north, WGS84)
+    utms = lla2utm.(LLA.(rad2deg.(lat), rad2deg.(lon)))
 
     # velocities & specific forces from position
     vn = fdm([utm.y for utm in utms]) / dt
@@ -377,27 +374,27 @@ function create_traj(mapS::Union{MapS,MapSd,MapS3D} = get_map(namad);
     fn = fdm(vn) / dt
     fe = fdm(ve) / dt
     fd = fdm(vd) / dt .- g_earth
-    tt = [LinRange(0,t,N);]
+    tt = [LinRange(0, t, N);]
 
     # direction cosine matrix (body to navigation) estimate from heading
-    Cnb = create_dcm(vn,ve,dt,:body2nav)
-    (roll,pitch,yaw) = dcm2euler(Cnb,:body2nav)
+    Cnb = create_dcm(vn, ve, dt, :body2nav)
+    (roll, pitch, yaw) = dcm2euler(Cnb, :body2nav)
 
     if save_h5 # save `traj_h5`
-        h5open(traj_h5,"cw") do file # read-write, create file if not existing, preserve existing contents
-            write(file,"tt"   ,tt)
-            write(file,"lat"  ,lat)
-            write(file,"lon"  ,lon)
-            write(file,"alt"  ,alt*one.(lat))
-            write(file,"vn"   ,vn)
-            write(file,"ve"   ,ve)
-            write(file,"vd"   ,vd)
-            write(file,"fn"   ,fn)
-            write(file,"fe"   ,fe)
-            write(file,"fd"   ,fd)
-            write(file,"roll" ,roll)
-            write(file,"pitch",pitch)
-            write(file,"yaw"  ,yaw)
+        h5open(traj_h5, "cw") do file # read-write, create file if not existing, preserve existing contents
+            write(file, "tt", tt)
+            write(file, "lat", lat)
+            write(file, "lon", lon)
+            write(file, "alt", alt*one.(lat))
+            write(file, "vn", vn)
+            write(file, "ve", ve)
+            write(file, "vd", vd)
+            write(file, "fn", fn)
+            write(file, "fe", fe)
+            write(file, "fd", fd)
+            write(file, "roll", roll)
+            write(file, "pitch", pitch)
+            return write(file, "yaw", yaw)
         end
     end
 
@@ -465,43 +462,42 @@ function create_ins(traj::Traj;
                     gyro_tau       = 3600.0,
                     save_h5::Bool  = false,
                     ins_h5::String = "ins_data.h5")
-
-    ins_h5 = add_extension(ins_h5,".h5")
+    ins_h5 = add_extension(ins_h5, ".h5")
 
     N  = traj.N
     dt = traj.dt
     nx = 17 # total state dimension (inherent to this model)
 
-    (P0,Qd,_) = create_model(dt,traj.lat[1];
-                             init_pos_sigma = init_pos_sigma,
-                             init_alt_sigma = init_alt_sigma,
-                             init_vel_sigma = init_vel_sigma,
-                             init_att_sigma = init_att_sigma,
-                             VRW_sigma      = VRW_sigma,
-                             ARW_sigma      = ARW_sigma,
-                             baro_sigma     = baro_sigma,
-                             ha_sigma       = ha_sigma,
-                             a_hat_sigma    = a_hat_sigma,
-                             acc_sigma      = acc_sigma,
-                             gyro_sigma     = gyro_sigma,
-                             baro_tau       = baro_tau,
-                             acc_tau        = acc_tau,
-                             gyro_tau       = gyro_tau,
-                             fogm_state     = false)
+    (P0, Qd, _) = create_model(dt, traj.lat[1];
+                               init_pos_sigma = init_pos_sigma,
+                               init_alt_sigma = init_alt_sigma,
+                               init_vel_sigma = init_vel_sigma,
+                               init_att_sigma = init_att_sigma,
+                               VRW_sigma      = VRW_sigma,
+                               ARW_sigma      = ARW_sigma,
+                               baro_sigma     = baro_sigma,
+                               ha_sigma       = ha_sigma,
+                               a_hat_sigma    = a_hat_sigma,
+                               acc_sigma      = acc_sigma,
+                               gyro_sigma     = gyro_sigma,
+                               baro_tau       = baro_tau,
+                               acc_tau        = acc_tau,
+                               gyro_tau       = gyro_tau,
+                               fogm_state     = false)
 
-    P   = zeros(Float64,nx,nx,N)
-    err = zeros(Float64,nx,N)
+    P   = zeros(Float64, nx, nx, N)
+    err = zeros(Float64, nx, N)
 
-    P[:,:,1] = P0
-    err[:,1] = rand(MvNormal(P0),1) # mean = 0, covariance = P0
-    Q_chol   = chol(Qd)
+    P[:, :, 1] = P0
+    err[:, 1]  = rand(MvNormal(P0), 1) # mean = 0, covariance = P0
+    Q_chol     = chol(Qd)
 
-    for k = 1:N-1
-        Phi = get_Phi(nx,traj.lat[k],traj.vn[k],traj.ve[k],traj.vd[k],
-                      traj.fn[k],traj.fe[k],traj.fd[k],traj.Cnb[:,:,k],
-                      baro_tau,acc_tau,gyro_tau,0,dt;fogm_state=false)
-        err[:,k+1] = Phi*err[:,k] + Q_chol*randn(nx)
-        P[:,:,k+1] = Phi*P[:,:,k]*Phi' + Qd
+    for k in 1:(N-1)
+        Phi = get_Phi(nx, traj.lat[k], traj.vn[k], traj.ve[k], traj.vd[k],
+                      traj.fn[k], traj.fe[k], traj.fd[k], traj.Cnb[:, :, k],
+                      baro_tau, acc_tau, gyro_tau, 0, dt; fogm_state=false)
+        err[:, k+1] = Phi*err[:, k] + Q_chol*randn(nx)
+        P[:, :, k+1] = Phi*P[:, :, k]*Phi' + Qd
     end
 
     # for debugging INS Cnb
@@ -510,38 +506,38 @@ function create_ins(traj::Traj;
     # println("INS_err_d ",round.(rad2deg.(extrema(err[9,:])),digits=5)," deg")
 
     tt  = traj.tt
-    lat = traj.lat - err[1,:]
-    lon = traj.lon - err[2,:]
-    alt = traj.alt - err[3,:]
-    vn  = traj.vn  - err[4,:]
-    ve  = traj.ve  - err[5,:]
-    vd  = traj.vd  - err[6,:]
+    lat = traj.lat - err[1, :]
+    lon = traj.lon - err[2, :]
+    alt = traj.alt - err[3, :]
+    vn  = traj.vn - err[4, :]
+    ve  = traj.ve - err[5, :]
+    vd  = traj.vd - err[6, :]
     fn  = fdm(vn) / dt
     fe  = fdm(ve) / dt
     fd  = fdm(vd) / dt .- g_earth
-    Cnb = correct_Cnb(traj.Cnb, -err[7:9,:])
+    Cnb = correct_Cnb(traj.Cnb, -err[7:9, :])
     if any(Cnb .> 1) | any(Cnb .< -1)
         error("create_ins() failed, likely due to bad trajectory data, re-run")
     else
-        (roll,pitch,yaw) = dcm2euler(Cnb,:body2nav)
+        (roll, pitch, yaw) = dcm2euler(Cnb, :body2nav)
     end
 
     if save_h5 # save `ins_h5`
-        h5open(ins_h5,"cw") do file # read-write, create file if not existing, preserve existing contents
-            write(file,"ins_tt"   ,tt)
-            write(file,"ins_lat"  ,lat)
-            write(file,"ins_lon"  ,lon)
-            write(file,"ins_alt"  ,alt)
-            write(file,"ins_vn"   ,vn)
-            write(file,"ins_ve"   ,ve)
-            write(file,"ins_vd"   ,vd)
-            write(file,"ins_fn"   ,fn)
-            write(file,"ins_fe"   ,fe)
-            write(file,"ins_fd"   ,fd)
-            write(file,"ins_roll" ,roll)
-            write(file,"ins_pitch",pitch)
-            write(file,"ins_yaw"  ,yaw)
-            write(file,"ins_P"    ,P)
+        h5open(ins_h5, "cw") do file # read-write, create file if not existing, preserve existing contents
+            write(file, "ins_tt", tt)
+            write(file, "ins_lat", lat)
+            write(file, "ins_lon", lon)
+            write(file, "ins_alt", alt)
+            write(file, "ins_vn", vn)
+            write(file, "ins_ve", ve)
+            write(file, "ins_vd", vd)
+            write(file, "ins_fn", fn)
+            write(file, "ins_fe", fe)
+            write(file, "ins_fd", fd)
+            write(file, "ins_roll", roll)
+            write(file, "ins_pitch", pitch)
+            write(file, "ins_yaw", yaw)
+            return write(file, "ins_P", P)
         end
     end
 
@@ -574,19 +570,19 @@ magnetic anomaly map.
 **Returns:**
 - `mag_c`: compensated (clean) scalar magnetometer measurements [nT]
 """
-function create_mag_c(lat, lon, mapS::Union{MapS,MapSd,MapS3D} = get_map(namad);
-                      alt          = 1000,
-                      dt           = 0.1,
-                      meas_var     = 1.0^2,
-                      fogm_sigma   = 1.0,
-                      fogm_tau     = 600.0,
-                      silent::Bool = false)
+function create_mag_c(lat, lon, mapS::Union{MapS,MapSd,MapS3D}=get_map(namad);
+                      alt=1000,
+                      dt=0.1,
+                      meas_var=1.0^2,
+                      fogm_sigma=1.0,
+                      fogm_tau=600.0,
+                      silent::Bool=false)
 
     # convert MapS3D to MapS at alt
-    mapS isa MapS3D && (mapS = upward_fft(mapS,alt))
+    mapS isa MapS3D && (mapS = upward_fft(mapS, alt))
 
     N = length(lat)
-    (ind0,ind1,_,_) = map_params(mapS)
+    (ind0, ind1, _, _) = map_params(mapS)
 
     # fill map if >1% unfilled
     if sum(ind0)/sum(ind0+ind1) > 0.01
@@ -596,11 +592,11 @@ function create_mag_c(lat, lon, mapS::Union{MapS,MapSd,MapS3D} = get_map(namad);
 
     # map values along trajectory
     silent || @info("getting scalar map values, possibly with upward/downward continuation")
-    map_val = get_map_val(mapS,lat,lon,alt;α=200)
+    map_val = get_map_val(mapS, lat, lon, alt; α=200)
 
     # FOGM & white noise
     silent || @info("adding FOGM & white noise to scalar map values")
-    mag_c = map_val + fogm(fogm_sigma,fogm_tau,dt,N) + sqrt(meas_var)*randn(N)
+    mag_c = map_val + fogm(fogm_sigma, fogm_tau, dt, N) + sqrt(meas_var)*randn(N)
 
     return (mag_c)
 end # function create_mag_c
@@ -626,18 +622,18 @@ magnetic anomaly map.
 **Returns:**
 - `mag_c`: compensated (clean) scalar magnetometer measurements [nT]
 """
-function create_mag_c(path::Path, mapS::Union{MapS,MapSd,MapS3D} = get_map(namad);
-                      meas_var     = 1.0^2,
-                      fogm_sigma   = 1.0,
-                      fogm_tau     = 600.0,
-                      silent::Bool = false)
-    create_mag_c(path.lat,path.lon,mapS;
-                 alt        = median(path.alt),
-                 dt         = path.dt,
-                 meas_var   = meas_var,
-                 fogm_sigma = fogm_sigma,
-                 fogm_tau   = fogm_tau,
-                 silent     = silent)
+function create_mag_c(path::Path, mapS::Union{MapS,MapSd,MapS3D}=get_map(namad);
+                      meas_var=1.0^2,
+                      fogm_sigma=1.0,
+                      fogm_tau=600.0,
+                      silent::Bool=false)
+    return create_mag_c(path.lat, path.lon, mapS;
+                        alt        = median(path.alt),
+                        dt         = path.dt,
+                        meas_var   = meas_var,
+                        fogm_sigma = fogm_sigma,
+                        fogm_tau   = fogm_tau,
+                        silent     = silent)
 end # function create_mag_c
 
 """
@@ -681,23 +677,22 @@ function corrupt_mag(mag_c, Bx, By, Bz;
                      cor_perm_mag = 5.0,
                      cor_ind_mag  = 5.0,
                      cor_eddy_mag = 0.5)
-
-    P = Diagonal(vcat(repeat([cor_perm_mag],3),
-                      repeat([cor_ind_mag ],6),
-                      repeat([cor_eddy_mag],9))).^2
+    P = Diagonal(vcat(repeat([cor_perm_mag], 3),
+                      repeat([cor_ind_mag], 6),
+                      repeat([cor_eddy_mag], 9))) .^ 2
 
     # sample from MvNormal distribution with mean = 0, covariance = P
-    TL_coef = vec(rand(MvNormal(P),1))
+    TL_coef = vec(rand(MvNormal(P), 1))
 
     N = length(mag_c)
 
-    cor_fogm = fogm(cor_sigma,cor_tau,dt,N)
+    cor_fogm = fogm(cor_sigma, cor_tau, dt, N)
 
     mag_uc = mag_c + sqrt(cor_var)*randn(N) + cor_fogm +
-                     cor_drift*rand()*(0:dt:dt*(N-1))
+             cor_drift*rand()*(0:dt:(dt*(N-1)))
 
     # corrupt with TL if vector magnetometer measurements are non-zero
-    ~iszero(Bx) && (mag_uc += create_TL_A(Bx,By,Bz)*TL_coef)
+    ~iszero(Bx) && (mag_uc += create_TL_A(Bx, By, Bz)*TL_coef)
 
     return (mag_uc, TL_coef, cor_fogm)
 end # function corrupt_mag
@@ -743,15 +738,15 @@ function corrupt_mag(mag_c, flux;
                      cor_perm_mag = 5.0,
                      cor_ind_mag  = 5.0,
                      cor_eddy_mag = 0.5)
-    corrupt_mag(mag_c,flux.x,flux.y,flux.z;
-                dt           = dt,
-                cor_sigma    = cor_sigma,
-                cor_tau      = cor_tau,
-                cor_var      = cor_var,
-                cor_drift    = cor_drift,
-                cor_perm_mag = cor_perm_mag,
-                cor_ind_mag  = cor_ind_mag,
-                cor_eddy_mag = cor_eddy_mag)
+    return corrupt_mag(mag_c, flux.x, flux.y, flux.z;
+                       dt           = dt,
+                       cor_sigma    = cor_sigma,
+                       cor_tau      = cor_tau,
+                       cor_var      = cor_var,
+                       cor_drift    = cor_drift,
+                       cor_perm_mag = cor_perm_mag,
+                       cor_ind_mag  = cor_ind_mag,
+                       cor_eddy_mag = cor_eddy_mag)
 end # function corrupt_mag
 
 """
@@ -782,31 +777,30 @@ magnetic anomaly map.
 **Returns:**
 - `flux`: `MagV` vector magnetometer measurement struct
 """
-function create_flux(lat, lon, mapV::MapV = get_map(emm720);
-                     Cnb          = repeat(I(3),1,1,length(lat)),
+function create_flux(lat, lon, mapV::MapV   = get_map(emm720);
+                     Cnb          = repeat(I(3), 1, 1, length(lat)),
                      alt          = 1000,
                      dt           = 0.1,
                      meas_var     = 1.0^2,
                      fogm_sigma   = 1.0,
                      fogm_tau     = 600.0,
                      silent::Bool = false)
-
     N = length(lat)
 
     # map values along trajectory
     silent || @info("getting vector map values, possibly with upward/downward continuation")
-    (Bx,By,Bz) = get_map_val(mapV,lat,lon,alt;α=200)
+    (Bx, By, Bz) = get_map_val(mapV, lat, lon, alt; α=200)
 
     # FOGM & white noise
     silent || @info("adding FOGM & white noise to vector map values")
-    Bx += fogm(fogm_sigma,fogm_tau,dt,N) + sqrt(meas_var)*randn(N)
-    By += fogm(fogm_sigma,fogm_tau,dt,N) + sqrt(meas_var)*randn(N)
-    Bz += fogm(fogm_sigma,fogm_tau,dt,N) + sqrt(meas_var)*randn(N)
-    Bt  = sqrt.(Bx.^2+By.^2+Bz.^2)
+    Bx += fogm(fogm_sigma, fogm_tau, dt, N) + sqrt(meas_var)*randn(N)
+    By += fogm(fogm_sigma, fogm_tau, dt, N) + sqrt(meas_var)*randn(N)
+    Bz += fogm(fogm_sigma, fogm_tau, dt, N) + sqrt(meas_var)*randn(N)
+    Bt = sqrt.(Bx .^ 2+By .^ 2+Bz .^ 2)
 
     # put measurements into body frame
-    for i = 1:N
-        (Bx[i],By[i],Bz[i]) = Cnb[:,:,i]' * [Bx[i],By[i],Bz[i]]
+    for i in 1:N
+        (Bx[i], By[i], Bz[i]) = Cnb[:, :, i]' * [Bx[i], By[i], Bz[i]]
     end
 
     return MagV(Bx, By, Bz, Bt)
@@ -833,19 +827,19 @@ magnetic anomaly map.
 **Returns:**
 - `flux`: `MagV` vector magnetometer measurement struct
 """
-function create_flux(path::Path, mapV::MapV = get_map(emm720);
+function create_flux(path::Path, mapV::MapV   = get_map(emm720);
                      meas_var     = 1.0^2,
                      fogm_sigma   = 1.0,
                      fogm_tau     = 600.0,
                      silent::Bool = false)
-    create_flux(path.lat,path.lon,mapV;
-                Cnb        = path.Cnb,
-                alt        = median(path.alt),
-                dt         = path.dt,
-                meas_var   = meas_var,
-                fogm_sigma = fogm_sigma,
-                fogm_tau   = fogm_tau,
-                silent     = silent)
+    return create_flux(path.lat, path.lon, mapV;
+                       Cnb        = path.Cnb,
+                       alt        = median(path.alt),
+                       dt         = path.dt,
+                       meas_var   = meas_var,
+                       fogm_sigma = fogm_sigma,
+                       fogm_tau   = fogm_tau,
+                       silent     = silent)
 end # function create_flux
 
 """
@@ -863,18 +857,17 @@ heading with FOGM noise.
 **Returns:**
 - `dcm`: `3` x `3` x `N` direction cosine matrix [-]
 """
-function create_dcm(vn, ve, dt = 0.1, order::Symbol = :body2nav)
-
+function create_dcm(vn, ve, dt=0.1, order::Symbol=:body2nav)
     N     = length(vn)
-    roll  = fogm(deg2rad(2  ),2,dt,N)
-    pitch = fogm(deg2rad(0.5),2,dt,N)
-    yaw   = fogm(deg2rad(1  ),2,dt,N)
+    roll  = fogm(deg2rad(2), 2, dt, N)
+    pitch = fogm(deg2rad(0.5), 2, dt, N)
+    yaw   = fogm(deg2rad(1), 2, dt, N)
 
-    bpf   = get_bpf(;pass1=1e-6,pass2=1)
-    roll  = bpf_data(roll ;bpf=bpf)
-    pitch = bpf_data(pitch;bpf=bpf) .+ deg2rad(2)   # pitch typically ~2 deg
-    yaw   = bpf_data(yaw  ;bpf=bpf) .+ atan.(ve,vn) # yaw definition
-    dcm   = euler2dcm(roll,pitch,yaw,order)
+    bpf   = get_bpf(; pass1=1e-6, pass2=1)
+    roll  = bpf_data(roll; bpf=bpf)
+    pitch = bpf_data(pitch; bpf=bpf) .+ deg2rad(2)   # pitch typically ~2 deg
+    yaw   = bpf_data(yaw; bpf=bpf) .+ atan.(ve, vn) # yaw definition
+    dcm   = euler2dcm(roll, pitch, yaw, order)
 
     return (dcm)
 end # function create_dcm
@@ -902,14 +895,14 @@ Internal helper function to get the imputed Earth vector between two locations.
 """
 function calculate_imputed_TL_earth(xyz::XYZ, ind,
                                     map_val, set_igrf::Bool, TL_coef;
-                                    terms    = [:permanent,:induced,:eddy],
+                                    terms    = [:permanent, :induced, :eddy],
                                     Bt_scale = 50000)
 
     # get IGRF from model
-    igrf_vec  = get_igrf(xyz,ind;
-                         frame     = :body,
-                         norm_igrf = false,
-                         check_xyz = !set_igrf)
+    igrf_vec = get_igrf(xyz, ind;
+                        frame     = :body,
+                        norm_igrf = false,
+                        check_xyz = (!set_igrf))
     set_igrf && (xyz.igrf[ind] .= norm.(igrf_vec))
 
     # obtain scalar map values with IGRF for this trajectory
@@ -919,11 +912,11 @@ function calculate_imputed_TL_earth(xyz::XYZ, ind,
     B_earth = reduce(hcat, B_earth .* normalize.(igrf_vec))
 
     # time-derivative of vector field
-    B_earth_dot = [fdm(B_earth[1,:]) fdm(B_earth[2,:]) fdm(B_earth[3,:])]'
+    B_earth_dot = [fdm(B_earth[1, :]) fdm(B_earth[2, :]) fdm(B_earth[3, :])]'
 
     # Earth-only contribution to aircraft field
-    (TL_coef_p,TL_coef_i,TL_coef_e) = TL_vec2mat(TL_coef,terms;Bt_scale=Bt_scale)
-    TL_aircraft = get_TL_aircraft_vec(B_earth,B_earth_dot,TL_coef_p,TL_coef_i,TL_coef_e)
+    (TL_coef_p, TL_coef_i, TL_coef_e) = TL_vec2mat(TL_coef, terms; Bt_scale=Bt_scale)
+    TL_aircraft = get_TL_aircraft_vec(B_earth, B_earth_dot, TL_coef_p, TL_coef_i, TL_coef_e)
 
     return (TL_aircraft, B_earth)
 end # function calculate_imputed_TL_earth
@@ -965,61 +958,59 @@ over into `use_mag` in the new `XYZ` data.
 """
 function create_informed_xyz(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D},
                              use_mag::Symbol, use_vec::Symbol, TL_coef::Vector;
-                             terms::Vector{Symbol} = [:permanent,:induced,:eddy],
-                             disp_min = 100,
-                             disp_max = 500,
-                             Bt_disp  = 50,
-                             Bt_scale = 50000)
-
-    @assert any([:permanent,:p,:permanent3,:p3] .∈ (terms,)) "permanent terms are required"
-    @assert any([:induced,:i,:induced6,:i6,:induced5,:i5,:induced3,:i3] .∈ (terms,)) "induced terms are required"
-    @assert any([:eddy,:e,:eddy9,:e9,:eddy8,:e8,:eddy3,:e3] .∈ (terms,)) "eddy current terms are required"
-    @assert !any([:fdm,:f,:fdm3,:f3,:bias,:b] .∈ (terms,)) "derivative & bias terms may not be used"
+                             terms::Vector{Symbol}=[:permanent, :induced, :eddy],
+                             disp_min=100,
+                             disp_max=500,
+                             Bt_disp=50,
+                             Bt_scale=50000)
+    @assert any([:permanent, :p, :permanent3, :p3] .∈ (terms,)) "permanent terms are required"
+    @assert any([:induced, :i, :induced6, :i6, :induced5, :i5, :induced3, :i3] .∈ (terms,)) "induced terms are required"
+    @assert any([:eddy, :e, :eddy9, :e9, :eddy8, :e8, :eddy3, :e3] .∈ (terms,)) "eddy current terms are required"
+    @assert !any([:fdm, :f, :fdm3, :f3, :bias, :b] .∈ (terms,)) "derivative & bias terms may not be used"
 
     N = length(TL_coef)
-    A_test = create_TL_A([1.0],[1.0],[1.0];terms=terms)
+    A_test = create_TL_A([1.0], [1.0], [1.0]; terms=terms)
     @assert N == length(A_test) "TL_coef does not agree with specified terms"
 
-    traj = get_traj(xyz,ind)
+    traj = get_traj(xyz, ind)
 
-    @assert map_check(mapS,traj) "trajectory must be inside the provided map"
+    @assert map_check(mapS, traj) "trajectory must be inside the provided map"
 
     # map values along trajectory & map
-    (map_val,itp_mapS) = get_map_val(mapS,traj;α=200,return_itp=true)
+    (map_val, itp_mapS) = get_map_val(mapS, traj; α=200, return_itp=true)
 
     # compute vector aircraft component & vector flux along trajectory
     set_igrf = false
-    (TL_aircraft,B_earth) =
-        calculate_imputed_TL_earth(xyz,ind,map_val,set_igrf,TL_coef,
-                                   terms    = terms,
-                                   Bt_scale = Bt_scale)
+    (TL_aircraft, B_earth) = calculate_imputed_TL_earth(xyz, ind, map_val, set_igrf, TL_coef;
+                                                        terms    = terms,
+                                                        Bt_scale = Bt_scale)
 
     # sample ~100 points along trajectory
     spacing = floor(Int, traj.N / 100)
     pts     = 1:spacing:traj.N
 
     # average lat & lon points on trajectory & map
-    traj_avg = mean.([traj.lat[pts],traj.lon[pts]])
-    map_avg  = mean.([mapS.yy,mapS.xx])
+    traj_avg = mean.([traj.lat[pts], traj.lon[pts]])
+    map_avg  = mean.([mapS.yy, mapS.xx])
 
     # average y/x gradients [nT/rad] of sampled points
-    grad_avg = mean(map((y,x) -> collect(gradient(itp_mapS,y,x)),
-                    traj.lat[pts],traj.lon[pts]))
+    grad_avg = mean(map((y, x) -> collect(gradient(itp_mapS, y, x)),
+                        traj.lat[pts], traj.lon[pts]))
     dir_disp = normalize(grad_avg)
 
     # switch direction to go toward middle of map if necessary
     (dot(map_avg - traj_avg, dir_disp) < 0) && (dir_disp *= -1)
 
     # convert displacement limits from [m] to [rad]
-    disp_min = min(dn2dlat(disp_min,traj_avg[1]),
-                   de2dlon(disp_min,traj_avg[1]))
-    disp_max = max(dn2dlat(disp_max,traj_avg[1]),
-                   de2dlon(disp_max,traj_avg[1]))
+    disp_min = min(dn2dlat(disp_min, traj_avg[1]),
+                   de2dlon(disp_min, traj_avg[1]))
+    disp_max = max(dn2dlat(disp_max, traj_avg[1]),
+                   de2dlon(disp_max, traj_avg[1]))
 
     # shoot for difference of Bt_disp [nT]
-    dir_diriv = abs(dot(grad_avg,dir_disp)) # [nT/rad]
+    dir_diriv = abs(dot(grad_avg, dir_disp)) # [nT/rad]
     disp_rad  = Bt_disp / dir_diriv # [rad]
-    disp_rad  = clamp(disp_rad,disp_min,disp_max) # limit displacement range
+    disp_rad  = clamp(disp_rad, disp_min, disp_max) # limit displacement range
     disp_ll   = disp_rad * dir_disp # set correct direction
 
     # copy & displace trajectory (uniformally; no acceleration changes!)
@@ -1027,37 +1018,36 @@ function create_informed_xyz(xyz::XYZ, ind, mapS::Union{MapS,MapSd,MapS3D},
     xyz_disp.traj.lat[ind] .+= disp_ll[1]
     xyz_disp.traj.lon[ind] .+= disp_ll[2]
 
-    @assert map_check(mapS,xyz_disp.traj(ind)) "larger map needed, could not create trajectory"
+    @assert map_check(mapS, xyz_disp.traj(ind)) "larger map needed, could not create trajectory"
 
     # map values along trajectory
-    map_val_disp = get_map_val(mapS,xyz_disp.traj(ind);α=200)
+    map_val_disp = get_map_val(mapS, xyz_disp.traj(ind); α=200)
 
     # calculate Earth's vector flux & TL component from that on new trajectory
     set_igrf = true
-    (TL_aircraft_disp,B_earth_disp) =
-        calculate_imputed_TL_earth(xyz_disp,ind,map_val_disp,set_igrf,TL_coef,
-                                   terms    = terms,
-                                   Bt_scale = Bt_scale)
+    (TL_aircraft_disp, B_earth_disp) = calculate_imputed_TL_earth(xyz_disp, ind, map_val_disp, set_igrf, TL_coef;
+                                                                  terms    = terms,
+                                                                  Bt_scale = Bt_scale)
 
     # calculate Earth-induced field that would occur along this trajectory
     ΔB_TL    = TL_aircraft_disp - TL_aircraft # known part from aircraft
-    ΔB_earth = B_earth_disp     - B_earth     # known part from Earth
+    ΔB_earth = B_earth_disp - B_earth     # known part from Earth
     ΔB       = ΔB_TL + ΔB_earth # total difference in vector field from different Earth locale & aircraft
     Δmap_val = map_val_disp - map_val # differnece in map values
 
     # update displaced vector magnetometer values used in learning
-    flux = getfield(xyz_disp,use_vec)
-    flux.x[ind] += ΔB[1,:]
-    flux.y[ind] += ΔB[2,:]
-    flux.z[ind] += ΔB[3,:]
-    flux.t[ind]  = sqrt.(flux.x[ind].^2 .+ flux.y[ind].^2 .+ flux.z[ind].^2)
+    flux = getfield(xyz_disp, use_vec)
+    flux.x[ind] += ΔB[1, :]
+    flux.y[ind] += ΔB[2, :]
+    flux.z[ind] += ΔB[3, :]
+    flux.t[ind] = sqrt.(flux.x[ind] .^ 2 .+ flux.y[ind] .^ 2 .+ flux.z[ind] .^ 2)
 
     # update displaced scalar magnetometer values used in learning
-    ΔB_dot = dot.(eachcol(ΔB),[[x,y,z] for (x,y,z) in
-                  zip(flux.x[ind],flux.y[ind],flux.z[ind])]) ./ flux.t[ind]
+    ΔB_dot = dot.(eachcol(ΔB), [[x, y, z] for (x, y, z) in
+                                              zip(flux.x[ind], flux.y[ind], flux.z[ind])]) ./ flux.t[ind]
 
-    getfield(xyz_disp,use_mag )[ind] += ΔB_dot
-    getfield(xyz_disp,:mag_1_c)[ind] += Δmap_val
+    getfield(xyz_disp, use_mag)[ind] += ΔB_dot
+    getfield(xyz_disp, :mag_1_c)[ind] += Δmap_val
 
     return (xyz_disp)
 end # function create_informed_xyz
