@@ -19,5 +19,5 @@ jobs:
     steps:
       - uses: julia-actions/julia-format@v4
         with:
-          version: '1'
+          version: '2'
           paths: 'src/, test/'
