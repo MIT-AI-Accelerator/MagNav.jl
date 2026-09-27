@@ -24,7 +24,7 @@ Section 3.6 (pg. 36-41 & 537).
 - `roll`:  length-`N` roll  angle [rad], right-handed rotation about x-axis
 - `pitch`: length-`N` pitch angle [rad], right-handed rotation about y-axis
 - `yaw`:   length-`N` yaw   angle [rad], right-handed rotation about z-axis
-- `order`: (optional) rotation order {`:body2nav`,`:nav2body`}
+- `order`: (optional) rotation order {`:body2nav`, `:nav2body`}
 
 **Returns:**
 - `dcm`: `3` x `3` x `N` direction cosine matrix [-]
@@ -33,9 +33,9 @@ function euler2dcm(roll, pitch, yaw, order::Symbol = :body2nav)
 
     @assert length(roll) == length(pitch) == length(yaw) "roll, pitch, and yaw must be the same length"
 
-    r = vec([roll ;])
+    r = vec([roll;])
     p = vec([pitch;])
-    y = vec([yaw  ;])
+    y = vec([yaw;])
 
     cr = cos.(r)
     sr = sin.(r)
@@ -44,34 +44,36 @@ function euler2dcm(roll, pitch, yaw, order::Symbol = :body2nav)
     cy = cos.(y)
     sy = sin.(y)
 
-    dcm = zeros(Float64,3,3,length(roll))
+    dcm = zeros(Float64, 3, 3, length(roll))
 
+    #! format: off
     if order == :body2nav # Cnb, shown in Titterton & Weston (pg. 41)
-        dcm[1,1,:] .=  cp.*cy
-        dcm[1,2,:] .= -cr.*sy + sr.*sp.*cy
-        dcm[1,3,:] .=  sr.*sy + cr.*sp.*cy
-        dcm[2,1,:] .=  cp.*sy
-        dcm[2,2,:] .=  cr.*cy + sr.*sp.*sy
-        dcm[2,3,:] .= -sr.*cy + cr.*sp.*sy
-        dcm[3,1,:] .= -sp
-        dcm[3,2,:] .=  sr.*cp
-        dcm[3,3,:] .=  cr.*cp
+        dcm[1, 1, :] .=  cp .* cy
+        dcm[1, 2, :] .= -cr .* sy + sr .* sp .* cy
+        dcm[1, 3, :] .=  sr .* sy + cr .* sp .* cy
+        dcm[2, 1, :] .=  cp .* sy
+        dcm[2, 2, :] .=  cr .* cy + sr .* sp .* sy
+        dcm[2, 3, :] .= -sr .* cy + cr .* sp .* sy
+        dcm[3, 1, :] .= -sp
+        dcm[3, 2, :] .=  sr .* cp
+        dcm[3, 3, :] .=  cr .* cp
     elseif order == :nav2body # Cbn, used by John Raquet in RpyToDcm()
-        dcm[1,1,:] .=  cp.*cy
-        dcm[1,2,:] .=  cp.*sy
-        dcm[1,3,:] .= -sp
-        dcm[2,1,:] .= -cr.*sy + sr.*sp.*cy
-        dcm[2,2,:] .=  cr.*cy + sr.*sp.*sy
-        dcm[2,3,:] .=  sr.*cp
-        dcm[3,1,:] .=  sr.*sy + cr.*sp.*cy
-        dcm[3,2,:] .= -sr.*cy + cr.*sp.*sy
-        dcm[3,3,:] .=  cr.*cp
+        dcm[1, 1, :] .=  cp .* cy
+        dcm[1, 2, :] .=  cp .* sy
+        dcm[1, 3, :] .= -sp
+        dcm[2, 1, :] .= -cr .* sy + sr .* sp .* cy
+        dcm[2, 2, :] .=  cr .* cy + sr .* sp .* sy
+        dcm[2, 3, :] .=  sr .* cp
+        dcm[3, 1, :] .=  sr .* sy + cr .* sp .* cy
+        dcm[3, 2, :] .= -sr .* cy + cr .* sp .* sy
+        dcm[3, 3, :] .=  cr .* cp
     else
         error("DCM rotation $order order not defined")
     end
+    #! format: on
 
     if length(roll) == 1
-        return (dcm[:,:,1])
+        return (dcm[:, :, 1])
     else
         return (dcm)
     end
@@ -101,7 +103,7 @@ Section 3.6 (pg. 36-41 & 537).
 
 **Arguments:**
 - `dcm`:   `3` x `3` x `N` direction cosine matrix [-]
-- `order`: (optional) rotation order {`:body2nav`,`:nav2body`}
+- `order`: (optional) rotation order {`:body2nav`, `:nav2body`}
 
 **Returns:**
 - `roll`:  length-`N` roll  angle [rad], right-handed rotation about x-axis
@@ -110,22 +112,24 @@ Section 3.6 (pg. 36-41 & 537).
 """
 function dcm2euler(dcm, order::Symbol = :body2nav)
 
+    #! format: off
     if order == :body2nav # Cnb, shown in Titterton & Weston (pg. 41)
-        roll  =  atan.(dcm[3,2,:],dcm[3,3,:])
-        pitch = -asin.(dcm[3,1,:])
-        yaw   =  atan.(dcm[2,1,:],dcm[1,1,:])
+        roll  =  atan.(dcm[3, 2, :],dcm[3, 3, :])
+        pitch = -asin.(dcm[3, 1, :])
+        yaw   =  atan.(dcm[2, 1, :],dcm[1, 1, :])
     elseif order == :nav2body # Cbn, used by John Raquet in DcmToRpy()
-        roll  =  atan.(dcm[2,3,:],dcm[3,3,:])
-        pitch = -asin.(dcm[1,3,:])
-        yaw   =  atan.(dcm[1,2,:],dcm[1,1,:])
+        roll  =  atan.(dcm[2, 3, :],dcm[3, 3, :])
+        pitch = -asin.(dcm[1, 3, :])
+        yaw   =  atan.(dcm[1, 2, :],dcm[1, 1, :])
     else
         error("DCM rotation $order order not defined")
     end
+    #! format: on
 
     # for debugging INS Cnb
-    # println("dcm[3,1] ",round.(extrema(dcm[3,1,:]),digits=3))
-    # println("dcm[1,3] ",round.(extrema(dcm[1,3,:]),digits=3))
-    # println("pitch ",round.(rad2deg.(extrema(pitch)),digits=1)," deg")
+    # println("dcm[3, 1] ", round.(extrema(dcm[3, 1, :]), digits = 3))
+    # println("dcm[1, 3] ", round.(extrema(dcm[1, 3, :]), digits = 3))
+    # println("pitch ", round.(rad2deg.(extrema(pitch)), digits = 1), " deg")
 
     if length(roll) == 1
         return (roll[1], pitch[1], yaw[1])
@@ -140,7 +144,7 @@ end # function dcm2euler
 
 Internal helper function to correct a (Euler) roll-pitch-yaw (`X`-`Y`-`Z`)
 right-handed body to navigation frame rotation DCM (direction cosine matrix)
-with [`X`,`Y`,`Z`] tilt angle errors. The resulting DCM is `in error`, such
+with [`X`, `Y`, `Z`] tilt angle errors. The resulting DCM is `in error`, such
 as INS data.
 
 Reference: Titterton & Weston, Strapdown Inertial Navigation Technology, 2004,
@@ -148,25 +152,25 @@ eq. 10.10 (pg. 284) and eq. 12.6 (pg. 342).
 
 **Arguments:**
 - `Cnb`:      `3` x `3` x `N` direction cosine matrix (body to navigation) [-]
-- `tilt_err`: `3` x `N` [`X`,`Y`,`Z`] tilt angle error [rad]
+- `tilt_err`: `3` x `N` [`X`, `Y`, `Z`] tilt angle error [rad]
 
 **Returns:**
 - `Cnb_estimate`: `3` x `3` x `N` "in error" direction cosine matrix [-]
 """
 function correct_Cnb(Cnb, tilt_err)
 
-    N = size(tilt_err,2)
-    Cnb_estimate = zeros(Float64,3,3,N)
+    N = size(tilt_err, 2)
+    Cnb_estimate = zeros(Float64, 3, 3, N)
     for i = 1:N
-        m = norm(tilt_err[:,i])
+        m = norm(tilt_err[:, i])
         if m != 0
-            s = [             0 -tilt_err[3,i]  tilt_err[2,i]
-                  tilt_err[3,i]              0 -tilt_err[1,i]
-                 -tilt_err[2,i]  tilt_err[1,i]              0]
-            B = I - sin(m)/m*s - (1-cos(m))/m^2*s^2 # ≈ I - s - 0.5*s^2
-            Cnb_estimate[:,:,i] = B*Cnb[:,:,i]
+            s = [              0 -tilt_err[3, i]  tilt_err[2, i]
+                  tilt_err[3, i]               0 -tilt_err[1, i]
+                 -tilt_err[2, i]  tilt_err[1, i]              0]
+            B = I - sin(m) / m * s - (1 - cos(m)) / m^2 * s^2 # ≈ I - s - 0.5 * s^2
+            Cnb_estimate[:, :, i] = B * Cnb[:, :, i]
         else
-            Cnb_estimate[:,:,i] =   Cnb[:,:,i]
+            Cnb_estimate[:, :, i] = Cnb[:, :, i]
         end
     end
 
