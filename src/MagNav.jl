@@ -36,7 +36,7 @@ using Statistics: cor, cov, mean, median, std, var
 using StatsBase: autocor, skewness
 using Zygote: Params, gradient
 
-project_toml = normpath(joinpath(@__DIR__,"..","Project.toml"))
+project_toml = normpath(joinpath(@__DIR__, "..", "Project.toml"))
 
 """
     magnav_version::VersionNumber
@@ -88,14 +88,14 @@ USGS. Same as the color scale used for the "Bouguer gravity anomaly map."
 
 Reference: https://mrdata.usgs.gov/magnetic/namag.png
 """
-const usgs = joinpath(artifact"util_files","util_files","color_scale_usgs.csv")
+const usgs = joinpath(artifact"util_files", "util_files", "color_scale_usgs.csv")
 
 """
     const icon_circle
 
 Point icon for optional use in path2kml(;points=true)
 """
-const icon_circle = joinpath(artifact"util_files","util_files","icon_circle.dae")
+const icon_circle = joinpath(artifact"util_files", "util_files", "icon_circle.dae")
 
 """
     const silent_debug::Bool
@@ -105,7 +105,7 @@ Internal flag. If true, no verbose print outs.
 const silent_debug = true
 
 """
-    sgl_fields(f::Union{String,Symbol} = "")
+    sgl_fields(f::Union{String, Symbol} = "")
 
 Data fields in SGL flight data collections, contains:
 - `fields_sgl_2020.csv`
@@ -119,14 +119,14 @@ Data fields in SGL flight data collections, contains:
 - `p`: path of folder or `f` data file
 """
 function sgl_fields(f = "")
-    p = joinpath(artifact"sgl_fields","sgl_fields")
+    p = joinpath(artifact"sgl_fields", "sgl_fields")
     d = "$f"
-    !isempty(d) && (p = joinpath(p,add_extension(d,".csv")))
+    !isempty(d) && (p = joinpath(p, add_extension(d, ".csv")))
     return (p)
 end # function sgl_fields
 
 """
-    sgl_2020_train(f::Union{String,Symbol} = "")
+    sgl_2020_train(f::Union{String, Symbol} = "")
 
 Flight data from the 2020 SGL flight data collection - training portion.
 Collected from 20-Jun-2020 to 07-Jul-2020 near Ottawa, Ontario, Canada by
@@ -145,14 +145,14 @@ Sander Geophysics Ltd. (SGL) using a Cessna Grand Caravan. Contains:
 - `p`: path of folder or `f` data file
 """
 function sgl_2020_train(f = "")
-    p = joinpath(artifact"sgl_2020_train","sgl_2020_train")
-    d = remove_extension("$f","_train")
-    !isempty(d) && (p = joinpath(p,add_extension(d,"_train.h5")))
+    p = joinpath(artifact"sgl_2020_train", "sgl_2020_train")
+    d = remove_extension("$f", "_train")
+    !isempty(d) && (p = joinpath(p, add_extension(d, "_train.h5")))
     return (p)
 end # function sgl_2020_train
 
 """
-    sgl_2021_train(f::Union{String,Symbol} = "")
+    sgl_2021_train(f::Union{String, Symbol} = "")
 
 Flight data from the 2021 SGL flight data collection - training portion.
 Collected from 13-Dec-2021 to 05-Jan-2022 near Ottawa, Ontario, Canada by
@@ -175,9 +175,9 @@ Sander Geophysics Ltd. (SGL) using a Cessna Grand Caravan. Contains:
 - `p`: path of folder or `f` data file
 """
 function sgl_2021_train(f = "")
-    p = joinpath(artifact"sgl_2021_train","sgl_2021_train")
-    d = remove_extension("$f","_train")
-    !isempty(d) && (p = joinpath(p,add_extension(d,"_train.h5")))
+    p = joinpath(artifact"sgl_2021_train", "sgl_2021_train")
+    d = remove_extension("$f", "_train")
+    !isempty(d) && (p = joinpath(p, add_extension(d, "_train.h5")))
     return (p)
 end # function sgl_2021_train
 
@@ -188,7 +188,7 @@ Earth Magnetic Anomaly Grid with 2 arcminute resolution (EMAG2). Compiled
 from satellite, marine, and airborne magnetic measurements. Reference:
 https://www.ncei.noaa.gov/products/earth-magnetic-model-anomaly-grid-2
 """
-const emag2 = joinpath(artifact"EMAG2","EMAG2.h5")
+const emag2 = joinpath(artifact"EMAG2", "EMAG2.h5")
 
 """
     const emm720
@@ -201,7 +201,7 @@ model derived from Earth Magnetic Anomaly Grid with 2-arc-minute resolution
 (EMAG2). Reference:
 https://www.ncei.noaa.gov/products/enhanced-magnetic-model
 """
-const emm720 = joinpath(artifact"EMM720_World","EMM720_World.h5")
+const emm720 = joinpath(artifact"EMM720_World", "EMM720_World.h5")
 
 """
     const namad
@@ -212,10 +212,10 @@ Geological Survey of Canada (GSC), and Consejo de Recursos Minerales of
 Mexico (CRM). Reference:
 https://www.usgs.gov/maps/magnetic-anomaly-map-north-america
 """
-const namad = joinpath(artifact"NAMAD_305","NAMAD_305.h5")
+const namad = joinpath(artifact"NAMAD_305", "NAMAD_305.h5")
 
 """
-    ottawa_area_maps(f::Union{String,Symbol} = "")
+    ottawa_area_maps(f::Union{String, Symbol} = "")
 
 Magnetic anomaly maps near Ottawa, Ontario, Canada, contains:
 - `Eastern_395.h5`:   Eastern Ontario at 395 m HAE
@@ -240,14 +240,14 @@ the map may be used without navigating into filled-in (artificial) areas.
 - `p`: path of folder or `f` data file
 """
 function ottawa_area_maps(f = "")
-    p = joinpath(artifact"ottawa_area_maps","ottawa_area_maps")
+    p = joinpath(artifact"ottawa_area_maps", "ottawa_area_maps")
     d = "$f"
-    !isempty(d) && (p = joinpath(p,add_extension(d,".h5")))
+    !isempty(d) && (p = joinpath(p, add_extension(d, ".h5")))
     return (p)
 end # function ottawa_area_maps
 
 """
-    ottawa_area_maps_gxf(f::Union{String,Symbol} = "")
+    ottawa_area_maps_gxf(f::Union{String, Symbol} = "")
 
 GXF versions of small magnetic anomaly maps near Ottawa, Ontario, Canada, contains:
 - `HighAlt_Mag.gxf`: High Altitude mini-survey (within Renfrew) at 5181 m HAE
@@ -260,9 +260,9 @@ GXF versions of small magnetic anomaly maps near Ottawa, Ontario, Canada, contai
 - `p`: path of folder or `f` data file
 """
 function ottawa_area_maps_gxf(f = "")
-    p = joinpath(artifact"ottawa_area_maps_gxf","ottawa_area_maps_gxf")
-    d = remove_extension("$f","_Mag")
-    !isempty(d) && (p = joinpath(p,add_extension(d,"_Mag.gxf")))
+    p = joinpath(artifact"ottawa_area_maps_gxf", "ottawa_area_maps_gxf")
+    d = remove_extension("$f", "_Mag")
+    !isempty(d) && (p = joinpath(p, add_extension(d, "_Mag.gxf")))
     return (p)
 end # function ottawa_area_maps_gxf
 
@@ -336,7 +336,7 @@ end # struct MapSd
 """
 struct MapS3D{T2 <: AbstractFloat} <: Map{T2}
     info :: String
-    map  :: Array{T2,3}
+    map  :: Array{T2, 3}
     xx   :: Vector{T2}
     yy   :: Vector{T2}
     alt  :: Vector{T2}
@@ -383,10 +383,10 @@ Vector magnetometer measurement struct.
 |`t`|Vector{`T2`}| total magnetic field [nT]
 """
 struct MagV{T2 <: AbstractFloat}
-    x :: Vector{T2}
-    y :: Vector{T2}
-    z :: Vector{T2}
-    t :: Vector{T2}
+    x::Vector{T2}
+    y::Vector{T2}
+    z::Vector{T2}
+    t::Vector{T2}
 end # struct MagV
 
 """
@@ -394,7 +394,7 @@ end # struct MagV
 
 Null scalar magnetic anomaly map used as default map for optional arguments.
 """
-const mapS_null = MapS("Null map",zeros(1,1),[0.0],[0.0],0.0,trues(1,1))
+const mapS_null = MapS("Null map", zeros(1, 1), [0.0], [0.0], 0.0, trues(1, 1))
 
 """
     Path{T1 <: Signed, T2 <: AbstractFloat} <: Path{T1, T2}
@@ -437,7 +437,7 @@ struct Traj{T1 <: Signed, T2 <: AbstractFloat} <: Path{T1, T2}
     fn  :: Vector{T2}
     fe  :: Vector{T2}
     fd  :: Vector{T2}
-    Cnb :: Array{T2,3}
+    Cnb :: Array{T2, 3}
 end # struct Traj
 
 """
@@ -475,8 +475,8 @@ struct INS{T1 <: Signed, T2 <: AbstractFloat} <: Path{T1, T2}
     fn  :: Vector{T2}
     fe  :: Vector{T2}
     fd  :: Vector{T2}
-    Cnb :: Array{T2,3}
-    P   :: Array{T2,3}
+    Cnb :: Array{T2, 3}
+    P   :: Array{T2, 3}
 end # struct INS
 
 """
@@ -493,23 +493,23 @@ Subtype of `XYZ` containing the minimum dataset required for MagNav.
 
 |**Field**|**Type**|**Description**
 |:--|:--|:--
-|`info`    |String         | dataset information
-|`traj`    |Traj{`T1`,`T2`}| trajectory struct
-|`ins`     |INS{`T1`,`T2`} | inertial navigation system struct
-|`flux_a`  |MagV{`T2`}     | Flux A vector magnetometer measurement struct
-|`flight`  |Vector{`T2`}   | flight number(s)
-|`line`    |Vector{`T2`}   | line number(s), i.e., segments within `flight`
-|`year`    |Vector{`T2`}   | year
-|`doy`     |Vector{`T2`}   | day of year
-|`diurnal` |Vector{`T2`}   | measured diurnal, i.e., temporal variations or space weather effects [nT]
-|`igrf`    |Vector{`T2`}   | International Geomagnetic Reference Field (IGRF), i.e., core field [nT]
-|`mag_1_c` |Vector{`T2`}   | Mag 1 compensated (clean) scalar magnetometer measurements [nT]
-|`mag_1_uc`|Vector{`T2`}   | Mag 1 uncompensated (corrupted) scalar magnetometer measurements [nT]
+|`info`    |String        | dataset information
+|`traj`    |Traj{`T1, T2`}| trajectory struct
+|`ins`     |INS{`T1, T2`} | inertial navigation system struct
+|`flux_a`  |MagV{`T2`}    | Flux A vector magnetometer measurement struct
+|`flight`  |Vector{`T2`}  | flight number(s)
+|`line`    |Vector{`T2`}  | line number(s), i.e., segments within `flight`
+|`year`    |Vector{`T2`}  | year
+|`doy`     |Vector{`T2`}  | day of year
+|`diurnal` |Vector{`T2`}  | measured diurnal, i.e., temporal variations or space weather effects [nT]
+|`igrf`    |Vector{`T2`}  | International Geomagnetic Reference Field (IGRF), i.e., core field [nT]
+|`mag_1_c` |Vector{`T2`}  | Mag 1 compensated (clean) scalar magnetometer measurements [nT]
+|`mag_1_uc`|Vector{`T2`}  | Mag 1 uncompensated (corrupted) scalar magnetometer measurements [nT]
 """
 struct XYZ0{T1 <: Signed, T2 <: AbstractFloat} <: XYZ{T1, T2}
     info     :: String
-    traj     :: Traj{T1,T2}
-    ins      :: INS{T1,T2}
+    traj     :: Traj{T1, T2}
+    ins      :: INS{T1, T2}
     flux_a   :: MagV{T2}
     flight   :: Vector{T2}
     line     :: Vector{T2}
@@ -529,31 +529,31 @@ used in place of any unused fields (e.g., `aux_3`) when creating struct.
 
 |**Field**|**Type**|**Description**
 |:--|:--|:--
-|`info`    |String         | dataset information
-|`traj`    |Traj{`T1`,`T2`}| trajectory struct
-|`ins`     |INS{`T1`,`T2`} | inertial navigation system struct
-|`flux_a`  |MagV{`T2`}     | Flux A vector magnetometer measurement struct
-|`flux_b`  |MagV{`T2`}     | Flux B vector magnetometer measurement struct
-|`flight`  |Vector{`T2`}   | flight number(s)
-|`line`    |Vector{`T2`}   | line number(s), i.e., segments within `flight`
-|`year`    |Vector{`T2`}   | year
-|`doy`     |Vector{`T2`}   | day of year
-|`diurnal` |Vector{`T2`}   | measured diurnal, i.e., temporal variations or space weather effects [nT]
-|`igrf`    |Vector{`T2`}   | International Geomagnetic Reference Field (IGRF), i.e., core field [nT]
-|`mag_1_c` |Vector{`T2`}   | Mag 1 compensated (clean) scalar magnetometer measurements [nT]
-|`mag_2_c` |Vector{`T2`}   | Mag 2 compensated (clean) scalar magnetometer measurements [nT]
-|`mag_3_c` |Vector{`T2`}   | Mag 3 compensated (clean) scalar magnetometer measurements [nT]
-|`mag_1_uc`|Vector{`T2`}   | Mag 1 uncompensated (corrupted) scalar magnetometer measurements [nT]
-|`mag_2_uc`|Vector{`T2`}   | Mag 2 uncompensated (corrupted) scalar magnetometer measurements [nT]
-|`mag_3_uc`|Vector{`T2`}   | Mag 3 uncompensated (corrupted) scalar magnetometer measurements [nT]
-|`aux_1`   |Vector{`T2`}   | flexible-use auxiliary data 1
-|`aux_2`   |Vector{`T2`}   | flexible-use auxiliary data 2
-|`aux_3`   |Vector{`T2`}   | flexible-use auxiliary data 3
+|`info`    |String        | dataset information
+|`traj`    |Traj{`T1, T2`}| trajectory struct
+|`ins`     |INS{`T1, T2`} | inertial navigation system struct
+|`flux_a`  |MagV{`T2`}    | Flux A vector magnetometer measurement struct
+|`flux_b`  |MagV{`T2`}    | Flux B vector magnetometer measurement struct
+|`flight`  |Vector{`T2`}  | flight number(s)
+|`line`    |Vector{`T2`}  | line number(s), i.e., segments within `flight`
+|`year`    |Vector{`T2`}  | year
+|`doy`     |Vector{`T2`}  | day of year
+|`diurnal` |Vector{`T2`}  | measured diurnal, i.e., temporal variations or space weather effects [nT]
+|`igrf`    |Vector{`T2`}  | International Geomagnetic Reference Field (IGRF), i.e., core field [nT]
+|`mag_1_c` |Vector{`T2`}  | Mag 1 compensated (clean) scalar magnetometer measurements [nT]
+|`mag_2_c` |Vector{`T2`}  | Mag 2 compensated (clean) scalar magnetometer measurements [nT]
+|`mag_3_c` |Vector{`T2`}  | Mag 3 compensated (clean) scalar magnetometer measurements [nT]
+|`mag_1_uc`|Vector{`T2`}  | Mag 1 uncompensated (corrupted) scalar magnetometer measurements [nT]
+|`mag_2_uc`|Vector{`T2`}  | Mag 2 uncompensated (corrupted) scalar magnetometer measurements [nT]
+|`mag_3_uc`|Vector{`T2`}  | Mag 3 uncompensated (corrupted) scalar magnetometer measurements [nT]
+|`aux_1`   |Vector{`T2`}  | flexible-use auxiliary data 1
+|`aux_2`   |Vector{`T2`}  | flexible-use auxiliary data 2
+|`aux_3`   |Vector{`T2`}  | flexible-use auxiliary data 3
 """
 struct XYZ1{T1 <: Signed, T2 <: AbstractFloat} <: XYZ{T1, T2}
     info     :: String
-    traj     :: Traj{T1,T2}
-    ins      :: INS{T1,T2}
+    traj     :: Traj{T1, T2}
+    ins      :: INS{T1, T2}
     flux_a   :: MagV{T2}
     flux_b   :: MagV{T2}
     flight   :: Vector{T2}
@@ -580,91 +580,91 @@ Subtype of `XYZ` for 2020 SGL datasets.
 
 |**Field**|**Type**|**Description**
 |:--|:--|:--
-|`info`      |String         | dataset information
-|`traj`      |Traj{`T1`,`T2`}| trajectory struct
-|`ins`       |INS{`T1`,`T2`} | inertial navigation system struct
-|`flux_a`    |MagV{`T2`}     | Flux A vector magnetometer measurement struct
-|`flux_b`    |MagV{`T2`}     | Flux B vector magnetometer measurement struct
-|`flux_c`    |MagV{`T2`}     | Flux C vector magnetometer measurement struct
-|`flux_d`    |MagV{`T2`}     | Flux D vector magnetometer measurement struct
-|`flight`    |Vector{`T2`}   | flight number(s)
-|`line`      |Vector{`T2`}   | line number(s), i.e., segments within `flight`
-|`year`      |Vector{`T2`}   | year
-|`doy`       |Vector{`T2`}   | day of year
-|`utm_x`     |Vector{`T2`}   | x-coordinate, WGS-84 UTM zone 18N [m]
-|`utm_y`     |Vector{`T2`}   | y-coordinate, WGS-84 UTM zone 18N [m]
-|`utm_z`     |Vector{`T2`}   | z-coordinate, GPS altitude above WGS-84 ellipsoid [m]
-|`msl`       |Vector{`T2`}   | z-coordinate, GPS altitude above EGM2008 Geoid [m]
-|`baro`      |Vector{`T2`}   | barometric altimeter [m]
-|`diurnal`   |Vector{`T2`}   | measured diurnal, i.e., temporal variations or space weather effects [nT]
-|`igrf`      |Vector{`T2`}   | International Geomagnetic Reference Field (IGRF), i.e., core field [nT]
-|`mag_1_c`   |Vector{`T2`}   | Mag 1 compensated (clean) scalar magnetometer measurements [nT]
-|`mag_1_lag` |Vector{`T2`}   | Mag 1 lag-corrected scalar magnetometer measurements [nT]
-|`mag_1_dc`  |Vector{`T2`}   | Mag 1 diurnal-corrected scalar magnetometer measurements [nT]
-|`mag_1_igrf`|Vector{`T2`}   | Mag 1 IGRF & diurnal-corrected scalar magnetometer measurements [nT]
-|`mag_1_uc`  |Vector{`T2`}   | Mag 1 uncompensated (corrupted) scalar magnetometer measurements [nT]
-|`mag_2_uc`  |Vector{`T2`}   | Mag 2 uncompensated (corrupted) scalar magnetometer measurements [nT]
-|`mag_3_uc`  |Vector{`T2`}   | Mag 3 uncompensated (corrupted) scalar magnetometer measurements [nT]
-|`mag_4_uc`  |Vector{`T2`}   | Mag 4 uncompensated (corrupted) scalar magnetometer measurements [nT]
-|`mag_5_uc`  |Vector{`T2`}   | Mag 5 uncompensated (corrupted) scalar magnetometer measurements [nT]
-|`mag_6_uc`  |Vector{`T2`}   | Mag 6 uncompensated (corrupted) scalar magnetometer measurements [nT]
-|`ogs_mag`   |Vector{`T2`}   | OGS survey diurnal-corrected, levelled, magnetic field [nT]
-|`ogs_alt`   |Vector{`T2`}   | OGS survey, GPS altitude (WGS-84) [m]
-|`ins_wander`|Vector{`T2`}   | INS-computed wander angle (ccw from north) [rad]
-|`ins_roll`  |Vector{`T2`}   | INS-computed aircraft roll [deg]
-|`ins_pitch` |Vector{`T2`}   | INS-computed aircraft pitch [deg]
-|`ins_yaw`   |Vector{`T2`}   | INS-computed aircraft yaw [deg]
-|`roll_rate` |Vector{`T2`}   | avionics-computed roll rate [deg/s]
-|`pitch_rate`|Vector{`T2`}   | avionics-computed pitch rate [deg/s]
-|`yaw_rate`  |Vector{`T2`}   | avionics-computed yaw rate [deg/s]
-|`ins_acc_x` |Vector{`T2`}   | INS x-acceleration [m/s^2]
-|`ins_acc_y` |Vector{`T2`}   | INS y-acceleration [m/s^2]
-|`ins_acc_z` |Vector{`T2`}   | INS z-acceleration [m/s^2]
-|`lgtl_acc`  |Vector{`T2`}   | avionics-computed longitudinal (forward) acceleration [g]
-|`ltrl_acc`  |Vector{`T2`}   | avionics-computed lateral (starboard) acceleration [g]
-|`nrml_acc`  |Vector{`T2`}   | avionics-computed normal (vertical) acceleration [g]
-|`pitot_p`   |Vector{`T2`}   | avionics-computed pitot pressure [kPa]
-|`static_p`  |Vector{`T2`}   | avionics-computed static pressure [kPa]
-|`total_p`   |Vector{`T2`}   | avionics-computed total pressure [kPa]
-|`cur_com_1` |Vector{`T2`}   | current sensor: aircraft radio 1 [A]
-|`cur_ac_hi` |Vector{`T2`}   | current sensor: air conditioner fan high [A]
-|`cur_ac_lo` |Vector{`T2`}   | current sensor: air conditioner fan low [A]
-|`cur_tank`  |Vector{`T2`}   | current sensor: cabin fuel pump [A]
-|`cur_flap`  |Vector{`T2`}   | current sensor: flap motor [A]
-|`cur_strb`  |Vector{`T2`}   | current sensor: strobe lights [A]
-|`cur_srvo_o`|Vector{`T2`}   | current sensor: INS outer servo [A]
-|`cur_srvo_m`|Vector{`T2`}   | current sensor: INS middle servo [A]
-|`cur_srvo_i`|Vector{`T2`}   | current sensor: INS inner servo [A]
-|`cur_heat`  |Vector{`T2`}   | current sensor: INS heater [A]
-|`cur_acpwr` |Vector{`T2`}   | current sensor: aircraft power [A]
-|`cur_outpwr`|Vector{`T2`}   | current sensor: system output power [A]
-|`cur_bat_1` |Vector{`T2`}   | current sensor: battery 1 [A]
-|`cur_bat_2` |Vector{`T2`}   | current sensor: battery 2 [A]
-|`vol_acpwr` |Vector{`T2`}   | voltage sensor: aircraft power [V]
-|`vol_outpwr`|Vector{`T2`}   | voltage sensor: system output power [V]
-|`vol_bat_1` |Vector{`T2`}   | voltage sensor: battery 1 [V]
-|`vol_bat_2` |Vector{`T2`}   | voltage sensor: battery 2 [V]
-|`vol_res_p` |Vector{`T2`}   | voltage sensor: resolver board (+) [V]
-|`vol_res_n` |Vector{`T2`}   | voltage sensor: resolver board (-) [V]
-|`vol_back_p`|Vector{`T2`}   | voltage sensor: backplane (+) [V]
-|`vol_back_n`|Vector{`T2`}   | voltage sensor: backplane (-) [V]
-|`vol_gyro_1`|Vector{`T2`}   | voltage sensor: gyroscope 1 [V]
-|`vol_gyro_2`|Vector{`T2`}   | voltage sensor: gyroscope 2 [V]
-|`vol_acc_p` |Vector{`T2`}   | voltage sensor: INS accelerometers (+) [V]
-|`vol_acc_n` |Vector{`T2`}   | voltage sensor: INS accelerometers (-) [V]
-|`vol_block` |Vector{`T2`}   | voltage sensor: block [V]
-|`vol_back`  |Vector{`T2`}   | voltage sensor: backplane [V]
-|`vol_srvo`  |Vector{`T2`}   | voltage sensor: servos [V]
-|`vol_cabt`  |Vector{`T2`}   | voltage sensor: cabinet [V]
-|`vol_fan`   |Vector{`T2`}   | voltage sensor: cooling fan [V]
-|`aux_1`     |Vector{`T2`}   | flexible-use auxiliary data 1
-|`aux_2`     |Vector{`T2`}   | flexible-use auxiliary data 2
-|`aux_3`     |Vector{`T2`}   | flexible-use auxiliary data 3
+|`info`      |String        | dataset information
+|`traj`      |Traj{`T1, T2`}| trajectory struct
+|`ins`       |INS{`T1, T2`} | inertial navigation system struct
+|`flux_a`    |MagV{`T2`}    | Flux A vector magnetometer measurement struct
+|`flux_b`    |MagV{`T2`}    | Flux B vector magnetometer measurement struct
+|`flux_c`    |MagV{`T2`}    | Flux C vector magnetometer measurement struct
+|`flux_d`    |MagV{`T2`}    | Flux D vector magnetometer measurement struct
+|`flight`    |Vector{`T2`}  | flight number(s)
+|`line`      |Vector{`T2`}  | line number(s), i.e., segments within `flight`
+|`year`      |Vector{`T2`}  | year
+|`doy`       |Vector{`T2`}  | day of year
+|`utm_x`     |Vector{`T2`}  | x-coordinate, WGS-84 UTM zone 18N [m]
+|`utm_y`     |Vector{`T2`}  | y-coordinate, WGS-84 UTM zone 18N [m]
+|`utm_z`     |Vector{`T2`}  | z-coordinate, GPS altitude above WGS-84 ellipsoid [m]
+|`msl`       |Vector{`T2`}  | z-coordinate, GPS altitude above EGM2008 Geoid [m]
+|`baro`      |Vector{`T2`}  | barometric altimeter [m]
+|`diurnal`   |Vector{`T2`}  | measured diurnal, i.e., temporal variations or space weather effects [nT]
+|`igrf`      |Vector{`T2`}  | International Geomagnetic Reference Field (IGRF), i.e., core field [nT]
+|`mag_1_c`   |Vector{`T2`}  | Mag 1 compensated (clean) scalar magnetometer measurements [nT]
+|`mag_1_lag` |Vector{`T2`}  | Mag 1 lag-corrected scalar magnetometer measurements [nT]
+|`mag_1_dc`  |Vector{`T2`}  | Mag 1 diurnal-corrected scalar magnetometer measurements [nT]
+|`mag_1_igrf`|Vector{`T2`}  | Mag 1 IGRF & diurnal-corrected scalar magnetometer measurements [nT]
+|`mag_1_uc`  |Vector{`T2`}  | Mag 1 uncompensated (corrupted) scalar magnetometer measurements [nT]
+|`mag_2_uc`  |Vector{`T2`}  | Mag 2 uncompensated (corrupted) scalar magnetometer measurements [nT]
+|`mag_3_uc`  |Vector{`T2`}  | Mag 3 uncompensated (corrupted) scalar magnetometer measurements [nT]
+|`mag_4_uc`  |Vector{`T2`}  | Mag 4 uncompensated (corrupted) scalar magnetometer measurements [nT]
+|`mag_5_uc`  |Vector{`T2`}  | Mag 5 uncompensated (corrupted) scalar magnetometer measurements [nT]
+|`mag_6_uc`  |Vector{`T2`}  | Mag 6 uncompensated (corrupted) scalar magnetometer measurements [nT]
+|`ogs_mag`   |Vector{`T2`}  | OGS survey diurnal-corrected, levelled, magnetic field [nT]
+|`ogs_alt`   |Vector{`T2`}  | OGS survey, GPS altitude (WGS-84) [m]
+|`ins_wander`|Vector{`T2`}  | INS-computed wander angle (ccw from north) [rad]
+|`ins_roll`  |Vector{`T2`}  | INS-computed aircraft roll [deg]
+|`ins_pitch` |Vector{`T2`}  | INS-computed aircraft pitch [deg]
+|`ins_yaw`   |Vector{`T2`}  | INS-computed aircraft yaw [deg]
+|`roll_rate` |Vector{`T2`}  | avionics-computed roll rate [deg/s]
+|`pitch_rate`|Vector{`T2`}  | avionics-computed pitch rate [deg/s]
+|`yaw_rate`  |Vector{`T2`}  | avionics-computed yaw rate [deg/s]
+|`ins_acc_x` |Vector{`T2`}  | INS x-acceleration [m/s^2]
+|`ins_acc_y` |Vector{`T2`}  | INS y-acceleration [m/s^2]
+|`ins_acc_z` |Vector{`T2`}  | INS z-acceleration [m/s^2]
+|`lgtl_acc`  |Vector{`T2`}  | avionics-computed longitudinal (forward) acceleration [g]
+|`ltrl_acc`  |Vector{`T2`}  | avionics-computed lateral (starboard) acceleration [g]
+|`nrml_acc`  |Vector{`T2`}  | avionics-computed normal (vertical) acceleration [g]
+|`pitot_p`   |Vector{`T2`}  | avionics-computed pitot pressure [kPa]
+|`static_p`  |Vector{`T2`}  | avionics-computed static pressure [kPa]
+|`total_p`   |Vector{`T2`}  | avionics-computed total pressure [kPa]
+|`cur_com_1` |Vector{`T2`}  | current sensor: aircraft radio 1 [A]
+|`cur_ac_hi` |Vector{`T2`}  | current sensor: air conditioner fan high [A]
+|`cur_ac_lo` |Vector{`T2`}  | current sensor: air conditioner fan low [A]
+|`cur_tank`  |Vector{`T2`}  | current sensor: cabin fuel pump [A]
+|`cur_flap`  |Vector{`T2`}  | current sensor: flap motor [A]
+|`cur_strb`  |Vector{`T2`}  | current sensor: strobe lights [A]
+|`cur_srvo_o`|Vector{`T2`}  | current sensor: INS outer servo [A]
+|`cur_srvo_m`|Vector{`T2`}  | current sensor: INS middle servo [A]
+|`cur_srvo_i`|Vector{`T2`}  | current sensor: INS inner servo [A]
+|`cur_heat`  |Vector{`T2`}  | current sensor: INS heater [A]
+|`cur_acpwr` |Vector{`T2`}  | current sensor: aircraft power [A]
+|`cur_outpwr`|Vector{`T2`}  | current sensor: system output power [A]
+|`cur_bat_1` |Vector{`T2`}  | current sensor: battery 1 [A]
+|`cur_bat_2` |Vector{`T2`}  | current sensor: battery 2 [A]
+|`vol_acpwr` |Vector{`T2`}  | voltage sensor: aircraft power [V]
+|`vol_outpwr`|Vector{`T2`}  | voltage sensor: system output power [V]
+|`vol_bat_1` |Vector{`T2`}  | voltage sensor: battery 1 [V]
+|`vol_bat_2` |Vector{`T2`}  | voltage sensor: battery 2 [V]
+|`vol_res_p` |Vector{`T2`}  | voltage sensor: resolver board (+) [V]
+|`vol_res_n` |Vector{`T2`}  | voltage sensor: resolver board (-) [V]
+|`vol_back_p`|Vector{`T2`}  | voltage sensor: backplane (+) [V]
+|`vol_back_n`|Vector{`T2`}  | voltage sensor: backplane (-) [V]
+|`vol_gyro_1`|Vector{`T2`}  | voltage sensor: gyroscope 1 [V]
+|`vol_gyro_2`|Vector{`T2`}  | voltage sensor: gyroscope 2 [V]
+|`vol_acc_p` |Vector{`T2`}  | voltage sensor: INS accelerometers (+) [V]
+|`vol_acc_n` |Vector{`T2`}  | voltage sensor: INS accelerometers (-) [V]
+|`vol_block` |Vector{`T2`}  | voltage sensor: block [V]
+|`vol_back`  |Vector{`T2`}  | voltage sensor: backplane [V]
+|`vol_srvo`  |Vector{`T2`}  | voltage sensor: servos [V]
+|`vol_cabt`  |Vector{`T2`}  | voltage sensor: cabinet [V]
+|`vol_fan`   |Vector{`T2`}  | voltage sensor: cooling fan [V]
+|`aux_1`     |Vector{`T2`}  | flexible-use auxiliary data 1
+|`aux_2`     |Vector{`T2`}  | flexible-use auxiliary data 2
+|`aux_3`     |Vector{`T2`}  | flexible-use auxiliary data 3
 """
 struct XYZ20{T1 <: Signed, T2 <: AbstractFloat} <: XYZ{T1, T2}
     info       :: String
-    traj       :: Traj{T1,T2}
-    ins        :: INS{T1,T2}
+    traj       :: Traj{T1, T2}
+    ins        :: INS{T1, T2}
     flux_a     :: MagV{T2}
     flux_b     :: MagV{T2}
     flux_c     :: MagV{T2}
@@ -751,82 +751,82 @@ Subtype of `XYZ` for 2021 SGL datasets.
 
 |**Field**|**Type**|**Description**
 |:--|:--|:--
-|`info`      |String         | dataset information
-|`traj`      |Traj{`T1`,`T2`}| trajectory struct
-|`ins`       |INS{`T1`,`T2`} | inertial navigation system struct
-|`flux_a`    |MagV{`T2`}     | Flux A vector magnetometer measurement struct
-|`flux_b`    |MagV{`T2`}     | Flux B vector magnetometer measurement struct
-|`flux_c`    |MagV{`T2`}     | Flux C vector magnetometer measurement struct
-|`flux_d`    |MagV{`T2`}     | Flux D vector magnetometer measurement struct
-|`flight`    |Vector{`T2`}   | flight number(s)
-|`line`      |Vector{`T2`}   | line number(s), i.e., segments within `flight`
-|`year`      |Vector{`T2`}   | year
-|`doy`       |Vector{`T2`}   | day of year
-|`utm_x`     |Vector{`T2`}   | x-coordinate, WGS-84 UTM zone 18N [m]
-|`utm_y`     |Vector{`T2`}   | y-coordinate, WGS-84 UTM zone 18N [m]
-|`utm_z`     |Vector{`T2`}   | z-coordinate, GPS altitude above WGS-84 ellipsoid [m]
-|`msl`       |Vector{`T2`}   | z-coordinate, GPS altitude above EGM2008 Geoid [m]
-|`baro`      |Vector{`T2`}   | barometric altimeter [m]
-|`diurnal`   |Vector{`T2`}   | measured diurnal, i.e., temporal variations or space weather effects [nT]
-|`igrf`      |Vector{`T2`}   | International Geomagnetic Reference Field (IGRF), i.e., core field [nT]
-|`mag_1_c`   |Vector{`T2`}   | Mag 1 compensated (clean) scalar magnetometer measurements [nT]
-|`mag_1_uc`  |Vector{`T2`}   | Mag 1 uncompensated (corrupted) scalar magnetometer measurements [nT]
-|`mag_2_uc`  |Vector{`T2`}   | Mag 2 uncompensated (corrupted) scalar magnetometer measurements [nT]
-|`mag_3_uc`  |Vector{`T2`}   | Mag 3 uncompensated (corrupted) scalar magnetometer measurements [nT]
-|`mag_4_uc`  |Vector{`T2`}   | Mag 4 uncompensated (corrupted) scalar magnetometer measurements [nT]
-|`mag_5_uc`  |Vector{`T2`}   | Mag 5 uncompensated (corrupted) scalar magnetometer measurements [nT]
-|`cur_com_1` |Vector{`T2`}   | current sensor: aircraft radio 1 [A]
-|`cur_ac_hi` |Vector{`T2`}   | current sensor: air conditioner fan high [A]
-|`cur_ac_lo` |Vector{`T2`}   | current sensor: air conditioner fan low [A]
-|`cur_tank`  |Vector{`T2`}   | current sensor: cabin fuel pump [A]
-|`cur_flap`  |Vector{`T2`}   | current sensor: flap motor [A]
-|`cur_strb`  |Vector{`T2`}   | current sensor: strobe lights [A]
-|`vol_block` |Vector{`T2`}   | voltage sensor: block [V]
-|`vol_back`  |Vector{`T2`}   | voltage sensor: backplane [V]
-|`vol_cabt`  |Vector{`T2`}   | voltage sensor: cabinet [V]
-|`vol_fan`   |Vector{`T2`}   | voltage sensor: cooling fan [V]
-|`aux_1`     |Vector{`T2`}   | flexible-use auxiliary data 1
-|`aux_2`     |Vector{`T2`}   | flexible-use auxiliary data 2
-|`aux_3`     |Vector{`T2`}   | flexible-use auxiliary data 3
+|`info`      |String        | dataset information
+|`traj`      |Traj{`T1, T2`}| trajectory struct
+|`ins`       |INS{`T1, T2`} | inertial navigation system struct
+|`flux_a`    |MagV{`T2`}    | Flux A vector magnetometer measurement struct
+|`flux_b`    |MagV{`T2`}    | Flux B vector magnetometer measurement struct
+|`flux_c`    |MagV{`T2`}    | Flux C vector magnetometer measurement struct
+|`flux_d`    |MagV{`T2`}    | Flux D vector magnetometer measurement struct
+|`flight`    |Vector{`T2`}  | flight number(s)
+|`line`      |Vector{`T2`}  | line number(s), i.e., segments within `flight`
+|`year`      |Vector{`T2`}  | year
+|`doy`       |Vector{`T2`}  | day of year
+|`utm_x`     |Vector{`T2`}  | x-coordinate, WGS-84 UTM zone 18N [m]
+|`utm_y`     |Vector{`T2`}  | y-coordinate, WGS-84 UTM zone 18N [m]
+|`utm_z`     |Vector{`T2`}  | z-coordinate, GPS altitude above WGS-84 ellipsoid [m]
+|`msl`       |Vector{`T2`}  | z-coordinate, GPS altitude above EGM2008 Geoid [m]
+|`baro`      |Vector{`T2`}  | barometric altimeter [m]
+|`diurnal`   |Vector{`T2`}  | measured diurnal, i.e., temporal variations or space weather effects [nT]
+|`igrf`      |Vector{`T2`}  | International Geomagnetic Reference Field (IGRF), i.e., core field [nT]
+|`mag_1_c`   |Vector{`T2`}  | Mag 1 compensated (clean) scalar magnetometer measurements [nT]
+|`mag_1_uc`  |Vector{`T2`}  | Mag 1 uncompensated (corrupted) scalar magnetometer measurements [nT]
+|`mag_2_uc`  |Vector{`T2`}  | Mag 2 uncompensated (corrupted) scalar magnetometer measurements [nT]
+|`mag_3_uc`  |Vector{`T2`}  | Mag 3 uncompensated (corrupted) scalar magnetometer measurements [nT]
+|`mag_4_uc`  |Vector{`T2`}  | Mag 4 uncompensated (corrupted) scalar magnetometer measurements [nT]
+|`mag_5_uc`  |Vector{`T2`}  | Mag 5 uncompensated (corrupted) scalar magnetometer measurements [nT]
+|`cur_com_1` |Vector{`T2`}  | current sensor: aircraft radio 1 [A]
+|`cur_ac_hi` |Vector{`T2`}  | current sensor: air conditioner fan high [A]
+|`cur_ac_lo` |Vector{`T2`}  | current sensor: air conditioner fan low [A]
+|`cur_tank`  |Vector{`T2`}  | current sensor: cabin fuel pump [A]
+|`cur_flap`  |Vector{`T2`}  | current sensor: flap motor [A]
+|`cur_strb`  |Vector{`T2`}  | current sensor: strobe lights [A]
+|`vol_block` |Vector{`T2`}  | voltage sensor: block [V]
+|`vol_back`  |Vector{`T2`}  | voltage sensor: backplane [V]
+|`vol_cabt`  |Vector{`T2`}  | voltage sensor: cabinet [V]
+|`vol_fan`   |Vector{`T2`}  | voltage sensor: cooling fan [V]
+|`aux_1`     |Vector{`T2`}  | flexible-use auxiliary data 1
+|`aux_2`     |Vector{`T2`}  | flexible-use auxiliary data 2
+|`aux_3`     |Vector{`T2`}  | flexible-use auxiliary data 3
 """
 struct XYZ21{T1 <: Signed, T2 <: AbstractFloat} <: XYZ{T1, T2}
-    info       :: String
-    traj       :: Traj{T1,T2}
-    ins        :: INS{T1,T2}
-    flux_a     :: MagV{T2}
-    flux_b     :: MagV{T2}
-    flux_c     :: MagV{T2}
-    flux_d     :: MagV{T2}
-    flight     :: Vector{T2}
-    line       :: Vector{T2}
-    year       :: Vector{T2}
-    doy        :: Vector{T2}
-    utm_x      :: Vector{T2}
-    utm_y      :: Vector{T2}
-    utm_z      :: Vector{T2}
-    msl        :: Vector{T2}
-    baro       :: Vector{T2}
-    diurnal    :: Vector{T2}
-    igrf       :: Vector{T2}
-    mag_1_c    :: Vector{T2}
-    mag_1_uc   :: Vector{T2}
-    mag_2_uc   :: Vector{T2}
-    mag_3_uc   :: Vector{T2}
-    mag_4_uc   :: Vector{T2}
-    mag_5_uc   :: Vector{T2}
-    cur_com_1  :: Vector{T2}
-    cur_ac_hi  :: Vector{T2}
-    cur_ac_lo  :: Vector{T2}
-    cur_tank   :: Vector{T2}
-    cur_flap   :: Vector{T2}
-    cur_strb   :: Vector{T2}
-    vol_block  :: Vector{T2}
-    vol_back   :: Vector{T2}
-    vol_cabt   :: Vector{T2}
-    vol_fan    :: Vector{T2}
-    aux_1      :: Vector{T2}
-    aux_2      :: Vector{T2}
-    aux_3      :: Vector{T2}
+    info      :: String
+    traj      :: Traj{T1, T2}
+    ins       :: INS{T1, T2}
+    flux_a    :: MagV{T2}
+    flux_b    :: MagV{T2}
+    flux_c    :: MagV{T2}
+    flux_d    :: MagV{T2}
+    flight    :: Vector{T2}
+    line      :: Vector{T2}
+    year      :: Vector{T2}
+    doy       :: Vector{T2}
+    utm_x     :: Vector{T2}
+    utm_y     :: Vector{T2}
+    utm_z     :: Vector{T2}
+    msl       :: Vector{T2}
+    baro      :: Vector{T2}
+    diurnal   :: Vector{T2}
+    igrf      :: Vector{T2}
+    mag_1_c   :: Vector{T2}
+    mag_1_uc  :: Vector{T2}
+    mag_2_uc  :: Vector{T2}
+    mag_3_uc  :: Vector{T2}
+    mag_4_uc  :: Vector{T2}
+    mag_5_uc  :: Vector{T2}
+    cur_com_1 :: Vector{T2}
+    cur_ac_hi :: Vector{T2}
+    cur_ac_lo :: Vector{T2}
+    cur_tank  :: Vector{T2}
+    cur_flap  :: Vector{T2}
+    cur_strb  :: Vector{T2}
+    vol_block :: Vector{T2}
+    vol_back  :: Vector{T2}
+    vol_cabt  :: Vector{T2}
+    vol_fan   :: Vector{T2}
+    aux_1     :: Vector{T2}
+    aux_2     :: Vector{T2}
+    aux_3     :: Vector{T2}
 end # struct XYZ21
 
 """
@@ -842,10 +842,10 @@ Filter results struct.
 |`c`|`Bool`       | if true, filter converged
 """
 struct FILTres{T2 <: AbstractFloat}
-    x :: Matrix{T2}
-    P :: Array{T2,3}
-    r :: Matrix{T2}
-    c :: Bool
+    x::Matrix{T2}
+    P::Array{T2, 3}
+    r::Matrix{T2}
+    c::Bool
 end # struct FILTres
 
 """
@@ -1037,9 +1037,9 @@ Abstract type `CompParams` for aeromagnetic compensation parameters.
 abstract type CompParams end
 
 # Helper aeromagnetic compensation parameter types
-LinDataNormsT = Tuple{Matrix{Float64},Matrix{Float64},Vector{Float64},Vector{Float64}}
-LinModelT     = Tuple{Vector{Float64},Float64}
-NNDataNormsT  = Tuple{Matrix{Float32},Matrix{Float32},Matrix{Float32},Matrix{Float32},Matrix{Float32},Vector{Float32},Vector{Float32}}
+LinDataNormsT = Tuple{Matrix{Float64}, Matrix{Float64}, Vector{Float64}, Vector{Float64}}
+LinModelT     = Tuple{Vector{Float64}, Float64}
+NNDataNormsT  = Tuple{Matrix{Float32}, Matrix{Float32}, Matrix{Float32}, Matrix{Float32}, Matrix{Float32}, Vector{Float32}, Vector{Float32}}
 
 """
     LinCompParams <: CompParams
@@ -1059,10 +1059,10 @@ To see default parameters, type `LinCompParams()`.
 |`y_type`          |Symbol          | `y` target type (`see below`)
 |`use_mag`         |Symbol          | uncompensated scalar magnetometer to use for `y` target vector {`:mag_1_uc`, etc.}, only used for `y_type = :c, :d, :e`
 |`use_vec`         |Symbol          | vector magnetometer (fluxgate) to use for "external" Tolles-Lawson `A` matrix {`:flux_a`, etc.}, only used for `model_type = :TL, :mod_TL, :map_TL`
-|`data_norms`      |LinDataNormsT   | length-`4` tuple of data normalizations, `(A_bias,A_scale,y_bias,y_scale)` for `model_type = :TL, :mod_TL, :map_TL` or `(x_bias,x_scale,y_bias,y_scale)` for `model_type = :elasticnet, :plsr`
+|`data_norms`      |LinDataNormsT   | length-`4` tuple of data normalizations, `(A_bias, A_scale, y_bias, y_scale)` for `model_type = :TL, :mod_TL, :map_TL` or `(x_bias, x_scale, y_bias, y_scale)` for `model_type = :elasticnet, :plsr`
 |`model`           |LinModelT       | length-`2` tuple of linear model coefficients
-|`terms`           |Vector{`Symbol`}| Tolles-Lawson terms to use for Tolles-Lawson `A` matrix (or matrices) within `x` data matrix {`:permanent`,`:induced`,`:eddy`}, only used for `model_type = :elasticnet, :plsr`
-|`terms_A`         |Vector{`Symbol`}| Tolles-Lawson terms to use for "external" Tolles-Lawson `A` matrix {`:permanent`,`:induced`,`:eddy`,`:bias`}, only used for `model_type = :TL, :mod_TL, :map_TL`
+|`terms`           |Vector{`Symbol`}| Tolles-Lawson terms to use for Tolles-Lawson `A` matrix (or matrices) within `x` data matrix {`:permanent`, `:induced`, `:eddy`}, only used for `model_type = :elasticnet, :plsr`
+|`terms_A`         |Vector{`Symbol`}| Tolles-Lawson terms to use for "external" Tolles-Lawson `A` matrix {`:permanent`, `:induced`, `:eddy`, `:bias`}, only used for `model_type = :TL, :mod_TL, :map_TL`
 |`sub_diurnal`     |Bool            | if true, subtract diurnal from scalar magnetometer measurements
 |`sub_igrf`        |Bool            | if true, subtract IGRF from scalar magnetometer measurements
 |`bpf_mag`         |Bool            | if true, bpf scalar magnetometer measurements in `x` data matrix, only used for `model_type = :elasticnet, :plsr`
@@ -1099,26 +1099,26 @@ To see default parameters, type `LinCompParams()`.
 |`λ_TL`  |Float64| ridge parameter, only used for `model_type = :TL, :mod_TL, :map_TL`
 """
 @with_kw struct LinCompParams <: CompParams
-    version          :: VersionNumber   = magnav_version
-    features_setup   :: Vector{Symbol}  = [:mag_1_uc,:TL_A_flux_a]
-    features_no_norm :: Vector{Symbol}  = Symbol[]
-    model_type       :: Symbol          = :plsr
-    y_type           :: Symbol          = :d
-    use_mag          :: Symbol          = :mag_1_uc
-    use_vec          :: Symbol          = :flux_a
-    data_norms       :: LinDataNormsT   = (zeros(1,1),zeros(1,1),[0.0],[0.0])
-    model            :: LinModelT       = ([0.0],0.0)
-    terms            :: Vector{Symbol}  = [:permanent,:induced,:eddy]
-    terms_A          :: Vector{Symbol}  = [:permanent,:induced,:eddy,:bias]
-    sub_diurnal      :: Bool            = false
-    sub_igrf         :: Bool            = false
-    bpf_mag          :: Bool            = false
-    reorient_vec     :: Bool            = false
-    norm_type_A      :: Symbol          = :none
-    norm_type_x      :: Symbol          = :none
-    norm_type_y      :: Symbol          = :none
-    k_plsr           :: Int64           = 18
-    λ_TL             :: Float64         = 0.025
+    version::VersionNumber           = magnav_version
+    features_setup::Vector{Symbol}   = [:mag_1_uc, :TL_A_flux_a]
+    features_no_norm::Vector{Symbol} = Symbol[]
+    model_type::Symbol               = :plsr
+    y_type::Symbol                   = :d
+    use_mag::Symbol                  = :mag_1_uc
+    use_vec::Symbol                  = :flux_a
+    data_norms::LinDataNormsT        = (zeros(1, 1), zeros(1, 1), [0.0], [0.0])
+    model::LinModelT                 = ([0.0], 0.0)
+    terms::Vector{Symbol}            = [:permanent, :induced, :eddy]
+    terms_A::Vector{Symbol}          = [:permanent, :induced, :eddy, :bias]
+    sub_diurnal::Bool                = false
+    sub_igrf::Bool                   = false
+    bpf_mag::Bool                    = false
+    reorient_vec::Bool               = false
+    norm_type_A::Symbol              = :none
+    norm_type_x::Symbol              = :none
+    norm_type_y::Symbol              = :none
+    k_plsr::Int64                    = 18
+    λ_TL::Float64                    = 0.025
 end # struct LinCompParams
 
 """
@@ -1140,10 +1140,10 @@ To see default parameters, type `NNCompParams()`.
 |`y_type`          |Symbol          | `y` target type (`see below`)
 |`use_mag`         |Symbol          | uncompensated scalar magnetometer to use for `y` target vector {`:mag_1_uc`, etc.}, only used for `y_type = :c, :d, :e`
 |`use_vec`         |Symbol          | vector magnetometer (fluxgate) to use for "external" Tolles-Lawson `A` matrix {`:flux_a`, etc.}, not used for `model_type = :m1`
-|`data_norms`      |NNDataNormsT    | length-`7` tuple of data normalizations, `(A_bias,A_scale,v_scale,x_bias,x_scale,y_bias,y_scale)`
+|`data_norms`      |NNDataNormsT    | length-`7` tuple of data normalizations, `(A_bias, A_scale, v_scale, x_bias, x_scale, y_bias, y_scale)`
 |`model`           |Chain           | neural network model
-|`terms`           |Vector{`Symbol`}| Tolles-Lawson terms to use for Tolles-Lawson `A` matrix (or matrices) within `x` data matrix {`:permanent`,`:induced`,`:eddy`}
-|`terms_A`         |Vector{`Symbol`}| Tolles-Lawson terms to use for "external" Tolles-Lawson `A` matrix {`:permanent`,`:induced`,`:eddy`,`:bias`}, not used for `model_type = :m1`
+|`terms`           |Vector{`Symbol`}| Tolles-Lawson terms to use for Tolles-Lawson `A` matrix (or matrices) within `x` data matrix {`:permanent`, `:induced`, `:eddy`}
+|`terms_A`         |Vector{`Symbol`}| Tolles-Lawson terms to use for "external" Tolles-Lawson `A` matrix {`:permanent`, `:induced`, `:eddy`, `:bias`}, not used for `model_type = :m1`
 |`sub_diurnal`     |Bool            | if true, subtract diurnal from scalar magnetometer measurements
 |`sub_igrf`        |Bool            | if true, subtract IGRF from scalar magnetometer measurements
 |`bpf_mag`         |Bool            | if true, bpf scalar magnetometer measurements in `x` data matrix
@@ -1187,12 +1187,12 @@ To see default parameters, type `NNCompParams()`.
 |`η_adam`      |Float64          | learning rate for Adam optimizer
 |`epoch_adam`  |Int64            | number of epochs for Adam optimizer
 |`epoch_lbfgs` |Int64            | number of epochs for LBFGS optimizer
-|`hidden`      |Vector{`Int64`}  | hidden layers & nodes (e.g., `[8,8]` for 2 hidden layers, 8 nodes each)
+|`hidden`      |Vector{`Int64`}  | hidden layers & nodes (e.g., `[8, 8]` for 2 hidden layers, 8 nodes each)
 |`activation`  |Function         | activation function (`see below`)
 |`loss`        |Function         | loss function (`see below`)
 |`batchsize`   |Int64            | mini-batch size
 |`frac_train`  |Float64          | fraction of training data used for training (remainder for validation), only used for Adam optimizer
-|`α_sgl`       |Float64          | Lasso (`α_sgl=0`) vs group Lasso (`α_sgl=1`) balancing parameter {0:1}
+|`α_sgl`       |Float64          | Lasso (`α_sgl = 0`) vs group Lasso (`α_sgl = 1`) balancing parameter {0:1}
 |`λ_sgl`       |Float64          | sparse group Lasso parameter, typically ~1e-5 (if non-zero)
 |`k_pca`       |Int64            | number of components for pre-processing with PCA + whitening, `-1` to ignore
 |`drop_fi`     |Bool             | if true, perform drop-column feature importance
@@ -1213,41 +1213,41 @@ To see default parameters, type `NNCompParams()`.
     - `huber_loss` = mean Huber loss
 """
 @with_kw struct NNCompParams <: CompParams
-    version          :: VersionNumber   = magnav_version
-    features_setup   :: Vector{Symbol}  = [:mag_1_uc,:TL_A_flux_a]
-    features_no_norm :: Vector{Symbol}  = Symbol[]
-    model_type       :: Symbol          = :m1
-    y_type           :: Symbol          = :d
-    use_mag          :: Symbol          = :mag_1_uc
-    use_vec          :: Symbol          = :flux_a
-    data_norms       :: NNDataNormsT    = (zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),zeros(Float32,1,1),[0f0],[0f0])
-    model            :: Chain           = Chain()
-    terms            :: Vector{Symbol}  = [:permanent,:induced,:eddy]
-    terms_A          :: Vector{Symbol}  = [:permanent,:induced,:eddy,:bias]
-    sub_diurnal      :: Bool            = false
-    sub_igrf         :: Bool            = false
-    bpf_mag          :: Bool            = false
-    reorient_vec     :: Bool            = false
-    norm_type_A      :: Symbol          = :none
-    norm_type_x      :: Symbol          = :standardize
-    norm_type_y      :: Symbol          = :standardize
-    TL_coef          :: Vector{Float64} = zeros(19)
-    η_adam           :: Float64         = 0.001
-    epoch_adam       :: Int64           = 5
-    epoch_lbfgs      :: Int64           = 0
-    hidden           :: Vector{Int64}   = [8]
-    activation       :: Function        = swish
-    loss             :: Function        = mse
-    batchsize        :: Int64           = 2048
-    frac_train       :: Float64         = 14/17
-    α_sgl            :: Float64         = 1.0
-    λ_sgl            :: Float64         = 0.0
-    k_pca            :: Int64           = -1
-    drop_fi          :: Bool            = false
-    drop_fi_bson     :: String          = "drop_fi"
-    drop_fi_csv      :: String          = "drop_fi"
-    perm_fi          :: Bool            = false
-    perm_fi_csv      :: String          = "perm_fi"
+    version::VersionNumber           = magnav_version
+    features_setup::Vector{Symbol}   = [:mag_1_uc, :TL_A_flux_a]
+    features_no_norm::Vector{Symbol} = Symbol[]
+    model_type::Symbol               = :m1
+    y_type::Symbol                   = :d
+    use_mag::Symbol                  = :mag_1_uc
+    use_vec::Symbol                  = :flux_a
+    data_norms::NNDataNormsT         = (zeros(Float32, 1, 1), zeros(Float32, 1, 1), zeros(Float32, 1, 1), zeros(Float32, 1, 1), zeros(Float32, 1, 1), [0.0f0], [0.0f0])
+    model::Chain                     = Chain()
+    terms::Vector{Symbol}            = [:permanent, :induced, :eddy]
+    terms_A::Vector{Symbol}          = [:permanent, :induced, :eddy, :bias]
+    sub_diurnal::Bool                = false
+    sub_igrf::Bool                   = false
+    bpf_mag::Bool                    = false
+    reorient_vec::Bool               = false
+    norm_type_A::Symbol              = :none
+    norm_type_x::Symbol              = :standardize
+    norm_type_y::Symbol              = :standardize
+    TL_coef::Vector{Float64}         = zeros(19)
+    η_adam::Float64                  = 0.001
+    epoch_adam::Int64                = 5
+    epoch_lbfgs::Int64               = 0
+    hidden::Vector{Int64}            = [8]
+    activation::Function             = swish
+    loss::Function                   = mse
+    batchsize::Int64                 = 2048
+    frac_train::Float64              = 14/17
+    α_sgl::Float64                   = 1.0
+    λ_sgl::Float64                   = 0.0
+    k_pca::Int64                     = -1
+    drop_fi::Bool                    = false
+    drop_fi_bson::String             = "drop_fi"
+    drop_fi_csv::String              = "drop_fi"
+    perm_fi::Bool                    = false
+    perm_fi_csv::String              = "perm_fi"
 end # struct NNCompParams
 
 """
@@ -1260,21 +1260,21 @@ Temporary parameters struct for temporal models.
 |`σ_curriculum` |Float64| standard deviation threshold, only used for `model_type = :m3sc, :m3vc`
 |`l_window`     |Int64  | temporal window length, only used for `model_type = :m3w, :m3tf`
 |`window_type`  |Symbol | type of windowing, `:sliding` for overlapping or `:contiguous` for non-overlapping, only used for `model_type = :m3w, :m3tf`
-|`tf_layer_type`|Symbol | transformer normalization layer before or after skip connection {`:prelayer`,`:postlayer`}, only used for `model_type = :m3tf`
-|`tf_norm_type` |Symbol | normalization for transformer encoder {`:batch`,`:layer`,`:none`}, only used for `model_type = :m3tf`
+|`tf_layer_type`|Symbol | transformer normalization layer before or after skip connection {`:prelayer`, `:postlayer`}, only used for `model_type = :m3tf`
+|`tf_norm_type` |Symbol | normalization for transformer encoder {`:batch`, `:layer`, `:none`}, only used for `model_type = :m3tf`
 |`dropout_prob` |Float64| dropout rate, only used for `model_type = :m3w, :m3tf`
 |`N_tf_head`    |Int64  | number of attention heads, only used for `model_type = :m3tf`
 |`tf_gain`      |Float64| weight initialization parameter, only used for `model_type = :m3tf`
 """
 @with_kw struct TempParams
-    σ_curriculum  :: Float64 = 1.0
-    l_window      :: Int64   = 5
-    window_type   :: Symbol  = :sliding
-    tf_layer_type :: Symbol  = :postlayer
-    tf_norm_type  :: Symbol  = :batch
-    dropout_prob  :: Float64 = 0.2
-    N_tf_head     :: Int64   = 8
-    tf_gain       :: Float64 = 1.0
+    σ_curriculum::Float64 = 1.0
+    l_window::Int64       = 5
+    window_type::Symbol   = :sliding
+    tf_layer_type::Symbol = :postlayer
+    tf_norm_type::Symbol  = :batch
+    dropout_prob::Float64 = 0.2
+    N_tf_head::Int64      = 8
+    tf_gain::Float64      = 1.0
 end # struct TempParams
 
 """
@@ -1300,20 +1300,20 @@ Real-time (RT) extended Kalman filter (EKF) struct, mutable.
 |`r`       |Vector{`Float64`}| measurement residual
 """
 @with_kw mutable struct EKF_RT
-    P        :: Matrix{Float64} = create_P0()
-    Qd       :: Matrix{Float64} = create_Qd()
-    R        :: Float64         = 1.0
-    baro_tau :: Float64         = 3600.0
-    acc_tau  :: Float64         = 3600.0
-    gyro_tau :: Float64         = 3600.0
-    fogm_tau :: Float64         = 600.0
-    date     :: Float64         = get_years(2020,185)
-    core     :: Bool            = false
-    nx       :: Int64           = size(P,1)
-    ny       :: Int64           = 1
-    t        :: Float64         = -1
-    x        :: Vector{Float64} = zeros(nx)
-    r        :: Vector{Float64} = zeros(ny)
+    P::Matrix{Float64}  = create_P0()
+    Qd::Matrix{Float64} = create_Qd()
+    R::Float64          = 1.0
+    baro_tau::Float64   = 3600.0
+    acc_tau::Float64    = 3600.0
+    gyro_tau::Float64   = 3600.0
+    fogm_tau::Float64   = 600.0
+    date::Float64       = get_years(2020, 185)
+    core::Bool          = false
+    nx::Int64           = size(P, 1)
+    ny::Int64           = 1
+    t::Float64          = -1
+    x::Vector{Float64}  = zeros(nx)
+    r::Vector{Float64}  = zeros(ny)
 end # mutable struct EKF_RT
 
 """
@@ -1326,17 +1326,17 @@ Map cache struct, mutable.
 |`maps`          |Vector{`MapS`{`Float64`}}| vector of `MapS` scalar magnetic anomaly map structs
 |`map_sort_ind`  |Vector{`Int64`}          | `maps` indices sorted by altitude
 |`fallback`      |`MapS`{`Float64`}        | fallback `MapS` scalar magnetic anomaly map struct
-|`map_cache`     |Dict                     | `maps`     cache of scalar map interpolation functions (`f(lat,lon)`) at multiple altitudes
-|`fallback_cache`|Dict                     | `fallback` cache of scalar map interpolation functions (`f(lat,lon)`) at multiple altitudes
+|`map_cache`     |Dict                     | `maps`     cache of scalar map interpolation functions (`f(lat, lon)`) at multiple altitudes
+|`fallback_cache`|Dict                     | `fallback` cache of scalar map interpolation functions (`f(lat, lon)`) at multiple altitudes
 |`dz`            |Real                     | step size between map altitude levels [m]
 """
 @with_kw mutable struct Map_Cache
-    maps           :: Vector{MapS{Float64}}
-    map_sort_ind   :: Vector{Int64}         = sortperm([m.alt for m in maps])
-    fallback       :: MapS{Float64}         = get_map(namad)
-    map_cache      :: Dict                  = Dict{Tuple{Int64,Int64},Function}()
-    fallback_cache :: Dict                  = Dict{Int64,Function}()
-    dz             :: Real                  = 100
+    maps                        :: Vector{MapS{Float64}}
+    map_sort_ind::Vector{Int64} = sortperm([m.alt for m in maps])
+    fallback::MapS{Float64}     = get_map(namad)
+    map_cache::Dict             = Dict{Tuple{Int64, Int64}, Function}()
+    fallback_cache::Dict        = Dict{Int64, Function}()
+    dz::Real                    = 100
 end # mutable struct Map_Cache
 
 include("analysis_util.jl")
@@ -1359,52 +1359,52 @@ include("nekf.jl")
 include("tolles_lawson.jl")
 include("xyz2h5.jl")
 
-@compat(public, (
-ottawa_area_maps_gxf,emag2,emm720,namad,
-MapS,MapSd,MapS3D,MapV,MagV,Traj,INS,XYZ0,XYZ1,XYZ20,XYZ21,
-FILTres,CRLBout,INSout,FILTout,TempParams,
-linreg,get_x,get_y,get_Axy,get_nn_m,sparse_group_lasso,
-chunk_data,predict_rnn_full,predict_rnn_windowed,krr_fit,krr_test,
-project_body_field_to_2d_igrf,get_optimal_rotation_matrix,
-filter_events!,filter_events,
-TL_vec2mat,TL_mat2vec,plsr_fit,elasticnet_fit,linear_fit,linear_test,
-create_mag_c,corrupt_mag,
-eval_results,eval_crlb,eval_ins,
-downward_L,psd,
-map_get_gxf,map_correct_igrf!,map_correct_igrf,map_chessboard!,
-map_chessboard,map_utm2lla!,map_utm2lla,map_resample,get_step,
-create_P0,create_Qd,get_pinson,fogm,
-fdm,
-compare_fields))
+@compat(public,
+        (ottawa_area_maps_gxf, emag2, emm720, namad,
+         MapS, MapSd, MapS3D, MapV, MagV, Traj, INS, XYZ0, XYZ1, XYZ20, XYZ21,
+         FILTres, CRLBout, INSout, FILTout, TempParams,
+         linreg, get_x, get_y, get_Axy, get_nn_m, sparse_group_lasso,
+         chunk_data, predict_rnn_full, predict_rnn_windowed, krr_fit, krr_test,
+         project_body_field_to_2d_igrf, get_optimal_rotation_matrix,
+         filter_events!, filter_events,
+         TL_vec2mat, TL_mat2vec, plsr_fit, elasticnet_fit, linear_fit, linear_test,
+         create_mag_c, corrupt_mag,
+         eval_results, eval_crlb, eval_ins,
+         downward_L, psd,
+         map_get_gxf, map_correct_igrf!, map_correct_igrf, map_chessboard!,
+         map_chessboard, map_utm2lla!, map_utm2lla, map_resample, get_step,
+         create_P0, create_Qd, get_pinson, fogm,
+         fdm,
+         compare_fields))
 
 export
-LinCompParams,NNCompParams,EKF_RT,Map_Cache,
-sgl_2020_train,sgl_2021_train,ottawa_area_maps,
-dn2dlat,de2dlon,dlat2dn,dlon2de,detrend,get_bpf,bpf_data,bpf_data!,
-err_segs,norm_sets,denorm_sets,get_ind,eval_shapley,plot_shapley,eval_gsa,
-get_IGRF,get_igrf,get_years,gif_animation_m3,plot_basic,plot_activation,
-plot_mag,plot_mag_c,plot_frequency,plot_correlation,plot_correlation_matrix,
-comp_train,comp_test,comp_m2bc_test,comp_m3_test,comp_train_test,
-create_XYZ0,create_traj,create_ins,create_flux,create_informed_xyz,
-euler2dcm,dcm2euler,
-ekf,crlb,
-ekf_online_nn,ekf_online_nn_setup,
-ekf_online,ekf_online_setup,
-eval_filt,run_filt,
-plot_filt!,plot_filt,plot_filt_err,plot_mag_map,plot_mag_map_err,
-get_autocor,plot_autocor,gif_ellipse,
-get_map,save_map,get_comp_params,save_comp_params,
-get_XYZ20,get_XYZ21,get_XYZ,get_xyz,get_XYZ0,get_XYZ1,
-get_flux,get_magv,get_MagV,get_traj,get_Traj,get_ins,get_INS,
-map2kmz,path2kml,
-upward_fft,vector_fft,map_expand,
-map_interpolate,map_itp,map_trim,map_fill!,map_fill,map_gxf2h5,
-plot_map!,plot_map,plot_path!,plot_path,plot_events!,plot_events,
-map_check,get_map_val,get_cached_map,map_border,map_combine,
-create_model,
-mpf,
-nekf,nekf_train,
-create_TL_A,create_TL_coef,
-xyz2h5
+       LinCompParams, NNCompParams, EKF_RT, Map_Cache,
+       sgl_2020_train, sgl_2021_train, ottawa_area_maps,
+       dn2dlat, de2dlon, dlat2dn, dlon2de, detrend, get_bpf, bpf_data, bpf_data!,
+       err_segs, norm_sets, denorm_sets, get_ind, eval_shapley, plot_shapley, eval_gsa,
+       get_IGRF, get_igrf, get_years, gif_animation_m3, plot_basic, plot_activation,
+       plot_mag, plot_mag_c, plot_frequency, plot_correlation, plot_correlation_matrix,
+       comp_train, comp_test, comp_m2bc_test, comp_m3_test, comp_train_test,
+       create_XYZ0, create_traj, create_ins, create_flux, create_informed_xyz,
+       euler2dcm, dcm2euler,
+       ekf, crlb,
+       ekf_online_nn, ekf_online_nn_setup,
+       ekf_online, ekf_online_setup,
+       eval_filt, run_filt,
+       plot_filt!, plot_filt, plot_filt_err, plot_mag_map, plot_mag_map_err,
+       get_autocor, plot_autocor, gif_ellipse,
+       get_map, save_map, get_comp_params, save_comp_params,
+       get_XYZ20, get_XYZ21, get_XYZ, get_xyz, get_XYZ0, get_XYZ1,
+       get_flux, get_magv, get_MagV, get_traj, get_Traj, get_ins, get_INS,
+       map2kmz, path2kml,
+       upward_fft, vector_fft, map_expand,
+       map_interpolate, map_itp, map_trim, map_fill!, map_fill, map_gxf2h5,
+       plot_map!, plot_map, plot_path!, plot_path, plot_events!, plot_events,
+       map_check, get_map_val, get_cached_map, map_border, map_combine,
+       create_model,
+       mpf,
+       nekf, nekf_train,
+       create_TL_A, create_TL_coef,
+       xyz2h5
 
 end # module MagNav

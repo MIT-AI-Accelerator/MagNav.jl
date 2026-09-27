@@ -1,5 +1,5 @@
 """
-    create_P0(lat1 = deg2rad(45);
+    create_P0(lat1             = deg2rad(45);
               init_pos_sigma   = 3.0,
               init_alt_sigma   = 0.001,
               init_vel_sigma   = 0.01,
@@ -35,7 +35,7 @@ Create initial covariance matrix `P0`.
 **Returns:**
 - `P0`: initial covariance matrix
 """
-function create_P0(lat1 = deg2rad(45);
+function create_P0(lat1             = deg2rad(45);
                    init_pos_sigma   = 3.0,
                    init_alt_sigma   = 0.001,
                    init_vel_sigma   = 0.01,
@@ -50,44 +50,46 @@ function create_P0(lat1 = deg2rad(45);
                    fogm_state::Bool = true,
                    P0_TL            = [])
 
-    nx_TL   = size(P0_TL,1)
+    nx_TL   = size(P0_TL, 1)
     nx_vec  = vec_states ? 3 : 0
     nx_fogm = fogm_state ? 1 : 0
 
     nx = 17 + nx_TL + nx_vec + nx_fogm
 
-    P0 = zeros(Float64,nx,nx) # initial covariance matrix
+    P0 = zeros(Float64, nx, nx) # initial covariance matrix
 
-    P0[1,1]   = dn2dlat(init_pos_sigma,lat1)^2
-    P0[2,2]   = de2dlon(init_pos_sigma,lat1)^2
-    P0[3,3]   = init_alt_sigma^2
-    P0[4,4]   = init_vel_sigma^2
-    P0[5,5]   = init_vel_sigma^2
-    P0[6,6]   = init_vel_sigma^2
-    P0[7,7]   = init_att_sigma^2
-    P0[8,8]   = init_att_sigma^2
-    P0[9,9]   = init_att_sigma^2
-    P0[10,10] = ha_sigma^2
-    P0[11,11] = a_hat_sigma^2
-    P0[12,12] = acc_sigma^2
-    P0[13,13] = acc_sigma^2
-    P0[14,14] = acc_sigma^2
-    P0[15,15] = gyro_sigma^2
-    P0[16,16] = gyro_sigma^2
-    P0[17,17] = gyro_sigma^2
+    P0[1, 1]   = dn2dlat(init_pos_sigma, lat1)^2
+    P0[2, 2]   = de2dlon(init_pos_sigma, lat1)^2
+    P0[3, 3]   = init_alt_sigma^2
+    P0[4, 4]   = init_vel_sigma^2
+    P0[5, 5]   = init_vel_sigma^2
+    P0[6, 6]   = init_vel_sigma^2
+    P0[7, 7]   = init_att_sigma^2
+    P0[8, 8]   = init_att_sigma^2
+    P0[9, 9]   = init_att_sigma^2
+    P0[10, 10] = ha_sigma^2
+    P0[11, 11] = a_hat_sigma^2
+    P0[12, 12] = acc_sigma^2
+    P0[13, 13] = acc_sigma^2
+    P0[14, 14] = acc_sigma^2
+    P0[15, 15] = gyro_sigma^2
+    P0[16, 16] = gyro_sigma^2
+    P0[17, 17] = gyro_sigma^2
 
+    #! format: off
     i1 = 18
     i2 = i1 + nx_TL
     i3 = i2 + nx_vec
-    nx_TL   > 0 && (P0[i1:i2-1,i1:i2-1] = P0_TL)
-    nx_vec  > 0 && (P0[i2:i3-1,i2:i3-1] = Diagonal(repeat([vec_sigma^2],nx_vec)))
-    nx_fogm > 0 && (P0[i3     ,i3     ] = fogm_sigma^2)
+    nx_TL   > 0 && (P0[i1:(i2 - 1), i1:(i2 - 1)] = P0_TL)
+    nx_vec  > 0 && (P0[i2:(i3 - 1), i2:(i3 - 1)] = Diagonal(repeat([vec_sigma^2], nx_vec)))
+    nx_fogm > 0 && (P0[i3, i3] = fogm_sigma^2)
+    #! format: on
 
     return (P0)
 end # function create_P0
 
 """
-    create_Qd(dt = 0.1;
+    create_Qd(dt               = 0.1;
               VRW_sigma        = 0.000238,
               ARW_sigma        = 0.000000581,
               baro_sigma       = 1.0,
@@ -125,7 +127,7 @@ Create the discrete time process/system noise matrix `Qd`.
 **Returns:**
 - `Qd`: discrete time process/system noise matrix
 """
-function create_Qd(dt = 0.1;
+function create_Qd(dt               = 0.1;
                    VRW_sigma        = 0.000238,
                    ARW_sigma        = 0.000000581,
                    baro_sigma       = 1.0,
@@ -141,42 +143,45 @@ function create_Qd(dt = 0.1;
                    vec_states::Bool = false,
                    fogm_state::Bool = true)
 
+    #! format: off
     VRW_var    = VRW_sigma^2    # velocity random walk noise variance
     ARW_var    = ARW_sigma^2    # angular  random walk noise variance
-    baro_drive = 2*baro_sigma^2 / baro_tau  # barometer      driving noise
-    acc_drive  = 2*acc_sigma^2  / acc_tau   # accelerometer  driving noise
-    gyro_drive = 2*gyro_sigma^2 / gyro_tau  # gyroscope      driving noise
-    fogm_drive = 2*fogm_sigma^2 / fogm_tau  # FOGM catch-all driving noise
-    TL_var     = TL_sigma.^2    # Tolles-Lawson coefficient noise variance
+    baro_drive = 2*baro_sigma^2 / baro_tau # barometer      driving noise
+    acc_drive  = 2*acc_sigma^2  / acc_tau  # accelerometer  driving noise
+    gyro_drive = 2*gyro_sigma^2 / gyro_tau # gyroscope      driving noise
+    fogm_drive = 2*fogm_sigma^2 / fogm_tau # FOGM catch-all driving noise
+    TL_var     = TL_sigma .^ 2  # Tolles-Lawson coefficient noise variance
     vec_var    = vec_sigma^2    # vector magnetometer noise variance
 
-    nx_TL   = size(TL_sigma,1)
+    nx_TL   = size(TL_sigma, 1)
     nx_vec  = vec_states ? 3 : 0
     nx_fogm = fogm_state ? 1 : 0
 
-    Q = [repeat([1e-30  ],3);
-         repeat([VRW_var],3);
-         repeat([ARW_var],3);
+    Q = [repeat([1e-30],   3);
+         repeat([VRW_var], 3);
+         repeat([ARW_var], 3);
          baro_drive;
          1e-30;
-         repeat([acc_drive ],3);
-         repeat([gyro_drive],3);
-         zeros(Float64,nx_TL+nx_vec+nx_fogm)]
+         repeat([acc_drive],  3);
+         repeat([gyro_drive], 3);
+         zeros(Float64, nx_TL+nx_vec+nx_fogm)]
 
     i1 = 18
     i2 = i1 + nx_TL
     i3 = i2 + nx_vec
-    nx_TL   > 0 && (Q[i1:i2-1] = vec(TL_var))
-    nx_vec  > 0 && (Q[i2:i3-1] = repeat([vec_var],3))
-    nx_fogm > 0 && (Q[i3     ] = fogm_drive)
+    nx_TL   > 0 && (Q[i1:(i2 - 1)] = vec(TL_var))
+    nx_vec  > 0 && (Q[i2:(i3 - 1)] = repeat([vec_var], 3))
+    nx_fogm > 0 && (Q[i3] = fogm_drive)
+    #! format: on
 
-    Qd = Diagonal(Q)*dt # discrete time process/system noise matrix
+    Qd = Diagonal(Q) * dt # discrete time process/system noise matrix
 
     return (Qd)
 end # function create_Qd
 
 """
-    create_model(dt = 0.1, lat1 = deg2rad(45);
+    create_model(dt               = 0.1,
+                 lat1             = deg2rad(45);
                  init_pos_sigma   = 3.0,
                  init_alt_sigma   = 0.001,
                  init_vel_sigma   = 0.01,
@@ -233,7 +238,8 @@ Create a magnetic navigation filter model for use in an EKF or a MPF.
 - `Qd`: discrete time process/system noise matrix
 - `R`:  measurement (white) noise variance
 """
-function create_model(dt = 0.1, lat1 = deg2rad(45);
+function create_model(dt               = 0.1,
+                      lat1             = deg2rad(45);
                       init_pos_sigma   = 3.0,
                       init_alt_sigma   = 0.001,
                       init_vel_sigma   = 0.01,
@@ -301,7 +307,9 @@ end # function create_model
                fogm_tau         = 600.0,
                vec_states::Bool = false,
                fogm_state::Bool = true,
-               k1=3e-2, k2=3e-4, k3=1e-6)
+               k1               = 3e-2,
+               k2               = 3e-4,
+               k3               = 1e-6)
 
 Get the `nx` x `nx` Pinson dynamics matrix. States (errors) are:
 
@@ -356,7 +364,9 @@ function get_pinson(nx::Int, lat, vn, ve, vd, fn, fe, fd, Cnb;
                     fogm_tau         = 600.0,
                     vec_states::Bool = false,
                     fogm_state::Bool = true,
-                    k1=3e-2, k2=3e-4, k3=1e-6)
+                    k1               = 3e-2,
+                    k2               = 3e-4,
+                    k3               = 1e-6)
 
     # for 40 states:
     #  19-37 TL   [-]     Tolles-Lawson coefficients
@@ -368,84 +378,86 @@ function get_pinson(nx::Int, lat, vn, ve, vd, fn, fe, fd, Cnb;
     cos_l = cos(lat)
     sin_l = sin(lat)
 
-    F = zeros(Float64,nx,nx)
+    #! format: off
+    F = zeros(Float64, nx, nx)
 
-    F[1,3]   = -vn / r_earth^2
-    F[1,4]   =  1  / r_earth
+    F[1, 3]   = -vn / r_earth^2
+    F[1, 4]   =  1 / r_earth
 
-    F[2,1]   =  ve * tan_l / (r_earth * cos_l)
-    F[2,3]   = -ve         / (cos_l*r_earth^2)
-    F[2,5]   =  1          / (r_earth * cos_l)
+    F[2, 1]   =  ve * tan_l / (r_earth * cos_l)
+    F[2, 3]   = -ve / (cos_l * r_earth^2)
+    F[2, 5]   =  1 / (r_earth * cos_l)
 
-    F[3,3]   = -k1
-    F[3,6]   = -1
-    F[3,10]  =  k1
+    F[3, 3]   = -k1
+    F[3, 6]   = -1
+    F[3, 10]  =  k1
 
-    F[4,1]   = -ve * (2*ω_earth*cos_l + ve / (r_earth*cos_l^2))
-    F[4,3]   = (ve^2*tan_l - vn*vd) / r_earth^2
-    F[4,4]   =  vd / r_earth
-    F[4,5]   = -2*(ω_earth*sin_l + ve*tan_l / r_earth)
-    F[4,6]   =  vn / r_earth
-    F[4,8]   = -fd
-    F[4,9]   =  fe
+    F[4, 1]   = -ve * (2 * ω_earth * cos_l + ve / (r_earth * cos_l^2))
+    F[4, 3]   =  (ve^2 * tan_l - vn * vd) / r_earth^2
+    F[4, 4]   =  vd / r_earth
+    F[4, 5]   = -2 * (ω_earth * sin_l + ve * tan_l / r_earth)
+    F[4, 6]   =  vn / r_earth
+    F[4, 8]   = -fd
+    F[4, 9]   =  fe
 
-    F[5,1]   =  2*ω_earth*(vn*cos_l - vd*sin_l) + vn*ve / (r_earth * cos_l^2)
-    F[5,3]   = -ve*((vn*tan_l + vd) / r_earth^2)
-    F[5,4]   =  2*ω_earth*sin_l + ve * tan_l / r_earth
-    F[5,5]   =      (vn*tan_l + vd) / r_earth
-    F[5,6]   =  2*ω_earth*cos_l + ve / r_earth
-    F[5,7]   =  fd
-    F[5,9]   = -fn
+    F[5, 1]   =  2 * ω_earth * (vn * cos_l - vd * sin_l) + vn * ve / (r_earth * cos_l^2)
+    F[5, 3]   = -ve * ((vn * tan_l + vd) / r_earth^2)
+    F[5, 4]   =  2 * ω_earth * sin_l + ve * tan_l / r_earth
+    F[5, 5]   =  (vn * tan_l + vd) / r_earth
+    F[5, 6]   =  2 * ω_earth * cos_l + ve / r_earth
+    F[5, 7]   =  fd
+    F[5, 9]   = -fn
 
-    F[6,1]   =  2*ω_earth*ve*sin_l
-    F[6,3]   =  (vn^2 + ve^2) / r_earth^2 + k2
-    F[6,4]   = -2*vn / r_earth
-    F[6,5]   = -2*(ω_earth*cos_l + ve / r_earth)
-    F[6,7]   = -fe
-    F[6,8]   =  fn
-    F[6,10]  = -k2
-    F[6,11]  =  1
+    F[6, 1]   =  2 * ω_earth * ve * sin_l
+    F[6, 3]   =  (vn^2 + ve^2) / r_earth^2 + k2
+    F[6, 4]   = -2 * vn / r_earth
+    F[6, 5]   = -2 * (ω_earth * cos_l + ve / r_earth)
+    F[6, 7]   = -fe
+    F[6, 8]   =  fn
+    F[6, 10]  = -k2
+    F[6, 11]  =  1
 
-    F[7,1]   = -ω_earth*sin_l
-    F[7,3]   = -ve / r_earth^2
-    F[7,5]   =  1 / r_earth
-    F[7,8]   = -ω_earth*sin_l - ve*tan_l / r_earth
-    F[7,9]   =  vn / r_earth
+    F[7, 1]   = -ω_earth * sin_l
+    F[7, 3]   = -ve / r_earth^2
+    F[7, 5]   =  1 / r_earth
+    F[7, 8]   = -ω_earth * sin_l - ve * tan_l / r_earth
+    F[7, 9]   =  vn / r_earth
 
-    F[8,3]   =  vn / r_earth^2
-    F[8,4]   = -1 / r_earth
-    F[8,7]   =  ω_earth*sin_l + ve*tan_l / r_earth
-    F[8,9]   =  ω_earth*cos_l + ve / r_earth
+    F[8, 3]   =  vn / r_earth^2
+    F[8, 4]   = -1 / r_earth
+    F[8, 7]   =  ω_earth * sin_l + ve * tan_l / r_earth
+    F[8, 9]   =  ω_earth * cos_l + ve / r_earth
 
-    F[9,1]   = -ω_earth*cos_l - ve / (r_earth*cos_l^2)
-    F[9,3]   =  ve*tan_l / r_earth^2
-    F[9,5]   = -tan_l / r_earth
-    F[9,7]   = -vn / r_earth
-    F[9,8]   = -ω_earth*cos_l - ve / r_earth
+    F[9, 1]   = -ω_earth * cos_l - ve / (r_earth * cos_l^2)
+    F[9, 3]   =  ve * tan_l / r_earth^2
+    F[9, 5]   = -tan_l / r_earth
+    F[9, 7]   = -vn / r_earth
+    F[9, 8]   = -ω_earth * cos_l - ve / r_earth
 
-    F[10,10] = -1 / baro_tau
+    F[10, 10] = -1 / baro_tau
 
-    F[11,3]  =  k3
-    F[11,10] = -k3
+    F[11, 3]  =  k3
+    F[11, 10] = -k3
 
-    F[12,12] = -1 / acc_tau
-    F[13,13] = -1 / acc_tau
-    F[14,14] = -1 / acc_tau
-    F[15,15] = -1 / gyro_tau
-    F[16,16] = -1 / gyro_tau
-    F[17,17] = -1 / gyro_tau
+    F[12, 12] = -1 / acc_tau
+    F[13, 13] = -1 / acc_tau
+    F[14, 14] = -1 / acc_tau
+    F[15, 15] = -1 / gyro_tau
+    F[16, 16] = -1 / gyro_tau
+    F[17, 17] = -1 / gyro_tau
 
-    F[4:6,12:14] =  Cnb
-    F[7:9,15:17] = -Cnb
+    F[4:6, 12:14] =  Cnb
+    F[7:9, 15:17] = -Cnb
 
     if vec_states
         nx_fogm = fogm_state ? 1 : 0
-        F[end-nx_fogm-2,end-nx_fogm-2] = -1e9
-        F[end-nx_fogm-1,end-nx_fogm-1] = -1e9
-        F[end-nx_fogm  ,end-nx_fogm  ] = -1e9
+        F[end - nx_fogm - 2, end - nx_fogm - 2] = -1e9
+        F[end - nx_fogm - 1, end - nx_fogm - 1] = -1e9
+        F[end - nx_fogm    , end - nx_fogm]     = -1e9
     end
 
-    fogm_state && (F[end,end] = -1 / fogm_tau)
+    fogm_state && (F[end, end] = -1 / fogm_tau)
+    #! format: on
 
     return (F)
 end # function get_pinson
@@ -484,7 +496,7 @@ function get_Phi(nx::Int, lat, vn, ve, vd, fn, fe, fd, Cnb,
                  vec_states::Bool = false,
                  fogm_state::Bool = true)
 
-    exponential!(get_pinson(nx,lat,vn,ve,vd,fn,fe,fd,Cnb;
+    exponential!(get_pinson(nx, lat, vn, ve, vd, fn, fe, fd, Cnb;
                             baro_tau   = baro_tau,
                             acc_tau    = acc_tau,
                             gyro_tau   = gyro_tau,
@@ -493,7 +505,7 @@ function get_Phi(nx::Int, lat, vn, ve, vd, fn, fe, fd, Cnb,
                             fogm_state = fogm_state) * dt)
 
     # #* note: slightly more allocations & slightly slower
-    # sparse(exponential!(get_pinson(nx,lat,vn,ve,vd,fn,fe,fd,Cnb;
+    # sparse(exponential!(get_pinson(nx, lat, vn, ve, vd, fn, fe, fd, Cnb;
     #                                baro_tau   = baro_tau,
     #                                acc_tau    = acc_tau,
     #                                gyro_tau   = gyro_tau,
@@ -505,13 +517,13 @@ end # function get_Phi
 
 """
     get_H(itp_mapS, x::Vector, lat, lon, alt;
-          date       = get_years(2020,185),
+          date       = get_years(2020, 185),
           core::Bool = false)
 
 Internal helper function to get expected magnetic measurement Jacobian (gradient here).
 
 **Arguments:**
-- `itp_mapS`: scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
+- `itp_mapS`: scalar map interpolation function (`f(lat, lon)` or `f(lat, lon, alt)`)
 - `x`:        states [lat, lon, ... S]
 - `lat`:      latitude  [rad]
 - `lon`:      longitude [rad]
@@ -523,19 +535,19 @@ Internal helper function to get expected magnetic measurement Jacobian (gradient
 - `H`: expected magnetic measurement Jacobian [nT/rad]
 """
 function get_H(itp_mapS, x::Vector, lat, lon, alt;
-               date       = get_years(2020,185),
+               date       = get_years(2020, 185),
                core::Bool = false)
     if core
-        return ([(igrf_grad(lat+x[1],lon+x[2],alt+x[3];date=date) +
-                 map_grad(itp_mapS,lat+x[1],lon+x[2],alt+x[3])); zero(x)[4:end-1]; 1])
+        return ([(igrf_grad(lat+x[1], lon+x[2], alt+x[3]; date = date) +
+                  map_grad(itp_mapS, lat+x[1], lon+x[2], alt+x[3])); zero(x)[4:(end - 1)]; 1])
     else
-        return ([map_grad(itp_mapS,lat+x[1],lon+x[2],alt+x[3]) ; zero(x)[4:end-1]; 1])
+        return ([map_grad(itp_mapS, lat+x[1], lon+x[2], alt+x[3]); zero(x)[4:(end - 1)]; 1])
     end
 end # function get_H
 
 """
     get_h(itp_mapS, x::Array, lat, lon, alt;
-          date       = get_years(2020,185),
+          date       = get_years(2020, 185),
           core::Bool = false)
 
 Internal helper function to get expected magnetic measurement using magnetic
@@ -543,7 +555,7 @@ anomaly map interpolation function, FOGM catch-all, and optionally IGRF for
 core magnetic field.
 
 **Arguments:**
-- `itp_mapS`: scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
+- `itp_mapS`: scalar map interpolation function (`f(lat, lon)` or `f(lat, lon, alt)`)
 - `x`:        states [lat, lon, ... S]
 - `lat`:      latitude  [rad]
 - `lon`:      longitude [rad]
@@ -555,23 +567,23 @@ core magnetic field.
 - `h`: expected magnetic measurement [nT]
 """
 function get_h(itp_mapS, x::Array, lat, lon, alt;
-               date       = get_years(2020,185),
+               date       = get_years(2020, 185),
                core::Bool = false)
 
-    map_val = itp_mapS.(lat.+x[1,:],lon.+x[2,:],alt.+x[3,:])
+    map_val = itp_mapS.(lat .+ x[1, :], lon .+ x[2, :], alt .+ x[3, :])
 
     if core
-        return (map_val .+ x[end,:] .+ norm.(igrf.(date,alt.+x[3,:],lat.+x[1,:],
-                                                   lon.+x[2,:],Val(:geodetic))))
+        return (map_val .+ x[end, :] .+ norm.(igrf.(date, alt .+ x[3, :], lat .+ x[1, :],
+                                                    lon .+ x[2, :], Val(:geodetic))))
     else
-        return (map_val .+ x[end,:])
+        return (map_val .+ x[end, :])
     end
 
 end # function get_h
 
 """
     get_h(itp_mapS, der_mapS, x::Array, lat, lon, alt, map_alt;
-          date       = get_years(2020,185),
+          date       = get_years(2020, 185),
           core::Bool = false)
 
 Internal helper function to get expected magnetic measurement using magnetic
@@ -580,8 +592,8 @@ core magnetic field. Includes vertical derivative information, currently only
 for ~constant HAE.
 
 **Arguments:**
-- `itp_mapS`: scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
-- `der_mapS`: scalar map vertical derivative map interpolation function (`f(lat,lon)` or (`f(lat,lon,alt)`)
+- `itp_mapS`: scalar map interpolation function (`f(lat, lon)` or `f(lat, lon, alt)`)
+- `der_mapS`: scalar map vertical derivative map interpolation function (`f(lat, lon)` or (`f(lat, lon, alt)`)
 - `x`:        states [lat, lon, ... S]
 - `lat`:      latitude  [rad]
 - `lon`:      longitude [rad]
@@ -594,17 +606,17 @@ for ~constant HAE.
 - `h`: expected magnetic measurement [nT]
 """
 function get_h(itp_mapS, der_mapS, x::Array, lat, lon, alt, map_alt;
-               date       = get_years(2020,185),
+               date       = get_years(2020, 185),
                core::Bool = false)
 
-    map_val = itp_mapS.(lat.+x[1,:],lon.+x[2,:],alt.+x[3,:])
-    der_val = der_mapS.(lat.+x[1,:],lon.+x[2,:],alt.+x[3,:])
+    map_val = itp_mapS.(lat .+ x[1, :], lon .+ x[2, :], alt .+ x[3, :])
+    der_val = der_mapS.(lat .+ x[1, :], lon .+ x[2, :], alt .+ x[3, :])
 
     if core
-        return (map_val .+ x[end,:] .+ der_val .* (alt.+x[3,:] .- map_alt) .+
-                norm.(igrf.(date,alt.+x[3,:],lat.+x[1,:],lon.+x[2,:],Val(:geodetic))))
+        return (map_val .+ x[end, :] .+ der_val .* (alt .+ x[3, :] .- map_alt) .+
+                norm.(igrf.(date, alt .+ x[3, :], lat .+ x[1, :], lon .+ x[2, :], Val(:geodetic))))
     else
-        return (map_val .+ x[end,:] .+ der_val .* (alt.+x[3,:] .- map_alt))
+        return (map_val .+ x[end, :] .+ der_val .* (alt .+ x[3, :] .- map_alt))
     end
 
 end # function get_h
@@ -615,7 +627,7 @@ end # function get_h
 Internal helper function to get local map gradient.
 
 **Arguments:**
-- `itp_mapS`: scalar map interpolation function (`f(lat,lon)` or `f(lat,lon,alt)`)
+- `itp_mapS`: scalar map interpolation function (`f(lat, lon)` or `f(lat, lon, alt)`)
 - `lat`:      latitude  [rad]
 - `lon`:      longitude [rad]
 - `alt`:      altitude  [m]
@@ -626,14 +638,14 @@ Internal helper function to get local map gradient.
 """
 function map_grad(itp_mapS, lat, lon, alt; δ = 1.0f-8)
     dlat = dlon = δ
-    dalt = dlat2dn(δ,lat)
-    return ([(itp_mapS(lat+dlat,lon,alt) - itp_mapS(lat-dlat,lon,alt)) /2/dlat,
-             (itp_mapS(lat,lon+dlon,alt) - itp_mapS(lat,lon-dlon,alt)) /2/dlon,
-             (itp_mapS(lat,lon,alt+dalt) - itp_mapS(lat,lon,alt-dalt)) /2/dalt])
+    dalt = dlat2dn(δ, lat)
+    return ([(itp_mapS(lat+dlat, lon, alt) - itp_mapS(lat-dlat, lon, alt)) / 2 / dlat,
+             (itp_mapS(lat, lon+dlon, alt) - itp_mapS(lat, lon-dlon, alt)) / 2 / dlon,
+             (itp_mapS(lat, lon, alt+dalt) - itp_mapS(lat, lon, alt-dalt)) / 2 / dalt])
 end # function map_grad
 
 """
-    igrf_grad(lat, lon, alt; date = get_years(2020,185), δ = 1.0f-8)
+    igrf_grad(lat, lon, alt; date = get_years(2020, 185), δ = 1.0f-8)
 
 Internal helper function to get core magnetic field gradient using IGRF model.
 
@@ -647,15 +659,15 @@ Internal helper function to get core magnetic field gradient using IGRF model.
 **Returns:**
 - `core_grad`: local core magnetic field gradient: δmap/δlat [nT/rad], δmap/δlon [nT/rad], δmap/δalt [nT/m]
 """
-function igrf_grad(lat, lon, alt; date = get_years(2020,185), δ = 1.0f-8)
+function igrf_grad(lat, lon, alt; date = get_years(2020, 185), δ = 1.0f-8)
     dlat = dlon = δ
-    dalt = dlat2dn(δ,lat)
-    return ([(norm(igrf(date,alt,lat+dlat,lon,Val(:geodetic))) -
-              norm(igrf(date,alt,lat-dlat,lon,Val(:geodetic)))) /2/dlat,
-             (norm(igrf(date,alt,lat,lon+dlon,Val(:geodetic))) -
-              norm(igrf(date,alt,lat,lon-dlon,Val(:geodetic)))) /2/dlon,
-             (norm(igrf(date,alt+dalt,lat,lon,Val(:geodetic))) -
-              norm(igrf(date,alt-dalt,lat,lon,Val(:geodetic)))) /2/dalt])
+    dalt = dlat2dn(δ, lat)
+    return ([(norm(igrf(date, alt, lat+dlat, lon, Val(:geodetic))) -
+              norm(igrf(date, alt, lat-dlat, lon, Val(:geodetic)))) / 2 / dlat,
+             (norm(igrf(date, alt, lat, lon+dlon, Val(:geodetic))) -
+              norm(igrf(date, alt, lat, lon-dlon, Val(:geodetic)))) / 2 / dlon,
+             (norm(igrf(date, alt+dalt, lat, lon, Val(:geodetic))) -
+              norm(igrf(date, alt-dalt, lat, lon, Val(:geodetic)))) / 2 / dalt])
 end # function igrf_grad
 
 """
@@ -675,14 +687,14 @@ Represents unmeasureable time-correlated errors.
 """
 function fogm(sigma, tau, dt, N)
 
-    x    = zeros(Float64,N)
-    x[1] = sigma*randn(Float64)
-    Phi  = exp(-dt/tau)
-    Q    = 2*sigma^2/tau
-    Qd   = Q*dt
+    x    = zeros(Float64, N)
+    x[1] = sigma * randn(Float64)
+    Phi  = exp(-dt / tau)
+    Q    = 2 * sigma^2 / tau
+    Qd   = Q * dt
 
     for i = 2:N
-        x[i] = Phi*x[i-1] + sqrt(Qd)*randn(Float64)
+        x[i] = Phi * x[i - 1] + sqrt(Qd) * randn(Float64)
     end
 
     return (x)
