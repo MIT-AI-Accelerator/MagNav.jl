@@ -15,7 +15,7 @@ begin
     using Random: seed!
     using Statistics: mean, median, std
     seed!(33) # for reproducibility
-    include("dataframes_setup.jl"); # setup DataFrames
+    include("dataframes_setup.jl") # setup DataFrames
 end;
 
 # ╔═╡ e289486a-57ed-4eeb-9ec9-6500f0bc563b

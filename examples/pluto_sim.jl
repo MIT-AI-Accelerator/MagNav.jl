@@ -15,7 +15,7 @@ begin
     using Random: seed!
     using Statistics: mean, median, std
     seed!(33) # for reproducibility
-    include("dataframes_setup.jl"); # setup DataFrames
+    include("dataframes_setup.jl") # setup DataFrames
 end;
 
 # ╔═╡ d9ac0df2-3d79-11ee-0869-73b7f6649d95
@@ -97,8 +97,8 @@ md"Plotting setup.
 
 # ╔═╡ 8f417413-6739-4c25-848f-7d47a491b89a
 begin
-    t0 = traj.tt[1]/60    # [min]
-    tt = traj.tt/60 .- t0 # [min]
+    t0 = traj.tt[1] / 60    # [min]
+    tt = traj.tt / 60 .- t0 # [min]
 end;
 
 # ╔═╡ dc5aa915-9037-4792-a3e1-09074431d786

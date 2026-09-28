@@ -15,7 +15,7 @@ begin
     using Random: seed!
     using Statistics: mean, median, std
     seed!(33) # for reproducibility
-    include("dataframes_setup.jl"); # setup DataFrames
+    include("dataframes_setup.jl") # setup DataFrames
 end;
 
 # ╔═╡ f0f58d36-a2a9-4cd6-a549-352a726c76d0
@@ -148,6 +148,7 @@ begin
                        use_mag = use_mag, use_vec = use_vec, terms = terms)
     (x_bias, x_scale, x_train_norm, x_test_norm) = norm_sets(x_train, x_test)
     (y_bias, y_scale, y_train_norm, y_test_norm) = norm_sets(y_train, y_test)
+
     x   = x_train_norm # for conciseness
     y   = y_train_norm # for conciseness
     x_t = x_test_norm  # for conciseness
@@ -162,8 +163,8 @@ md"Training data matrix decomposition & reconstruction with SVD.
 begin
     (U, S, V) = svd(x)
     Vt        = V'
-    x_err     = [std(U[:, 1:i]*Diagonal(S[1:i])*Vt[1:i, :]-x) for i in eachindex(S)]
-    x_var     = [sum(S[1:i])/sum(S) for i in eachindex(S)]
+    x_err     = [std(U[:, 1:i] * Diagonal(S[1:i]) * Vt[1:i, :] - x) for i in eachindex(S)]
+    x_var     = [sum(S[1:i]) / sum(S) for i in eachindex(S)]
 end;
 
 # ╔═╡ 94faaf70-6eb9-485b-b05e-8685265a612f
@@ -188,8 +189,8 @@ begin
     err_test  = zeros(k_max)
     coef_set  = plsr_fit(x, y, k_max; return_set = true)
     for k = 1:k_max
-        y_train_hat_norm = vec(x * coef_set[:, :, k])
-        y_test_hat_norm  = vec(x_t*coef_set[:, :, k])
+        y_train_hat_norm = vec(x   * coef_set[:, :, k])
+        y_test_hat_norm  = vec(x_t * coef_set[:, :, k])
         (y_train_hat, y_test_hat) = denorm_sets(y_bias, y_scale,
                                                 y_train_hat_norm,
                                                 y_test_hat_norm)
@@ -242,11 +243,11 @@ begin
     println("std dev error with k = $k_pca: ", round(x_err[k_pca], digits = 2))
     println("var  retained with k = $k_pca: ", round(x_var[k_pca], digits = 2))
     (_, S_pca, V_pca) = svd(cov(x))
-    x_new   = x*V_pca[:, 1:k_pca]
-    x_t_new = x_t*V_pca[:, 1:k_pca]
-    v_scale = V_pca[:, 1:k_pca]*inv(Diagonal(sqrt.(S_pca[1:k_pca])))
-    x_use   = x*v_scale   #* this could be trained on
-    x_t_use = x_t*v_scale #* this could be tested  on
+    x_new   = x   * V_pca[:, 1:k_pca]
+    x_t_new = x_t * V_pca[:, 1:k_pca]
+    v_scale = V_pca[:, 1:k_pca] * inv(Diagonal(sqrt.(S_pca[1:k_pca])))
+    x_use   = x   * v_scale #* this could be trained on
+    x_t_use = x_t * v_scale #* this could be tested  on
 end;
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001

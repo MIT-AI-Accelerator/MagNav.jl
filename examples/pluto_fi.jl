@@ -15,7 +15,7 @@ begin
     using Random: seed!
     using Statistics: mean, median, std
     seed!(33) # for reproducibility
-    include("dataframes_setup.jl"); # setup DataFrames
+    include("dataframes_setup.jl") # setup DataFrames
 end;
 
 # ╔═╡ 66e96968-4daa-11ee-31cd-7b4d78033095
@@ -142,11 +142,12 @@ begin
     λ_sgl = 1e-5
     comp_params_sgl_init = NNCompParams(comp_params_init, α_sgl = α_sgl, λ_sgl = λ_sgl)
     comp_params_sgl = comp_train(comp_params_sgl_init, lines_train, df_all, df_flight, df_map)[1]
+
     m_sgl  = comp_params_sgl.model # extract trained NN model
-    w_sgl  = comp_params_sgl.data_norms[3]*MagNav.sparse_group_lasso(m_sgl, 1)
+    w_sgl  = comp_params_sgl.data_norms[3] * MagNav.sparse_group_lasso(m_sgl, 1)
     df_sgl = sort(DataFrame(feature = feats, w_norm = w_sgl), :w_norm, by = abs, rev = true)
     # m_sgl_  = comp_params.model # extract trained NN model
-    # w_sgl_  = comp_params.data_norms[3]*MagNav.sparse_group_lasso(m_sgl_, 1)
+    # w_sgl_  = comp_params.data_norms[3] * MagNav.sparse_group_lasso(m_sgl_, 1)
     # df_sgl_ = sort(DataFrame(feature = feats, w_norm = w_sgl_), :w_norm, by = abs, rev = true)
 end
 

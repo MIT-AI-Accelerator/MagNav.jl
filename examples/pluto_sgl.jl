@@ -15,7 +15,7 @@ begin
     using Random: seed!
     using Statistics: mean, median, std
     seed!(33) # for reproducibility
-    include("dataframes_setup.jl"); # setup DataFrames
+    include("dataframes_setup.jl") # setup DataFrames
 end;
 
 # ╔═╡ 13ac32f0-3d77-11ee-3009-e70e93e2e71b
@@ -87,7 +87,7 @@ md"Select a flight line (row of `df_options`) & get the flight data Boolean indi
 begin
     line = df_options.line[1] # select flight line (row) from df_options
     ind  = get_ind(xyz, line, df_nav) # get Boolean indices
-    # ind = get_ind(xyz;lines=[line]) # alternative
+    # ind = get_ind(xyz; lines = [line]) # alternative
 end;
 
 # ╔═╡ f665ea95-dac3-4823-94af-c7ba58cd4401
@@ -207,11 +207,11 @@ md"Create the Tolles-Lawson `A` matrices & perform Tolles-Lawson compensation.
 
 # ╔═╡ 9116a5b5-7b5f-4c38-8a48-e854584a8ada
 begin
-    mag_1_c = mag_1_uc - detrend(A*TL_d_1; mean_only = true)
-    mag_2_c = mag_2_uc - detrend(A*TL_d_2; mean_only = true)
-    mag_3_c = mag_3_uc - detrend(A*TL_d_3; mean_only = true)
-    mag_4_c = mag_4_uc - detrend(A*TL_d_4; mean_only = true)
-    mag_5_c = mag_5_uc - detrend(A*TL_d_5; mean_only = true)
+    mag_1_c = mag_1_uc - detrend(A * TL_d_1; mean_only = true)
+    mag_2_c = mag_2_uc - detrend(A * TL_d_2; mean_only = true)
+    mag_3_c = mag_3_uc - detrend(A * TL_d_3; mean_only = true)
+    mag_4_c = mag_4_uc - detrend(A * TL_d_4; mean_only = true)
+    mag_5_c = mag_5_uc - detrend(A * TL_d_5; mean_only = true)
 end;
 
 # ╔═╡ 01779ec7-0088-4b37-bda4-7fccf4dbb548
@@ -234,11 +234,11 @@ md"Map to magnetometer (standard deviation) errors. Magnetometer `1` is great (s
 
 # ╔═╡ 110e5de7-9011-4ba6-83d6-3443b6845dc6
 begin
-    println("Mag 1: ", round(std(map_val-mag_1_c), digits = 2))
-    println("Mag 2: ", round(std(map_val-mag_2_c), digits = 2))
-    println("Mag 3: ", round(std(map_val-mag_3_c), digits = 2))
-    println("Mag 4: ", round(std(map_val-mag_4_c), digits = 2))
-    println("Mag 5: ", round(std(map_val-mag_5_c), digits = 2))
+    println("Mag 1: ", round(std(map_val - mag_1_c), digits = 2))
+    println("Mag 2: ", round(std(map_val - mag_2_c), digits = 2))
+    println("Mag 3: ", round(std(map_val - mag_3_c), digits = 2))
+    println("Mag 4: ", round(std(map_val - mag_4_c), digits = 2))
+    println("Mag 5: ", round(std(map_val - mag_5_c), digits = 2))
 end
 
 # ╔═╡ e5adfd84-4727-4839-bef0-9365d035249f
@@ -273,8 +273,8 @@ md"Plotting setup.
 
 # ╔═╡ 8167ba6a-fff4-4c79-9ee6-57d6f594bb18
 begin
-    t0  = traj.tt[1]/60    # [min]
-    tt  = traj.tt/60 .- t0 # [min]
+    t0  = traj.tt[1] / 60    # [min]
+    tt  = traj.tt / 60 .- t0 # [min]
     dpi = 200
 end;
 
@@ -292,7 +292,7 @@ begin
     plot!(p1, tt, detrend(mag_3_c), lab = "MIT comp Mag 3", color = :green)
     plot!(p1, tt, detrend(mag_4_c), lab = "MIT comp Mag 4", color = :black)
     plot!(p1, tt, detrend(mag_5_c), lab = "MIT comp Mag 5", color = :orange)
-    # png(p1,"comp_prof_1") # to save figure
+    # png(p1, "comp_prof_1") # to save figure
 end
 
 # ╔═╡ 4036432b-2bea-4463-908a-5f5dcc5544cf

@@ -15,7 +15,7 @@ begin
     using Random: seed!
     using Statistics: mean, median, std
     seed!(33) # for reproducibility
-    include("dataframes_setup.jl"); # setup DataFrames
+    include("dataframes_setup.jl") # setup DataFrames
 end;
 
 # ╔═╡ e289486a-57ed-4eeb-9ec9-6500f0bc563b
@@ -139,7 +139,7 @@ This shows how the bandpass filter causes a bias in the compensation (filtering 
 # ╔═╡ f492ee3d-c097-4937-9552-e7d2632a5e50
 # create Tolles-Lawson coefficients with use_vec & use_mag
 TL_coef = create_TL_coef(getfield(xyz_train, use_vec),
-                         getfield(xyz_train, use_mag)-xyz_train.mag_1_c, TL_ind;
+                         getfield(xyz_train, use_mag) - xyz_train.mag_1_c, TL_ind;
                          terms = terms, pass1 = 0.0, pass2 = 0.9);
 
 # ╔═╡ 7e15f297-64a4-4ee6-a0ab-65d959354f29
@@ -147,8 +147,8 @@ begin # create Tolles-Lawson `A` matrix & perform compensation
     A                  = create_TL_A(flux, TL_ind)
     mag_1_sgl_TL_train = xyz_train.mag_1_c[TL_ind]
     mag_4_uc_TL_train  = xyz_train.mag_4_uc[TL_ind]
-    mag_4_c_bpf        = mag_4_uc_TL_train - A*TL_a_4
-    mag_4_c_lpf        = mag_4_uc_TL_train - A*TL_coef
+    mag_4_c_bpf        = mag_4_uc_TL_train - A * TL_a_4
+    mag_4_c_lpf        = mag_4_uc_TL_train - A * TL_coef
 
     p2 = plot(xlab = xlab, ylab = ylab, dpi = dpi, ylim = (52000, 55000))
     plot!(p2, tt, mag_1_sgl_TL_train, lab = "ground truth")
@@ -274,7 +274,7 @@ begin
     mag_use = mag_4_c
     (crlb_out, ins_out, filt_out) = run_filt(traj, ins, mag_use, itp_mapS, :ekf;
                                              P0, Qd, R, core = true)
-    drms_out = round(Int, sqrt(mean(filt_out.n_err .^ 2+filt_out.e_err .^ 2)))
+    drms_out = round(Int, sqrt(mean(filt_out.n_err .^ 2 + filt_out.e_err .^ 2)))
 end;
 
 # ╔═╡ 658524ef-c716-408c-ab57-f1a10459ff24
