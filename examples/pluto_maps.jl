@@ -64,7 +64,7 @@ Display the Perth map in Google Earth by uncommenting below to generate a KMZ fi
 "
 
 # ╔═╡ d7d5fa3e-0c00-4d0b-b9e0-b6d8b0e917cf
-# map2kmz(p_mapS_800,"Perth")
+# map2kmz(p_mapS_800, "Perth")
 
 # ╔═╡ 32d385fd-1a78-47f8-b748-41e77f680da0
 md"## Overlay Perth mini-survey

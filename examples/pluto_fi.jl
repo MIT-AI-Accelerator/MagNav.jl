@@ -50,7 +50,7 @@ md"Select magnetometers & parameters for compensation.
 
 # ╔═╡ 1c4d1729-19eb-4b2e-8775-a7b45714c9b9
 begin # try modifying these parameters
-    features = [:mag_4_uc, :mag_4_uc_dot, :mag_4_uc_dot4, :TL_A_flux_a]
+    features = [:mag_4_uc, :mag_4_uc_dot, :mag_4_uc_dot4, :TL_A_flux_d]
     use_mag  = :mag_4_uc
     use_vec  = :flux_d
     terms    = [:p3, :i3, :e3]

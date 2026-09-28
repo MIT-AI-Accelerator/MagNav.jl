@@ -97,14 +97,14 @@ begin
     plot!(p1, tt, xyz_train.igrf[TL_ind], lab = "IGRF core field")
     plot!(p1, tt, xyz_train.mag_1_c[TL_ind], lab = "compensated tail stinger")
     plot!(p1, tt, xyz_train.mag_4_uc[TL_ind], lab = "uncompensated Mag 4")
-    plot!(p1, tt, xyz_train.flux_a.t[TL_ind], lab = "vector Flux A, total field")
+    plot!(p1, tt, xyz_train.flux_d.t[TL_ind], lab = "vector Flux D, total field")
 end
 
 # ╔═╡ ae1acc31-19db-4e94-85dc-e6274186978e
 begin # Tolles-Lawson calibration
     (comp_params_lin, _, _, err_TL) =
         comp_train(comp_params_lin_init, xyz_train, TL_ind)
-    TL_a_4 = comp_params_lin.model[1]
+    TL_d_4 = comp_params_lin.model[1]
 end;
 
 # ╔═╡ 7a20ef62-f352-4fc7-9061-13fb293bb0bf
@@ -147,7 +147,7 @@ begin # create Tolles-Lawson `A` matrix & perform compensation
     A                  = create_TL_A(flux, TL_ind)
     mag_1_sgl_TL_train = xyz_train.mag_1_c[TL_ind]
     mag_4_uc_TL_train  = xyz_train.mag_4_uc[TL_ind]
-    mag_4_c_bpf        = mag_4_uc_TL_train - A * TL_a_4
+    mag_4_c_bpf        = mag_4_uc_TL_train - A * TL_d_4
     mag_4_c_lpf        = mag_4_uc_TL_train - A * TL_coef
 
     p2 = plot(xlab = xlab, ylab = ylab, dpi = dpi, ylim = (52000, 55000))
@@ -167,7 +167,7 @@ begin
     lines_train = [1006.03, 1006.04, 1006.05, 1006.06]
     ind_train   = get_ind(xyz_train, lines_train, df_all) # get Boolean indices
     model_type  = :m3s
-    features    = [:mag_4_uc, :lpf_cur_com_1, :lpf_cur_strb, :lpf_cur_outpwr, :lpf_cur_ac_lo, :TL_A_flux_a]
+    features    = [:mag_4_uc, :lpf_cur_com_1, :lpf_cur_strb, :lpf_cur_outpwr, :lpf_cur_ac_lo, :TL_A_flux_d]
 end;
 
 # ╔═╡ 4d75b716-bc93-42f5-8b1a-f5550e7de276

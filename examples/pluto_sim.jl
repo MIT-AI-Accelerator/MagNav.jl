@@ -146,10 +146,10 @@ md"Display the map or flight paths in Google Earth by uncommenting below to gene
 
 # ╔═╡ 26810eff-0812-43cc-b1bc-d4f5d7c9542d
 begin
-    # map2kmz(mapS,"pluto_sim_map")
-    # path2kml(traj,"pluto_sim_gps")
-    # path2kml(ins,"pluto_sim_ins")
-    # path2kml(filt_out,"pluto_sim_filt")
+    # map2kmz(mapS, "pluto_sim_map")
+    # path2kml(traj, "pluto_sim_gps")
+    # path2kml(ins, "pluto_sim_ins")
+    # path2kml(filt_out, "pluto_sim_filt")
 end;
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001

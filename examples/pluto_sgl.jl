@@ -87,7 +87,7 @@ md"Select a flight line (row of `df_options`) & get the flight data Boolean indi
 begin
     line = df_options.line[1] # select flight line (row) from df_options
     ind  = get_ind(xyz, line, df_nav) # get Boolean indices
-    # ind = get_ind(xyz; lines = [line]) # alternative
+    # ind  = get_ind(xyz; lines = [line]) # alternative
 end;
 
 # ╔═╡ f665ea95-dac3-4823-94af-c7ba58cd4401
@@ -285,13 +285,13 @@ md"Compensated scalar magnetometers.
 # ╔═╡ e0a21a3c-b48c-458e-a4eb-7a726e77b2b2
 begin
     p1 = plot(xlab = "time [min]", ylab = "magnetic field [nT]", legend = :topleft, dpi = dpi)
-    plot!(p1, tt, detrend(mag_1_uc), lab = "SGL raw Mag 1", color = :cyan, lw = 2)
+    plot!(p1, tt, detrend(mag_1_uc),  lab = "SGL raw Mag 1",  color = :cyan, lw = 2)
     plot!(p1, tt, detrend(mag_1_sgl), lab = "SGL comp Mag 1", color = :blue, lw = 2)
-    plot!(p1, tt, detrend(mag_1_c), lab = "MIT comp Mag 1", color = :red, lw = 2, ls = :dash)
-    # plot!(p1, tt, detrend(mag_2_c), lab = "MIT comp Mag 2", color = :purple) # bad
-    plot!(p1, tt, detrend(mag_3_c), lab = "MIT comp Mag 3", color = :green)
-    plot!(p1, tt, detrend(mag_4_c), lab = "MIT comp Mag 4", color = :black)
-    plot!(p1, tt, detrend(mag_5_c), lab = "MIT comp Mag 5", color = :orange)
+    plot!(p1, tt, detrend(mag_1_c),   lab = "MIT comp Mag 1", color = :red,  lw = 2, ls = :dash)
+    # plot!(p1, tt, detrend(mag_2_c),   lab = "MIT comp Mag 2", color = :purple) # bad
+    plot!(p1, tt, detrend(mag_3_c),   lab = "MIT comp Mag 3", color = :green)
+    plot!(p1, tt, detrend(mag_4_c),   lab = "MIT comp Mag 4", color = :black)
+    plot!(p1, tt, detrend(mag_5_c),   lab = "MIT comp Mag 5", color = :orange)
     # png(p1, "comp_prof_1") # to save figure
 end
 
