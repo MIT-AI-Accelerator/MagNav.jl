@@ -25,7 +25,7 @@
 <!--
     # This information is used for caching.
     [PlutoStaticHTML.State]
-    input_sha = "691868610b645b101f2d6902817ddc5f6ee4ff6066a7d31fa9c6dc50ee2e001b"
+    input_sha = "90e22ba2bd92f4dd0d57f1fdfc104ee5294415f3872672cbc0667e253d8c3d8d"
     julia_version = "1.13.1"
 -->
 
@@ -45,7 +45,7 @@ julia&gt; Pluto.run() # select &amp; open notebook</code></pre><p>This is a reac
     using Random: seed!
     using Statistics: mean, median, std
     seed!(33) # for reproducibility
-    include("dataframes_setup.jl"); # setup DataFrames
+    include("dataframes_setup.jl") # setup DataFrames
 end;</code></pre>
 
 
@@ -92,8 +92,8 @@ end;</code></pre>
 <div class="markdown"><p>Plotting setup.</p></div>
 
 <pre class='language-julia'><code class='language-julia'>begin
-    t0 = traj.tt[1]/60    # [min]
-    tt = traj.tt/60 .- t0 # [min]
+    t0 = traj.tt[1] / 60    # [min]
+    tt = traj.tt / 60 .- t0 # [min]
 end;</code></pre>
 
 
@@ -143,4 +143,4 @@ end</code></pre>
 end;</code></pre>
 
 
-<!-- PlutoStaticHTML.End --></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../pluto_sgl/">« Using SGL Data</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Sunday 27 September 2026 03:01">Sunday 27 September 2026</span>. Using Julia version 1.13.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+<!-- PlutoStaticHTML.End --></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../pluto_sgl/">« Using SGL Data</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Monday 28 September 2026 00:26">Monday 28 September 2026</span>. Using Julia version 1.13.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
