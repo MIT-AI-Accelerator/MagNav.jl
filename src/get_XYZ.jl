@@ -1602,12 +1602,11 @@ function xyz_reorient_vec!(xyz::XYZ)
         if any(isnan, flux.t) | any(flux.t .≈ 0)
             @info("found NaNs, not reorienting $use_vec")
         else
-            # get start time of flight (fiducial seconds past midnight UTC) & compute IGRF directions
-            ind      = trues(length(flux.x)) # entire flight
-            igrf_vec = get_igrf(xyz, ind;
-            frame     = :body,
-            norm_igrf = true,
-            check_xyz = true)
+            # compute IGRF direction
+            igrf_vec = get_igrf(xyz;
+                                frame     = :body,
+                                norm_igrf = true,
+                                check_xyz = true)
 
             # compute optimal rotation matrix for this flight
             igrf_matrix = permutedims(reduce(hcat, igrf_vec))
