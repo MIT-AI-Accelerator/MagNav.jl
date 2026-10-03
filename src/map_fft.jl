@@ -100,14 +100,18 @@ function upward_fft(map_map::Map, alt; expand::Bool = true, α = 0)
             else
                 map_map = MapS(map_map.info,
                                upward_fft(map_map.map, dx, dy, dz, expand = expand, α = α),
-                               map_map.xx, map_map.yy, alt, map_map.mask)
+                               map_map.xx, map_map.yy, alt,
+                               map_map.mask)
             end
         elseif map_map isa MapV # vector map
-            mapX    = upward_fft(map_map.mapX, dx, dy, dz, expand = expand, α = α)
-            mapY    = upward_fft(map_map.mapY, dx, dy, dz, expand = expand, α = α)
-            mapZ    = upward_fft(map_map.mapZ, dx, dy, dz, expand = expand, α = α)
-            map_map = MapV(map_map.info, mapX, mapY, mapZ,
-            map_map.xx, map_map.yy, alt, map_map.mask)
+            mapX = upward_fft(map_map.mapX, dx, dy, dz, expand = expand, α = α)
+            mapY = upward_fft(map_map.mapY, dx, dy, dz, expand = expand, α = α)
+            mapZ = upward_fft(map_map.mapZ, dx, dy, dz, expand = expand, α = α)
+
+            map_map = MapV(map_map.info,
+                           mapX, mapY, mapZ,
+                           map_map.xx, map_map.yy, alt,
+                           map_map.mask)
         end
 
     elseif (map_map isa MapS3D) & (all(alt .>= map_map.alt[1]) | (α > 0))
@@ -135,7 +139,8 @@ function upward_fft(map_map::Map, alt; expand::Bool = true, α = 0)
             map_up = Array{eltype(alt)}(undef, ny, nx, 0)
         end
 
-        map_map = MapS3D(map_map.info, cat(map_down, map_map.map, map_up, dims = 3),
+        map_map = MapS3D(map_map.info,
+                         cat(map_down, map_map.map, map_up, dims = 3),
                          map_map.xx, map_map.yy, [alt_down; map_map.alt; alt_up],
                          cat((map_map.mask[:, :, 1] for _ = 1:N_down)...,
                              map_map.mask,
@@ -237,7 +242,7 @@ function map_expand(map_map::Matrix, pad::Int = 1)
 
     (ny, nx) = size(map_) # original map size
     (Ny, Nx) = smooth7.((ny, nx) .+ 2*pad) # map size with 7-smooth padding
-    # (Ny,Nx) = (ny,nx).+ 2*pad # map size with naive padding
+    # (Ny, Nx) = (ny, nx) .+ 2*pad # map size with naive padding
 
     # padding on each edge
     padx = (floor(Int, (Nx-nx)/2), ceil(Int, (Nx-nx)/2))
