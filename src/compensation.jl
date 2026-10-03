@@ -664,9 +664,10 @@ function nn_comp_2_test(A_norm::AbstractMatrix, x_norm::AbstractMatrix, y, y_bia
 
     # get results
     y_hat = nn_comp_2_fwd(A_norm, x_norm, y_bias, y_scale, model;
-    model_type   = model_type,
-    TL_coef_norm = TL_coef_norm)
-    err   = err_segs(y_hat, y, l_segs; silent = silent_debug)
+                          model_type   = model_type,
+                          TL_coef_norm = TL_coef_norm)
+
+    err = err_segs(y_hat, y, l_segs; silent = silent_debug)
     silent || @info("test  error: $(round(std(err), digits = 2)) nT")
 
     return (y_hat, err)
@@ -692,9 +693,10 @@ function nn_comp_2_test(A::Matrix, x::Matrix, y, data_norms::Tuple, model::Chain
 
     # get results
     y_hat = nn_comp_2_fwd(A, x, data_norms, model;
-    model_type = model_type,
-    TL_coef    = TL_coef)
-    err   = err_segs(y_hat, y, l_segs; silent = silent_debug)
+                          model_type = model_type,
+                          TL_coef    = TL_coef)
+
+    err = err_segs(y_hat, y, l_segs; silent = silent_debug)
     silent || @info("test  error: $(round(std(err), digits = 2)) nT")
 
     return (y_hat, err)
@@ -1172,7 +1174,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y,
     Bt_scale = 50000.0f0
     (TL_coef_p, TL_coef_i, TL_coef_e) = TL_vec2mat(TL_coef, terms_A; Bt_scale = Bt_scale)
 
-    B_unit    = A[:, 1:3]'     # normalized vector magnetometer reading
+    B_unit    = A[:, 1:3]'    # normalized vector magnetometer reading
     B_vec     = B_unit .* Bt' # vector magnetometer to be used in TL
     B_vec_dot = B_dot'        # not exactly true, but internally consistent
     isempty(A_test) || (B_unit_test = A_test[:, 1:3]')
@@ -1272,14 +1274,17 @@ function nn_comp_3_train(A, Bt, B_dot, x, y,
     # setup NN
     if model == Chain() # initialize model
         Ny = model_type in [:m3v, :m3vc] ? 3 : 1 # length of output
-        m  = get_nn_m(Nf, Ny; hidden        = hidden, activation    = activation,
-        model_type    = model_type,
-        l_window      = l_window,
-        tf_layer_type = tf_layer_type,
-        tf_norm_type  = tf_norm_type,
-        dropout_prob  = dropout_prob,
-        N_tf_head     = N_tf_head,
-        tf_gain       = tf_gain)
+
+        m = get_nn_m(Nf, Ny;
+                     hidden        = hidden,
+                     activation    = activation,
+                     model_type    = model_type,
+                     l_window      = l_window,
+                     tf_layer_type = tf_layer_type,
+                     tf_norm_type  = tf_norm_type,
+                     dropout_prob  = dropout_prob,
+                     N_tf_head     = N_tf_head,
+                     tf_gain       = tf_gain)
     else # re-train on known model
         m = deepcopy(model)
     end
@@ -1557,7 +1562,7 @@ function nn_comp_3_fwd(B_unit, B_vec, B_vec_dot,
     end
 
     if y_type in [:c, :d] # aircraft field to subtract from scalar mag
-        # vec_aircraft += y_bias .* B_unit # This was worse, overall
+        # vec_aircraft += y_bias .* B_unit # this performs worse overall
         y_hat = vec(sum(vec_aircraft .* B_unit, dims = 1)) # dot product
     # println("Aircraft correction = ", y_hat)
     elseif y_type in [:a, :b] # magnitude of scalar Earth field
@@ -1608,7 +1613,7 @@ function nn_comp_3_fwd(A, Bt, B_dot, x, data_norms::Tuple, model::Chain;
     Bt_scale = 50000.0f0
     (TL_coef_p, TL_coef_i, TL_coef_e) = TL_vec2mat(TL_coef, terms_A; Bt_scale = Bt_scale)
 
-    B_unit    = A[:, 1:3]'     # normalized vector magnetometer reading
+    B_unit    = A[:, 1:3]'    # normalized vector magnetometer reading
     B_vec     = B_unit .* Bt' # vector magnetometer to be used in TL
     B_vec_dot = B_dot'        # not exactly true, but internally consistent
 
@@ -1660,14 +1665,15 @@ function nn_comp_3_test(B_unit, B_vec, B_vec_dot,
 
     # get results
     y_hat = nn_comp_3_fwd(B_unit, B_vec, B_vec_dot,
-    x_norm, y_bias, y_scale, model,
-    TL_coef_p, TL_coef_i, TL_coef_e;
-    model_type = model_type,
-    y_type     = y_type,
-    use_nn     = use_nn,
-    denorm     = denorm,
-    testmode   = testmode)
-    err   = err_segs(y_hat, y, l_segs; silent = silent_debug)
+                          x_norm, y_bias, y_scale, model,
+                          TL_coef_p, TL_coef_i, TL_coef_e;
+                          model_type = model_type,
+                          y_type     = y_type,
+                          use_nn     = use_nn,
+                          denorm     = denorm,
+                          testmode   = testmode)
+
+    err = err_segs(y_hat, y, l_segs; silent = silent_debug)
     silent || @info("test  error: $(round(std(err), digits = 2)) nT")
 
     return (y_hat, err)
@@ -1701,13 +1707,14 @@ function nn_comp_3_test(A, Bt, B_dot, x, y, data_norms::Tuple, model::Chain;
 
     # get results
     y_hat = nn_comp_3_fwd(A, Bt, B_dot, x, data_norms, model;
-    model_type = model_type,
-    y_type     = y_type,
-    TL_coef    = TL_coef,
-    terms_A    = terms_A,
-    l_segs     = l_segs,
-    l_window   = l_window)
-    err   = err_segs(y_hat, y, l_segs; silent = silent_debug)
+                          model_type = model_type,
+                          y_type     = y_type,
+                          TL_coef    = TL_coef,
+                          terms_A    = terms_A,
+                          l_segs     = l_segs,
+                          l_window   = l_window)
+
+    err = err_segs(y_hat, y, l_segs; silent = silent_debug)
     silent || @info("test  error: $(round(std(err), digits = 2)) nT")
 
     return (y_hat, err)
@@ -1773,44 +1780,44 @@ function plsr_fit(x, y,
         y_norm = (y .- y_bias) ./ y_scale
     end
 
-    x_temp   = sum(x_norm .^ 2)           # scalar
-    y_temp   = sum(y_norm .^ 2)           # scalar
-    p_out    = zeros(eltype(x), Nf, k)    # Nf x k
-    q_out    = zeros(eltype(x), Ny, k)    # Ny x k
-    u_out    = zeros(eltype(x), Nf, k)    # Nf x k
+    x_temp   = sum(x_norm .^ 2)            # scalar
+    y_temp   = sum(y_norm .^ 2)            # scalar
+    p_out    = zeros(eltype(x), Nf, k)     # Nf x k
+    q_out    = zeros(eltype(x), Ny, k)     # Ny x k
+    u_out    = zeros(eltype(x), Nf, k)     # Nf x k
     coef_set = zeros(eltype(x), Nf, Ny, k) # Nf x Ny x k
 
     # covariance & cross-covariance matrices
-    Cxx = cov(x_norm)                   # Nf x Nf
-    Cyx = collect(cov(y_norm, x_norm))   # Ny x Nf
+    Cxx = cov(x_norm)                      # Nf x Nf
+    Cyx = collect(cov(y_norm, x_norm))     # Ny x Nf
 
     for i = 1:k
 
         # unit vectors that maximize correlation between input & output scores
-        (U, _, V) = svd(Cyx')      # Nf x Ny , _ , Ny x Ny
-        u = U[:, 1:1]             # Nf                      # x'*y ./ norm(x'*y)
-        v = V[:, 1:1]             # Ny
+        (U, _, V) = svd(Cyx')          # Nf x Ny , _ , Ny x Ny
+        u = U[:, 1:1]                  # Nf                    # x' * y ./ norm(x' * y)
+        v = V[:, 1:1]                  # Ny
 
         # input & output scores, input & output loading vectors
-        z = x_norm*u             # N
-        r = y_norm*v             # N
-        p = (Cxx*u) / (u'*Cxx*u) # Nf                      # x'*z ./ norm(z)^2
-        q = (Cyx*u) / (u'*Cxx*u) # Ny                      # y'*z ./ norm(z)^2
+        z = x_norm * u                 # N
+        r = y_norm * v                 # N
+        p = (Cxx * u) / (u' * Cxx * u) # Nf                    # x' * z ./ norm(z)^2
+        q = (Cyx * u) / (u' * Cxx * u) # Ny                    # y' * z ./ norm(z)^2
 
         # deflated covariance & cross-covariance matrices
-        Cxx = (I(Nf) - p*u')*Cxx # Nf x Nf
-        Cyx = Cyx*(I(Nf) - u*p') # Ny x Nf
+        Cxx = (I(Nf) - p * u') * Cxx   # Nf x Nf
+        Cyx = Cyx * (I(Nf) - u * p')   # Ny x Nf
 
         # deflated input & output data
-        x_norm = x_norm - z*p'   # N  x Nf                 # x*(u*p')
-        y_norm = y_norm - z*q'   # N  x Ny                 # x*(u*q')
+        x_norm = x_norm - z * p'       # N  x Nf               # x * (u * p')
+        y_norm = y_norm - z * q'       # N  x Ny               # x * (u * q')
 
-        p_out[:, i] = p           # Nf x k
-        q_out[:, i] = q           # Ny x k
-        u_out[:, i] = u           # Nf x k
+        p_out[:, i] = p                # Nf x k
+        q_out[:, i] = q                # Ny x k
+        u_out[:, i] = u                # Nf x k
 
         if return_set
-            coef_set[:, :, i] = u_out[:, 1:i]*inv(p_out[:, 1:i]'*u_out[:, 1:i])*q_out[:, 1:i]' # Nf x Ny x k
+            coef_set[:, :, i] = u_out[:, 1:i] * inv(p_out[:, 1:i]' * u_out[:, 1:i]) * q_out[:, 1:i]' # Nf x Ny x k
         end
 
     end
@@ -1822,16 +1829,17 @@ function plsr_fit(x, y,
     return_set && return (coef_set)
 
     # solve to get coefficients
-    coef = vec(u_out*inv(p_out'*u_out)*q_out') # Nf x Ny
+    coef = vec(u_out * inv(p_out' * u_out) * q_out') # Nf x Ny
     bias = zero(eltype(coef))
 
     model = (coef, bias)
 
     # get results
-    x_norm       = norm_sets(x; norm_type = norm_type_x, no_norm = no_norm)[3]
+    x_norm = norm_sets(x; norm_type = norm_type_x, no_norm = no_norm)[3]
     (y_hat, err) = linear_test(x_norm, y, y_bias, y_scale, model;
-    l_segs = l_segs,
-    silent = true)
+                               l_segs = l_segs,
+                               silent = true)
+
     silent || @info("fit   error: $(round(std(err), digits = 2)) nT")
 
     # pack data normalizations
@@ -1918,6 +1926,7 @@ function elasticnet_fit(x, y,
     (y_hat, err) = linear_test(x_norm, y, y_bias, y_scale, model;
                                l_segs = l_segs,
                                silent = true)
+
     silent || @info("fit   error: $(round(std(err), digits = 2)) nT")
 
     # pack data normalizations
@@ -1994,6 +2003,7 @@ function linear_fit(x, y,
     (y_hat, err) = linear_test(x_norm, y, y_bias, y_scale, model;
                                l_segs = l_segs,
                                silent = true)
+
     silent || @info("fit   error: $(round(std(err), digits = 2)) nT")
     silent || @info("fit error may be misleading if using bandpass filter")
 
@@ -3997,7 +4007,7 @@ function comp_m3_test(comp_params::NNCompParams, lines,
     Bt_scale = 50000.0f0
     (TL_coef_p, TL_coef_i, TL_coef_e) = TL_vec2mat(TL_coef, terms_A; Bt_scale = Bt_scale)
 
-    B_unit    = A[:, 1:3]'     # normalized vector magnetometer reading
+    B_unit    = A[:, 1:3]'    # normalized vector magnetometer reading
     B_vec     = B_unit .* Bt' # vector magnetometer to be used in TL
     B_vec_dot = B_dot'        # not exactly true, but internally consistent
 

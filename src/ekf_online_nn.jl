@@ -77,9 +77,9 @@ function ekf_online_nn(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
                       baro_tau, acc_tau, gyro_tau, fogm_tau, dt)
 
         # measurement residual [ny]
-        m     = re(x[(end - nx_nn):(end - 1)])
-        resid = meas[t, :] .- (m(x_nn[t, :]) .* y_scale .+ y_bias) .-
-        get_h(itp_mapS, x, lat[t], lon[t], alt[t]; date = date, core = core)
+        m = re(x[(end - nx_nn):(end - 1)])
+        h = get_h(itp_mapS, x, lat[t], lon[t], alt[t]; date = date, core = core)
+        resid = meas[t, :] .- (m(x_nn[t, :]) .* y_scale .+ y_bias) .- h
 
         # measurement Jacobian (repeated gradient here) [ny x nx]
         Hll = get_H(itp_mapS, x, lat[t], lon[t], alt[t]; date = date, core = core)'
@@ -95,7 +95,7 @@ function ekf_online_nn(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
 
         # state & covariance update
         x = x + K*resid         # x_t [nx]
-        P = (I - K*H) * P   # P_t [nx x nx]
+        P = (I - K*H) * P       # P_t [nx x nx]
 
         # state, covariance, & residual store
         x_out[:, t]    = x

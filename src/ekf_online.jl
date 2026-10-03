@@ -64,7 +64,7 @@ function ekf_online(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
     r_out  = zeros(eltype(P0), ny, N)
 
     x = zeros(eltype(P0), nx) # state estimate
-    P = P0  # covariance matrix
+    P = P0 # covariance matrix
     A = create_TL_A(Bx, By, Bz;
                     terms    = terms,
                     Bt_scale = Bt_scale)
@@ -207,7 +207,7 @@ end # function ekf_online
 """
     ekf_online_setup(flux::MagV, meas,
                      ind          = trues(length(meas));
-                     Bt           = sqrt.(flux.x .^ 2+flux.y .^ 2+flux.z .^ 2),
+                     Bt           = sqrt.(flux.x .^ 2 + flux.y .^ 2 + flux.z .^ 2),
                      λ            = 0.025,
                      terms        = [:permanent, :induced, :eddy, :bias],
                      pass1        = 0.1,
@@ -242,7 +242,7 @@ Setup for extended Kalman filter (EKF) with online learning of Tolles-Lawson coe
 """
 function ekf_online_setup(flux::MagV, meas,
                           ind          = trues(length(meas));
-                          Bt           = sqrt.(flux.x .^ 2+flux.y .^ 2+flux.z .^ 2),
+                          Bt           = sqrt.(flux.x .^ 2 + flux.y .^ 2 + flux.z .^ 2),
                           λ            = 0.025,
                           terms        = [:permanent, :induced, :eddy, :bias],
                           pass1        = 0.1,
