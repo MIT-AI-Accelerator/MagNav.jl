@@ -339,12 +339,12 @@ function create_traj(mapS::Union{MapS, MapSd, MapS3D} = get_map(namad);
         while !(frac1 ≈ 1) | !(frac2 ≈ 1) # typically 4-5 iterations
             dx = dlon2de.(fdm(lon), lat) # easting  distance per time step
             dy = dlat2dn.(fdm(lat), lat) # northing distance per time step
-            d_now = sum(sqrt.(dx[2:N] .^ 2+dy[2:N] .^ 2)) # current distance
+            d_now = sum(sqrt.(dx[2:N] .^ 2 + dy[2:N] .^ 2)) # current distance
 
             if isempty(ll2) # scale to target distance
                 frac1 = d / d_now # scaling factor
                 frac2 = frac1
-            else  # scale to target end point
+            else # scale to target end point
                 frac1 = (lat2 - lat[1])/(lat[end] - lat[1]) # scaling factor
                 frac2 = (lon2 - lon[1])/(lon[end] - lon[1]) # scaling factor
             end
@@ -355,7 +355,7 @@ function create_traj(mapS::Union{MapS, MapSd, MapS3D} = get_map(namad);
 
         dx = dlon2de.(fdm(lon), lat) # easting  distance per time step
         dy = dlat2dn.(fdm(lat), lat) # northing distance per time step
-        d_now = sum(sqrt.(dx[2:N] .^ 2+dy[2:N] .^ 2)) # current distance
+        d_now = sum(sqrt.(dx[2:N] .^ 2 + dy[2:N] .^ 2)) # current distance
 
         if ll2 != () # correct time & N for true distance & given velocity
             range_old = LinRange(0, 1, N) # starting range {0:1} with N_old
@@ -1055,9 +1055,9 @@ function create_informed_xyz(xyz::XYZ, ind, mapS::Union{MapS, MapSd, MapS3D},
 
     # calculate Earth-induced field that would occur along this trajectory
     ΔB_TL    = TL_aircraft_disp - TL_aircraft # known part from aircraft
-    ΔB_earth = B_earth_disp - B_earth     # known part from Earth
+    ΔB_earth = B_earth_disp - B_earth # known part from Earth
     ΔB       = ΔB_TL + ΔB_earth # total difference in vector field from different Earth locale & aircraft
-    Δmap_val = map_val_disp - map_val # differnece in map values
+    Δmap_val = map_val_disp - map_val # difference in map values
 
     # update displaced vector magnetometer values used in learning
     flux = getfield(xyz_disp, use_vec)

@@ -343,42 +343,43 @@ function get_x(xyz::XYZ,
         end
     end
 
+    #! format: off
     (roll, pitch, yaw) = dcm2euler(xyz.ins.Cnb[:, :, ind], :body2nav) # correct definition
     push!(d, :dcm => [reshape(euler2dcm(roll, pitch, yaw, :nav2body), (9, N))';]) # ordered this way initially, leaving for consistency
-    push!(d, :dcm_1 => euler2dcm(roll, pitch, yaw, :nav2body)[1, 1, :])           # :nav2body contains same terms as :body2nav, but transposed
-    push!(d, :dcm_2 => euler2dcm(roll, pitch, yaw, :nav2body)[2, 1, :])
-    push!(d, :dcm_3 => euler2dcm(roll, pitch, yaw, :nav2body)[3, 1, :])
-    push!(d, :dcm_4 => euler2dcm(roll, pitch, yaw, :nav2body)[1, 2, :])
-    push!(d, :dcm_5 => euler2dcm(roll, pitch, yaw, :nav2body)[2, 2, :])
-    push!(d, :dcm_6 => euler2dcm(roll, pitch, yaw, :nav2body)[3, 2, :])
-    push!(d, :dcm_7 => euler2dcm(roll, pitch, yaw, :nav2body)[1, 3, :])
-    push!(d, :dcm_8 => euler2dcm(roll, pitch, yaw, :nav2body)[2, 3, :])
-    push!(d, :dcm_9 => euler2dcm(roll, pitch, yaw, :nav2body)[3, 3, :])
-    push!(d, :crcy => cos.(roll) .* cos.(yaw))
-    push!(d, :cpcy => cos.(pitch) .* cos.(yaw))
-    push!(d, :crsy => cos.(roll) .* sin.(yaw))
-    push!(d, :cpsy => cos.(pitch) .* sin.(yaw))
-    push!(d, :srcy => sin.(roll) .* cos.(yaw))
-    push!(d, :spcy => sin.(pitch) .* cos.(yaw))
-    push!(d, :srsy => sin.(roll) .* sin.(yaw))
-    push!(d, :spsy => sin.(pitch) .* sin.(yaw))
-    push!(d, :crcpcy => cos.(roll) .* cos.(pitch) .* cos.(yaw))
-    push!(d, :srcpcy => sin.(roll) .* cos.(pitch) .* cos.(yaw))
-    push!(d, :crspcy => cos.(roll) .* sin.(pitch) .* cos.(yaw))
-    push!(d, :srspcy => sin.(roll) .* sin.(pitch) .* cos.(yaw))
-    push!(d, :crcpsy => cos.(roll) .* cos.(pitch) .* sin.(yaw))
-    push!(d, :srcpsy => sin.(roll) .* cos.(pitch) .* sin.(yaw))
-    push!(d, :crspsy => cos.(roll) .* sin.(pitch) .* sin.(yaw))
-    push!(d, :srspsy => sin.(roll) .* sin.(pitch) .* sin.(yaw))
-    push!(d, :crcp => cos.(roll) .* cos.(pitch))
-    push!(d, :srcp => sin.(roll) .* cos.(pitch))
-    push!(d, :crsp => cos.(roll) .* sin.(pitch))
-    push!(d, :srsp => sin.(roll) .* sin.(pitch))
+    push!(d, :dcm_1  => euler2dcm(roll, pitch, yaw, :nav2body)[1, 1, :])          # :nav2body contains same terms as :body2nav, transposed
+    push!(d, :dcm_2  => euler2dcm(roll, pitch, yaw, :nav2body)[2, 1, :])
+    push!(d, :dcm_3  => euler2dcm(roll, pitch, yaw, :nav2body)[3, 1, :])
+    push!(d, :dcm_4  => euler2dcm(roll, pitch, yaw, :nav2body)[1, 2, :])
+    push!(d, :dcm_5  => euler2dcm(roll, pitch, yaw, :nav2body)[2, 2, :])
+    push!(d, :dcm_6  => euler2dcm(roll, pitch, yaw, :nav2body)[3, 2, :])
+    push!(d, :dcm_7  => euler2dcm(roll, pitch, yaw, :nav2body)[1, 3, :])
+    push!(d, :dcm_8  => euler2dcm(roll, pitch, yaw, :nav2body)[2, 3, :])
+    push!(d, :dcm_9  => euler2dcm(roll, pitch, yaw, :nav2body)[3, 3, :])
+    push!(d, :crcy   => cos.(roll)  .* cos.(yaw))
+    push!(d, :cpcy   => cos.(pitch) .* cos.(yaw))
+    push!(d, :crsy   => cos.(roll)  .* sin.(yaw))
+    push!(d, :cpsy   => cos.(pitch) .* sin.(yaw))
+    push!(d, :srcy   => sin.(roll)  .* cos.(yaw))
+    push!(d, :spcy   => sin.(pitch) .* cos.(yaw))
+    push!(d, :srsy   => sin.(roll)  .* sin.(yaw))
+    push!(d, :spsy   => sin.(pitch) .* sin.(yaw))
+    push!(d, :crcpcy => cos.(roll)  .* cos.(pitch) .* cos.(yaw))
+    push!(d, :srcpcy => sin.(roll)  .* cos.(pitch) .* cos.(yaw))
+    push!(d, :crspcy => cos.(roll)  .* sin.(pitch) .* cos.(yaw))
+    push!(d, :srspcy => sin.(roll)  .* sin.(pitch) .* cos.(yaw))
+    push!(d, :crcpsy => cos.(roll)  .* cos.(pitch) .* sin.(yaw))
+    push!(d, :srcpsy => sin.(roll)  .* cos.(pitch) .* sin.(yaw))
+    push!(d, :crspsy => cos.(roll)  .* sin.(pitch) .* sin.(yaw))
+    push!(d, :srspsy => sin.(roll)  .* sin.(pitch) .* sin.(yaw))
+    push!(d, :crcp   => cos.(roll)  .* cos.(pitch))
+    push!(d, :srcp   => sin.(roll)  .* cos.(pitch))
+    push!(d, :crsp   => cos.(roll)  .* sin.(pitch))
+    push!(d, :srsp   => sin.(roll)  .* sin.(pitch))
 
     for rpy in [:roll, :pitch, :yaw]
-        rpy == :roll && (rpy_ = roll)
+        rpy == :roll  && (rpy_ = roll)
         rpy == :pitch && (rpy_ = pitch)
-        rpy == :yaw && (rpy_ = yaw)
+        rpy == :yaw   && (rpy_ = yaw)
         push!(d, Symbol(rpy, "_fdm") => fdm(rpy_))
         push!(d, Symbol(rpy, "_sin") => sin.(rpy_))
         push!(d, Symbol(rpy, "_cos") => cos.(rpy_))
@@ -389,12 +390,13 @@ function get_x(xyz::XYZ,
     # low-pass filter current sensors
     if N > 12
         lpf = get_bpf(; pass1 = 0.0, pass2 = 0.2, fs = 1/xyz.traj.dt)
-        hasproperty(xyz, :cur_strb) && push!(d, :lpf_cur_strb => bpf_data(xyz.cur_strb[ind]; bpf = lpf))
+        hasproperty(xyz, :cur_strb)   && push!(d, :lpf_cur_strb   => bpf_data(xyz.cur_strb[ind];   bpf = lpf))
         hasproperty(xyz, :cur_outpwr) && push!(d, :lpf_cur_outpwr => bpf_data(xyz.cur_outpwr[ind]; bpf = lpf))
-        hasproperty(xyz, :cur_ac_hi) && push!(d, :lpf_cur_ac_hi => bpf_data(xyz.cur_ac_hi[ind]; bpf = lpf))
-        hasproperty(xyz, :cur_ac_lo) && push!(d, :lpf_cur_ac_lo => bpf_data(xyz.cur_ac_lo[ind]; bpf = lpf))
-        hasproperty(xyz, :cur_com_1) && push!(d, :lpf_cur_com_1 => bpf_data(xyz.cur_com_1[ind]; bpf = lpf))
+        hasproperty(xyz, :cur_ac_hi)  && push!(d, :lpf_cur_ac_hi  => bpf_data(xyz.cur_ac_hi[ind];  bpf = lpf))
+        hasproperty(xyz, :cur_ac_lo)  && push!(d, :lpf_cur_ac_lo  => bpf_data(xyz.cur_ac_lo[ind];  bpf = lpf))
+        hasproperty(xyz, :cur_com_1)  && push!(d, :lpf_cur_com_1  => bpf_data(xyz.cur_com_1[ind];  bpf = lpf))
     end
+    #! format: on
 
     push!(d, :ins_lat => xyz.ins.lat[ind])
     push!(d, :ins_lon => xyz.ins.lon[ind])
@@ -1703,14 +1705,14 @@ function get_ind(xyz::XYZ, line::Real, df_line::DataFrame;
                  splits        = (1),
                  l_window::Int = -1)
 
-    tt_lim = [df_line.t_start[df_line.line .== line][1],
-    df_line.t_end[df_line.line .== line][end]]
+    tt_lim = [df_line.t_start[df_line.line .== line][1], df_line.t_end[df_line.line .== line][end]]
     fields = fieldnames(typeof(xyz))
     line_  = :line in fields ? xyz.line : one.(xyz.traj.tt)
-    inds   = get_ind(xyz.traj.tt, line_;
-    lines  = [line],
-    tt_lim = tt_lim,
-    splits = splits)
+
+    inds = get_ind(xyz.traj.tt, line_;
+                   lines  = [line],
+                   tt_lim = tt_lim,
+                   splits = splits)
 
     if l_window > 0
         if (inds) isa Tuple
@@ -2531,36 +2533,38 @@ function gif_animation_m3(TL_perm::AbstractMatrix, TL_induced::AbstractMatrix, T
     p1 = plot(layout = l, size = (800, 500), margin = 4*mm)
     a1 = Animation()
 
+    #! format: off
     for i = i_start:skip_every:i_end
         p1 = plot(layout = l, size = (800, 500), margin = 4*mm)
 
         # move a vertical line across the magnetic field data
         plot!(p1[1], xlab = "time [min]", ylab = " magnetic field [nT]",
               xlim = tt_lim, legend = :bottomleft)
-        plot!(p1[1], tt, y, lab = "true compensation", lc = :gray, ls = :dash)
-        plot!(p1[1], tt, y_hat, lab = "model 3 compensation", lc = :black)
-        plot!(p1[1], tt, TL_comp, lab = "TL component", lc = :blue)
-        plot!(p1[1], tt, NN_comp, lab = "NN component", lc = :red)
-        plot!(p1[1], [tt[i]], lab = "", lc = :black, lt = :vline)
+        plot!(p1[1], tt, y,       lab = "true compensation",    lc = :gray, ls = :dash)
+        plot!(p1[1], tt, y_hat,   lab = "model 3 compensation", lc = :black)
+        plot!(p1[1], tt, TL_comp, lab = "TL component",         lc = :blue)
+        plot!(p1[1], tt, NN_comp, lab = "NN component",         lc = :red)
+        plot!(p1[1], [tt[i]],     lab = "",                     lc = :black, lt = :vline)
 
         # draw compass plot for each field
         plot!(p1[2], xlab = "east [nT]", ylab = " north [nT]",
               xlim = (-2500, 2500), ylim = (-2500, 2500), legend = :topright)
         plot!(p1[2], [0.0, aircraft_2D_TL[2, i]], [0.0, aircraft_2D_TL[1, i]], arrow = true, lab = "TL", lc = :blue)
         plot!(p1[2], [0.0, aircraft_2D_NN[2, i]], [0.0, aircraft_2D_NN[1, i]], arrow = true, lab = "NN", lc = :red)
-        plot!(p1[2], [0.0, perm_field_2D[2, i]], [0.0, perm_field_2D[1, i]], arrow = true, lab = "perm.")
-        plot!(p1[2], [0.0, ind_field_2D[2, i]], [0.0, ind_field_2D[1, i]], arrow = true, lab = "ind.")
-        plot!(p1[2], [0.0, eddy_field_2D[2, i]], [0.0, eddy_field_2D[1, i]], arrow = true, lab = "eddy")
+        plot!(p1[2], [0.0, perm_field_2D[2, i]],  [0.0, perm_field_2D[1, i]],  arrow = true, lab = "perm.")
+        plot!(p1[2], [0.0, ind_field_2D[2, i]],   [0.0, ind_field_2D[1, i]],   arrow = true, lab = "ind.")
+        plot!(p1[2], [0.0, eddy_field_2D[2, i]],  [0.0, eddy_field_2D[1, i]],  arrow = true, lab = "eddy")
 
         # plot airplane on map
         plot!(p1[3], xlab = "longitude [deg]", ylab = "latitude [deg]")
         plot!(p1[3], gps_lon[1:i], gps_lat[1:i], xlim = xlim, ylim = ylim, lab = "GPS")
-        show_ins && (plot!(p1[3], ins_lon[1:i], ins_lat[1:i], xlim = xlim, ylim = ylim, lab = "INS"))
+        show_ins  && (plot!(p1[3], ins_lon[1:i],  ins_lat[1:i],  xlim = xlim, ylim = ylim, lab = "INS"))
         show_filt && (plot!(p1[3], filt_lon[1:i], filt_lat[1:i], xlim = xlim, ylim = ylim, lab = "MagNav", xrotation = 18))
         annotate!(gps_lon[i], gps_lat[i], Plots.text("✈", 20, rotation = dir[i]), subplot = 3)
 
         frame(a1, p1)
     end
+    #! format: on
 
     # show or save gif
     mag_gif = add_extension(mag_gif, ".gif")

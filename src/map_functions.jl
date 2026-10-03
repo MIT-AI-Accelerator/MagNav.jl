@@ -826,10 +826,8 @@ function map_fill!(map_map::Matrix, map_xx::Vector, map_yy::Vector; k::Int = 3)
 
     (ind0, ind1, nx, ny) = map_params(map_map, map_xx, map_yy)
 
-    data = vcat(vec(repeat(map_xx', ny, 1)[ind1])',
-    vec(repeat(map_yy, 1, nx)[ind1])') # xx & yy at ind1 [2 x N1]
-    pts  = vcat(vec(repeat(map_xx', ny, 1)[ind0])',
-    vec(repeat(map_yy, 1, nx)[ind0])') # xx & yy at ind0 [2 x N0]
+    data = vcat(vec(repeat(map_xx', ny, 1)[ind1])', vec(repeat(map_yy, 1, nx)[ind1])') # xx & yy at ind1 [2 x N1]
+    pts  = vcat(vec(repeat(map_xx', ny, 1)[ind0])', vec(repeat(map_yy, 1, nx)[ind0])') # xx & yy at ind0 [2 x N0]
     vals = vec(map_map[ind1]) # map data at ind1 [N1]
     tree = KDTree(float.(data))
     inds = knn(tree, pts, k, true)[1]
@@ -949,7 +947,7 @@ function map_chessboard!(map_map::Matrix, map_alt::Matrix, map_xx::Vector,
     (ind0_, ind1_, nx_, ny_) = map_params(map_alt, map_xx, map_yy)
 
     @assert (nx, ny) == (nx_, ny_) "map dimensions are inconsistent for chessboard method"
-    @assert sum(ind0)/sum(ind0 + ind1) < 0.01 "target   map must be filled for chessboard method"
+    @assert sum(ind0)/sum(ind0 + ind1) < 0.01 "target map must be filled for chessboard method"
     @assert sum(ind0_)/sum(ind0_+ind1_) < 0.01 "altitude map must be filled for chessboard method"
 
     # map step sizes (spacings)
