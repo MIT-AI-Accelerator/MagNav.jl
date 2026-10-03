@@ -280,7 +280,7 @@ function eval_crlb(traj::Traj, crlb_P::Array)
     crlb_out.n_std .= dlat2dn.(crlb_out.lat_std, traj.lat)
     crlb_out.e_std .= dlon2de.(crlb_out.lon_std, traj.lat)
 
-    crlb_DRMS = round(Int, sqrt(mean(crlb_out.n_std .^ 2+crlb_out.e_std .^ 2)))
+    crlb_DRMS = round(Int, sqrt(mean(crlb_out.n_std .^ 2 + crlb_out.e_std .^ 2)))
     @info("CRLB DRMS error = $crlb_DRMS m")
 
     return (crlb_out)
@@ -300,7 +300,7 @@ Extract INS results.
 """
 function eval_ins(traj::Traj, ins::INS)
 
-    # not doing vn,ve,vd,tn,te,td,ax,ay,az,gx,gy,gz
+    # not doing vn, ve, vd, tn, te, td, ax, ay, az, gx, gy, gz
 
     N        = traj.N
     N_fields = length(fieldnames(INSout))
@@ -320,7 +320,7 @@ function eval_ins(traj::Traj, ins::INS)
     ins_out.n_err   .= dlat2dn.(ins_out.lat_err, ins.lat)
     ins_out.e_err   .= dlon2de.(ins_out.lon_err, ins.lat)
 
-    ins_DRMS = round(Int, sqrt(mean(ins_out.n_err .^ 2+ins_out.e_err .^ 2)))
+    ins_DRMS = round(Int, sqrt(mean(ins_out.n_err .^ 2 + ins_out.e_err .^ 2)))
     @info("INS  DRMS error = $ins_DRMS m")
 
     return (ins_out)
@@ -415,7 +415,7 @@ function eval_filt(traj::Traj, ins::INS, filt_res::FILTres)
     filt_out.n_err .= dlat2dn.(filt_out.lat_err, filt_out.lat)
     filt_out.e_err .= dlon2de.(filt_out.lon_err, filt_out.lat)
 
-    filt_DRMS = round(Int, sqrt(mean(filt_out.n_err .^ 2+filt_out.e_err .^ 2)))
+    filt_DRMS = round(Int, sqrt(mean(filt_out.n_err .^ 2 + filt_out.e_err .^ 2)))
     @info("FILT DRMS error = $filt_DRMS m")
 
     return (filt_out)
@@ -1217,7 +1217,7 @@ function units_ellipse(P; conf_units::Symbol = :m, lat1 = deg2rad(45))
         P = rad2deg.(rad2deg.(P)) # deg^2
     elseif conf_units in [:m, :ft]
         l = [dlat2dn(1, lat1), dlon2de(1, lat1)] # m/rad
-        conf_units == :ft && (l ./= 0.3048)   # ft/rad
+        conf_units == :ft && (l ./= 0.3048) # ft/rad
         P = P .* (l*l') # m^2 or ft^2
     elseif conf_units != :rad
         error("$conf_units confidence ellipse units not defined")
@@ -1447,12 +1447,19 @@ function gif_ellipse(filt_res::FILTres,
             yi     = findmin(abs.(map_map.yy .- filt_out.lat[i]))[2]
             ind_xx = max(xi - num, 1):min(xi + num, length(map_map.xx))
             ind_yy = max(yi - num, 1):min(yi + num, length(map_map.yy))
-            p1     = plot_map(map_map.map[ind_yy, ind_xx, 1],
-            map_map.xx[ind_xx], map_map.yy[ind_yy];
-            clims = clims, dpi = dpi, margin = margin, Nmax = 10^10,
-            legend = false, axis = false,
-            map_color = map_color, bg_color = bg_color,
-            map_units = :rad, plot_units = conf_units, b_e = b_e)
+            p1 = plot_map(map_map.map[ind_yy, ind_xx, 1],
+                          map_map.xx[ind_xx], map_map.yy[ind_yy];
+                          clims      = clims,
+                          dpi        = dpi,
+                          margin     = margin,
+                          Nmax       = 10^10,
+                          legend     = false,
+                          axis       = false,
+                          map_color  = map_color,
+                          bg_color   = bg_color,
+                          map_units  = :rad,
+                          plot_units = conf_units,
+                          b_e        = b_e)
         else
             p1 = plot()
         end
