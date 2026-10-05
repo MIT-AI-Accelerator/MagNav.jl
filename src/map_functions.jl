@@ -958,8 +958,8 @@ function map_chessboard!(map_map::Matrix, map_alt::Matrix, map_xx::Vector,
     alt_max = ceil(maximum(map_alt[ind1]))
 
     up_max = 500
-    alt_max - alt > down_max && @info("limiting downward continuation to alt_max = $alt_max m - $down_max m for chessboard method")
-    alt - alt_min > up_max && @info("limiting upward continuation to alt_min = $alt_min m + $up_max m for chessboard method")
+    alt_max - alt > down_max && @info("limiting chessboard method DC to alt_max = $alt_max m - $down_max m")
+    alt - alt_min > up_max && @info("limiting chessboard method UC to alt_min = $alt_min m + $up_max m")
     alt_dif_down = clamp(alt_max - alt, 0, down_max)
     alt_dif_up   = clamp(alt - alt_min, 0, up_max)
     alt_lev_down = 0:dz:(alt_dif_down + dz) # downward continuation levels

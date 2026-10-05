@@ -1607,10 +1607,11 @@ function xyz_reorient_vec!(xyz::XYZ)
                                 frame     = :body,
                                 norm_igrf = true,
                                 check_xyz = true)
+            flux_vec = normalize.([[x, y, z] for (x, y, z) in zip(flux.x, flux.y, flux.z)])
 
             # compute optimal rotation matrix for this flight
             igrf_matrix = permutedims(reduce(hcat, igrf_vec))
-            flux_matrix = permutedims(reduce(hcat, normalize.([[x, y, z] for (x, y, z) in zip(flux.x, flux.y, flux.z)])))
+            flux_matrix = permutedims(reduce(hcat, flux_vec))
             R = get_optimal_rotation_matrix(flux_matrix, igrf_matrix)
 
             # correct vector magnetometer data

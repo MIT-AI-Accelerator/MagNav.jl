@@ -26,6 +26,6 @@ flux_a = xyz.flux_a
     @test ekf_online_setup(flux_a, xyz.mag_1_c; N_sigma = 10) isa Tuple{Vector, Matrix, Vector}
     @test ekf_online(ins, xyz.mag_1_c, flux_a, itp_mapS, x0_TL, P0_1, Qd_1, R_1) isa MagNav.FILTres
     @test ekf_online(ins, xyz.mag_1_c, flux_a, map_cache, x0_TL, P0_2, Qd_2, R_2) isa MagNav.FILTres
-    @test run_filt(traj, ins, xyz.mag_1_c, itp_mapS, :ekf_online;
-                   P0 = P0_1, Qd = Qd_1, R = R_1, flux = flux_a, x0_TL = x0_TL) isa Tuple{MagNav.CRLBout, MagNav.INSout, MagNav.FILTout}
+    @test run_filt(traj, ins, xyz.mag_1_c, itp_mapS, :ekf_online; P0 = P0_1, Qd = Qd_1, R = R_1,
+                   flux = flux_a, x0_TL = x0_TL) isa Tuple{MagNav.CRLBout, MagNav.INSout, MagNav.FILTout}
 end

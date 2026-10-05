@@ -588,12 +588,14 @@ function get_x(lines, df_line::DataFrame, df_flight::DataFrame,
                                               sub_igrf         = sub_igrf,
                                               bpf_mag          = bpf_mag)
         else
+            #! format: off
             x = vcat(x, get_x(xyz, ind, features_setup;
                               features_no_norm = features_no_norm,
                               terms            = terms,
                               sub_diurnal      = sub_diurnal,
                               sub_igrf         = sub_igrf,
                               bpf_mag          = bpf_mag)[1])
+            #! format: on
         end
     end
 
@@ -776,12 +778,14 @@ function get_y(lines, df_line::DataFrame, df_flight::DataFrame,
                       sub_diurnal = sub_diurnal,
                       sub_igrf    = sub_igrf)
         else
+            #! format: off
             y = vcat(y, get_y(xyz, ind, map_val;
                               y_type      = y_type,
                               use_mag     = use_mag,
                               use_mag_c   = use_mag_c,
                               sub_diurnal = sub_diurnal,
                               sub_igrf    = sub_igrf))
+            #! format: on
         end
     end
 
@@ -939,12 +943,14 @@ function get_Axy(lines, df_line::DataFrame,
                                               sub_igrf         = sub_igrf,
                                               bpf_mag          = bpf_mag)
         else
+            #! format: off
             x = vcat(x, get_x(xyz, ind, features_setup;
                               features_no_norm = features_no_norm,
                               terms            = terms,
                               sub_diurnal      = sub_diurnal,
                               sub_igrf         = sub_igrf,
                               bpf_mag          = bpf_mag)[1])
+            #! format: on
         end
 
         # map values along trajectory (if needed)
@@ -988,12 +994,14 @@ function get_Axy(lines, df_line::DataFrame,
                       sub_diurnal = sub_diurnal,
                       sub_igrf    = sub_igrf)
         else
+            #! format: off
             y = vcat(y, get_y(xyz, ind, map_val;
                               y_type      = y_type,
                               use_mag     = use_mag,
                               use_mag_c   = use_mag_c,
                               sub_diurnal = sub_diurnal,
                               sub_igrf    = sub_igrf))
+            #! format: on
         end
     end
 

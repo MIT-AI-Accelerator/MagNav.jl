@@ -37,6 +37,6 @@ m = comp_params.model
     @test ekf_online_nn_setup(x_norm, y_norm, m, y_norms; N_sigma = 10) isa Tuple{Matrix, Vector}
     @test ekf_online_nn(ins, xyz.mag_1_c, itp_mapS, x_norm, m, y_norms, P0, Qd, R) isa MagNav.FILTres
     @test ekf_online_nn(ins, xyz.mag_1_c, map_cache, x_norm, m, y_norms, P0, Qd, R) isa MagNav.FILTres
-    @test run_filt(traj, ins, xyz.mag_1_c, itp_mapS, :ekf_online_nn;
-                   P0 = P0, Qd = Qd, R = R, x_nn = x_norm, m = m, y_norms = y_norms) isa Tuple{MagNav.CRLBout, MagNav.INSout, MagNav.FILTout}
+    @test run_filt(traj, ins, xyz.mag_1_c, itp_mapS, :ekf_online_nn; P0 = P0, Qd = Qd, R = R,
+                   x_nn = x_norm, m = m, y_norms = y_norms) isa Tuple{MagNav.CRLBout, MagNav.INSout, MagNav.FILTout}
 end
