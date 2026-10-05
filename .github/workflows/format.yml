@@ -20,4 +20,4 @@ jobs:
       - uses: julia-actions/julia-format@v4
         with:
           version: '2'
-          paths: 'src/, test/coverage/coverage_summary.jl'
+          paths: 'src/, test/'
