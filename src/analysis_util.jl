@@ -1189,7 +1189,7 @@ function get_nn_m(Nf::Int,
                                            bias = final_bias, init = init))
 
         # encoder layer
-        m = Chain(Dense(Nf => N_head, init = init),
+        m = Chain(Dense(Nf => N_head; init = init),
                   x -> x .* sqrt(N_head),
                   LPE(N_head, l_window, dropout_prob),
                   encoder_layer,
@@ -1234,7 +1234,7 @@ function get_nn_m(Nf::Int,
         elseif skip_con
             if l == 1
                 m = Chain(SkipConnection(Dense(Nf => hidden[1], activation),
-                                         (mx, x) -> cat(mx, x, dims = 1)),
+                                         (mx, x) -> cat(mx, x; dims = 1)),
                           Dense(Nf+hidden[1] => Ny; bias = final_bias))
             else
                 error("$l > 1 hidden layers is invalid with skip connections")
@@ -1322,7 +1322,7 @@ function err_segs(y_hat, y, l_segs; silent::Bool = true)
     for i in eachindex(l_segs)
         (i1, i2) = cumsum(l_segs)[i] .- (l_segs[i]-1, 0)
         err[i1:i2] .-= mean(err[i1:i2])
-        err_std = round(std(err[i1:i2]), digits = 2)
+        err_std = round(std(err[i1:i2]); digits = 2)
         silent || @info("line #$i error: $err_std nT")
     end
     return (err)
@@ -1358,14 +1358,14 @@ function norm_sets(train;
     end
 
     if norm_type == :standardize
-        train_bias  = mean(train, dims = 1)
-        train_scale = std(train, dims = 1)
+        train_bias  = mean(train; dims = 1)
+        train_scale = std(train; dims = 1)
     elseif norm_type == :normalize
-        train_bias  = minimum(train, dims = 1)
-        train_scale = maximum(train, dims = 1) - train_bias
+        train_bias  = minimum(train; dims = 1)
+        train_scale = maximum(train; dims = 1) - train_bias
     elseif norm_type == :scale
         train_bias  = size(train, 2) > 1 ? zero(train[1:1, :]) : zero(train[1:1])
-        train_scale = maximum(abs.(train), dims = 1)
+        train_scale = maximum(abs.(train); dims = 1)
     elseif norm_type == :none
         train_bias  = size(train, 2) > 1 ? zero(train[1:1, :]) : zero(train[1:1])
         train_scale = size(train, 2) > 1 ? one.(train[1:1, :]) : one.(train[1:1])
@@ -1869,7 +1869,7 @@ end # function predict_rnn_windowed
 """
     krr_fit(x, y,
             no_norm             = falses(size(x, 2));
-            k::Kernel           = PolynomialKernel(; degree = 1),
+            k::Kernel           = PolynomialKernel(degree = 1),
             λ::Real             = 0.5,
             norm_type_x::Symbol = :standardize,
             norm_type_y::Symbol = :standardize,
@@ -1899,7 +1899,7 @@ Fit a kernel ridge regression (KRR) model to data.
 """
 function krr_fit(x, y,
                  no_norm             = falses(size(x, 2));
-                 k::Kernel           = PolynomialKernel(; degree = 1),
+                 k::Kernel           = PolynomialKernel(degree = 1),
                  λ::Real             = 0.5,
                  norm_type_x::Symbol = :standardize,
                  norm_type_y::Symbol = :standardize,
@@ -2034,8 +2034,8 @@ function eval_shapley(m::Chain, x, features::Vector{Symbol},
     # setup output DataFrame
     df_shap = combine(groupby(df_temp, [:feature_name]),
                       :shap_effect => (x -> mean(abs.(x))) => :mean_effect)
-    df_shap = sort(df_shap, order(:mean_effect, rev = true))
-    baseline_shap = round(df_temp.intercept[1], digits = 2)
+    df_shap = sort(df_shap, order(:mean_effect; rev = true))
+    baseline_shap = round(df_temp.intercept[1]; digits = 2)
 
     return (df_shap, baseline_shap)
 end # function eval_shapley
@@ -2080,7 +2080,7 @@ function plot_shapley(df_shap, baseline_shap,
     ylim = extrema(range_shap) .+ (-1, 1)
 
     # plot horizontal bar graph
-    p1 = bar(range_shap, x, yticks = (range_shap, y), lab = false,
+    p1 = bar(range_shap, x; yticks = (range_shap, y), lab = false,
              dpi = dpi, xlab = xlab, ylab = ylab, ylim = ylim, title = title,
              orientation = :h, yflip = true, margin = 4*mm)
 
@@ -2109,7 +2109,7 @@ function eval_gsa(m::Chain, x, n::Int = min(10000, size(x, 1)))
     seed!(2) # for reproducibility
 
     method      = Morris(relative_scale = true, num_trajectory = n)
-    param_range = vec(extrema(x, dims = 1))
+    param_range = vec(extrema(x; dims = 1))
     means       = vec(gsa(m, method, param_range; samples = n).means)
     # #* note: produces Float32 warning even if param_range is Float32
 
@@ -2162,7 +2162,7 @@ function get_igrf(xyz::XYZ,
     igrf_vec = [igrf(tt[i], alt[i], lat[i], lon[i], Val(:geodetic)) for i = 1:N]
     if check_xyz
         lim_igrf = 1
-        err_igrf = round(rms(norm.(igrf_vec) - xyz.igrf[ind]), digits = 2)
+        err_igrf = round(rms(norm.(igrf_vec) - xyz.igrf[ind]); digits = 2)
         @assert err_igrf < lim_igrf "IGRF discrepancy = $err_igrf > $lim_igrf nT, check `igrf`, `year`, & `doy` fields in `xyz`"
     end
 
@@ -2253,8 +2253,8 @@ function get_optimal_rotation_matrix(v1s, v2s)
     @assert size(v2s, 2) == 3 "size(`v2s`, 2) ≂̸ 3"
 
     # compute centroids and recenter point clouds
-    v1_centroid   = mean(v1s, dims = 1)
-    v2_centroid   = mean(v2s, dims = 1)
+    v1_centroid   = mean(v1s; dims = 1)
+    v2_centroid   = mean(v2s; dims = 1)
     v1_recentered = v1s .- v1_centroid
     v2_recentered = v2s .- v2_centroid
 
@@ -2500,8 +2500,8 @@ function gif_animation_m3(TL_perm::AbstractMatrix, TL_induced::AbstractMatrix, T
                         check_xyz = true)
 
     # compute dot product component of each field
-    NN_comp = vec(sum(y_nn .* B_unit, dims = 1))
-    TL_comp = vec(sum(TL_aircraft .* B_unit, dims = 1))
+    NN_comp = vec(sum(y_nn .* B_unit; dims = 1))
+    TL_comp = vec(sum(TL_aircraft .* B_unit; dims = 1))
 
     # #* note: body field can be projected onto 3D IGRF vector for full picture
     # most of the 3D vector may be in the "down" direction, which makes
@@ -2512,11 +2512,11 @@ function gif_animation_m3(TL_perm::AbstractMatrix, TL_induced::AbstractMatrix, T
     normalize!.(eachcol(igrf_nav_2D))
 
     Cnb            = iszero(traj.Cnb) ? ins.Cnb : traj.Cnb # body to navigation
-    aircraft_2D_NN = project_body_field_to_2d_igrf.(eachcol(y_nn), eachcol(igrf_nav_2D), eachslice(Cnb, dims = 3))
-    aircraft_2D_TL = project_body_field_to_2d_igrf.(eachcol(TL_aircraft), eachcol(igrf_nav_2D), eachslice(Cnb, dims = 3))
-    perm_field_2D  = project_body_field_to_2d_igrf.(eachcol(TL_perm), eachcol(igrf_nav_2D), eachslice(Cnb, dims = 3))
-    ind_field_2D   = project_body_field_to_2d_igrf.(eachcol(TL_induced), eachcol(igrf_nav_2D), eachslice(Cnb, dims = 3))
-    eddy_field_2D  = project_body_field_to_2d_igrf.(eachcol(TL_eddy), eachcol(igrf_nav_2D), eachslice(Cnb, dims = 3))
+    aircraft_2D_NN = project_body_field_to_2d_igrf.(eachcol(y_nn), eachcol(igrf_nav_2D), eachslice(Cnb; dims = 3))
+    aircraft_2D_TL = project_body_field_to_2d_igrf.(eachcol(TL_aircraft), eachcol(igrf_nav_2D), eachslice(Cnb; dims = 3))
+    perm_field_2D  = project_body_field_to_2d_igrf.(eachcol(TL_perm), eachcol(igrf_nav_2D), eachslice(Cnb; dims = 3))
+    ind_field_2D   = project_body_field_to_2d_igrf.(eachcol(TL_induced), eachcol(igrf_nav_2D), eachslice(Cnb; dims = 3))
+    eddy_field_2D  = project_body_field_to_2d_igrf.(eachcol(TL_eddy), eachcol(igrf_nav_2D), eachslice(Cnb; dims = 3))
 
     aircraft_2D_NN = reduce(hcat, aircraft_2D_NN)
     aircraft_2D_TL = reduce(hcat, aircraft_2D_TL)
@@ -2538,28 +2538,28 @@ function gif_animation_m3(TL_perm::AbstractMatrix, TL_induced::AbstractMatrix, T
         p1 = plot(layout = l, size = (800, 500), margin = 4*mm)
 
         # move a vertical line across the magnetic field data
-        plot!(p1[1], xlab = "time [min]", ylab = " magnetic field [nT]",
+        plot!(p1[1]; xlab = "time [min]", ylab = " magnetic field [nT]",
               xlim = tt_lim, legend = :bottomleft)
-        plot!(p1[1], tt, y,       lab = "true compensation",    lc = :gray, ls = :dash)
-        plot!(p1[1], tt, y_hat,   lab = "model 3 compensation", lc = :black)
-        plot!(p1[1], tt, TL_comp, lab = "TL component",         lc = :blue)
-        plot!(p1[1], tt, NN_comp, lab = "NN component",         lc = :red)
-        plot!(p1[1], [tt[i]],     lab = "",                     lc = :black, lt = :vline)
+        plot!(p1[1], tt, y;       lab = "true compensation",    lc = :gray, ls = :dash)
+        plot!(p1[1], tt, y_hat;   lab = "model 3 compensation", lc = :black)
+        plot!(p1[1], tt, TL_comp; lab = "TL component",         lc = :blue)
+        plot!(p1[1], tt, NN_comp; lab = "NN component",         lc = :red)
+        plot!(p1[1], [tt[i]];     lab = "",                     lc = :black, lt = :vline)
 
         # draw compass plot for each field
-        plot!(p1[2], xlab = "east [nT]", ylab = " north [nT]",
+        plot!(p1[2]; xlab = "east [nT]", ylab = " north [nT]",
               xlim = (-2500, 2500), ylim = (-2500, 2500), legend = :topright)
-        plot!(p1[2], [0.0, aircraft_2D_TL[2, i]], [0.0, aircraft_2D_TL[1, i]], arrow = true, lab = "TL", lc = :blue)
-        plot!(p1[2], [0.0, aircraft_2D_NN[2, i]], [0.0, aircraft_2D_NN[1, i]], arrow = true, lab = "NN", lc = :red)
-        plot!(p1[2], [0.0, perm_field_2D[2, i]],  [0.0, perm_field_2D[1, i]],  arrow = true, lab = "perm.")
-        plot!(p1[2], [0.0, ind_field_2D[2, i]],   [0.0, ind_field_2D[1, i]],   arrow = true, lab = "ind.")
-        plot!(p1[2], [0.0, eddy_field_2D[2, i]],  [0.0, eddy_field_2D[1, i]],  arrow = true, lab = "eddy")
+        plot!(p1[2], [0.0, aircraft_2D_TL[2, i]], [0.0, aircraft_2D_TL[1, i]]; arrow = true, lab = "TL", lc = :blue)
+        plot!(p1[2], [0.0, aircraft_2D_NN[2, i]], [0.0, aircraft_2D_NN[1, i]]; arrow = true, lab = "NN", lc = :red)
+        plot!(p1[2], [0.0, perm_field_2D[2, i]],  [0.0, perm_field_2D[1, i]];  arrow = true, lab = "perm.")
+        plot!(p1[2], [0.0, ind_field_2D[2, i]],   [0.0, ind_field_2D[1, i]];   arrow = true, lab = "ind.")
+        plot!(p1[2], [0.0, eddy_field_2D[2, i]],  [0.0, eddy_field_2D[1, i]];  arrow = true, lab = "eddy")
 
         # plot airplane on map
-        plot!(p1[3], xlab = "longitude [deg]", ylab = "latitude [deg]")
-        plot!(p1[3], gps_lon[1:i], gps_lat[1:i], xlim = xlim, ylim = ylim, lab = "GPS")
-        show_ins  && (plot!(p1[3], ins_lon[1:i],  ins_lat[1:i],  xlim = xlim, ylim = ylim, lab = "INS"))
-        show_filt && (plot!(p1[3], filt_lon[1:i], filt_lat[1:i], xlim = xlim, ylim = ylim, lab = "MagNav", xrotation = 18))
+        plot!(p1[3]; xlab = "longitude [deg]", ylab = "latitude [deg]")
+        plot!(p1[3], gps_lon[1:i], gps_lat[1:i]; xlim = xlim, ylim = ylim, lab = "GPS")
+        show_ins  && (plot!(p1[3], ins_lon[1:i],  ins_lat[1:i];  xlim = xlim, ylim = ylim, lab = "INS"))
+        show_filt && (plot!(p1[3], filt_lon[1:i], filt_lat[1:i]; xlim = xlim, ylim = ylim, lab = "MagNav", xrotation = 18))
         annotate!(gps_lon[i], gps_lat[i], Plots.text("✈", 20, rotation = dir[i]), subplot = 3)
 
         frame(a1, p1)

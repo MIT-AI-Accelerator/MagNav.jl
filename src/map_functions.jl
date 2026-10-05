@@ -220,7 +220,7 @@ function map_get_gxf(map_gxf::String)
 
         # read map data into array
         # rows reversed to match getgrd2 in MATLAB
-        map_map = reverse(ArchGDAL.read(dataset, 1)', dims = 1)
+        map_map = reverse(ArchGDAL.read(dataset, 1)'; dims = 1)
 
         # read size of map
         nx = ArchGDAL.width(dataset)
@@ -406,12 +406,12 @@ function map_trim(map_map::Matrix,
     (ny, nx) = size(map_map)
 
     # xx limits of data-containing map
-    xx_sum = vec(sum(map_map, dims = 1))
+    xx_sum = vec(sum(map_map; dims = 1))
     xx_1   = findfirst(xx_sum .!= 0)
     xx_nx  = findlast(xx_sum .!= 0)
 
     # yy limits of data-containing map
-    yy_sum = vec(sum(map_map, dims = 2))
+    yy_sum = vec(sum(map_map; dims = 2))
     yy_1   = findfirst(yy_sum .!= 0)
     yy_ny  = findlast(yy_sum .!= 0)
 
@@ -1606,7 +1606,7 @@ function plot_map!(p1::Plot, map_map::Matrix,
     ind_yy = downsample(1:ny, Nmax)
 
     b_e # backend
-    contourf!(p1, map_xx[ind_xx], map_yy[ind_yy], map_map[ind_yy, ind_xx], dpi = dpi,
+    contourf!(p1, map_xx[ind_xx], map_yy[ind_yy], map_map[ind_yy, ind_xx]; dpi = dpi,
               lw = 0, c = c, bg = bg_color, clims = clims, margin = margin*mm, legend = legend,
               axis = axis, xticks = axis, yticks = axis, xlab = xlab, ylab = ylab, lab = false)
 
@@ -2003,15 +2003,15 @@ function plot_path!(p1::Plot, lat, lon;
     lat = downsample(rad2deg.(lat), Nmax)
 
     if path_color == :ignore
-        p1 = plot!(p1, lon, lat, lab = lab, legend = true)
+        p1 = plot!(p1, lon, lat; lab = lab, legend = true)
     else
-        p1 = plot!(p1, lon, lat, lab = lab, legend = true, lc = path_color)
+        p1 = plot!(p1, lon, lat; lab = lab, legend = true, lc = path_color)
     end
 
     if zoom_plot
         xlim = get_lim(lon, 0.2)
         ylim = get_lim(lat, 0.2)
-        p1 = plot!(p1, xlim = xlim, ylim = ylim)
+        p1 = plot!(p1; xlim = xlim, ylim = ylim)
     end
 
     show_plot && display(p1)
@@ -2248,7 +2248,7 @@ Plot in-flight event on an existing plot.
 """
 function plot_events!(p1::Plot, t::Real, lab::String = "";
                       legend::Symbol = :outertopright)
-    plot!(p1, [t], lab = lab, legend = legend, lc = :red, ls = :dash, lt = :vline, lw = 1)
+    plot!(p1, [t]; lab = lab, legend = legend, lc = :red, ls = :dash, lt = :vline, lw = 1)
     return (nothing)
 end # function plot_events!
 
@@ -2741,10 +2741,10 @@ function map_border_sort(yy::Vector, xx::Vector, dy, dx)
     for i in axes(ll_out, 2)[2:end]
         ll = ll[:, .!ind]
         pt = ll_out[:, i-1]
-        ll_nn = ll[:, vec(all(abs.(ll .- pt) .< d3, dims = 1))]
+        ll_nn = ll[:, vec(all(abs.(ll .- pt) .< d3; dims = 1))]
         try
             ind_nn = nn(KDTree(ll_nn), pt)[1]
-            ind    = vec(all(ll_nn[:, ind_nn] .≈ ll, dims = 1))
+            ind    = vec(all(ll_nn[:, ind_nn] .≈ ll; dims = 1))
         catch _
             @info("full border not sorted")
             return (ll_out[1, 1:(i - 1)], ll_out[2, 1:(i - 1)])

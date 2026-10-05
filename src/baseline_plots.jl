@@ -33,7 +33,7 @@ function plot_basic(tt::Vector, y::Vector,
                     save_plot::Bool  = false,
                     plot_png::String = "data_vs_time.png")
 
-    p1 = plot((tt[ind] .- tt[ind][1]) / 60, y[ind], lab = lab, xlab = xlab, ylab = ylab)
+    p1 = plot((tt[ind] .- tt[ind][1]) / 60, y[ind]; lab = lab, xlab = xlab, ylab = ylab)
 
     show_plot && display(p1)
     save_plot && png(p1, plot_png)
@@ -88,17 +88,17 @@ function plot_activation(activation       = [:relu, :σ, :swish, :tanh];
     if !plot_deriv # plot activation functions
         p1 = plot(xlab = "z", ylab = "f(z)", xlim = (-6, 4), ylim = (-2, 4),
                   legend = :topleft, margin = 2*mm, dpi = dpi)
-        :relu  in activation && plot!(p1, x, p_relu,  lab = "ReLU",    lw = 2, ls = :solid)
-        :σ     in activation && plot!(p1, x, p_σ,     lab = "sigmoid", lw = 2, ls = :solid)
-        :swish in activation && plot!(p1, x, p_swish, lab = "Swish",   lw = 2, ls = :dash)
-        :tanh  in activation && plot!(p1, x, p_tanh,  lab = "tanh",    lw = 2, ls = :dot)
+        :relu  in activation && plot!(p1, x, p_relu;  lab = "ReLU",    lw = 2, ls = :solid)
+        :σ     in activation && plot!(p1, x, p_σ;     lab = "sigmoid", lw = 2, ls = :solid)
+        :swish in activation && plot!(p1, x, p_swish; lab = "Swish",   lw = 2, ls = :dash)
+        :tanh  in activation && plot!(p1, x, p_tanh;  lab = "tanh",    lw = 2, ls = :dot)
     else # plot derivatives of activation functions
         p1 = plot(xlab = "z", ylab = "f'(z)", xlim = (-6, 4), ylim = (-0.5, 1.5),
                   legend = :topleft, margin = 2*mm, dpi = dpi)
-        :relu  in activation && plot!(p1, x, d_relu,  lab = "ReLU",    lw = 2, ls = :solid)
-        :σ     in activation && plot!(p1, x, d_σ,     lab = "sigmoid", lw = 2, ls = :solid)
-        :swish in activation && plot!(p1, x, d_swish, lab = "Swish",   lw = 2, ls = :dash)
-        :tanh  in activation && plot!(p1, x, d_tanh,  lab = "tanh",    lw = 2, ls = :dot)
+        :relu  in activation && plot!(p1, x, d_relu;  lab = "ReLU",    lw = 2, ls = :solid)
+        :σ     in activation && plot!(p1, x, d_σ;     lab = "sigmoid", lw = 2, ls = :solid)
+        :swish in activation && plot!(p1, x, d_swish; lab = "Swish",   lw = 2, ls = :dash)
+        :tanh  in activation && plot!(p1, x, d_tanh;  lab = "tanh",    lw = 2, ls = :dot)
     end
     #! format: on
 
@@ -175,7 +175,7 @@ function plot_mag(xyz::XYZ;
         for i in eachindex(mags_c_)
             val = (getfield(xyz, list_uc[mags_uc_[i]]) - getfield(xyz, list_c[mags_c_[i]]))[ind]
             detrend_data && (val = detrend(val))
-            plot!(p1, tt, val, lab = "mag_$i comp")
+            plot!(p1, tt, val; lab = "mag_$i comp")
             println("==== mag_$i comp ====")
             println("avg comp = $(round(mean(val), digits = 3)) nT")
             println("std dev  = $(round(std( val), digits = 3)) nT")
@@ -201,7 +201,7 @@ function plot_mag(xyz::XYZ;
             for vec_term in vec_terms
                 val = getfield(flux, vec_term)
                 detrend_data && (val = detrend(val))
-                plot!(p1, tt, val, lab = "$use_mag $vec_term")
+                plot!(p1, tt, val; lab = "$use_mag $vec_term")
             end
 
         end
@@ -222,7 +222,7 @@ function plot_mag(xyz::XYZ;
         for mag in use_mags
             val = getfield(xyz, mag)[ind]
             detrend_data && (val = detrend(val))
-            plot!(p1, tt, val, lab = "$mag")
+            plot!(p1, tt, val; lab = "$mag")
         end
 
     else
@@ -238,7 +238,7 @@ function plot_mag(xyz::XYZ;
         for mag in use_mags
             val = getfield(xyz, mag)[ind]
             detrend_data && (val = detrend(val))
-            plot!(p1, tt, val, lab = "$mag")
+            plot!(p1, tt, val; lab = "$mag")
         end
 
     end
@@ -320,7 +320,7 @@ function plot_mag_c(xyz::XYZ, xyz_comp::XYZ;
                     plot_png::String         = "scalar_mags_comp.png")
 
     field_check(xyz, use_vec, MagV)
-    A = create_TL_A(getfield(xyz, use_vec), terms = terms)[ind, :]
+    A = create_TL_A(getfield(xyz, use_vec); terms = terms)[ind, :]
 
     tt       = (xyz.traj.tt[ind] .- xyz.traj.tt[ind][1]) / 60
     mag_1_c  = detrend_data ? detrend(xyz.mag_1_c[ind]) : xyz.mag_1_c[ind]
@@ -336,7 +336,7 @@ function plot_mag_c(xyz::XYZ, xyz_comp::XYZ;
     end
 
     if plot_mag_1_uc .& ~plot_diff
-        plot!(p1, tt, mag_1_uc, lab = "mag_1_uc", lc = :cyan)
+        plot!(p1, tt, mag_1_uc; lab = "mag_1_uc", lc = :cyan)
     end
 
     fields  = fieldnames(typeof(xyz))
@@ -376,7 +376,7 @@ function plot_mag_c(xyz::XYZ, xyz_comp::XYZ;
         lab = "$use_mag"[1:(end - 3)]*"_c"
         lab = plot_diff ? "Δ $lab" : lab
         val = plot_diff ? mag_c - mag_1_c : mag_c
-        plot!(p1, tt[1:(end - 1)], val[1:(end - 1)], lab = lab, lc = lc)
+        plot!(p1, tt[1:(end - 1)], val[1:(end - 1)]; lab = lab, lc = lc)
 
         if plot_diff
             @info("=== $lab ===")
@@ -387,7 +387,7 @@ function plot_mag_c(xyz::XYZ, xyz_comp::XYZ;
     end
 
     if plot_mag_1_c .& ~plot_diff
-        plot!(p1, tt[1:(end - 1)], mag_1_c[1:(end - 1)],
+        plot!(p1, tt[1:(end - 1)], mag_1_c[1:(end - 1)];
               lab = "provided mag_1_c", lc = :blue, ls = :dash)
     end
 
@@ -429,9 +429,9 @@ function plot_PSD(x::Vector,
                   save_plot::Bool  = false,
                   plot_png::String = "PSD.png")
 
-    p = welch_pgram(x, fs = fs, window = window)
+    p = welch_pgram(x; fs = fs, window = window)
 
-    p1 = plot(p.freq, pow2db.(p.power), lab = "", dpi = dpi,
+    p1 = plot(p.freq, pow2db.(p.power); lab = "", dpi = dpi,
               xlab = "frequency [Hz]", ylab = "power/frequency [dB/Hz]")
 
     show_plot && display(p1)
@@ -473,7 +473,7 @@ function plot_spectrogram(x::Vector,
 
     s = spectrogram(x; fs = fs, window = window)
 
-    p1 = heatmap(s.time, s.freq, pow2db.(s.power), dpi = dpi,
+    p1 = heatmap(s.time, s.freq, pow2db.(s.power); dpi = dpi,
                  xguide = "time [s]", yguide = "frequency [Hz]")
 
     show_plot && display(p1)
@@ -586,7 +586,7 @@ function plot_correlation(x::Vector, y::Vector,
     silent || println("$title, correlation & slope: $(round.([xyc,xys], digits = 5))")
 
     if abs(xyc) > lim
-        p1 = scatter(x, y, lab = false, dpi = dpi, title = title,
+        p1 = scatter(x, y; lab = false, dpi = dpi, title = title,
                      xlab = xlab, ylab = ylab, mc = :black, ms = 2)
         show_plot && display(p1)
         save_plot && png(p1, plot_png)
@@ -691,10 +691,10 @@ function plot_correlation_matrix(x::AbstractMatrix, features::Vector{Symbol};
             ylab   = i == 1 ? features[j] : ""
             x_     = x[:, i]
             y_     = x[:, j]
-            xticks = j == Nf ? round.(mean(x_) .+ [-1, 1]*std(x_), sigdigits = 3) : []
-            yticks = i == 1 ? round.(mean(y_) .+ [-1, 1]*std(y_), sigdigits = 3) : []
+            xticks = j == Nf ? round.(mean(x_) .+ [-1, 1]*std(x_); sigdigits = 3) : []
+            yticks = i == 1 ? round.(mean(y_) .+ [-1, 1]*std(y_); sigdigits = 3) : []
             push!(p_,
-                  scatter(downsample(x_, Nmax), downsample(y_, Nmax),
+                  scatter(downsample(x_, Nmax), downsample(y_, Nmax);
                           lab = false, dpi = dpi, mc = :black, ms = 1,
                           xlab = xlab, ylab = ylab, xticks = xticks, yticks = yticks,
                           xguidefontsize = 8, yguidefontsize = 8))
@@ -711,7 +711,7 @@ function plot_correlation_matrix(x::AbstractMatrix, features::Vector{Symbol};
         l = @layout [p _ _ _; p p _ _; p p p _; p p p p]
     end
 
-    p1 = plot(p_..., layout = l, margin = 2*mm)
+    p1 = plot(p_...; layout = l, margin = 2*mm)
 
     show_plot && display(p1)
     save_plot && png(p1, plot_png)

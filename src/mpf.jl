@@ -109,7 +109,7 @@ function mpf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS;
         # expected measurement and residual
         y_hat = get_h(itp_mapS, [xn; xl], lat[t], lon[t], alt[t]; date = date, core = core)
         e = repeat(meas[t, :], 1, np) - repeat(y_hat', ny, 1)
-        resid[:, t] = mean(e, dims = 2)
+        resid[:, t] = mean(e; dims = 2)
 
         # particle update                                                       # eq 25a
         V = H * Pl * H' .+ R

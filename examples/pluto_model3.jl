@@ -94,10 +94,10 @@ begin
     dpi  = 200
     tt   = (xyz_train.traj.tt[TL_ind] .- xyz_train.traj.tt[TL_ind][1]) / 60
     p1   = plot(xlab = xlab, ylab = ylab, dpi = dpi, ylim = (51000, 55000))
-    plot!(p1, tt, xyz_train.igrf[TL_ind], lab = "IGRF core field")
-    plot!(p1, tt, xyz_train.mag_1_c[TL_ind], lab = "compensated tail stinger")
-    plot!(p1, tt, xyz_train.mag_4_uc[TL_ind], lab = "uncompensated Mag 4")
-    plot!(p1, tt, xyz_train.flux_d.t[TL_ind], lab = "vector Flux D, total field")
+    plot!(p1, tt, xyz_train.igrf[TL_ind];     lab = "IGRF core field")
+    plot!(p1, tt, xyz_train.mag_1_c[TL_ind];  lab = "compensated tail stinger")
+    plot!(p1, tt, xyz_train.mag_4_uc[TL_ind]; lab = "uncompensated Mag 4")
+    plot!(p1, tt, xyz_train.flux_d.t[TL_ind]; lab = "vector Flux D, total field")
 end
 
 # ╔═╡ ae1acc31-19db-4e94-85dc-e6274186978e
@@ -151,9 +151,9 @@ begin # create Tolles-Lawson `A` matrix & perform compensation
     mag_4_c_lpf        = mag_4_uc_TL_train - A * TL_coef
 
     p2 = plot(xlab = xlab, ylab = ylab, dpi = dpi, ylim = (52000, 55000))
-    plot!(p2, tt, mag_1_sgl_TL_train, lab = "ground truth")
-    plot!(p2, tt, mag_4_c_lpf, lab = "low-pass filtered TL")
-    plot!(p2, tt, mag_4_c_bpf, lab = "bandpass filtered TL")
+    plot!(p2, tt, mag_1_sgl_TL_train; lab = "ground truth")
+    plot!(p2, tt, mag_4_c_lpf; lab = "low-pass filtered TL")
+    plot!(p2, tt, mag_4_c_bpf; lab = "bandpass filtered TL")
 end
 
 # ╔═╡ 239b60aa-0e97-4871-a9a5-64cd802f4bde
@@ -249,9 +249,9 @@ end
 begin
     tt_test = (xyz_test.traj.tt[ind_test] .- xyz_test.traj.tt[ind_test][1]) / 60
     p3 = plot(xlab = xlab, ylab = ylab, dpi = dpi, ylim = (52900, 53700))
-    plot!(p3, tt_test, map_val + (xyz_test.diurnal + xyz_test.igrf)[ind_test], lab = "map value")
-    plot!(p3, tt_test, xyz_test.mag_1_c[ind_test], lab = "compensated tail stinger")
-    plot!(p3, tt_test, mag_4_c, lab = "compensated Mag 4")
+    plot!(p3, tt_test, map_val + (xyz_test.diurnal + xyz_test.igrf)[ind_test]; lab = "map value")
+    plot!(p3, tt_test, xyz_test.mag_1_c[ind_test]; lab = "compensated tail stinger")
+    plot!(p3, tt_test, mag_4_c; lab = "compensated Mag 4")
 end
 
 # ╔═╡ d0fcbd95-002b-4e67-ad06-15ae52f27ede

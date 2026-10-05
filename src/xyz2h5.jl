@@ -140,7 +140,7 @@ function xyz2h5(data::Array, xyz_h5::String, flight::Symbol;
 
     # write N & dt data fields
     N  = sum(ind) # number of used data rows
-    dt = N > 1 ? round(data[ind, ind_tt][2]-data[ind, ind_tt][1], digits = 9) : 0.1 # measurement time step
+    dt = N > 1 ? round(data[ind, ind_tt][2]-data[ind, ind_tt][1]; digits = 9) : 0.1 # measurement time step
     write_field(xyz_h5, :N, N)
     write_field(xyz_h5, :dt, dt)
 

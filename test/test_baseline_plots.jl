@@ -61,11 +61,11 @@ show_plot = false
                      lab       = "mag_1_c",
                      xlab      = "time [min]",
                      ylab      = "magnetic field [nT]",
-                     show_plot = false) isa Plot
+                     show_plot = show_plot) isa Plot
 end
 
 @testset "plot_activation tests" begin
-    @test plot_activation(; show_plot) isa Plot
+    @test plot_activation(show_plot = show_plot) isa Plot
     @test plot_activation([:relu, :swish];
                           plot_deriv = true,
                           show_plot  = false,

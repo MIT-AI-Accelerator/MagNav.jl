@@ -455,11 +455,11 @@ function plot_filt!(p1::Plot, traj::Traj, ins::INS, filt_out::FILTout;
     xlim = get_lim(lon, 0.05)
     ylim = get_lim(lat, 0.05)
 
-    plot!(p1, xlab = "longitude [deg]", ylab = "latitude [deg]", dpi = dpi)
-    plot!(p1, rad2deg.(traj.lon[i]), rad2deg.(traj.lat[i]), lab = "GPS")
-    plot!(p1, rad2deg.(ins.lon[i]), rad2deg.(ins.lat[i]), lab = "INS")
-    plot!(p1, rad2deg.(filt_out.lon[i]), rad2deg.(filt_out.lat[i]), lab = "MagNav")
-    plot!(p1, xlim = xlim, ylim = ylim)
+    plot!(p1; xlab = "longitude [deg]", ylab = "latitude [deg]", dpi = dpi)
+    plot!(p1, rad2deg.(traj.lon[i]), rad2deg.(traj.lat[i]); lab = "GPS")
+    plot!(p1, rad2deg.(ins.lon[i]), rad2deg.(ins.lat[i]); lab = "INS")
+    plot!(p1, rad2deg.(filt_out.lon[i]), rad2deg.(filt_out.lat[i]); lab = "MagNav")
+    plot!(p1; xlim = xlim, ylim = ylim)
     show_plot && display(p1)
     save_plot && png(p1, "flight_path.png")
 
@@ -512,53 +512,53 @@ function plot_filt(p1::Plot, traj::Traj, ins::INS, filt_out::FILTout;
     tt = (traj.tt[i] .- traj.tt[i][1]) / 60
 
     p3 = plot(xlab = "time [min]", ylab = "latitude [deg]", dpi = dpi)
-    plot!(p3, tt, rad2deg.(traj.lat[i]), lab = "GPS")
-    plot!(p3, tt, rad2deg.(ins.lat[i]), lab = "INS")
-    plot!(p3, tt, rad2deg.(filt_out.lat[i]), lab = "MagNav")
+    plot!(p3, tt, rad2deg.(traj.lat[i]); lab = "GPS")
+    plot!(p3, tt, rad2deg.(ins.lat[i]); lab = "INS")
+    plot!(p3, tt, rad2deg.(filt_out.lat[i]); lab = "MagNav")
     show_plot && display(p3)
     save_plot && png(p3, "latitude.png")
 
     p4 = plot(xlab = "time [min]", ylab = "longitude [deg]", dpi = dpi)
-    plot!(p4, tt, rad2deg.(traj.lon[i]), lab = "GPS")
-    plot!(p4, tt, rad2deg.(ins.lon[i]), lab = "INS")
-    plot!(p4, tt, rad2deg.(filt_out.lon[i]), lab = "MagNav")
+    plot!(p4, tt, rad2deg.(traj.lon[i]); lab = "GPS")
+    plot!(p4, tt, rad2deg.(ins.lon[i]); lab = "INS")
+    plot!(p4, tt, rad2deg.(filt_out.lon[i]); lab = "MagNav")
     show_plot && display(p4)
     save_plot && png(p4, "longitude.png")
 
     if plot_vel
         p5 = plot(xlab = "time [min]", ylab = "north velocity [m/s]", dpi = dpi)
-        plot!(p5, tt, traj.vn[i], lab = "GPS")
-        plot!(p5, tt, ins.vn[i], lab = "INS")
-        plot!(p5, tt, filt_out.vn[i], lab = "MagNav")
+        plot!(p5, tt, traj.vn[i]; lab = "GPS")
+        plot!(p5, tt, ins.vn[i]; lab = "INS")
+        plot!(p5, tt, filt_out.vn[i]; lab = "MagNav")
         show_plot && display(p5)
         save_plot && png(p5, "north_velocity.png")
 
         p6 = plot(xlab = "time [min]", ylab = "east velocity [m/s]", dpi = dpi)
-        plot!(p6, tt, traj.ve[i], lab = "GPS")
-        plot!(p6, tt, ins.ve[i], lab = "INS")
-        plot!(p6, tt, filt_out.ve[i], lab = "MagNav")
+        plot!(p6, tt, traj.ve[i]; lab = "GPS")
+        plot!(p6, tt, ins.ve[i]; lab = "INS")
+        plot!(p6, tt, filt_out.ve[i]; lab = "MagNav")
         show_plot && display(p6)
         save_plot && png(p6, "east_velocity.png")
     end
 
     # p7 = plot(xlab = "time [min]", ylab = "altitude [m]", dpi = dpi)
-    # plot!(p7, tt, traj.alt[i], lab = "GPS")
-    # plot!(p7, tt, ins.alt[i], lab = "INS")
-    # plot!(p7, tt, filt_out.alt[i], lab = "MagNav")
+    # plot!(p7, tt, traj.alt[i]; lab = "GPS")
+    # plot!(p7, tt, ins.alt[i]; lab = "INS")
+    # plot!(p7, tt, filt_out.alt[i]; lab = "MagNav")
     # show_plot && display(p7)
     # save_plot && png(p7, "altitude.png")
 
     # p8 = plot(xlab = "time [min]", ylab = "down velocity [m/s]", dpi = dpi)
-    # plot!(p8, tt, traj.vd[i], lab = "GPS")
-    # plot!(p8, tt, ins.vd[i], lab = "INS")
-    # plot!(p8, tt, filt_out.vd[i], lab = "MagNav")
+    # plot!(p8, tt, traj.vd[i]; lab = "GPS")
+    # plot!(p8, tt, ins.vd[i]; lab = "INS")
+    # plot!(p8, tt, filt_out.vd[i]; lab = "MagNav")
     # show_plot && display(p8)
     # save_plot && png(p8, "down_velocity.png")
 
     # p9 = plot(xlab = "time [min]", ylab = "tilt [deg]", dpi = dpi)
-    # plot!(p9, tt, rad2deg.(filt_out.tn[i]), lab = "north")
-    # plot!(p9, tt, rad2deg.(filt_out.te[i]), lab = "east")
-    # plot!(p9, tt, rad2deg.(filt_out.td[i]), lab = "down")
+    # plot!(p9, tt, rad2deg.(filt_out.tn[i]); lab = "north")
+    # plot!(p9, tt, rad2deg.(filt_out.te[i]); lab = "east")
+    # plot!(p9, tt, rad2deg.(filt_out.td[i]); lab = "down")
     # show_plot && display(p9)
     # save_plot && png(p9, "tilt.png")
 
@@ -573,16 +573,16 @@ function plot_filt(p1::Plot, traj::Traj, ins::INS, filt_out::FILTout;
     # save_plot && png(p11, "barometer_aiding_vertical_accel.png")
 
     # p12 = plot(xlab = "time [min]", ylab = "accelerometer bias [m/s^2]", dpi = dpi)
-    # plot!(p12, tt, filt_out.ax[i], lab = "x")
-    # plot!(p12, tt, filt_out.ay[i], lab = "y")
-    # plot!(p12, tt, filt_out.az[i], lab = "z")
+    # plot!(p12, tt, filt_out.ax[i]; lab = "x")
+    # plot!(p12, tt, filt_out.ay[i]; lab = "y")
+    # plot!(p12, tt, filt_out.az[i]; lab = "z")
     # show_plot && display(p12)
     # save_plot && png(p12, "accelerometer_bias.png")
 
     # p13 = plot(xlab = "time [min]", ylab = "gyroscope bias [rad/s]", dpi = dpi)
-    # plot!(p13, tt, filt_out.gx[i], lab = "x")
-    # plot!(p13, tt, filt_out.gy[i], lab = "y")
-    # plot!(p13, tt, filt_out.gz[i], lab = "z")
+    # plot!(p13, tt, filt_out.gx[i]; lab = "x")
+    # plot!(p13, tt, filt_out.gy[i]; lab = "y")
+    # plot!(p13, tt, filt_out.gz[i]; lab = "z")
     # show_plot && display(p13)
     # save_plot && png(p13, "gyroscope_bias.png")
 
@@ -668,101 +668,101 @@ function plot_filt_err(traj::Traj, filt_out::FILTout, crlb_out::CRLBout;
     tt = (traj.tt[i] .- traj.tt[i][1]) / 60
 
     p1 = plot(xlab = "time [min]", ylab = "northing error [m]", dpi = dpi)
-    plot!(p1, tt, filt_out.n_err[i], lab = "filter error", lc = :black, lw = 2)
-    plot!(p1, tt, filt_out.n_std[i], lab = "filter 1-σ", lc = :blue)
-    plot!(p1, tt, -filt_out.n_std[i], lab = false, lc = :blue)
-    plot!(p1, tt, crlb_out.n_std[i], lab = "CRLB 1-σ", lc = :red, ls = :dash)
-    plot!(p1, tt, -crlb_out.n_std[i], lab = false, lc = :red, ls = :dash)
+    plot!(p1, tt, filt_out.n_err[i]; lab = "filter error", lc = :black, lw = 2)
+    plot!(p1, tt, filt_out.n_std[i]; lab = "filter 1-σ", lc = :blue)
+    plot!(p1, tt, -filt_out.n_std[i]; lab = false, lc = :blue)
+    plot!(p1, tt, crlb_out.n_std[i]; lab = "CRLB 1-σ", lc = :red, ls = :dash)
+    plot!(p1, tt, -crlb_out.n_std[i]; lab = false, lc = :red, ls = :dash)
     show_plot && display(p1)
     save_plot && png(p1, "northing_error.png")
 
     p2 = plot(xlab = "time [min]", ylab = "easting error [m]", dpi = dpi)
-    plot!(p2, tt, filt_out.e_err[i], lab = "filter error", lc = :black, lw = 2)
-    plot!(p2, tt, filt_out.e_std[i], lab = "filter 1-σ", lc = :blue)
-    plot!(p2, tt, -filt_out.e_std[i], lab = false, lc = :blue)
-    plot!(p2, tt, crlb_out.e_std[i], lab = "CRLB 1-σ", lc = :red, ls = :dash)
-    plot!(p2, tt, -crlb_out.e_std[i], lab = false, lc = :red, ls = :dash)
+    plot!(p2, tt, filt_out.e_err[i]; lab = "filter error", lc = :black, lw = 2)
+    plot!(p2, tt, filt_out.e_std[i]; lab = "filter 1-σ", lc = :blue)
+    plot!(p2, tt, -filt_out.e_std[i]; lab = false, lc = :blue)
+    plot!(p2, tt, crlb_out.e_std[i]; lab = "CRLB 1-σ", lc = :red, ls = :dash)
+    plot!(p2, tt, -crlb_out.e_std[i]; lab = false, lc = :red, ls = :dash)
     show_plot && display(p2)
     save_plot && png(p2, "easting_error.png")
 
     if plot_vel
 
         p3 = plot(xlab = "time [min]", ylab = "north velocity error [m/s]", dpi = dpi) # , ylim=(-10, 10))
-        plot!(p3, tt, filt_out.vn_err[i], lab = "filter error", lc = :black, lw = 2)
-        plot!(p3, tt, filt_out.vn_std[i], lab = "filter 1-σ", lc = :blue)
-        plot!(p3, tt, -filt_out.vn_std[i], lab = false, lc = :blue)
+        plot!(p3, tt, filt_out.vn_err[i]; lab = "filter error", lc = :black, lw = 2)
+        plot!(p3, tt, filt_out.vn_std[i]; lab = "filter 1-σ", lc = :blue)
+        plot!(p3, tt, -filt_out.vn_std[i]; lab = false, lc = :blue)
         show_plot && display(p3)
         save_plot && png(p3, "north_velocity_error.png")
 
         p4 = plot(xlab = "time [min]", ylab = "east velocity error [m/s]", dpi = dpi) # , ylim=(-10, 10))
-        plot!(p4, tt, filt_out.ve_err[i], lab = "filter error", lc = :black, lw = 2)
-        plot!(p4, tt, filt_out.ve_std[i], lab = "filter 1-σ", lc = :blue)
-        plot!(p4, tt, -filt_out.ve_std[i], lab = false, lc = :blue)
+        plot!(p4, tt, filt_out.ve_err[i]; lab = "filter error", lc = :black, lw = 2)
+        plot!(p4, tt, filt_out.ve_std[i]; lab = "filter 1-σ", lc = :blue)
+        plot!(p4, tt, -filt_out.ve_std[i]; lab = false, lc = :blue)
         show_plot && display(p4)
         save_plot && png(p4, "east_velocity_error.png")
 
     end
 
     # p5 = plot(xlab = "time [min]", ylab = "altitude error [m]", dpi = dpi)
-    # plot!(p5, tt, filt_out.alt_err[i], lab = "filter error", lc = :black, lw = 2)
-    # plot!(p5, tt, filt_out.alt_std[i], lab = "filter 1-σ", lc = :blue)
-    # plot!(p5, tt, -filt_out.alt_std[i], lab =  lab=false , lc = :blue)
-    # plot!(p5, tt, crlb_out.alt_std[i], lab = "CRLB 1-σ", lc = :red, ls = :dash)
-    # plot!(p5, tt, -crlb_out.alt_std[i], lab = false, lc = :red, ls = :dash)
+    # plot!(p5, tt, filt_out.alt_err[i]; lab = "filter error", lc = :black, lw = 2)
+    # plot!(p5, tt, filt_out.alt_std[i]; lab = "filter 1-σ", lc = :blue)
+    # plot!(p5, tt, -filt_out.alt_std[i]; lab =  lab=false , lc = :blue)
+    # plot!(p5, tt, crlb_out.alt_std[i]; lab = "CRLB 1-σ", lc = :red, ls = :dash)
+    # plot!(p5, tt, -crlb_out.alt_std[i]; lab = false, lc = :red, ls = :dash)
     # show_plot && display(p5)
     # save_plot && png(p5, "altitude_error.png")
 
     # p6 = plot(xlab = "time [min]", ylab = "down velocity error [m/s]", dpi = dpi)
-    # plot!(p6, tt, filt_out.vd_err[i], lab = "filter error", lc = :black, lw = 2)
-    # plot!(p6, tt, filt_out.vd_std[i], lab = "filter 1-σ", lc = :blue)
-    # plot!(p6, tt, -filt_out.vd_std[i], lab = false, lc = :blue)
+    # plot!(p6, tt, filt_out.vd_err[i]; lab = "filter error", lc = :black, lw = 2)
+    # plot!(p6, tt, filt_out.vd_std[i]; lab = "filter 1-σ", lc = :blue)
+    # plot!(p6, tt, -filt_out.vd_std[i]; lab = false, lc = :blue)
     # show_plot && display(p6)
     # save_plot && png(p6, "down_velocity_error.png")
 
     # p7 = plot(xlab = "time [min]", ylab = "north tilt error [deg]", dpi = dpi)
-    # plot!(p7, tt, rad2deg.(filt_out.tn_err[i]), lab = "filter error", lc = :black, lw = 2)
-    # plot!(p7, tt, rad2deg.(filt_out.tn_std[i]), lab = "filter 1-σ", lc = :blue)
-    # plot!(p7, tt, -rad2deg.(filt_out.tn_std[i]), lab = false, lc = :blue)
+    # plot!(p7, tt, rad2deg.(filt_out.tn_err[i]); lab = "filter error", lc = :black, lw = 2)
+    # plot!(p7, tt, rad2deg.(filt_out.tn_std[i]); lab = "filter 1-σ", lc = :blue)
+    # plot!(p7, tt, -rad2deg.(filt_out.tn_std[i]); lab = false, lc = :blue)
     # show_plot && display(p7)
     # save_plot && png(p7, "north_tilt_error.png")
 
     # p8 = plot(xlab = "time [min]", ylab = "east tilt error [deg]", dpi = dpi)
-    # plot!(p8, tt, rad2deg.(filt_out.te_err[i]), lab = "filter error", lc = :black, lw = 2)
-    # plot!(p8, tt, rad2deg.(filt_out.te_std[i]), lab = "filter 1-σ", lc = :blue)
-    # plot!(p8, tt, -rad2deg.(filt_out.te_std[i]), lab = false, lc = :blue)
+    # plot!(p8, tt, rad2deg.(filt_out.te_err[i]); lab = "filter error", lc = :black, lw = 2)
+    # plot!(p8, tt, rad2deg.(filt_out.te_std[i]); lab = "filter 1-σ", lc = :blue)
+    # plot!(p8, tt, -rad2deg.(filt_out.te_std[i]); lab = false, lc = :blue)
     # show_plot && display(p8)
     # save_plot && png(p8, "east_tilt_error.png")
 
     # p9 = plot(xlab = "time [min]", ylab = "down tilt error [deg]", dpi = dpi)
-    # plot!(p9, tt, rad2deg.(filt_out.td_err[i]), lab = "filter error", lc = :black, lw = 2)
-    # plot!(p9, tt, rad2deg.(filt_out.td_std[i]), lab = "filter 1-σ", lc = :blue)
-    # plot!(p9, tt, -rad2deg.(filt_out.td_std[i]), lab = false, lc = :blue)
+    # plot!(p9, tt, rad2deg.(filt_out.td_err[i]); lab = "filter error", lc = :black, lw = 2)
+    # plot!(p9, tt, rad2deg.(filt_out.td_std[i]); lab = "filter 1-σ", lc = :blue)
+    # plot!(p9, tt, -rad2deg.(filt_out.td_std[i]); lab = false, lc = :blue)
     # show_plot && display(p9)
     # save_plot && png(p9, "down_tilt_error.png")
 
     # p10 = plot(xlab = "time [min]", ylab = "barometer aiding altitude σ [m]", dpi = dpi)
-    # plot!(p10, tt, filt_out.ha_std[i], lab = "filter 1-σ", lc = :blue)
-    # plot!(p10, tt, -filt_out.ha_std[i], lab = false, lc = :blue)
+    # plot!(p10, tt, filt_out.ha_std[i]; lab = "filter 1-σ", lc = :blue)
+    # plot!(p10, tt, -filt_out.ha_std[i]; lab = false, lc = :blue)
     # show_plot && display(p10)
     # save_plot && png(p10, "barometer_aiding_altitude_σ.png")
 
     # p11 = plot(xlab = "time [min]", ylab = "barometer aiding vertical accel σ [m/s^2]", dpi = dpi)
-    # plot!(p11, tt, filt_out.ah_std[i], lab = "filter 1-σ", lc = :blue)
-    # plot!(p11, tt, -filt_out.ah_std[i], lab = false, lc = :blue)
+    # plot!(p11, tt, filt_out.ah_std[i]; lab = "filter 1-σ", lc = :blue)
+    # plot!(p11, tt, -filt_out.ah_std[i]; lab = false, lc = :blue)
     # show_plot && display(p11)
     # save_plot && png(p11, "barometer_aiding_vertical_accel_σ.png")
 
     # p12 = plot(xlab = "time [min]", ylab = "accelerometer bias σ [m/s^2]", dpi = dpi)
-    # plot!(p12, tt, filt_out.ax_std[i], lab = "x")
-    # plot!(p12, tt, filt_out.ay_std[i], lab = "y")
-    # plot!(p12, tt, filt_out.az_std[i], lab = "z")
+    # plot!(p12, tt, filt_out.ax_std[i]; lab = "x")
+    # plot!(p12, tt, filt_out.ay_std[i]; lab = "y")
+    # plot!(p12, tt, filt_out.az_std[i]; lab = "z")
     # show_plot && display(p12)
     # save_plot && png(p12, "accelerometer_bias_σ.png")
 
     # p13 = plot(xlab = "time [min]", ylab = "gyroscope bias σ [rad/s]", dpi = dpi)
-    # plot!(p13, tt, filt_out.gx_std[i], lab = "x")
-    # plot!(p13, tt, filt_out.gy_std[i], lab = "y")
-    # plot!(p13, tt, filt_out.gz_std[i], lab = "z")
+    # plot!(p13, tt, filt_out.gx_std[i]; lab = "x")
+    # plot!(p13, tt, filt_out.gy_std[i]; lab = "y")
+    # plot!(p13, tt, filt_out.gz_std[i]; lab = "z")
     # show_plot && display(p13)
     # save_plot && png(p13, "gyroscope_bias_σ.png")
 
@@ -817,11 +817,11 @@ function plot_mag_map(path::Path, mag, itp_mapS;
 
     p1 = plot(xlab = "time [min]", ylab = "magnetic field [nT]", dpi = dpi)
     if order == :magmap
-        plot!(p1, tt, mag_val, lab = lab)
-        plot!(p1, tt, map_val, lab = "anomaly map")
+        plot!(p1, tt, mag_val; lab = lab)
+        plot!(p1, tt, map_val; lab = "anomaly map")
     elseif order == :mapmag
-        plot!(p1, tt, map_val, lab = "anomaly map")
-        plot!(p1, tt, mag_val, lab = lab)
+        plot!(p1, tt, map_val; lab = "anomaly map")
+        plot!(p1, tt, mag_val; lab = lab)
     else
         error("order $order not defined")
     end
@@ -878,12 +878,12 @@ function plot_mag_map_err(path::Path, mag, itp_mapS;
 
     map_val = itp_mapS.(path.lat[i], path.lon[i], path.alt[i])
 
-    plot!(p1, tt, f(mag[i] - map_val), lab = lab)
+    plot!(p1, tt, f(mag[i] - map_val); lab = lab)
 
     show_plot && display(p1)
     save_plot && png(p1, plot_png)
 
-    err = round(std(mag[i] - map_val), digits = 2)
+    err = round(std(mag[i] - map_val); digits = 2)
     @info("mag-map error standard deviation = $err nT")
 
     return (p1)
@@ -951,7 +951,7 @@ function plot_autocor(x::Vector,
     dts  = 0:dt:dt_max
     lags = round.(Int, dts / dt)
     x_ac = autocor(x, lags)
-    p1   = plot(dts, x_ac, lab = false)
+    p1   = plot(dts, x_ac; lab = false)
 
     show_plot && display(p1)
     save_plot && png(p1, plot_png)
@@ -1107,20 +1107,20 @@ function conf_ellipse!(p1::Plot, P;
     k = sqrt(chisq_q(conf, 2)) # compute quantile for desired percentile
     b_e # backend
     if lim isa Nothing
-        plot!(p1, xlab = xlab, ylab = ylab,
+        plot!(p1; xlab = xlab, ylab = ylab,
               legend = false, aspect_ratio = :equal, margin = margin*mm,
               axis = axis, xticks = axis, yticks = axis, grid = axis, bg = bg_color)
     else
-        plot!(p1, xlim = xlim, ylim = ylim, xlab = xlab, ylab = ylab,
+        plot!(p1; xlim = xlim, ylim = ylim, xlab = xlab, ylab = ylab,
               legend = false, aspect_ratio = :equal, margin = margin*mm,
               axis = axis, xticks = axis, yticks = axis, grid = axis, bg = bg_color)
     end
 
     (x, y) = points_ellipse(P; clip = clip, n = n)
-    plot!(p1, μ[1] .+ k * x, μ[2] .+ k * y, lc = ce_color, lw = 2)
+    plot!(p1, μ[1] .+ k * x, μ[2] .+ k * y; lc = ce_color, lw = 2)
     if plot_eigax
-        plot!(p1, [-k, k] * eigax[1, 1], [-k, k] * eigax[1, 2], lc = :red, ls = :dash, lw = 1)
-        plot!(p1, [-k, k] * eigax[2, 1], [-k, k] * eigax[2, 2], lc = :red, ls = :dash, lw = 2)
+        plot!(p1, [-k, k] * eigax[1, 1], [-k, k] * eigax[1, 2]; lc = :red, ls = :dash, lw = 1)
+        plot!(p1, [-k, k] * eigax[2, 1], [-k, k] * eigax[2, 2]; lc = :red, ls = :dash, lw = 2)
     end
 
     return (nothing)
