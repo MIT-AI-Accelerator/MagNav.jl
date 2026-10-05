@@ -1258,7 +1258,7 @@ function get_XYZ20(xyz_h5::String;
 
     # INS specific forces from measurements, rotated wander angle (CW for NED)
     ins_f = zeros(Float64, N, 3)
-    for i = 1:N
+    for i in 1:N
         ins_f[i, :] = euler2dcm(0, 0, -d[:ins_wander][i], :body2nav) *
                       [d[:ins_acc_x][i], -d[:ins_acc_y][i], -d[:ins_acc_z][i]]
     end
@@ -1449,7 +1449,7 @@ function get_XYZ21(xyz_h5::String;
 
     # INS specific forces from measurements, rotated wander angle (CW for NED)
     ins_f = zeros(Float64, N, 3)
-    for i = 1:N
+    for i in 1:N
         ins_f[i, :] = euler2dcm(0, 0, -d[:ins_wander][i], :body2nav) *
                       [d[:ins_acc_x][i], -d[:ins_acc_y][i], -d[:ins_acc_z][i]]
     end

@@ -154,8 +154,8 @@ function plot_mag(xyz::XYZ;
     xlab = "time [min]"
 
     fields   = fieldnames(typeof(xyz))
-    list_c   = [Symbol("mag_", i, "_c") for i = 1:num_mag_max]
-    list_uc  = [Symbol("mag_", i, "_uc") for i = 1:num_mag_max]
+    list_c   = [Symbol("mag_", i, "_c") for i in 1:num_mag_max]
+    list_uc  = [Symbol("mag_", i, "_uc") for i in 1:num_mag_max]
     mags_c   = list_c[list_c .∈ (fields,)]
     mags_uc  = list_uc[list_uc .∈ (fields,)]
     mags_c_  = findall((list_c .∈ (fields,)) .& (list_uc .∈ (fields,)))
@@ -340,7 +340,7 @@ function plot_mag_c(xyz::XYZ, xyz_comp::XYZ;
     end
 
     fields  = fieldnames(typeof(xyz))
-    list_uc = [Symbol("mag_", i, "_uc") for i = 1:num_mag_max]
+    list_uc = [Symbol("mag_", i, "_uc") for i in 1:num_mag_max]
     mags_uc = list_uc[list_uc .∈ (fields,)]
 
     :all_mags in use_mags && (use_mags = mags_uc)
@@ -685,7 +685,7 @@ function plot_correlation_matrix(x::AbstractMatrix, features::Vector{Symbol};
     @assert Nf <= Nf_max "number of features = $Nf > $Nf_max"
 
     p_ = []
-    for j = 2:Nf, i = 1:(Nf - 1)
+    for j in 2:Nf, i in 1:(Nf - 1)
         if j > i
             xlab   = j == Nf ? features[i] : ""
             ylab   = i == 1 ? features[j] : ""

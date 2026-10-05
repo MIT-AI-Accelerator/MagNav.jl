@@ -90,7 +90,7 @@ function mpf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS;
 
     map_cache = itp_mapS isa Map_Cache ? itp_mapS : nothing
 
-    for t = 1:N
+    for t in 1:N
         # custom itp_mapS from map cache, if available
         if map_cache isa Map_Cache
             itp_mapS = get_cached_map(map_cache, lat[t], lon[t], alt[t]; silent = true)
@@ -113,7 +113,7 @@ function mpf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS;
 
         # particle update                                                       # eq 25a
         V = H * Pl * H' .+ R
-        for i = 1:ny
+        for i in 1:ny
             q = q .* exp.(-0.5 * (e[i, :] .* (1 / V[i, i]) .* e[i, :])) # weight particles
             # weighting only works for NON-correlated measurements
         end
@@ -122,7 +122,7 @@ function mpf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS;
             q = q / sum(q) # normalize particle weights
 
             # store non-linear particle states
-            for i = 1:nxn
+            for i in 1:nxn
                 x_out[i, t] = sum(q .* xn[i, :])
             end
 
@@ -152,7 +152,7 @@ function mpf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS;
         xl = xl + K * e                                                         # eq 22a
 
         # store linear particle states
-        for i = 1:nxl
+        for i in 1:nxl
             x_out[nxn + i, t] = sum(q .* xl[i, :])
         end
 
@@ -255,7 +255,7 @@ function sys_resample(q)
     i  = zeros(Int, np)
     k  = 1
 
-    for j = 1:np
+    for j in 1:np
         while (qc[k] < u[j]) & (k < np)
             k += 1
         end

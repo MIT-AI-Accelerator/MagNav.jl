@@ -504,7 +504,7 @@ function create_ins(traj::Traj;
     err[:, 1]  = rand(MvNormal(P0), 1) # mean = 0, covariance = P0
     Q_chol     = chol(Qd)
 
-    for k = 1:(N - 1)
+    for k in 1:(N - 1)
         Phi = get_Phi(nx, traj.lat[k], traj.vn[k], traj.ve[k], traj.vd[k],
                       traj.fn[k], traj.fe[k], traj.fd[k], traj.Cnb[:, :, k],
                       baro_tau, acc_tau, gyro_tau, 0, dt; fogm_state = false)
@@ -821,7 +821,7 @@ function create_flux(lat, lon,
     Bt = sqrt.(Bx .^ 2 + By .^ 2 + Bz .^ 2)
 
     # put measurements into body frame
-    for i = 1:N
+    for i in 1:N
         (Bx[i], By[i], Bz[i]) = Cnb[:, :, i]' * [Bx[i], By[i], Bz[i]]
     end
 

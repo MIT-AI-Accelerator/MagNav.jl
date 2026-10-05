@@ -264,7 +264,7 @@ function eval_crlb(traj::Traj, crlb_P::Array)
 
     N = traj.N
     N_fields = length(fieldnames(CRLBout))
-    crlb_out = CRLBout((zeros(Float64, N) for _ = 1:N_fields)...)
+    crlb_out = CRLBout((zeros(Float64, N) for _ in 1:N_fields)...)
 
     crlb_out.lat_std  .= sqrt.(crlb_P[1, 1, :])
     crlb_out.lon_std  .= sqrt.(crlb_P[2, 2, :])
@@ -304,7 +304,7 @@ function eval_ins(traj::Traj, ins::INS)
 
     N        = traj.N
     N_fields = length(fieldnames(INSout))
-    ins_out  = INSout((zeros(Float64, N) for _ = 1:N_fields)...)
+    ins_out  = INSout((zeros(Float64, N) for _ in 1:N_fields)...)
 
     if !iszero(ins.P)
         ins_out.lat_std .= sqrt.(ins.P[1, 1, :])
@@ -344,7 +344,7 @@ function eval_filt(traj::Traj, ins::INS, filt_res::FILTres)
     N = traj.N
     dt = traj.dt
     N_fields = length(fieldnames(FILTout))
-    filt_out = FILTout(N, dt, (zeros(Float64, N) for _ = 1:(N_fields - 2))...)
+    filt_out = FILTout(N, dt, (zeros(Float64, N) for _ in 1:(N_fields - 2))...)
 
     #! format: off
     filt_out.tt   .= traj.tt
@@ -401,7 +401,7 @@ function eval_filt(traj::Traj, ins::INS, filt_res::FILTres)
     e_tilt = zeros(eltype(filt_out.lat), N)
     d_tilt = zeros(eltype(filt_out.lat), N)
 
-    for k = 1:N
+    for k in 1:N
         tilt_temp = ins.Cnb[:, :, k] * traj.Cnb[:, :, k]'
         n_tilt[k] = tilt_temp[3, 2] # ≈ -tilt_temp[2, 3]
         e_tilt[k] = tilt_temp[1, 3] # ≈ -tilt_temp[3, 1]
@@ -1319,7 +1319,7 @@ function gif_ellipse(P,
     P  = units_ellipse(P; conf_units = conf_units, lat1 = lat1)
     a1 = Animation()
 
-    for i = 1:di:size(P, 3)
+    for i in 1:di:size(P, 3)
         p1 = conf_ellipse(P[:, :, i];
                           μ          = μ,
                           conf       = conf,
@@ -1440,7 +1440,7 @@ function gif_ellipse(filt_res::FILTres,
     P  = units_ellipse(filt_res, filt_out; conf_units = conf_units)
     a1 = Animation()
 
-    for i = 1:di:size(P, 3)
+    for i in 1:di:size(P, 3)
 
         if !any(iszero.([dx, dy]) .| isnan.([dx, dy]))
             xi = findmin(abs.(map_map.xx .- filt_out.lon[i]))[2]

@@ -82,7 +82,7 @@ function ekf_online(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
 
     map_cache = itp_mapS isa Map_Cache ? itp_mapS : nothing
 
-    for t = 1:N
+    for t in 1:N
         # custom itp_mapS from map cache, if available
         if map_cache isa Map_Cache
             itp_mapS = get_cached_map(map_cache, lat[t], lon[t], alt[t]; silent = true)
@@ -267,7 +267,7 @@ function ekf_online_setup(flux::MagV, meas,
     @assert N >= N_min "increase N_sigma to $N_min or use more data"
 
     coef_set = zeros(eltype(A), size(A, 2), N)
-    for i = 1:N
+    for i in 1:N
         coef_set[:, i] = create_TL_coef(flux, meas, inds[i:(end + i - N)];
                                         Bt = Bt, λ = λ, terms = terms, pass1 = pass1,
                                         pass2 = pass2, fs = fs, pole = pole, trim = trim,

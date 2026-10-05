@@ -492,7 +492,7 @@ drop_fi_bson = MagNav.remove_extension(drop_fi_bson, ".bson")
 drop_fi_csv  = MagNav.add_extension(drop_fi_csv, ".csv")
 perm_fi_csv  = MagNav.add_extension(perm_fi_csv, ".csv")
 
-[rm(drop_fi_bson*"_$i.bson") for i = 1:10]
+[rm(drop_fi_bson*"_$i.bson") for i in 1:10]
 rm(drop_fi_csv)
 rm(perm_fi_csv)
 rm(map_h5)

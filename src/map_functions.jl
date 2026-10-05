@@ -183,7 +183,7 @@ function (mapS3D::MapS3D)(alt::Real = mapS3D.alt[1])
         map_map  = zero.(mapS3D.map[:, :, 1])
         map_mask = zero.(mapS3D.mask[:, :, 1])
         (ny, nx) = size(map_map)
-        for i = 1:nx, j = 1:ny
+        for i in 1:nx, j in 1:ny
             itp_map = interpolate(map_3D[j, i, :], BSpline(Linear()))
             itp_mask = interpolate(mask_3D[j, i, :], BSpline(Linear()))
             map_map[j, i] = scale(itp_map, alt_lev)(alt)
@@ -648,7 +648,7 @@ function map_correct_igrf!(map_map::Matrix, map_alt,
 
         @info("starting igrf")
 
-        for i = 1:nx, j = 1:ny # time consumer
+        for i in 1:nx, j in 1:ny # time consumer
             if ind1[j, i]
 
                 if map_units == :utm
@@ -978,7 +978,7 @@ function map_chessboard!(map_map::Matrix, map_alt::Matrix, map_xx::Vector,
 
     @info("starting upward and/or downward continuation with $nz levels")
 
-    for k = 1:nz # time consumer
+    for k in 1:nz # time consumer
         if k == k0
             map_3D[:, :, k] = float.(map_map)
         else
@@ -990,7 +990,7 @@ function map_chessboard!(map_map::Matrix, map_alt::Matrix, map_xx::Vector,
     @info("starting chessboard interpolation")
 
     # interpolate vertical direction at each grid point
-    for i = 1:nx, j = 1:ny
+    for i in 1:nx, j in 1:ny
         if alt < alt_lev[1] + map_alt[j, i] # desired map below data
             map_map[j, i] = map_3D[j, i, 1] # take lowest (closest) value
         elseif alt_lev[end] + map_alt[j, i] < alt # desired map above data
@@ -1109,7 +1109,7 @@ function map_utm2lla!(map_map::Matrix, map_xx::Vector, map_yy::Vector,
 
     # interpolate original (UTM) map with grid for new (LLA) map
     lla2utm = UTMfromLLA(zone_utm, is_north, WGS84)
-    for i = 1:nx, j = 1:ny
+    for i in 1:nx, j in 1:ny
         utm = lla2utm(LLA(map_yy[j], map_xx[i]))
         if itp_ind1(utm.y, utm.x) ≈ 1
             @inbounds map_map[j, i] = itp_map(utm.y, utm.x)
@@ -1960,7 +1960,7 @@ function map_clims(c, map_map::Matrix)
         bcen  = sort(map_map[map_mask])[indc] # bin centers
         bwid  = fdm(bcen) # bin widths
         nc    = round.(Int, bwid/minimum(bwid)) # times to repeat each color
-        c     = cgrad([c[i] for i = 1:lc for j = 1:nc[i]]) # new color scale
+        c     = cgrad([c[i] for i in 1:lc for j in 1:nc[i]]) # new color scale
         clims = (bcen[1] - bwid[1]/2, bcen[end] + bwid[end]/2) # colorbar limits
     else
         clims = extrema(map_map)
@@ -2368,7 +2368,7 @@ function map_check(map_map::Map, lat, lon, alt = fill(median(map_map.alt), size(
     alt_lim = extrema(map_map.alt)
     N       = length(lat)
     val     = trues(N)
-    for i = 1:N
+    for i in 1:N
         xx_lim[1] < lon[i] < xx_lim[2] || (val[i] = false)
         yy_lim[1] < lat[i] < yy_lim[2] || (val[i] = false)
         if map_map isa Union{MapS, MapSd, MapV}
@@ -2638,29 +2638,29 @@ function map_border(map_map::Matrix, map_xx::Vector, map_yy::Vector;
 
     # non-empty point along left/right edge of original map area
     for i in [2, Nx-1]
-        for j = 2:(Ny - 1)
+        for j in 2:(Ny - 1)
             ind[j, i] = ind1[j, i]
         end
     end
 
     # non-empty point along top/bottom edge of original map area
-    for i = 2:(Nx - 1)
+    for i in 2:(Nx - 1)
         for j in [2, Ny-1]
             ind[j, i] = ind1[j, i]
         end
     end
 
     if inner # non-empty point next to empty point(s)
-        for i = 2:(Nx - 1)
-            for j = 2:(Ny - 1)
+        for i in 2:(Nx - 1)
+            for j in 2:(Ny - 1)
                 if ind1[j, i]
                     ind[j, i] = any(ind0[(j - 1):(j + 1), (i - 1):(i + 1)])
                 end
             end
         end
     else # empty point next to non-empty point(s)
-        for i = 2:(Nx - 1)
-            for j = 2:(Ny - 1)
+        for i in 2:(Nx - 1)
+            for j in 2:(Ny - 1)
                 if ind0[j, i]
                     ind[j, i] = any(ind1[(j - 1):(j + 1), (i - 1):(i + 1)])
                 end
@@ -2773,8 +2773,8 @@ function map_border_singles(ind::BitMatrix)
     sum_ind = 0
     while sum_ind != sum(ind)
         sum_ind = sum(ind)
-        for i = 2:(Nx - 1)
-            for j = 2:(Ny - 1)
+        for i in 2:(Nx - 1)
+            for j in 2:(Ny - 1)
                 if ind[j, i]
                     ind[j, i] = sum(ind[j, [i-1, i+1]]+ind[[j-1, j+1], i]) > 1
                 end
@@ -2803,8 +2803,8 @@ function map_border_doubles(ind::BitMatrix)
     sum_ind = 0
     while sum_ind != sum(ind)
         sum_ind = sum(ind)
-        for i = 3:(Nx - 1)
-            for j = 3:(Ny - 1)
+        for i in 3:(Nx - 1)
+            for j in 3:(Ny - 1)
                 if ind[j, i]
                     if all(ind[(j - 1):j, i])
                         ind[(j - 1):j, i] .= sum(ind[(j - 1):j, i-1]+ind[[j-2, j+1], i]) > 0
@@ -3000,7 +3000,7 @@ function map_combine(mapS::MapS,
     map_map[ind_yy, ind_xx] = mapS.map .* mapS.mask
     map_mask[ind_yy, ind_xx] = mapS.mask
     (ind0, _, nx, ny) = map_params(map_map)
-    for i = 1:nx, j = 1:ny
+    for i in 1:nx, j in 1:ny
         ind0[j, i] && (map_map[j, i] = itp_mapS(map_yy[j], map_xx[i]))
     end
 

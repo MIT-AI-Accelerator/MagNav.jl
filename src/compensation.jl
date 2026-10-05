@@ -145,7 +145,7 @@ function nn_comp_1_train(x, y,
                                                              silent = silent_debug)[2]))
 
     silent || @info("epoch 0: loss = $best_loss")
-    for i = 1:epoch_adam
+    for i in 1:epoch_adam
         Flux.train!(lossf, s, data_train, opt)
         current_loss = loss_all(s, data_val)
         # update NN model weights for lowest validation loss or lowest test error
@@ -496,7 +496,7 @@ function nn_comp_2_train(A, x, y,
                                                              silent       = silent_debug)[2]))
 
     silent || @info("epoch 0: loss = $best_loss")
-    for i = 1:epoch_adam
+    for i in 1:epoch_adam
         Flux.train!(lossf, s, data_train, opt)
         current_loss = loss_all(s, data_val)
         if isempty(x_test)
@@ -960,7 +960,7 @@ function get_temporal_data(x_norm::AbstractMatrix, l_segs::Vector, l_window::Int
 
         x_w_ = zeros(eltype(x_norm), Nf, l_window, N_)
 
-        for j = 1:N_
+        for j in 1:N_
             j1 = max(1, j - l_window + 1)
             j2 = j1 + l_window - j
             x_w_[:, 1:(j2 - 1), j] .= x_norm[:, l0_[i] .+ (j1)]
@@ -1354,7 +1354,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y,
 
     epoch_adam_cur = ceil.(Int, epoch_adam * [1, 2, 3, 6] / 10)
     silent || @info("epoch 0: loss = $best_loss")
-    for i = 1:epoch_adam
+    for i in 1:epoch_adam
         if (model_type in [:m3sc, :m3vc]) & (i in [1, epoch_adam_cur...])
             if i == 1
                 Flux.freeze!(opt.m)
@@ -1791,7 +1791,7 @@ function plsr_fit(x, y,
     Cxx = cov(x_norm)                      # Nf x Nf
     Cyx = collect(cov(y_norm, x_norm))     # Ny x Nf
 
-    for i = 1:k
+    for i in 1:k
 
         # unit vectors that maximize correlation between input & output scores
         (U, _, V) = svd(Cyx')          # Nf x Ny , _ , Ny x Ny
