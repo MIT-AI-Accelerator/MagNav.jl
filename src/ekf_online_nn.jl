@@ -66,7 +66,7 @@ function ekf_online_nn(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas,
 
     map_cache = itp_mapS isa Map_Cache ? itp_mapS : nothing
 
-    for t = 1:N
+    for t in 1:N
         # custom itp_mapS from map cache, if available
         if map_cache isa Map_Cache
             itp_mapS = get_cached_map(map_cache, lat[t], lon[t], alt[t]; silent = true)
@@ -246,7 +246,7 @@ function ekf_online_nn_setup(x, y, m, y_norms; N_sigma::Int = 1000)
     (w_nn, re) = destructure(m) # weights, restructure
     w_nn_store = zeros(eltype(w_nn), length(w_nn), N_sigma) # initialize weights matrix
     P = I(length(w_nn)) # initialize covariance matrix
-    for i = 1:N_sigma   # run recursive least squares
+    for i in 1:N_sigma   # run recursive least squares
         m = re(w_nn)
         K = P * w_nn / (1 + w_nn' * P * w_nn)
         P -= P * w_nn * w_nn' * P / (1 + w_nn' * P * w_nn)

@@ -147,7 +147,7 @@ function xyz2h5(data::Array, xyz_h5::String, flight::Symbol;
     ind_sort = tt_sort ? sortperm(data[ind, ind_tt]) : 1:N # sorting order
 
     # write other data fields
-    for i = 1:Nf
+    for i in 1:Nf
         fields[i] != :ignore && write_field(xyz_h5, fields[i],
                                             data[ind, i][ind_sort, 1])
     end

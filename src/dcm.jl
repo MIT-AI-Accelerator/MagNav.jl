@@ -161,7 +161,7 @@ function correct_Cnb(Cnb, tilt_err)
 
     N = size(tilt_err, 2)
     Cnb_estimate = zeros(Float64, 3, 3, N)
-    for i = 1:N
+    for i in 1:N
         m = norm(tilt_err[:, i])
         if m != 0
             s = [              0 -tilt_err[3, i]  tilt_err[2, i]

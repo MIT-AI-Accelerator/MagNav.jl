@@ -188,7 +188,7 @@ begin
     err_train = zeros(k_max)
     err_test  = zeros(k_max)
     coef_set  = plsr_fit(x, y, k_max; return_set = true)
-    for k = 1:k_max
+    for k in 1:k_max
         y_train_hat_norm = vec(x   * coef_set[:, :, k])
         y_test_hat_norm  = vec(x_t * coef_set[:, :, k])
         (y_train_hat, y_test_hat) = denorm_sets(y_bias, y_scale,

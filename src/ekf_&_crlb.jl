@@ -75,7 +75,7 @@ function ekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS;
 
     map_cache = itp_mapS isa Map_Cache ? itp_mapS : nothing
 
-    for t = 1:N
+    for t in 1:N
         # custom itp_mapS from map cache, if available
         if map_cache isa Map_Cache
             itp_mapS = get_cached_map(map_cache, lat[t], lon[t], alt[t]; silent = true)
@@ -374,7 +374,7 @@ function crlb(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, dt, itp_mapS;
     length(R) == 2 && (R = mean(R))
     map_cache = itp_mapS isa Map_Cache ? itp_mapS : nothing
 
-    for t = 1:N
+    for t in 1:N
         # custom itp_mapS from map cache, if available
         if map_cache isa Map_Cache
             itp_mapS = get_cached_map(map_cache, lat[t], lon[t], alt[t]; silent = true)

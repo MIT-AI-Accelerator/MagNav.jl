@@ -69,7 +69,7 @@ function nekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS,
     P = P0 # covariance matrix
     map_cache = itp_mapS isa Map_Cache ? itp_mapS : nothing
 
-    for t = 1:N
+    for t in 1:N
         # custom itp_mapS from map cache, if available
         if map_cache isa Map_Cache
             itp_mapS = get_cached_map(map_cache, lat[t], lon[t], alt[t]; silent = true)
@@ -323,12 +323,12 @@ function nekf_train(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt,
 
     x_seqs = chunk_data(Float32.(x_nn), zero(lat), l_window)[1]
     y_seqs = chunk_data(Float32.(y_nn), zero(lat), l_window)[1]
-    N_seqs = [[N_nn;;] for N_nn = l_window:l_window:N]
+    N_seqs = [[N_nn;;] for N_nn in l_window:l_window:N]
 
     # pre-compute Phi
     N   = length(lat)
     Phi = zeros(Float64, 18, 18, N)
-    for t = 1:N
+    for t in 1:N
         Phi[:, :, t] = get_Phi(size(Phi)[1], lat[t], vn[t], ve[t], vd[t],
                                fn[t], fe[t], fd[t], Cnb[:, :, t],
                                baro_tau, acc_tau, gyro_tau, fogm_tau, dt)
@@ -344,7 +344,7 @@ function nekf_train(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt,
         R_nn = m(x_nn) # pre-compute R correction
 
         l = 0
-        for i = 1:N
+        for i in 1:N
             t = N_nn[1] - N + i
             (P, x) = ekf_single(lat[t], lon[t], alt[t], Phi[:, :, t], meas[t],
                                 itp_mapS, P, Qd, R, R_nn[i], x; date = date, core = core)
@@ -360,7 +360,7 @@ function nekf_train(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt,
     opt = Flux.setup(Adam(η_adam), m)
 
     # train RNN with Adam optimizer
-    for _ = 1:epoch_adam
+    for _ in 1:epoch_adam
         Flux.train!(loss, m, zip(x_seqs, y_seqs, N_seqs), opt)
         println("loss: ", sum(loss.((m,), x_seqs, y_seqs, N_seqs)))
     end

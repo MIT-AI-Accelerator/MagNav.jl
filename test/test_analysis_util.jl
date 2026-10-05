@@ -312,27 +312,27 @@ end
     north_vec_nav = vec([1.0, 0.0, 0.0])
 
     # check that north in 3D stays north in 2D (repeated for cardinal directions)
-    north_vec_body = [Cnb[:, :, i]'*north_vec_nav for i = 1:size(Cnb)[3]]
+    north_vec_body = [Cnb[:, :, i]'*north_vec_nav for i in 1:size(Cnb)[3]]
     n2ds = [project_body_field_to_2d_igrf(north_vec_body[i], north_vec_nav, Cnb[:, :, i])
-            for i = 1:size(Cnb)[3]]
+            for i in 1:size(Cnb)[3]]
     @test all(map(v -> v ≈ [1.0, 0.0], n2ds))
 
     east_vec_nav  = vec([0.0, 1.0, 0.0])
-    east_vec_body = [Cnb[:, :, i]'*east_vec_nav for i = 1:size(Cnb)[3]]
+    east_vec_body = [Cnb[:, :, i]'*east_vec_nav for i in 1:size(Cnb)[3]]
     e2ds          = [project_body_field_to_2d_igrf(east_vec_body[i], north_vec_nav, Cnb[:, :, i])
-    for i = 1:size(Cnb)[3]]
+    for i in 1:size(Cnb)[3]]
     @test all(map(v -> v ≈ [0.0, 1.0], e2ds))
 
     west_vec_nav  = vec([0.0, -1.0, 0.0])
-    west_vec_body = [Cnb[:, :, i]'*west_vec_nav for i = 1:size(Cnb)[3]]
+    west_vec_body = [Cnb[:, :, i]'*west_vec_nav for i in 1:size(Cnb)[3]]
     w2ds          = [project_body_field_to_2d_igrf(west_vec_body[i], north_vec_nav, Cnb[:, :, i])
-    for i = 1:size(Cnb)[3]]
+    for i in 1:size(Cnb)[3]]
     @test all(map(v -> v ≈ [0.0, -1.0], w2ds))
 
     south_vec_nav  = vec([-1.0, 0.0, 0.0])
-    south_vec_body = [Cnb[:, :, i]'*south_vec_nav for i = 1:size(Cnb)[3]]
+    south_vec_body = [Cnb[:, :, i]'*south_vec_nav for i in 1:size(Cnb)[3]]
     s2ds           = [project_body_field_to_2d_igrf(south_vec_body[i], north_vec_nav, Cnb[:, :, i])
-    for i = 1:size(Cnb)[3]]
+    for i in 1:size(Cnb)[3]]
     @test all(map(v -> v ≈ [-1.0, 0.0], s2ds))
 end
 

@@ -96,7 +96,7 @@ function upward_fft(map_map::Map, alt; expand::Bool = true, α = 0)
                 map_map = MapS3D(map_map.info,
                                  upward_fft(map_map.map, dx, dy, dz; expand = expand, α = α),
                                  map_map.xx, map_map.yy, alt,
-                                 cat((map_map.mask for _ = 1:N_alt)...; dims = 3))
+                                 cat((map_map.mask for _ in 1:N_alt)...; dims = 3))
             else
                 map_map = MapS(map_map.info,
                                upward_fft(map_map.map, dx, dy, dz; expand = expand, α = α),
@@ -142,9 +142,9 @@ function upward_fft(map_map::Map, alt; expand::Bool = true, α = 0)
         map_map = MapS3D(map_map.info,
                          cat(map_down, map_map.map, map_up; dims = 3),
                          map_map.xx, map_map.yy, [alt_down; map_map.alt; alt_up],
-                         cat((map_map.mask[:, :, 1] for _ = 1:N_down)...,
+                         cat((map_map.mask[:, :, 1] for _ in 1:N_down)...,
                              map_map.mask,
-                             (map_map.mask[:, :, end] for _ = 1:N_up)...;
+                             (map_map.mask[:, :, end] for _ in 1:N_up)...;
                              dims = 3))
 
     else
@@ -255,14 +255,14 @@ function map_expand(map_map::Matrix, pad::Int = 1)
     map_map[y1:y2, x1:x2] = map_
 
     # fill row edges (right/left)
-    for j = y1:y2
+    for j in y1:y2
         vals = LinRange(map_map[j, x1], map_map[j, x2], Nx-nx+2)[2:(end - 1)]
         map_map[j, 1:(x1 - 1)] = reverse(vals[1:padx[1]])
         map_map[j, (x2 + 1):end] = reverse(vals[(1:padx[2]) .+ padx[1]])
     end
 
     # fill column edges (top/bottom)
-    for i = 1:Nx
+    for i in 1:Nx
         vals = LinRange(map_map[y1, i], map_map[y2, i], Ny-ny+2)[2:(end - 1)]
         map_map[1:(y1 - 1), i] = reverse(vals[1:pady[1]])
         map_map[(y2 + 1):end, i] = reverse(vals[(1:pady[2]) .+ pady[1]])
@@ -278,9 +278,9 @@ Internal helper function to find the lowest 7-smooth number `y` >= `x`.
 """
 function smooth7(x::Int)
     y = 2*x
-    for i = 0:ceil(Int, log(7, x))
-        for j = 0:ceil(Int, log(5, x))
-            for k = 0:ceil(Int, log(3, x))
+    for i in 0:ceil(Int, log(7, x))
+        for j in 0:ceil(Int, log(5, x))
+            for k in 0:ceil(Int, log(3, x))
                 z = 7^i*5^j*3^k
                 z < 2*x && (y = min(y, 2^ceil(Int, log(2, x/z))*z))
             end
@@ -331,7 +331,7 @@ function downward_L(map_map::Matrix, dx, dy, dz, α::Vector;
     H         = H_temp ./ (1 .+ α[1] .* k .^ 2 .* H_temp) # filter
     map_old   = real(ifft(fft(map_map) .* H))
     map_old   = map_old[(1:ny) .+ py, (1:nx) .+ px][map_mask]
-    for i = 2:length(α)
+    for i in 2:length(α)
         H = H_temp ./ (1 .+ α[i] .* k .^ 2 .* H_temp) # filter
         map_new = real(ifft(fft(map_map) .* H))
         map_new = map_new[(1:ny) .+ py, (1:nx) .+ px][map_mask]

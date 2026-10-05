@@ -290,8 +290,8 @@ function get_x(xyz::XYZ,
     sub_igrf && (sub += xyz.igrf[ind])
 
     fields   = fieldnames(typeof(xyz))
-    list_c   = [Symbol("mag_", i, "_c") for i = 1:num_mag_max]
-    list_uc  = [Symbol("mag_", i, "_uc") for i = 1:num_mag_max]
+    list_c   = [Symbol("mag_", i, "_c") for i in 1:num_mag_max]
+    list_uc  = [Symbol("mag_", i, "_uc") for i in 1:num_mag_max]
     mags_c   = list_c[list_c .∈ (fields,)]
     mags_uc  = list_uc[list_uc .∈ (fields,)]
     mags_all = [mags_c; mags_uc]
@@ -318,7 +318,7 @@ function get_x(xyz::XYZ,
         push!(d, lab => val)
     end
 
-    for i = 1:3
+    for i in 1:3
         for mag in mags_all
             lab = Symbol(mag, "_lag_", i)
             val = getfield(xyz, mag)[ind] - sub
@@ -413,7 +413,7 @@ function get_x(xyz::XYZ,
 
         Nf = size(u, 2)
         v  = f in features_no_norm ? trues(Nf) : falses(Nf)
-        w  = Nf > 1 ? [Symbol(f, "_", i) for i = 1:Nf] : f
+        w  = Nf > 1 ? [Symbol(f, "_", i) for i in 1:Nf] : f
 
         if isnan(sum(u))
             error("$f feature contains NaNs, remove")
@@ -1718,13 +1718,13 @@ function get_ind(xyz::XYZ, line::Real, df_line::DataFrame;
         if (inds) isa Tuple
             for ind in inds
                 N_trim = length(xyz.traj.lat[ind]) % l_window
-                for _ = 1:N_trim
+                for _ in 1:N_trim
                     ind[findlast(ind .== 1)] = 0
                 end
             end
         else
             N_trim = sum(inds) % l_window
-            for _ = 1:N_trim
+            for _ in 1:N_trim
                 inds[findlast(inds .== 1)] = 0
             end
         end
@@ -1809,8 +1809,8 @@ function chunk_data(x, y, l_window::Int)
 
     N % l_window == 0 || @info("data was not trimmed for l_window = $l_window, may result in worse performance")
 
-    x_seqs = [x[:, (j-1)*l_window .+ (1:l_window)] for j = 1:N_window]
-    y_seqs = [y[(j-1)*l_window .+ (1:l_window)] for j = 1:N_window]
+    x_seqs = [x[:, (j-1)*l_window .+ (1:l_window)] for j in 1:N_window]
+    y_seqs = [y[(j-1)*l_window .+ (1:l_window)] for j in 1:N_window]
 
     return (x_seqs, y_seqs)
 end # function chunk_data
@@ -1858,7 +1858,7 @@ function predict_rnn_windowed(m, x, l_window::Int)
     # 1 2 3 4 5 6 7 8
     #     i     j
 
-    for j = 1:N
+    for j in 1:N
         i = j < l_window ? 1 : j - l_window + 1 # create window
         y_hat[j] = m(x[:, i:j])[end][1] # store last value in sequence window
     end
@@ -2159,7 +2159,7 @@ function get_igrf(xyz::XYZ,
     # Bx: north component [nT]
     # By: east  component [nT]
     # Bz: down  component [nT]
-    igrf_vec = [igrf(tt[i], alt[i], lat[i], lon[i], Val(:geodetic)) for i = 1:N]
+    igrf_vec = [igrf(tt[i], alt[i], lat[i], lon[i], Val(:geodetic)) for i in 1:N]
     if check_xyz
         lim_igrf = 1
         err_igrf = round(rms(norm.(igrf_vec) - xyz.igrf[ind]); digits = 2)
@@ -2173,7 +2173,7 @@ function get_igrf(xyz::XYZ,
     else # convert to body frame
         Cnb = iszero(xyz.traj.Cnb[:, :, ind]) ? xyz.ins.Cnb[:, :, ind] : xyz.traj.Cnb[:, :, ind] # body to navigation
         # transpose is navigation to body
-        igrf_vec_body = [Cnb[:, :, i]'*igrf_vec[i] for i = 1:N]
+        igrf_vec_body = [Cnb[:, :, i]'*igrf_vec[i] for i in 1:N]
         return (igrf_vec_body)
     end
 end # function get_igrf

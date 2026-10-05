@@ -204,7 +204,7 @@ function path2kml(lat::Vector, lon::Vector, alt::Vector,
                     "<kml xmlns=\"http://www.opengis.net/kml/2.2\" xmlns:gx=\"http://www.google.com/kml/ext/2.2\" xmlns:kml=\"http://www.opengis.net/kml/2.2\" xmlns:atom=\"http://www.w3.org/2005/Atom\"> \n",
                     "  <Document> \n",
                     "    <Folder> ")
-            for i = 1:frac:N
+            for i in 1:frac:N
                 println(file,
                         "      <Placemark> \n",
                         "        <visibility>1</visibility> \n",
@@ -279,7 +279,7 @@ function path2kml(lat::Vector, lon::Vector, alt::Vector,
                     "          <tessellate>1</tessellate> \n",
                     "          <altitudeMode>relativeToGround</altitudeMode> \n",
                     "          <coordinates> ")
-            for i = 1:frac:N
+            for i in 1:frac:N
                 println(file, "            ", lon[i], ",", lat[i], ",", alt[i])
             end
             println(file,

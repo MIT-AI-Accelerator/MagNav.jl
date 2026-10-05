@@ -693,7 +693,7 @@ function fogm(sigma, tau, dt, N)
     Q    = 2 * sigma^2 / tau
     Qd   = Q * dt
 
-    for i = 2:N
+    for i in 2:N
         x[i] = Phi * x[i - 1] + sqrt(Qd) * randn(Float64)
     end
 
