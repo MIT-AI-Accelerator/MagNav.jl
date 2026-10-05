@@ -163,7 +163,9 @@ function nn_comp_1_train(x, y,
                 best_test_error = test_error
                 m_store         = deepcopy(s.m)
             end
-            i % 5 == 0 && !silent && @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error, digits = 2)) nT")
+            if i % 5 == 0 && !silent
+                @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error, digits = 2)) nT")
+            end
         end
         if i % 10 == 0 && !silent
             train_err = std(nn_comp_1_test(x_norm, y, y_bias, y_scale, s.m;
@@ -517,7 +519,9 @@ function nn_comp_2_train(A, x, y,
                 m_store         = deepcopy(s.m)
                 TL_coef_store   = deepcopy(s.TL_coef_norm)
             end
-            i % 5 == 0 && !silent && @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error, digits = 2)) nT")
+            if i % 5 == 0 && !silent
+                @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error, digits = 2)) nT")
+            end
         end
         if i % 10 == 0 && !silent
             train_err = std(nn_comp_2_test(A_norm, x_norm, y, y_bias, y_scale, s.m;
@@ -1418,7 +1422,9 @@ function nn_comp_3_train(A, Bt, B_dot, x, y,
                 m_store         = deepcopy(s.m)
                 TL_coef_store   = deepcopy(TL_coef)
             end
-            i % 5 == 0 && !silent && @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error, digits = 2)) nT")
+            if i % 5 == 0 && !silent
+                @info("epoch $i: loss = $current_loss, test error = $(round(best_test_error, digits = 2)) nT")
+            end
         end
         if i % 10 == 0 && !silent
             train_err = std(nn_comp_3_test(B_unit, B_vec, B_vec_dot,
@@ -2695,6 +2701,7 @@ function comp_train(comp_params::CompParams, xyz_vec::Vector, ind_vec::Vector,
         x = vcat(x, x_)
         l_segs = vcat(l_segs, l_segs_)
 
+        #! format: off
         y = vcat(y, get_y(xyz, ind, map_val;
                           y_type      = y_type,
                           use_mag     = use_mag,
@@ -2706,7 +2713,7 @@ function comp_train(comp_params::CompParams, xyz_vec::Vector, ind_vec::Vector,
                                                                          use_mag     = use_mag,
                                                                          sub_diurnal = sub_diurnal,
                                                                          sub_igrf    = sub_igrf)))
-
+        #! format: on
     end
 
     y_hat = zero(y) # initialize
@@ -4158,9 +4165,12 @@ function comp_train_test(comp_params::CompParams, lines_train, lines_test,
                          temp_params::TempParams = TempParams(),
                          silent::Bool            = false)
 
-    (comp_params, y_train, y_train_hat, err_train, features) = comp_train(comp_params, lines_train, df_line, df_flight, df_map;
-                                                                          temp_params = temp_params,
-                                                                          silent      = silent)
+    #! format: off
+    (comp_params, y_train, y_train_hat, err_train, features) =
+        comp_train(comp_params, lines_train, df_line, df_flight, df_map;
+                   temp_params = temp_params,
+                   silent      = silent)
+    #! format: on
 
     (y_test, y_test_hat, err_test, _) = comp_test(comp_params, lines_test, df_line, df_flight, df_map;
                                                   temp_params = temp_params,

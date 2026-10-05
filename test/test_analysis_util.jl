@@ -354,7 +354,8 @@ end
 (B_unit, Bt, B_vec_dot) = create_TL_A(xyz.flux_a, ind; terms = [:p], return_B = true)
 B_vec = B_unit .* Bt
 (TL_coef_p, TL_coef_i, TL_coef_e) = MagNav.TL_vec2mat(TL_a_1, [:p, :i, :e])
-(TL_aircraft, TL_perm, TL_induced, TL_eddy) = MagNav.get_TL_aircraft_vec(B_vec', B_vec_dot', TL_coef_p, TL_coef_i, TL_coef_e;
+(TL_aircraft, TL_perm, TL_induced, TL_eddy) = MagNav.get_TL_aircraft_vec(B_vec', B_vec_dot',
+                                                                         TL_coef_p, TL_coef_i, TL_coef_e;
                                                                          return_parts = true)
 y_nn = zeros(3, 50)
 y = y_hat = zeros(50)
