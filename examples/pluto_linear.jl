@@ -174,8 +174,8 @@ md"Plot PLSR error & variance retained.
 # ╔═╡ 8ecaeb47-af94-47f9-bfed-2c3b5789375e
 begin
     p1 = plot(xlab = "k (number of compenents)", ylim = (0, 1.01), dpi = 200)
-    plot!(p1, eachindex(S), x_err, lab = "error", lc = :blue)
-    plot!(p1, eachindex(S), x_var, lab = "variance retained", lc = :red)
+    plot!(p1, eachindex(S), x_err; lab = "error", lc = :blue)
+    plot!(p1, eachindex(S), x_var; lab = "variance retained", lc = :red)
 end
 
 # ╔═╡ d46c62a2-9368-4ec3-b305-ab4e56b27f6b
@@ -206,8 +206,8 @@ md"Plot PLSR-based training & testing error with different numbers of components
 # ╔═╡ 15839dc6-cbe0-4fb9-b60a-1eed9dd4941c
 begin
     p2 = plot(xlab = "k (number of compenents)", ylab = "PLSR error [nT]", ylim = (0, 150))
-    plot!(p2, 1:k_max, err_train, lab = "train")
-    plot!(p2, 1:k_max, err_test, lab = "test")
+    plot!(p2, 1:k_max, err_train; lab = "train")
+    plot!(p2, 1:k_max, err_test;  lab = "test")
 end
 
 # ╔═╡ c5e34922-977c-4cad-9e9a-94bb242daa7c

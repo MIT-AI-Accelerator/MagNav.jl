@@ -261,7 +261,7 @@ function (ekf_rt::EKF_RT)(lat, lon, alt, vn, ve, vd, fn, fe, fd,
     o.t = t
     o.r = resid
 
-    H = repeat(get_H(itp_mapS, o.x, lat, lon, alt, date = o.date, core = o.core)', o.ny, 1)
+    H = repeat(get_H(itp_mapS, o.x, lat, lon, alt; date = o.date, core = o.core)', o.ny, 1)
 
     S = H*o.P*H' .+ o.R
 

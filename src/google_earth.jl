@@ -47,7 +47,7 @@ function map2kmz(map_map::Matrix, map_xx::Vector, map_yy::Vector,
     map_name  = remove_extension(map_kmz, ".kmz")
     map_kml   = map_name*".kml"
     map_png   = map_name*".png"
-    map_trans = string(round(Int, opacity*255), base = 16, pad = 2)*"ffffff" # ABGR
+    map_trans = string(round(Int, opacity*255); base = 16, pad = 2)*"ffffff" # ABGR
 
     p1 = plot_map(map_map;
                   clims    = clims,
@@ -58,7 +58,7 @@ function map2kmz(map_map::Matrix, map_xx::Vector, map_yy::Vector,
                   axis     = false,
                   bg_color = :transparent)
 
-    plot!(p1, size = min.(size(map_map), 10000))
+    plot!(p1; size = min.(size(map_map), 10000))
 
     png(p1, map_png)
 
@@ -97,7 +97,7 @@ function map2kmz(map_map::Matrix, map_xx::Vector, map_yy::Vector,
     w = ZipFile.Writer(map_kmz)
 
     for file in [map_kml, map_png]
-        f = ZipFile.addfile(w, file, method = ZipFile.Deflate)
+        f = ZipFile.addfile(w, file; method = ZipFile.Deflate)
         write(f, read(file))
     end
 

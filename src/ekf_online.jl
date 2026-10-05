@@ -261,7 +261,7 @@ function ekf_online_setup(flux::MagV, meas,
     P0_TL = inv(A'*A)*y_var
     N_ind = length(meas[ind])
     N     = min(N_ind - max(2*trim, 50), N_sigma) # avoid bpf issues
-    inds  = sortperm(ind .== 1, rev = true)[1:N_ind]
+    inds  = sortperm(ind .== 1; rev = true)[1:N_ind]
 
     N_min = 10
     @assert N >= N_min "increase N_sigma to $N_min or use more data"
@@ -274,7 +274,7 @@ function ekf_online_setup(flux::MagV, meas,
                                         Bt_scale = Bt_scale, return_var = false)
     end
 
-    TL_sigma = vec(std(coef_set, dims = 2))
+    TL_sigma = vec(std(coef_set; dims = 2))
     # TL_sigma = vec(minimum(abs.(coef_set[:, 2:end]-coef_set[:, 1:(end - 1)]), dims = 2))
     # TL_sigma = vec(abs.(median(coef_set[:, 2:end]-coef_set[:, 1:(end - 1)], dims = 2)))
 

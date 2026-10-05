@@ -728,9 +728,9 @@ function get_traj(traj_file::String,
     # if needed, create tt, otherwise get dt from tt
     if any(isnan.(tt))
         silent || @info("creating time data")
-        tt = round.(0:dt:(dt * (N - 1)), digits = 9)
+        tt = round.(0:dt:(dt * (N - 1)); digits = 9)
     else
-        dt = round(tt[2] - tt[1], digits = 9)
+        dt = round(tt[2] - tt[1]; digits = 9)
     end
 
     # if needed, create vn, ve, vd
@@ -941,9 +941,9 @@ function get_ins(ins_file::String,
     # if needed, create tt, otherwise get dt from tt
     if any(isnan.(tt))
         silent || @info("creating INS time data")
-        tt = round.(0:dt:(dt * (N - 1)), digits = 9)
+        tt = round.(0:dt:(dt * (N - 1)); digits = 9)
     else
-        dt = round(tt[2] - tt[1], digits = 9)
+        dt = round(tt[2] - tt[1]; digits = 9)
     end
 
     # if needed, create vn, ve, vd
@@ -1228,7 +1228,7 @@ function get_XYZ20(xyz_h5::String;
 
     close(xyz)
 
-    dt = N > 1 ? round(d[:tt][2] - d[:tt][1], digits = 9) : 0.1
+    dt = N > 1 ? round(d[:tt][2] - d[:tt][1]; digits = 9) : 0.1
 
     # using [rad] exclusively
     for field in [:lat, :lon, :ins_roll, :ins_pitch, :ins_yaw,
@@ -1420,7 +1420,7 @@ function get_XYZ21(xyz_h5::String;
 
     close(xyz)
 
-    dt = N > 1 ? round(d[:tt][2] - d[:tt][1], digits = 9) : 0.1
+    dt = N > 1 ? round(d[:tt][2] - d[:tt][1]; digits = 9) : 0.1
 
     # using [rad] exclusively
     for field in [:lat, :lon, :ins_roll, :ins_pitch, :ins_yaw]

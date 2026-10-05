@@ -259,7 +259,7 @@ function ekf_online_nn_setup(x, y, m, y_norms; N_sigma::Int = 1000)
     # nn_sigma = sqrt.(diag(P0_TL))
     # nn_sigma = vec(abs.(median(w_nn_store[:, 2:end] - w_nn_store[:, 1:(end - 1)], dims = 2)))
     # nn_sigma = vec(std(abs.(w_nn_store[:, 2:5] - w_nn_store[:, 1:4]), dims = 2))
-    nn_sigma = vec(minimum(abs.(w_nn_store[:, 2:end] - w_nn_store[:, 1:(end - 1)]), dims = 2))
+    nn_sigma = vec(minimum(abs.(w_nn_store[:, 2:end] - w_nn_store[:, 1:(end - 1)]); dims = 2))
     # nn_sigma = vec(abs.(w_nn_store[:, 2] - w_nn_store[:, 1]))
 
     return (P0_nn, nn_sigma) # , w_nn_store)

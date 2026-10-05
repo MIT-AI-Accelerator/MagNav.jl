@@ -152,7 +152,7 @@ begin # this map contains an additional drape (altitude) map
     alt_med = round(Int, median(e_alts))
     alt_val = 200:500
     alt_cdf = [sum(e_alts .< a) for a in alt_val] / sum(e_mask)
-    p3 = plot(alt_val, alt_cdf, xlab = "altitude [m]", ylab = "fraction [-]",
+    p3 = plot(alt_val, alt_cdf; xlab = "altitude [m]", ylab = "fraction [-]",
               title = "altitude map CDF", lab = false, dpi = 200)
 end
 
@@ -228,8 +228,8 @@ md" The trend of the map values agree, as expected.
 # ╔═╡ 992dce6d-3bed-428c-84ca-2ee9bc9f0167
 begin
     p8 = plot(ylab = "map value [nT]", dpi = 200)
-    plot!(p8, e_mapS_val, lab = "Eastern")
-    plot!(p8, n_mapS_val, lab = "NAMAD")
+    plot!(p8, e_mapS_val; lab = "Eastern")
+    plot!(p8, n_mapS_val; lab = "NAMAD")
 end
 
 # ╔═╡ 18eecde1-3cc3-4775-a139-c77beffe394e

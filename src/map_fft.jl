@@ -94,19 +94,19 @@ function upward_fft(map_map::Map, alt; expand::Bool = true, α = 0)
         if map_map isa Union{MapS, MapSd} # scalar map
             if N_alt > 1 # 3D map
                 map_map = MapS3D(map_map.info,
-                                 upward_fft(map_map.map, dx, dy, dz, expand = expand, α = α),
+                                 upward_fft(map_map.map, dx, dy, dz; expand = expand, α = α),
                                  map_map.xx, map_map.yy, alt,
-                                 cat((map_map.mask for _ = 1:N_alt)..., dims = 3))
+                                 cat((map_map.mask for _ = 1:N_alt)...; dims = 3))
             else
                 map_map = MapS(map_map.info,
-                               upward_fft(map_map.map, dx, dy, dz, expand = expand, α = α),
+                               upward_fft(map_map.map, dx, dy, dz; expand = expand, α = α),
                                map_map.xx, map_map.yy, alt,
                                map_map.mask)
             end
         elseif map_map isa MapV # vector map
-            mapX = upward_fft(map_map.mapX, dx, dy, dz, expand = expand, α = α)
-            mapY = upward_fft(map_map.mapY, dx, dy, dz, expand = expand, α = α)
-            mapZ = upward_fft(map_map.mapZ, dx, dy, dz, expand = expand, α = α)
+            mapX = upward_fft(map_map.mapX, dx, dy, dz; expand = expand, α = α)
+            mapY = upward_fft(map_map.mapY, dx, dy, dz; expand = expand, α = α)
+            mapZ = upward_fft(map_map.mapZ, dx, dy, dz; expand = expand, α = α)
 
             map_map = MapV(map_map.info,
                            mapX, mapY, mapZ,
@@ -127,24 +127,24 @@ function upward_fft(map_map::Map, alt; expand::Bool = true, α = 0)
 
         if N_down > 0 # downward continue from lowest map
             dz       = alt_down .- map_map.alt[1]
-            map_down = upward_fft(map_map.map[:, :, 1], dx, dy, dz, expand = expand, α = α)
+            map_down = upward_fft(map_map.map[:, :, 1], dx, dy, dz; expand = expand, α = α)
         else
             map_down = Array{eltype(alt)}(undef, ny, nx, 0)
         end
 
         if N_up > 0 # upward continue from highest map
             dz     = alt_up .- map_map.alt[end]
-            map_up = upward_fft(map_map.map[:, :, end], dx, dy, dz, expand = expand, α = α)
+            map_up = upward_fft(map_map.map[:, :, end], dx, dy, dz; expand = expand, α = α)
         else
             map_up = Array{eltype(alt)}(undef, ny, nx, 0)
         end
 
         map_map = MapS3D(map_map.info,
-                         cat(map_down, map_map.map, map_up, dims = 3),
+                         cat(map_down, map_map.map, map_up; dims = 3),
                          map_map.xx, map_map.yy, [alt_down; map_map.alt; alt_up],
                          cat((map_map.mask[:, :, 1] for _ = 1:N_down)...,
                              map_map.mask,
-                             (map_map.mask[:, :, end] for _ = 1:N_up)...,
+                             (map_map.mask[:, :, end] for _ = 1:N_up)...;
                              dims = 3))
 
     else

@@ -73,7 +73,7 @@ function nn_comp_1_train(x, y,
             end
             (_, S, V) = svd(cov(x_norm))
             v_scale = V[:, 1:k_pca]*inv(Diagonal(sqrt.(S[1:k_pca])))
-            var_ret = round(sum(S[1:k_pca])/sum(S)*100, digits = 6)
+            var_ret = round(sum(S[1:k_pca])/sum(S)*100; digits = 6)
             silent || @info("k_pca = $k_pca of $Nf, variance retained: $var_ret %")
         else
             v_scale = I(Nf)
@@ -97,10 +97,10 @@ function nn_comp_1_train(x, y,
         x_val_norm       = x_norm[:, p_val]
         y_train_norm     = y_norm[:, p_train]
         y_val_norm       = y_norm[:, p_val]
-        data_train       = DataLoader((x_train_norm, y_train_norm), shuffle = true, batchsize = batchsize)
-        data_val         = DataLoader((x_val_norm, y_val_norm), shuffle = true, batchsize = batchsize)
+        data_train       = DataLoader((x_train_norm, y_train_norm); shuffle = true, batchsize = batchsize)
+        data_val         = DataLoader((x_val_norm, y_val_norm); shuffle = true, batchsize = batchsize)
     else
-        data_train = DataLoader((x_norm, y_norm), shuffle = true, batchsize = batchsize)
+        data_train = DataLoader((x_norm, y_norm); shuffle = true, batchsize = batchsize)
         data_val   = data_train
     end
 
@@ -181,7 +181,7 @@ function nn_comp_1_train(x, y,
     s = m1_struct(m)
 
     if epoch_lbfgs > 0 # LBFGS, may overfit depending on iterations
-        data = DataLoader((x_norm, y_norm), shuffle = true, batchsize = batchsize)
+        data = DataLoader((x_norm, y_norm); shuffle = true, batchsize = batchsize)
 
         function lbfgs_train!(s_l, data_l, iter, silent)
             (x_l, y_l) = data_l.data
@@ -396,7 +396,7 @@ function nn_comp_2_train(A, x, y,
             end
             (_, S, V) = svd(cov(x_norm))
             v_scale = V[:, 1:k_pca]*inv(Diagonal(sqrt.(S[1:k_pca])))
-            var_ret = round(sum(S[1:k_pca])/sum(S)*100, digits = 6)
+            var_ret = round(sum(S[1:k_pca])/sum(S)*100; digits = 6)
             silent || @info("k_pca = $k_pca of $Nf, variance retained: $var_ret %")
         else
             v_scale = I(Nf)
@@ -427,10 +427,10 @@ function nn_comp_2_train(A, x, y,
         x_val_norm       = x_norm[:, p_val]
         y_train_norm     = y_norm[:, p_train]
         y_val_norm       = y_norm[:, p_val]
-        data_train       = DataLoader((A_train_norm, x_train_norm, y_train_norm), shuffle = true, batchsize = batchsize)
-        data_val         = DataLoader((A_val_norm, x_val_norm, y_val_norm), shuffle = true, batchsize = batchsize)
+        data_train       = DataLoader((A_train_norm, x_train_norm, y_train_norm); shuffle = true, batchsize = batchsize)
+        data_val         = DataLoader((A_val_norm, x_val_norm, y_val_norm); shuffle = true, batchsize = batchsize)
     else
-        data_train = DataLoader((A_norm, x_norm, y_norm), shuffle = true, batchsize = batchsize)
+        data_train = DataLoader((A_norm, x_norm, y_norm); shuffle = true, batchsize = batchsize)
         data_val   = data_train
     end
 
@@ -542,7 +542,7 @@ function nn_comp_2_train(A, x, y,
     end
 
     if epoch_lbfgs > 0 # LBFGS, may overfit depending on iterations
-        data = DataLoader((A_norm, x_norm, y_norm), shuffle = true, batchsize = batchsize)
+        data = DataLoader((A_norm, x_norm, y_norm); shuffle = true, batchsize = batchsize)
 
         function lbfgs_train!(s_l, data_l, iter, t_l, silent)
             (A_l, x_l, y_l) = data_l.data
@@ -604,11 +604,11 @@ function nn_comp_2_fwd(A_norm::AbstractMatrix, x_norm::AbstractMatrix, y_bias, y
 
     # get results
     if model_type in [:m2a]
-        y_hat = vec(sum(A_norm .* m(x_norm), dims = 1))
+        y_hat = vec(sum(A_norm .* m(x_norm); dims = 1))
     elseif model_type in [:m2b, :m2c]
         y_hat = vec(m(x_norm)) + A_norm'*TL_coef_norm
     elseif model_type in [:m2d]
-        y_hat = vec(sum(A_norm .* (m(x_norm) .+ TL_coef_norm), dims = 1))
+        y_hat = vec(sum(A_norm .* (m(x_norm) .+ TL_coef_norm); dims = 1))
     end
 
     denorm && (y_hat .= denorm_sets(y_bias, y_scale, y_hat))
@@ -1191,7 +1191,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y,
             end
             (_, S, V) = svd(cov(x_norm))
             v_scale = V[:, 1:k_pca]*inv(Diagonal(sqrt.(S[1:k_pca])))
-            var_ret = round(sum(S[1:k_pca])/sum(S)*100, digits = 6)
+            var_ret = round(sum(S[1:k_pca])/sum(S)*100; digits = 6)
             silent || @info("k_pca = $k_pca of $Nf, variance retained: $var_ret %")
         else
             v_scale = I(Nf)
@@ -1260,13 +1260,13 @@ function nn_comp_3_train(A, Bt, B_dot, x, y,
                                       shuffle = true, batchsize = batchsize)
             #! format: on
         else
-            data_train = DataLoader((B_unit_train, B_vec_train, B_vec_dot_train, x_train_norm, y_train_norm),
+            data_train = DataLoader((B_unit_train, B_vec_train, B_vec_dot_train, x_train_norm, y_train_norm);
                                     shuffle = true, batchsize = batchsize)
         end
-        data_val = DataLoader((B_unit_val, B_vec_val, B_vec_dot_val, x_val_norm, y_val_norm),
+        data_val = DataLoader((B_unit_val, B_vec_val, B_vec_dot_val, x_val_norm, y_val_norm);
                               shuffle = true, batchsize = batchsize)
     else
-        data_train   = DataLoader((B_unit, B_vec, B_vec_dot, x_norm, y_norm), shuffle = true, batchsize = batchsize)
+        data_train   = DataLoader((B_unit, B_vec, B_vec_dot, x_norm, y_norm); shuffle = true, batchsize = batchsize)
         data_train_2 = data_train
         data_val     = data_train
     end
@@ -1449,7 +1449,7 @@ function nn_comp_3_train(A, Bt, B_dot, x, y,
     end
 
     if epoch_lbfgs > 0 # LBFGS, may overfit depending on iterations
-        data = DataLoader((B_unit, B_vec, B_vec_dot, x_norm, y_norm), shuffle = true, batchsize = batchsize)
+        data = DataLoader((B_unit, B_vec, B_vec_dot, x_norm, y_norm); shuffle = true, batchsize = batchsize)
 
         function lbfgs_train!(s_l, data_l, iter, t_l, silent)
             (Bu_l, Bv_l, Bvd_l, x_l, y_l) = data_l.data
@@ -1563,11 +1563,11 @@ function nn_comp_3_fwd(B_unit, B_vec, B_vec_dot,
 
     if y_type in [:c, :d] # aircraft field to subtract from scalar mag
         # vec_aircraft += y_bias .* B_unit # this performs worse overall
-        y_hat = vec(sum(vec_aircraft .* B_unit, dims = 1)) # dot product
+        y_hat = vec(sum(vec_aircraft .* B_unit; dims = 1)) # dot product
     # println("Aircraft correction = ", y_hat)
     elseif y_type in [:a, :b] # magnitude of scalar Earth field
         B_e   = B_vec - vec_aircraft
-        y_hat = vec(sqrt.(sum(B_e .^ 2, dims = 1)))
+        y_hat = vec(sqrt.(sum(B_e .^ 2; dims = 1)))
         # println("Aircraft correction = ", sum(vec_aircraft .* B_unit, dims = 1))
         # println("|B_e| = ", y_hat)
     end
@@ -2382,7 +2382,7 @@ function comp_train(comp_params::CompParams, xyz::XYZ, ind,
                 err   = err_fi
             end
 
-            comp_params = NNCompParams(comp_params,
+            comp_params = NNCompParams(comp_params;
                                        data_norms = data_norms,
                                        model      = model,
                                        terms_A    = terms_A,
@@ -2511,13 +2511,13 @@ function comp_train(comp_params::CompParams, xyz::XYZ, ind,
     end
 
     if comp_params isa NNCompParams
-        comp_params = NNCompParams(comp_params,
+        comp_params = NNCompParams(comp_params;
                                    data_norms = data_norms,
                                    model      = model,
                                    terms_A    = terms_A,
                                    TL_coef    = TL_coef)
     elseif comp_params isa LinCompParams
-        comp_params = LinCompParams(comp_params,
+        comp_params = LinCompParams(comp_params;
                                     data_norms = data_norms,
                                     model      = model)
     end
@@ -2833,7 +2833,7 @@ function comp_train(comp_params::CompParams, xyz_vec::Vector, ind_vec::Vector,
                 err   = err_fi
             end
 
-            comp_params = NNCompParams(comp_params,
+            comp_params = NNCompParams(comp_params;
                                        data_norms = data_norms,
                                        model      = model,
                                        terms_A    = terms_A,
@@ -2962,13 +2962,13 @@ function comp_train(comp_params::CompParams, xyz_vec::Vector, ind_vec::Vector,
     end
 
     if comp_params isa NNCompParams
-        comp_params = NNCompParams(comp_params,
+        comp_params = NNCompParams(comp_params;
                                    data_norms = data_norms,
                                    model      = model,
                                    terms_A    = terms_A,
                                    TL_coef    = TL_coef)
     elseif comp_params isa LinCompParams
-        comp_params = LinCompParams(comp_params,
+        comp_params = LinCompParams(comp_params;
                                     data_norms = data_norms,
                                     model      = model)
     end
@@ -3209,7 +3209,7 @@ function comp_train(comp_params::CompParams, lines,
                 err   = err_fi
             end
 
-            comp_params = NNCompParams(comp_params,
+            comp_params = NNCompParams(comp_params;
                                        data_norms = data_norms,
                                        model      = model,
                                        terms_A    = terms_A,
@@ -3340,13 +3340,13 @@ function comp_train(comp_params::CompParams, lines,
     end
 
     if comp_params isa NNCompParams
-        comp_params = NNCompParams(comp_params,
+        comp_params = NNCompParams(comp_params;
                                    data_norms = data_norms,
                                    model      = model,
                                    terms_A    = terms_A,
                                    TL_coef    = TL_coef)
     elseif comp_params isa LinCompParams
-        comp_params = LinCompParams(comp_params,
+        comp_params = LinCompParams(comp_params;
                                     data_norms = data_norms,
                                     model      = model)
     end

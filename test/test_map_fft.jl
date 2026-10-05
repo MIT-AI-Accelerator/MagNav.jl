@@ -7,7 +7,7 @@ map_data  = matopen(test_file, "r") do file
 end
 
 traj_file = joinpath(@__DIR__, "test_data", "test_data_traj.mat")
-traj = get_traj(traj_file, :traj, silent = true)
+traj = get_traj(traj_file, :traj; silent = true)
 
 map_map = map_data["map"]
 nx = size(map_map, 2)

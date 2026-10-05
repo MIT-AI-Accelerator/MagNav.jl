@@ -109,7 +109,7 @@ md"Position (lat & lot) for trajectory (GPS), INS (after zeroing), & navigation 
 begin
     p1 = plot_map(mapS; map_color = :gray) # map background
     plot_filt!(p1, traj, ins, filt_out; show_plot = false) # overlay GPS, INS, & filter
-    plot!(p1, legend = :topleft) # move as needed
+    plot!(p1; legend = :topleft) # move as needed
 end
 
 # ╔═╡ 9f90be51-1d9b-45a0-8ef3-91c93aa9bf2b
@@ -119,8 +119,8 @@ md"Northing & easting INS error (after zeroing).
 # ╔═╡ 3699e96c-48b4-4116-8c33-13cbc64bb3df
 begin
     p2 = plot(xlab = "time [min]", ylab = "error [m]", legend = :topright, dpi = 200)
-    plot!(p2, tt, ins_out.n_err, lab = "northing")
-    plot!(p2, tt, ins_out.e_err, lab = "easting")
+    plot!(p2, tt, ins_out.n_err; lab = "northing")
+    plot!(p2, tt, ins_out.e_err; lab = "easting")
 end
 
 # ╔═╡ 7fecb8d4-5b8d-4731-b224-22b9adfad5ee

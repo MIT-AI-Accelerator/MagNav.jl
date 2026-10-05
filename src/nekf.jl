@@ -107,7 +107,7 @@ function nekf(lat, lon, alt, vn, ve, vd, fn, fe, fd, Cnb, meas, dt, itp_mapS,
         P = Phi*P*Phi' + Qd     # P_t|t-1 [nx x nx]
     end
 
-    println("R_nn at [1, N/2, N]: ", round.(R_nn[[1, round(Int, N/2), N]], digits = 5))
+    println("R_nn at [1, N/2, N]: ", round.(R_nn[[1, round(Int, N/2), N]]; digits = 5))
 
     return FILTres(x_out, P_out, r_out, true)
 end # function nekf

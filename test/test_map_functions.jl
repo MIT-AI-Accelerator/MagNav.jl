@@ -13,7 +13,7 @@ mapS     = get_map(map_file, :map_data)
 itp_mapS = map_interpolate(mapS, :linear) # linear to match MATLAB
 
 traj_file = joinpath(@__DIR__, "test_data", "test_data_traj.mat")
-traj      = get_traj(traj_file, :traj, silent = true)
+traj      = get_traj(traj_file, :traj; silent = true)
 
 gxf_file = MagNav.ottawa_area_maps_gxf(:HighAlt)
 (map_map, map_xx, map_yy) = MagNav.map_get_gxf(gxf_file)
@@ -258,7 +258,7 @@ end
 
 xx_lim = extrema(mapS.xx) .+ (-0.01, 0.01)
 yy_lim = extrema(mapS.yy) .+ (-0.01, 0.01)
-namad  = upward_fft(map_trim(get_map(), xx_lim = xx_lim, yy_lim = yy_lim), mapS.alt)
+namad  = upward_fft(map_trim(get_map(); xx_lim = xx_lim, yy_lim = yy_lim), mapS.alt)
 
 @testset "map_combine tests" begin
     @test map_combine(mapS, namad) isa MapS

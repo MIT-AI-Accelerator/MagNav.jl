@@ -285,13 +285,13 @@ md"Compensated scalar magnetometers.
 # ╔═╡ e0a21a3c-b48c-458e-a4eb-7a726e77b2b2
 begin
     p1 = plot(xlab = "time [min]", ylab = "magnetic field [nT]", legend = :topleft, dpi = dpi)
-    plot!(p1, tt, detrend(mag_1_uc),  lab = "SGL raw Mag 1",  color = :cyan, lw = 2)
-    plot!(p1, tt, detrend(mag_1_sgl), lab = "SGL comp Mag 1", color = :blue, lw = 2)
-    plot!(p1, tt, detrend(mag_1_c),   lab = "MIT comp Mag 1", color = :red,  lw = 2, ls = :dash)
-    # plot!(p1, tt, detrend(mag_2_c),   lab = "MIT comp Mag 2", color = :purple) # bad
-    plot!(p1, tt, detrend(mag_3_c),   lab = "MIT comp Mag 3", color = :green)
-    plot!(p1, tt, detrend(mag_4_c),   lab = "MIT comp Mag 4", color = :black)
-    plot!(p1, tt, detrend(mag_5_c),   lab = "MIT comp Mag 5", color = :orange)
+    plot!(p1, tt, detrend(mag_1_uc);  lab = "SGL raw Mag 1",  color = :cyan, lw = 2)
+    plot!(p1, tt, detrend(mag_1_sgl); lab = "SGL comp Mag 1", color = :blue, lw = 2)
+    plot!(p1, tt, detrend(mag_1_c);   lab = "MIT comp Mag 1", color = :red,  lw = 2, ls = :dash)
+    # plot!(p1, tt, detrend(mag_2_c);   lab = "MIT comp Mag 2", color = :purple) # bad
+    plot!(p1, tt, detrend(mag_3_c);   lab = "MIT comp Mag 3", color = :green)
+    plot!(p1, tt, detrend(mag_4_c);   lab = "MIT comp Mag 4", color = :black)
+    plot!(p1, tt, detrend(mag_5_c);   lab = "MIT comp Mag 5", color = :orange)
     # png(p1, "comp_prof_1") # to save figure
 end
 
@@ -303,7 +303,7 @@ md"Position (lat & lot) for trajectory (GPS), INS (after zeroing), & navigation 
 begin
     p2 = plot_map(mapS; map_color = :gray) # map background
     plot_filt!(p2, traj, ins, filt_out; show_plot = false) # overlay GPS, INS, & filter
-    plot!(p2, legend = :topleft) # move as needed
+    plot!(p2; legend = :topleft) # move as needed
 end
 
 # ╔═╡ 60c2bb16-a0d4-42f2-ba4a-f42dd70f2611
@@ -313,8 +313,8 @@ md"Northing & easting INS error (after zeroing).
 # ╔═╡ 9bc21e37-9911-4b2e-8460-99ebd8256673
 begin
     p3 = plot(xlab = "time [min]", ylab = "error [m]", legend = :topleft, dpi = dpi)
-    plot!(p3, tt, ins_out.n_err, lab = "northing")
-    plot!(p3, tt, ins_out.e_err, lab = "easting")
+    plot!(p3, tt, ins_out.n_err; lab = "northing")
+    plot!(p3, tt, ins_out.e_err; lab = "easting")
 end
 
 # ╔═╡ de62fdda-a107-4283-9140-43dcf2dfb4bc
@@ -352,11 +352,11 @@ md"Magnetometers with in-flight event(s) marked. This may be useful for understa
 # ╔═╡ 289d9265-a8a0-410b-a858-3698bd4cae37
 begin
     p7 = plot(xlab = "time [min]", ylab = "magnetic field [nT]", dpi = dpi)
-    plot!(p7, tt, mag_1_uc, lab = "mag_1_uc")
-    # plot!(p7, tt, mag_2_uc, lab = "mag_2_uc") # bad
-    plot!(p7, tt, mag_3_uc, lab = "mag_3_uc")
-    plot!(p7, tt, mag_4_uc, lab = "mag_4_uc")
-    plot!(p7, tt, mag_5_uc, lab = "mag_5_uc")
+    plot!(p7, tt, mag_1_uc; lab = "mag_1_uc")
+    # plot!(p7, tt, mag_2_uc; lab = "mag_2_uc") # bad
+    plot!(p7, tt, mag_3_uc; lab = "mag_3_uc")
+    plot!(p7, tt, mag_4_uc; lab = "mag_4_uc")
+    plot!(p7, tt, mag_5_uc; lab = "mag_5_uc")
     plot_events!(p7, flight, df_event; t0 = t0, t_units = :min)
     p7
 end
