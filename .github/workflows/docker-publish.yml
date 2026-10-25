@@ -31,6 +31,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
+      - name: Install Julia
+        uses: julia-actions/setup-julia@v3
+        with:
+          version: '1'
+
       - name: Install Cosign
         uses: sigstore/cosign-installer@v4.1.2
 
