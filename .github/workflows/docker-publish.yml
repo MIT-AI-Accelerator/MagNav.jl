@@ -11,7 +11,8 @@ on:
   push:
     branches:
       - master
-    tags: '*'
+    tags:
+     - '*'
 
 env:
   REGISTRY: ghcr.io # if empty, uses docker.io for Docker Hub
