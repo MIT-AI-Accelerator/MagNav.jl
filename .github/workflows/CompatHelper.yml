@@ -2,7 +2,7 @@ name: CompatHelper
 
 on:
   schedule:
-    - cron: 15 11 * * *
+    - cron: 15 6 * * 6
 
 jobs:
   CompatHelper:
