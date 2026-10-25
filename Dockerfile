@@ -12,9 +12,8 @@
 FROM quay.io/jupyter/julia-notebook:latest
 
 # Add packages & precompile
-RUN julia -e 'using Pkg; \
-    Pkg.add(["CSV","DataFrames","MagNav","Plots"]); \
-    Pkg.precompile();'
+RUN julia -e 'using Pkg; Pkg.add(["CSV", "DataFrames", "MagNav", "Plots"]);'
+RUN julia -e 'using Pkg; Pkg.status(); Pkg.precompile();'
 
 # Download examples
 RUN git clone "https://github.com/MIT-AI-Accelerator/MagNav.jl" $HOME/MagNav.jl && \
