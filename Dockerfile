@@ -11,6 +11,9 @@
 # Get Julia, Jupyter, & Pluto image, should use latest Julia version
 FROM quay.io/jupyter/julia-notebook:latest
 
+# Disable automatic precompilation during package installation
+ENV JULIA_PKG_PRECOMPILE_AUTO=0
+
 # Add packages & precompile
 RUN julia -e 'using Pkg; Pkg.add(["CSV", "DataFrames", "MagNav", "Plots"]);'
 RUN julia -e 'using Pkg; Pkg.status(); Pkg.precompile();'
