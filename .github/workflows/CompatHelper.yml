@@ -2,12 +2,16 @@ name: CompatHelper
 
 on:
   schedule:
-    - cron: 15 11 * * *
+    - cron: 15 6 * * 6
 
 jobs:
   CompatHelper:
     runs-on: ubuntu-latest
     steps:
+      - name: Install Julia
+        uses: julia-actions/setup-julia@v3
+        with:
+          version: '1'
       - name: Pkg.add("CompatHelper")
         run: julia -e 'using Pkg; Pkg.add("CompatHelper")'
       - name: CompatHelper.main()

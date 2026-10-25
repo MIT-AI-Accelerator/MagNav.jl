@@ -7,7 +7,8 @@ on:
   push:
     branches:
       - master
-    tags: '*'
+    tags:
+     - '*'
 
 jobs:
   test:
