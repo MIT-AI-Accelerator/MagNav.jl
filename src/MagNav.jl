@@ -6,7 +6,7 @@ using BSON: bson, load
 using Compat: @compat
 using DSP: Bandpass, Butterworth, Highpass, Lowpass
 using DSP: digitalfilter, fft, fftfreq, filtfilt, hamming, ifft
-using DSP: pow2db, rms, spectrogram, welch_pgram
+using DSP: pow2db, spectrogram, welch_pgram
 using DataFrames: DataFrame, combine, groupby, order, sort
 using DelimitedFiles: readdlm, writedlm
 using Distributions: MvNormal, Normal, Uniform
