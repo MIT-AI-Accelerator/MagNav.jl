@@ -2170,7 +2170,7 @@ function get_igrf(xyz::XYZ,
     igrf_vec = [igrf(tt[i], alt[i], lat[i], lon[i], Val(:geodetic)) for i in 1:N]
     if check_xyz
         lim_igrf = 1
-        err_igrf = round(rms(norm.(igrf_vec) - xyz.igrf[ind]); digits = 2)
+        err_igrf = round(std(norm.(igrf_vec) - xyz.igrf[ind]); digits = 2)
         @assert err_igrf < lim_igrf "IGRF discrepancy = $err_igrf > $lim_igrf nT, check `igrf`, `year`, & `doy` fields in `xyz`"
     end
 
