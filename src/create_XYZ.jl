@@ -1004,7 +1004,7 @@ function create_informed_xyz(xyz::XYZ, ind, mapS::Union{MapS, MapSd, MapS3D},
     (map_val, itp_mapS) = get_map_val(mapS, traj; α = 200, return_itp = true)
 
     # compute vector aircraft component & vector flux along trajectory
-    set_igrf = false
+    set_igrf = true
     (TL_aircraft, B_earth) = calculate_imputed_TL_earth(xyz, ind, map_val, set_igrf, TL_coef;
                                                         terms    = terms,
                                                         Bt_scale = Bt_scale)
