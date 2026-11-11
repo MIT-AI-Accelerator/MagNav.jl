@@ -12,7 +12,7 @@ on:
     branches:
       - master
     tags:
-     - '*'
+      - '*'
 
 env:
   REGISTRY: ghcr.io # if empty, uses docker.io for Docker Hub
